@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import * as api from "../api/client";
+import { useCallback, useEffect, useState } from "react";
 import { SIDEBAR_WIDTH } from "../constants";
 import type { ThemePreference } from "../styles/styleConsts";
 import { useThemePreference } from "../styles/Theme";
@@ -28,6 +27,8 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; description: strin
 ];
 
 const DISCORD_URL = "https://discord.com/invite/J8jwMxEEff";
+const CONTACT_FORM_URL = "https://contact-form.nfshost.com/contact";
+const MAX_CHARS = 800;
 
 export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
   const { preference, setPreference } = useThemePreference();
@@ -42,15 +43,28 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.value.length > MAX_CHARS) return;
+    setFeedbackMessage(e.target.value);
+  }, []);
+
   const handleSubmitFeedback = async () => {
     const trimmed = feedbackMessage.trim();
     if (!trimmed) return;
 
     setSubmitting(true);
     try {
-      await api.submitFeedback(trimmed);
-      setFeedbackMessage("");
-      onToast("Feedback sent — thank you!");
+      const response = await fetch(CONTACT_FORM_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed, website: "infinite-adventures-feedback" }),
+      });
+      if (response.ok) {
+        setFeedbackMessage("");
+        onToast("Feedback sent — thank you!");
+      } else {
+        onToast("Failed to send feedback");
+      }
     } catch {
       onToast("Failed to send feedback");
     } finally {
@@ -92,11 +106,14 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
       {/* Feedback */}
       <div style={styles.section}>
         <div style={styles.sectionLabel}>Feedback</div>
+        <div style={styles.charCount}>
+          {feedbackMessage.length}/{MAX_CHARS} characters
+        </div>
         <textarea
           style={styles.textarea}
           placeholder="Tell us what you think..."
           value={feedbackMessage}
-          onChange={(e) => setFeedbackMessage(e.target.value)}
+          onChange={handleMessageChange}
           rows={4}
         />
         <button
@@ -184,6 +201,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     color: "var(--color-subtext0)",
     fontWeight: 600,
+  },
+  charCount: {
+    fontSize: 12,
+    color: "var(--color-overlay0)",
+    textAlign: "right",
   },
   options: {
     display: "flex",

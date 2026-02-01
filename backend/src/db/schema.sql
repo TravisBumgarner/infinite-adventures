@@ -15,12 +15,6 @@ CREATE TABLE IF NOT EXISTS note_links (
   PRIMARY KEY (source_note_id, target_note_id)
 );
 
-CREATE TABLE IF NOT EXISTS feedback (
-  id TEXT PRIMARY KEY,
-  message TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
   title,
   content,
