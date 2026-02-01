@@ -1,4 +1,4 @@
-import type { Note, NoteSummary, CreateNoteInput, UpdateNoteInput } from "../types";
+import type { Note, NoteSummary, CreateNoteInput, UpdateNoteInput, SearchResult } from "../types";
 
 const API_BASE = "http://localhost:3001/api";
 
@@ -38,4 +38,11 @@ export function updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
 
 export function deleteNote(id: string): Promise<void> {
   return request<void>(`/notes/${id}`, { method: "DELETE" });
+}
+
+export async function searchNotes(query: string): Promise<SearchResult[]> {
+  const data = await request<{ results: SearchResult[] }>(
+    `/notes/search?q=${encodeURIComponent(query)}`
+  );
+  return data.results;
 }
