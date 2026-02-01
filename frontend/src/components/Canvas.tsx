@@ -212,13 +212,13 @@ export default function Canvas() {
       notesCache.current.set(fullNote.id, fullNote);
       setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
-      // Double rAF: first for React to commit the DOM, second for layout to settle
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const zoom = reactFlowInstance.getZoom();
-          reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
-        });
-      });
+      // Race condition: sidebar open triggers canvas resize via CSS, but React Flow
+      // needs time to recalculate its internal dimensions. Without the delay, setCenter
+      // uses the old (full-width) dimensions and the note ends up under the sidebar.
+      setTimeout(() => {
+        const zoom = reactFlowInstance.getZoom();
+        reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
+      }, 200);
     },
     [nodes, setNodes, fitBothNotes, reactFlowInstance]
   );
