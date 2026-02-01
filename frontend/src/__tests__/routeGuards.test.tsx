@@ -8,10 +8,9 @@ vi.mock("../auth/service.js", () => ({
   getUser: vi.fn(),
 }));
 
-import { getUser } from "../auth/service.js";
 import { AuthProvider } from "../auth/AuthProvider";
-import AnonymousRoute from "../components/AnonymousRoute";
-import MemberRoute from "../components/MemberRoute";
+import { getUser } from "../auth/service.js";
+import { AnonymousRoute, MemberRoute } from "../components/Router";
 
 const mockGetUser = vi.mocked(getUser);
 
