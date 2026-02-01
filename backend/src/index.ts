@@ -3,7 +3,7 @@ import cors from "cors";
 import { initDb } from "./db/connection.js";
 import { notesRouter } from "./routes/notes.js";
 
-const PORT = parseInt(process.env["PORT"] || "3001", 10);
+const PORT = parseInt(process.env["PORT"] || "3021", 10);
 
 const app = express();
 app.use(cors());
