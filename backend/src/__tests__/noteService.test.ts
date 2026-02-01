@@ -6,6 +6,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  searchNotes,
   ValidationError,
 } from "../services/noteService.js";
 
@@ -135,6 +136,49 @@ describe("noteService", () => {
 
     it("returns false for non-existent id", () => {
       expect(deleteNote("non-existent")).toBe(false);
+    });
+  });
+
+  describe("searchNotes", () => {
+    it("finds notes by title", () => {
+      createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      createNote({ type: "pc", title: "Frodo", content: "A hobbit" });
+
+      const results = searchNotes("Gandalf");
+      expect(results).toHaveLength(1);
+      expect(results[0]!.title).toBe("Gandalf");
+      expect(results[0]!.type).toBe("npc");
+    });
+
+    it("finds notes by content", () => {
+      createNote({ type: "npc", title: "Gandalf", content: "A wise wizard from Middle Earth" });
+
+      const results = searchNotes("wizard");
+      expect(results).toHaveLength(1);
+      expect(results[0]!.title).toBe("Gandalf");
+      expect(results[0]!.snippet).toContain("wizard");
+    });
+
+    it("returns empty array for no matches", () => {
+      createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+
+      const results = searchNotes("dragon");
+      expect(results).toEqual([]);
+    });
+
+    it("returns empty array for empty query", () => {
+      createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+
+      expect(searchNotes("")).toEqual([]);
+      expect(searchNotes("   ")).toEqual([]);
+    });
+
+    it("supports prefix matching", () => {
+      createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+
+      const results = searchNotes("Gan");
+      expect(results).toHaveLength(1);
+      expect(results[0]!.title).toBe("Gandalf");
     });
   });
 });
