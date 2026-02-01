@@ -7,7 +7,7 @@
     "shared"
   ],
   "scripts": {
-    "dev": "concurrently -n backend,frontend -c blue,green \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev": "concurrently -n docker,backend,frontend -c gray,blue,green \"docker compose up\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "test": "npm --prefix frontend test && npm --prefix backend test",
     "lint": "biome check .",
     "format": "biome format --write .",
