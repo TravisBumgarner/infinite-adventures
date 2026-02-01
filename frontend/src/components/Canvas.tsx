@@ -218,7 +218,7 @@ export default function Canvas() {
       setTimeout(() => {
         const zoom = reactFlowInstance.getZoom();
         reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
-      }, 200);
+      }, 50);
     },
     [nodes, setNodes, fitBothNotes, reactFlowInstance]
   );
