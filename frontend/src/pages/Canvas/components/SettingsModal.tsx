@@ -20,10 +20,10 @@ interface SettingsSidebarProps {
   onToast: (message: string) => void;
 }
 
-const THEME_OPTIONS: { value: ThemePreference; label: string; description: string }[] = [
-  { value: "system", label: "System", description: "Follow your OS preference" },
-  { value: "light", label: "Light", description: "Catppuccin Latte" },
-  { value: "dark", label: "Dark", description: "Catppuccin Mocha" },
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
 ];
 
 const DISCORD_URL = "https://discord.com/invite/J8jwMxEEff";
@@ -96,8 +96,7 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
               }}
               onClick={() => setPreference(opt.value)}
             >
-              <div style={styles.optionLabel}>{opt.label}</div>
-              <div style={styles.optionDesc}>{opt.description}</div>
+              {opt.label}
             </button>
           ))}
         </div>
@@ -144,7 +143,7 @@ const styles: Record<string, React.CSSProperties> = {
   gearButton: {
     position: "fixed",
     top: 16,
-    left: 16,
+    right: 16,
     zIndex: 50,
     background: "var(--color-base)",
     border: "1px solid var(--color-surface1)",
@@ -209,29 +208,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
   options: {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     gap: 8,
   },
   optionCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-    padding: "10px 14px",
+    flex: 1,
+    padding: "8px 0",
     background: "var(--color-surface0)",
     border: "2px solid",
     borderRadius: 8,
     cursor: "pointer",
     textAlign: "left",
     fontFamily: "system-ui, sans-serif",
-  },
-  optionLabel: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "var(--color-text)",
-  },
-  optionDesc: {
-    fontSize: 12,
-    color: "var(--color-subtext0)",
   },
   textarea: {
     background: "var(--color-surface0)",
