@@ -212,8 +212,12 @@ export default function Canvas() {
       notesCache.current.set(fullNote.id, fullNote);
       setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
+      // Center viewport on the new note after the sidebar opens and canvas resizes
+      requestAnimationFrame(() => {
+        reactFlowInstance.setCenter(pos.x, pos.y, { duration: 300 });
+      });
     },
-    [nodes, setNodes, fitBothNotes]
+    [nodes, setNodes, fitBothNotes, reactFlowInstance]
   );
 
   // Right-click canvas to open context menu
@@ -271,19 +275,15 @@ export default function Canvas() {
   }, [reactFlowInstance]);
 
   // Toolbar: create note at viewport center
-  const sidebarOpen = !!(editingNoteId || browsingNoteId);
   const handleToolbarCreate = useCallback(
     (type: NoteType) => {
-      const canvasWidth = sidebarOpen
-        ? window.innerWidth - SIDEBAR_WIDTH
-        : window.innerWidth;
       const center = reactFlowInstance.screenToFlowPosition({
-        x: canvasWidth / 2,
+        x: window.innerWidth / 2,
         y: window.innerHeight / 2,
       });
       createNoteAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition, sidebarOpen]
+    [reactFlowInstance, createNoteAtPosition]
   );
 
   // Drag end to save positions for all selected nodes
