@@ -24,7 +24,7 @@ export async function processRequest(
   res: Response,
   context: DeleteValidationContext,
 ): Promise<void> {
-  const deleted = deleteNote(context.id);
+  const deleted = await deleteNote(context.id);
   if (!deleted) {
     sendNotFound(res, "NOTE_NOT_FOUND");
     return;

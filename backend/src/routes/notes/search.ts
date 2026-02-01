@@ -16,7 +16,7 @@ export async function processRequest(
   res: Response,
   context: SearchValidationContext,
 ): Promise<void> {
-  const results = searchNotes(context.query);
+  const results = await searchNotes(context.query);
   sendSuccess(res, { results });
 }
 

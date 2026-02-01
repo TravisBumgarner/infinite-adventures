@@ -3,7 +3,9 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.string().default("3021"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  DB_PATH: z.string().default("./data/infinite-adventures.db"),
+  DATABASE_URL: z
+    .string()
+    .default("postgresql://infinite:infinite@localhost:5434/infinite_adventures"),
   SUPABASE_URL: z.string().default(""),
   SUPABASE_SERVICE_ROLE_KEY: z.string().default(""),
 });
@@ -11,7 +13,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse({
   PORT: process.env.PORT,
   NODE_ENV: process.env.NODE_ENV,
-  DB_PATH: process.env.DB_PATH,
+  DATABASE_URL: process.env.DATABASE_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
@@ -25,7 +27,7 @@ if (!parsed.success) {
 const config = {
   port: Number.parseInt(parsed.data.PORT, 10),
   nodeEnv: parsed.data.NODE_ENV,
-  dbPath: parsed.data.DB_PATH,
+  databaseUrl: parsed.data.DATABASE_URL,
   supabaseUrl: parsed.data.SUPABASE_URL,
   supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
   isProduction: parsed.data.NODE_ENV === "production",

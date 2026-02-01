@@ -11,7 +11,7 @@ export async function processRequest(
   res: Response,
   _context: Record<string, never>,
 ): Promise<void> {
-  const notes = listNotes();
+  const notes = await listNotes();
   sendSuccess(res, notes);
 }
 

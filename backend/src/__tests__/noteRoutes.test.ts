@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { closeDb, initDb } from "../db/connection.js";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { handler as createHandler, validate as createValidate } from "../routes/notes/create.js";
+import { handler as deleteHandler, validate as deleteValidate } from "../routes/notes/delete.js";
+import { handler as getHandler, validate as getValidate } from "../routes/notes/get.js";
+import { handler as listHandler, validate as listValidate } from "../routes/notes/list.js";
+import { handler as searchHandler, validate as searchValidate } from "../routes/notes/search.js";
+import { handler as updateHandler, validate as updateValidate } from "../routes/notes/update.js";
 import { createNote } from "../services/noteService.js";
-
-import { validate as listValidate, handler as listHandler } from "../routes/notes/list.js";
-import { validate as getValidate, handler as getHandler } from "../routes/notes/get.js";
-import { validate as createValidate, handler as createHandler } from "../routes/notes/create.js";
-import { validate as updateValidate, handler as updateHandler } from "../routes/notes/update.js";
-import { validate as deleteValidate, handler as deleteHandler } from "../routes/notes/delete.js";
-import { validate as searchValidate, handler as searchHandler } from "../routes/notes/search.js";
+import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 function createMockRes() {
   const res = {
@@ -27,12 +26,16 @@ function createMockReq(overrides: Record<string, unknown> = {}) {
 }
 
 describe("note routes", () => {
-  beforeEach(() => {
-    initDb(":memory:");
+  beforeAll(async () => {
+    await setupTestDb();
   });
 
-  afterEach(() => {
-    closeDb();
+  beforeEach(async () => {
+    await truncateAllTables();
+  });
+
+  afterAll(async () => {
+    await teardownTestDb();
   });
 
   describe("list", () => {
@@ -44,8 +47,8 @@ describe("note routes", () => {
     });
 
     it("handler returns all notes wrapped in success envelope", async () => {
-      createNote({ type: "npc", title: "Gandalf", content: "wizard" });
-      createNote({ type: "pc", title: "Frodo", content: "hobbit" });
+      await createNote({ type: "npc", title: "Gandalf", content: "wizard" });
+      await createNote({ type: "pc", title: "Frodo", content: "hobbit" });
 
       const req = createMockReq();
       const res = createMockRes();
@@ -75,7 +78,7 @@ describe("note routes", () => {
     });
 
     it("handler returns note in success envelope", async () => {
-      const note = createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" });
       const req = createMockReq({ params: { id: note.id } });
       const res = createMockRes();
       await getHandler(req as import("express").Request<{ id: string }>, res);
@@ -172,7 +175,7 @@ describe("note routes", () => {
     });
 
     it("handler updates note and returns success envelope", async () => {
-      const note = createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" });
       const req = createMockReq({
         params: { id: note.id },
         body: { title: "Gandalf the Grey" },
@@ -217,7 +220,7 @@ describe("note routes", () => {
     });
 
     it("handler deletes note and returns success envelope", async () => {
-      const note = createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" });
       const req = createMockReq({ params: { id: note.id } });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
@@ -254,7 +257,7 @@ describe("note routes", () => {
     });
 
     it("handler returns search results in success envelope", async () => {
-      createNote({ type: "npc", title: "Gandalf", content: "A wise wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wise wizard" });
 
       const req = createMockReq({ query: { q: "wizard" } });
       const res = createMockRes();
@@ -268,7 +271,7 @@ describe("note routes", () => {
     });
 
     it("handler returns empty results for no matches", async () => {
-      createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
 
       const req = createMockReq({ query: { q: "dragon" } });
       const res = createMockRes();

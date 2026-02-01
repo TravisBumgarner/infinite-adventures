@@ -52,16 +52,15 @@ export function parseMentions(content: string): ParsedMention[] {
  * 3. Create note_links entries
  * 4. Remove stale links for mentions that were removed
  */
-export function resolveLinks(sourceNoteId: string, content: string): ResolvedLink[] {
+export async function resolveLinks(sourceNoteId: string, content: string): Promise<ResolvedLink[]> {
   const db = getDb();
   const mentions = parseMentions(content);
 
   // Get the source note for positioning new notes nearby
-  const sourceNote = db
+  const [sourceNote] = await db
     .select({ canvas_x: notes.canvas_x, canvas_y: notes.canvas_y })
     .from(notes)
-    .where(eq(notes.id, sourceNoteId))
-    .get();
+    .where(eq(notes.id, sourceNoteId));
 
   const baseX = sourceNote?.canvas_x ?? 0;
   const baseY = sourceNote?.canvas_y ?? 0;
@@ -76,20 +75,21 @@ export function resolveLinks(sourceNoteId: string, content: string): ResolvedLin
 
     if (mention.type === "id") {
       // ID-based mention: look up by ID, skip if not found
-      targetNote = db
+      const [found] = await db
         .select({ id: notes.id, title: notes.title })
         .from(notes)
-        .where(eq(notes.id, mention.value))
-        .get();
+        .where(eq(notes.id, mention.value));
 
+      targetNote = found;
       if (!targetNote) continue;
     } else {
       // Title-based mention: case-insensitive lookup + auto-create
-      targetNote = db
+      const [found] = await db
         .select({ id: notes.id, title: notes.title })
         .from(notes)
-        .where(sql`LOWER(${notes.title}) = LOWER(${mention.value})`)
-        .get();
+        .where(sql`LOWER(${notes.title}) = LOWER(${mention.value})`);
+
+      targetNote = found;
 
       if (!targetNote) {
         const newId = uuidv4();
@@ -97,18 +97,16 @@ export function resolveLinks(sourceNoteId: string, content: string): ResolvedLin
         const offsetY = baseY + 100 + i * 50;
         const now = new Date().toISOString();
 
-        db.insert(notes)
-          .values({
-            id: newId,
-            type: "npc",
-            title: mention.value,
-            content: "",
-            canvas_x: offsetX,
-            canvas_y: offsetY,
-            created_at: now,
-            updated_at: now,
-          })
-          .run();
+        await db.insert(notes).values({
+          id: newId,
+          type: "npc",
+          title: mention.value,
+          content: "",
+          canvas_x: offsetX,
+          canvas_y: offsetY,
+          created_at: now,
+          updated_at: now,
+        });
 
         targetNote = { id: newId, title: mention.value };
         created = true;
@@ -117,13 +115,13 @@ export function resolveLinks(sourceNoteId: string, content: string): ResolvedLin
 
     // Don't link a note to itself
     if (targetNote.id !== sourceNoteId) {
-      db.insert(noteLinks)
+      await db
+        .insert(noteLinks)
         .values({
           source_note_id: sourceNoteId,
           target_note_id: targetNote.id,
         })
-        .onConflictDoNothing()
-        .run();
+        .onConflictDoNothing();
     }
 
     resolved.push({
@@ -135,20 +133,21 @@ export function resolveLinks(sourceNoteId: string, content: string): ResolvedLin
 
   // Remove stale links: links from this source that are no longer mentioned
   const currentTargetIds = resolved.map((r) => r.targetNoteId);
-  const existingLinks = db
+  const existingLinks = await db
     .select({ target_note_id: noteLinks.target_note_id })
     .from(noteLinks)
-    .where(eq(noteLinks.source_note_id, sourceNoteId))
-    .all();
+    .where(eq(noteLinks.source_note_id, sourceNoteId));
 
   const staleIds = existingLinks
     .map((l) => l.target_note_id)
     .filter((id) => !currentTargetIds.includes(id));
 
   for (const staleId of staleIds) {
-    db.delete(noteLinks)
-      .where(and(eq(noteLinks.source_note_id, sourceNoteId), eq(noteLinks.target_note_id, staleId)))
-      .run();
+    await db
+      .delete(noteLinks)
+      .where(
+        and(eq(noteLinks.source_note_id, sourceNoteId), eq(noteLinks.target_note_id, staleId)),
+      );
   }
 
   return resolved;

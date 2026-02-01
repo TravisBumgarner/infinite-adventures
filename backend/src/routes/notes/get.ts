@@ -21,7 +21,7 @@ export async function processRequest(
   res: Response,
   context: GetValidationContext,
 ): Promise<void> {
-  const note = getNote(context.id);
+  const note = await getNote(context.id);
   if (!note) {
     sendNotFound(res, "NOTE_NOT_FOUND");
     return;

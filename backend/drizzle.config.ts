@@ -3,8 +3,10 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
-  dialect: "sqlite",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env["DB_PATH"] || "./data/infinite-adventures.db",
+    url:
+      process.env["DATABASE_URL"] ||
+      "postgresql://infinite:infinite@localhost:5434/infinite_adventures",
   },
 });

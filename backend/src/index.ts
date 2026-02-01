@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-initDb();
+await initDb();
 
 app.use("/api/notes", notesRouter);
 

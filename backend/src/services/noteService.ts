@@ -28,7 +28,7 @@ export function isValidNoteType(type: string): type is NoteType {
   return (VALID_TYPES as readonly string[]).includes(type);
 }
 
-export function listNotes(): NoteSummary[] {
+export async function listNotes(): Promise<NoteSummary[]> {
   const db = getDb();
   return db
     .select({
@@ -39,16 +39,15 @@ export function listNotes(): NoteSummary[] {
       canvas_y: notes.canvas_y,
     })
     .from(notes)
-    .orderBy(notes.created_at)
-    .all();
+    .orderBy(notes.created_at);
 }
 
-export function getNote(id: string): NoteWithLinks | null {
+export async function getNote(id: string): Promise<NoteWithLinks | null> {
   const db = getDb();
-  const note = db.select().from(notes).where(eq(notes.id, id)).get();
+  const [note] = await db.select().from(notes).where(eq(notes.id, id));
   if (!note) return null;
 
-  const linksTo = db
+  const linksTo = await db
     .select({
       id: notes.id,
       title: notes.title,
@@ -56,10 +55,9 @@ export function getNote(id: string): NoteWithLinks | null {
     })
     .from(noteLinks)
     .innerJoin(notes, eq(notes.id, noteLinks.target_note_id))
-    .where(eq(noteLinks.source_note_id, id))
-    .all();
+    .where(eq(noteLinks.source_note_id, id));
 
-  const linkedFrom = db
+  const linkedFrom = await db
     .select({
       id: notes.id,
       title: notes.title,
@@ -67,13 +65,12 @@ export function getNote(id: string): NoteWithLinks | null {
     })
     .from(noteLinks)
     .innerJoin(notes, eq(notes.id, noteLinks.source_note_id))
-    .where(eq(noteLinks.target_note_id, id))
-    .all();
+    .where(eq(noteLinks.target_note_id, id));
 
   return { ...note, links_to: linksTo, linked_from: linkedFrom };
 }
 
-export function createNote(input: CreateNoteInput): Note {
+export async function createNote(input: CreateNoteInput): Promise<Note> {
   const db = getDb();
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -87,31 +84,29 @@ export function createNote(input: CreateNoteInput): Note {
     );
   }
 
-  db.insert(notes)
-    .values({
-      id,
-      type: input.type as NoteType,
-      title: input.title,
-      content: input.content ?? "",
-      canvas_x: input.canvas_x ?? 0,
-      canvas_y: input.canvas_y ?? 0,
-      created_at: now,
-      updated_at: now,
-    })
-    .run();
+  await db.insert(notes).values({
+    id,
+    type: input.type as NoteType,
+    title: input.title,
+    content: input.content ?? "",
+    canvas_x: input.canvas_x ?? 0,
+    canvas_y: input.canvas_y ?? 0,
+    created_at: now,
+    updated_at: now,
+  });
 
-  const note = db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const [note] = await db.select().from(notes).where(eq(notes.id, id));
 
-  if (note.content) {
-    resolveLinks(id, note.content);
+  if (note!.content) {
+    await resolveLinks(id, note!.content);
   }
 
-  return note;
+  return note!;
 }
 
-export function updateNote(id: string, input: UpdateNoteInput): Note | null {
+export async function updateNote(id: string, input: UpdateNoteInput): Promise<Note | null> {
   const db = getDb();
-  const existing = db.select().from(notes).where(eq(notes.id, id)).get();
+  const [existing] = await db.select().from(notes).where(eq(notes.id, id));
   if (!existing) return null;
 
   if (input.type !== undefined && !isValidNoteType(input.type)) {
@@ -120,7 +115,8 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
     );
   }
 
-  db.update(notes)
+  await db
+    .update(notes)
     .set({
       type: (input.type as NoteType) ?? existing.type,
       title: input.title ?? existing.title,
@@ -129,46 +125,53 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
       canvas_y: input.canvas_y ?? existing.canvas_y,
       updated_at: new Date().toISOString(),
     })
-    .where(eq(notes.id, id))
-    .run();
+    .where(eq(notes.id, id));
 
-  const updatedNote = db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const [updatedNote] = await db.select().from(notes).where(eq(notes.id, id));
 
   if (input.content !== undefined) {
-    resolveLinks(id, updatedNote.content);
+    await resolveLinks(id, updatedNote!.content);
   }
 
-  return updatedNote;
+  return updatedNote!;
 }
 
-export function deleteNote(id: string): boolean {
+export async function deleteNote(id: string): Promise<boolean> {
   const db = getDb();
-  const result = db.delete(notes).where(eq(notes.id, id)).run();
-  return result.changes > 0;
+  const result = await db.delete(notes).where(eq(notes.id, id)).returning({ id: notes.id });
+  return result.length > 0;
 }
 
 export type { SearchResult };
 
-export function searchNotes(query: string): SearchResult[] {
+export async function searchNotes(query: string): Promise<SearchResult[]> {
   if (!query || !query.trim()) {
     return [];
   }
 
   const db = getDb();
-  // Append * for prefix matching so partial words match
-  const ftsQuery = `${query.trim().replace(/"/g, '""')}*`;
+  // Sanitize query: remove special tsquery characters, then format for prefix matching
+  const sanitized = query
+    .trim()
+    .replace(/[&|!<>():*'"\\]/g, " ")
+    .trim();
+  if (!sanitized) return [];
 
-  return db.all<SearchResult>(
-    sql.raw(
-      `SELECT n.id, n.type, n.title,
-            snippet(notes_fts, 1, '<b>', '</b>', '...', 32) as snippet
-     FROM notes_fts fts
-     JOIN notes n ON n.rowid = fts.rowid
-     WHERE notes_fts MATCH '${ftsQuery.replace(/'/g, "''")}'
-     ORDER BY rank
+  const tsquery = sanitized
+    .split(/\s+/)
+    .map((word) => `${word}:*`)
+    .join(" & ");
+
+  const result = await db.execute<SearchResult>(
+    sql`SELECT n.id, n.type, n.title,
+          ts_headline('english', n.content, to_tsquery('english', ${tsquery}),
+            'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet
+     FROM notes n
+     WHERE n.search_vector @@ to_tsquery('english', ${tsquery})
+     ORDER BY ts_rank(n.search_vector, to_tsquery('english', ${tsquery})) DESC
      LIMIT 20`,
-    ),
   );
+  return result.rows;
 }
 
 export class ValidationError extends Error {

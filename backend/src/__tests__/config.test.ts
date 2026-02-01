@@ -5,7 +5,7 @@ describe("config", () => {
   it("exports a config object with expected keys", () => {
     expect(config).toHaveProperty("port");
     expect(config).toHaveProperty("nodeEnv");
-    expect(config).toHaveProperty("dbPath");
+    expect(config).toHaveProperty("databaseUrl");
     expect(config).toHaveProperty("supabaseUrl");
     expect(config).toHaveProperty("supabaseServiceRoleKey");
     expect(config).toHaveProperty("isProduction");
