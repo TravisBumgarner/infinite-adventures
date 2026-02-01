@@ -202,4 +202,4 @@ tasks:
       - Works correctly on an empty canvas (no offset needed)
     depends_on: []
     effort: 2
-    status: scoped
+    status: testing
