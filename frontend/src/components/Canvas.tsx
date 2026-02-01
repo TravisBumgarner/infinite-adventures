@@ -20,11 +20,12 @@ import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
+import { TYPE_COLORS, NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
 import FilterBar from "./FilterBar";
+import ConnectionsBrowser from "./ConnectionsBrowser";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -95,6 +96,7 @@ export default function Canvas() {
     noteId: string;
     selectedIds: string[];
   } | null>(null);
+  const [browsingNoteId, setBrowsingNoteId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
   const [filterSearch, setFilterSearch] = useState("");
   const reactFlowInstance = useReactFlow();
@@ -363,7 +365,10 @@ export default function Canvas() {
   }, [setNodes, setEdges]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
+    <div style={{
+      width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+      height: "100vh",
+    }}>
       <ReactFlow
         nodes={filteredNodes}
         edges={filteredEdges}
@@ -372,6 +377,7 @@ export default function Canvas() {
         nodeTypes={nodeTypes}
         onPaneClick={() => {
           setEditingNoteId(null);
+          setBrowsingNoteId(null);
           setContextMenu(null);
           setNodeContextMenu(null);
         }}
@@ -425,7 +431,14 @@ export default function Canvas() {
           y={nodeContextMenu.y}
           noteId={nodeContextMenu.noteId}
           selectedCount={nodeContextMenu.selectedIds.length}
-          onEdit={(noteId) => setEditingNoteId(noteId)}
+          onEdit={(noteId) => {
+            setBrowsingNoteId(null);
+            setEditingNoteId(noteId);
+          }}
+          onBrowseConnections={(noteId) => {
+            setEditingNoteId(null);
+            setBrowsingNoteId(noteId);
+          }}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
@@ -438,7 +451,7 @@ export default function Canvas() {
         />
       )}
 
-      {editingNoteId && (
+      {editingNoteId && !browsingNoteId && (
         <NoteEditor
           noteId={editingNoteId}
           onClose={() => setEditingNoteId(null)}
@@ -446,6 +459,15 @@ export default function Canvas() {
           onDeleted={handleDeleted}
           onNavigate={navigateToNote}
           notesCache={notesCache.current}
+        />
+      )}
+
+      {browsingNoteId && (
+        <ConnectionsBrowser
+          noteId={browsingNoteId}
+          notesCache={notesCache.current}
+          onNavigate={navigateToNote}
+          onClose={() => setBrowsingNoteId(null)}
         />
       )}
     </div>

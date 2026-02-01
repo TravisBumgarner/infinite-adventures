@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
 import MentionEditor from "./MentionEditor";
-import { NOTE_TYPES } from "../constants";
+import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
 
 interface NoteEditorProps {
   noteId: string;
@@ -148,7 +148,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "fixed",
     top: 0,
     right: 0,
-    width: 360,
+    width: SIDEBAR_WIDTH,
     height: "100vh",
     background: "#1e1e2e",
     borderLeft: "1px solid #313244",

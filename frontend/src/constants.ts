@@ -1,5 +1,7 @@
 import type { NoteType } from "./types";
 
+export const SIDEBAR_WIDTH = 360;
+
 export const TYPE_COLORS: Record<NoteType, string> = {
   pc: "#4a90d9",
   npc: "#d94a4a",
