@@ -11,6 +11,7 @@ const mockFetch = vi.fn();
 const mockGetToken = vi.mocked(getToken);
 
 beforeEach(() => {
+  mockFetch.mockClear();
   vi.stubGlobal("fetch", mockFetch);
   mockGetToken.mockResolvedValue({ success: false, error: "no session" });
 });

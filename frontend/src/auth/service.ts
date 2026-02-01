@@ -1,3 +1,5 @@
+import { supabase } from "../lib/supabase.js";
+
 type AuthSuccess<T = undefined> = T extends undefined
   ? { success: true }
   : { success: true; data: T };
@@ -10,29 +12,73 @@ export interface AuthUser {
 }
 
 export async function getUser(): Promise<AuthResult<AuthUser>> {
-  return { success: false, error: "not implemented" };
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    return { success: false, error: error?.message ?? "Not authenticated" };
+  }
+  return { success: true, data: { id: data.user.id, email: data.user.email ?? "" } };
 }
 
-export async function login(_input: { email: string; password: string }): Promise<AuthResult> {
-  return { success: false, error: "not implemented" };
+export async function login(input: { email: string; password: string }): Promise<AuthResult> {
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { error } = await supabase.auth.signInWithPassword(input);
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }
 
-export async function signup(_input: { email: string; password: string }): Promise<AuthResult> {
-  return { success: false, error: "not implemented" };
+export async function signup(input: { email: string; password: string }): Promise<AuthResult> {
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { error } = await supabase.auth.signUp(input);
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }
 
 export async function logout(): Promise<AuthResult> {
-  return { success: false, error: "not implemented" };
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }
 
 export async function getToken(): Promise<AuthResult<string>> {
-  return { success: false, error: "not implemented" };
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    return { success: false, error: "No active session" };
+  }
+  return { success: true, data: data.session.access_token };
 }
 
-export async function resetPassword(_email: string, _redirectUrl?: string): Promise<AuthResult> {
-  return { success: false, error: "not implemented" };
+export async function resetPassword(email: string, redirectUrl?: string): Promise<AuthResult> {
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }
 
-export async function updatePassword(_password: string): Promise<AuthResult> {
-  return { success: false, error: "not implemented" };
+export async function updatePassword(password: string): Promise<AuthResult> {
+  if (!supabase) return { success: false, error: "Supabase not configured" };
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
 }
