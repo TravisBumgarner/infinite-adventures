@@ -28,14 +28,21 @@ const nodeTypes: NodeTypes = {
 
 const VIEWPORT_KEY = "infinite-adventures-viewport";
 
-function resolveContentForPreview(content: string, cache: Map<string, Note>): string {
-  return content.replace(/@\{([^}]+)\}/g, (_match, id: string) => {
-    const note = cache.get(id);
-    return note ? `@${note.title}` : `@${id}`;
-  });
-}
+function toFlowNode(
+  note: Note,
+  cache: Map<string, Note>,
+  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void
+): Node<NoteNodeData> {
+  // Build mentionLabels: scan content for @{id} and map each to the cached note title
+  const mentionLabels: Record<string, string> = {};
+  const mentionRegex = /@\{([^}]+)\}/g;
+  let match;
+  while ((match = mentionRegex.exec(note.content)) !== null) {
+    const id = match[1];
+    const cached = cache.get(id);
+    mentionLabels[id] = cached ? cached.title : id;
+  }
 
-function toFlowNode(note: Note, cache: Map<string, Note>): Node<NoteNodeData> {
   return {
     id: note.id,
     type: "note",
@@ -44,7 +51,9 @@ function toFlowNode(note: Note, cache: Map<string, Note>): Node<NoteNodeData> {
       noteId: note.id,
       type: note.type,
       title: note.title,
-      content: resolveContentForPreview(note.content, cache),
+      content: note.content,
+      mentionLabels,
+      onMentionClick,
     },
   };
 }
@@ -85,6 +94,18 @@ export default function Canvas() {
   const initialized = useRef(false);
   const notesCache = useRef<Map<string, Note>>(new Map());
 
+  // Fit viewport to show both source and target notes
+  const fitBothNotes = useCallback(
+    (sourceId: string, targetId: string) => {
+      reactFlowInstance.fitView({
+        nodes: [{ id: sourceId }, { id: targetId }],
+        duration: 500,
+        padding: 0.3,
+      });
+    },
+    [reactFlowInstance]
+  );
+
   // Load all notes and edges on mount
   const loadAllNotes = useCallback(async () => {
     const summaries = await api.fetchNotes();
@@ -92,9 +113,9 @@ export default function Canvas() {
       summaries.map((n) => api.fetchNote(n.id))
     );
     notesCache.current = new Map(fullNotes.map((n) => [n.id, n]));
-    setNodes(fullNotes.map((n) => toFlowNode(n, notesCache.current)));
+    setNodes(fullNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
     setEdges(buildEdges(fullNotes));
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, fitBothNotes]);
 
   useEffect(() => {
     loadAllNotes();
@@ -148,10 +169,10 @@ export default function Canvas() {
       });
       const fullNote = await api.fetchNote(note.id);
       notesCache.current.set(fullNote.id, fullNote);
-      setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current)]);
+      setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
     },
-    [setNodes]
+    [setNodes, fitBothNotes]
   );
 
   // Right-click canvas to open context menu
@@ -202,14 +223,6 @@ export default function Canvas() {
     [reactFlowInstance, createNoteAtPosition]
   );
 
-  // Click node to edit
-  const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      setEditingNoteId(node.id);
-    },
-    []
-  );
-
   // Drag end to save position
   const onNodeDragStop: OnNodeDrag = useCallback((_event, node) => {
     api.updateNote(node.id, {
@@ -249,10 +262,10 @@ export default function Canvas() {
 
       // Rebuild all nodes and edges
       const allNotes = Array.from(notesCache.current.values());
-      setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current)));
+      setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
       setEdges(buildEdges(allNotes));
     },
-    [setNodes, setEdges]
+    [setNodes, setEdges, fitBothNotes]
   );
 
   const handleDeleted = useCallback(
@@ -282,7 +295,7 @@ export default function Canvas() {
         }}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
-        onNodeClick={onNodeClick}
+
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
         minZoom={0.1}
@@ -320,6 +333,7 @@ export default function Canvas() {
           x={nodeContextMenu.x}
           y={nodeContextMenu.y}
           noteId={nodeContextMenu.noteId}
+          onEdit={(noteId) => setEditingNoteId(noteId)}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
