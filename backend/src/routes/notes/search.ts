@@ -1,15 +1,23 @@
 import type { Request, Response } from "express";
+import { searchNotes } from "../../services/noteService.js";
+import { sendSuccess } from "../shared/responses.js";
 
 export interface SearchValidationContext {
   query: string;
 }
 
-export function validate(_req: Request, _res: Response): SearchValidationContext | null {
-  return null;
+export function validate(req: Request, _res: Response): SearchValidationContext | null {
+  const query = (req.query.q as string) ?? "";
+  return { query };
 }
 
-export async function processRequest(_req: Request, res: Response, _context: SearchValidationContext): Promise<void> {
-  res.status(500).json({ error: "not implemented" });
+export async function processRequest(
+  _req: Request,
+  res: Response,
+  context: SearchValidationContext,
+): Promise<void> {
+  const results = searchNotes(context.query);
+  sendSuccess(res, { results });
 }
 
 export async function handler(req: Request, res: Response): Promise<void> {

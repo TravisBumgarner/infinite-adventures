@@ -1,16 +1,40 @@
 import type { Request, Response } from "express";
 import type { CreateNoteInput } from "shared";
+import { createNote, ValidationError } from "../../services/noteService.js";
+import { sendBadRequest, sendSuccess } from "../shared/responses.js";
 
 export interface CreateValidationContext {
   input: CreateNoteInput;
 }
 
-export function validate(_req: Request, _res: Response): CreateValidationContext | null {
-  return null;
+export function validate(req: Request, res: Response): CreateValidationContext | null {
+  const { type, title, content, canvas_x, canvas_y } = req.body;
+  if (!title) {
+    sendBadRequest(res);
+    return null;
+  }
+  if (!type) {
+    sendBadRequest(res);
+    return null;
+  }
+  return { input: { type, title, content, canvas_x, canvas_y } };
 }
 
-export async function processRequest(_req: Request, res: Response, _context: CreateValidationContext): Promise<void> {
-  res.status(500).json({ error: "not implemented" });
+export async function processRequest(
+  _req: Request,
+  res: Response,
+  context: CreateValidationContext,
+): Promise<void> {
+  try {
+    const note = createNote(context.input);
+    sendSuccess(res, note, 201);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      sendBadRequest(res);
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function handler(req: Request, res: Response): Promise<void> {

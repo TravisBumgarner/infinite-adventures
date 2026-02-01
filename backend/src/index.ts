@@ -1,7 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { initDb } from "./db/connection.js";
-import { notesRouter } from "./routes/notes.js";
+import { notesRouter } from "./routes/notes/index.js";
 
 const PORT = parseInt(process.env.PORT || "3021", 10);
 
