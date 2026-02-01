@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
 import type { NoteType } from "shared";
-import { NOTE_TYPES, TYPE_LABELS } from "../constants";
+import { NOTE_TYPES, TYPE_LABELS } from "../../../constants";
 
 interface ContextMenuProps {
   x: number;

@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import { useState } from "react";
 import type { NoteType } from "shared";
-import { NOTE_TYPES } from "../constants";
+import { NOTE_TYPES } from "../../../constants";
 
 interface FilterBarProps {
   activeTypes: Set<NoteType>;

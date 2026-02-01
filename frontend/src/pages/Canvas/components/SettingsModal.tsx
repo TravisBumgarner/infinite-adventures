@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { SIDEBAR_WIDTH } from "../constants";
-import type { ThemePreference } from "../styles/styleConsts";
-import { useThemePreference } from "../styles/Theme";
+import { SIDEBAR_WIDTH } from "../../../constants";
+import type { ThemePreference } from "../../../styles/styleConsts";
+import { useThemePreference } from "../../../styles/Theme";
 
 interface SettingsButtonProps {
   onClick: () => void;

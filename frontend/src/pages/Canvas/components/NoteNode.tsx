@@ -3,9 +3,9 @@ import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { memo, useState } from "react";
 import type { NoteType } from "shared";
-import { TYPE_LABELS } from "../constants";
-import type { PreviewSegment } from "../utils/previewParser";
-import { parsePreviewContent } from "../utils/previewParser";
+import { TYPE_LABELS } from "../../../constants";
+import type { PreviewSegment } from "../../../utils/previewParser";
+import { parsePreviewContent } from "../../../utils/previewParser";
 
 export type NoteNodeData = {
   noteId: string;

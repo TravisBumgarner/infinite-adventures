@@ -5,8 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Note, NoteSummary, NoteType } from "shared";
-import * as api from "../api/client";
-import { contentToHtml, serializeToMentionText } from "../utils/editorSerializer";
+import * as api from "../../../api/client";
+import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
 
 interface MentionEditorProps {
   value: string;

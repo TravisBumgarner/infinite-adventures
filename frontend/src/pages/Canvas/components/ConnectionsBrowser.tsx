@@ -1,8 +1,8 @@
 import { useTheme } from "@mui/material";
 import { useMemo, useState } from "react";
 import type { Note, NoteType } from "shared";
-import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
-import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
+import { NOTE_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 
 interface ConnectionsBrowserProps {
   noteId: string;

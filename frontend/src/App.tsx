@@ -1,13 +1,10 @@
-import { ReactFlowProvider } from "@xyflow/react";
-import Canvas from "./components/Canvas";
+import Router from "./components/Router";
 import { AppThemeProvider } from "./styles/Theme";
 
 function App() {
   return (
     <AppThemeProvider>
-      <ReactFlowProvider>
-        <Canvas />
-      </ReactFlowProvider>
+      <Router />
     </AppThemeProvider>
   );
 }
