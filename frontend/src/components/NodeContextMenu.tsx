@@ -4,12 +4,23 @@ interface NodeContextMenuProps {
   x: number;
   y: number;
   noteId: string;
+  selectedCount: number;
   onEdit: (noteId: string) => void;
   onDelete: (noteId: string) => void;
+  onDeleteSelected: () => void;
   onClose: () => void;
 }
 
-export default function NodeContextMenu({ x, y, noteId, onEdit, onDelete, onClose }: NodeContextMenuProps) {
+export default function NodeContextMenu({
+  x,
+  y,
+  noteId,
+  selectedCount,
+  onEdit,
+  onDelete,
+  onDeleteSelected,
+  onClose,
+}: NodeContextMenuProps) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -24,6 +35,8 @@ export default function NodeContextMenu({ x, y, noteId, onEdit, onDelete, onClos
       document.removeEventListener("wheel", handleScroll);
     };
   }, [onClose]);
+
+  const isMulti = selectedCount > 1;
 
   return (
     <div style={styles.backdrop} onMouseDown={onClose}>
@@ -40,17 +53,35 @@ export default function NodeContextMenu({ x, y, noteId, onEdit, onDelete, onClos
         >
           Edit
         </button>
-        <button
-          style={styles.item}
-          onClick={() => {
-            if (confirm("Delete this note? This cannot be undone.")) {
-              onDelete(noteId);
-            }
-            onClose();
-          }}
-        >
-          Delete
-        </button>
+        {isMulti ? (
+          <button
+            style={styles.item}
+            onClick={() => {
+              if (
+                confirm(
+                  `Delete ${selectedCount} selected notes? This cannot be undone.`
+                )
+              ) {
+                onDeleteSelected();
+              }
+              onClose();
+            }}
+          >
+            Delete Selected ({selectedCount})
+          </button>
+        ) : (
+          <button
+            style={styles.item}
+            onClick={() => {
+              if (confirm("Delete this note? This cannot be undone.")) {
+                onDelete(noteId);
+              }
+              onClose();
+            }}
+          >
+            Delete
+          </button>
+        )}
       </div>
     </div>
   );

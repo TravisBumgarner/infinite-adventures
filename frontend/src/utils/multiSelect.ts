@@ -7,7 +7,13 @@ import type { Node } from "@xyflow/react";
 export function getSelectedNodePositions(
   nodes: Node[]
 ): Map<string, { x: number; y: number }> {
-  return new Map();
+  const positions = new Map<string, { x: number; y: number }>();
+  for (const node of nodes) {
+    if (node.selected) {
+      positions.set(node.id, { x: node.position.x, y: node.position.y });
+    }
+  }
+  return positions;
 }
 
 /**
@@ -18,5 +24,10 @@ export async function batchDeleteNotes(
   noteIds: string[],
   deleteFn: (id: string) => Promise<void>
 ): Promise<string[]> {
-  return [];
+  const results = await Promise.allSettled(
+    noteIds.map((id) => deleteFn(id).then(() => id))
+  );
+  return results
+    .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
+    .map((r) => r.value);
 }

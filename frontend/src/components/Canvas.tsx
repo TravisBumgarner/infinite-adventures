@@ -21,6 +21,7 @@ import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
 import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
+import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -223,20 +224,15 @@ export default function Canvas() {
     [reactFlowInstance, createNoteAtPosition]
   );
 
-  // Drag end to save position
-  const onNodeDragStop: OnNodeDrag = useCallback((_event, node) => {
-    api.updateNote(node.id, {
-      canvas_x: node.position.x,
-      canvas_y: node.position.y,
-    });
-    // Update cache
-    const cached = notesCache.current.get(node.id);
-    if (cached) {
-      notesCache.current.set(node.id, {
-        ...cached,
-        canvas_x: node.position.x,
-        canvas_y: node.position.y,
-      });
+  // Drag end to save positions for all selected nodes
+  const onNodeDragStop: OnNodeDrag = useCallback((_event, _node, draggedNodes) => {
+    const positions = getSelectedNodePositions(draggedNodes);
+    for (const [id, pos] of positions) {
+      api.updateNote(id, { canvas_x: pos.x, canvas_y: pos.y });
+      const cached = notesCache.current.get(id);
+      if (cached) {
+        notesCache.current.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
+      }
     }
   }, []);
 
@@ -280,6 +276,22 @@ export default function Canvas() {
     [setNodes, setEdges]
   );
 
+  // Batch-delete all selected nodes
+  const handleDeleteSelected = useCallback(async () => {
+    const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
+    if (selectedIds.length === 0) return;
+    const deletedIds = await batchDeleteNotes(selectedIds, api.deleteNote);
+    for (const id of deletedIds) {
+      notesCache.current.delete(id);
+    }
+    const deletedSet = new Set(deletedIds);
+    setNodes((nds) => nds.filter((n) => !deletedSet.has(n.id)));
+    setEdges((eds) =>
+      eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target))
+    );
+    setEditingNoteId(null);
+  }, [nodes, setNodes, setEdges]);
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <ReactFlow
@@ -295,9 +307,10 @@ export default function Canvas() {
         }}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
-
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
+        selectionOnDrag
+        multiSelectionKeyCode="Shift"
         minZoom={0.1}
         fitView={!localStorage.getItem(VIEWPORT_KEY)}
         proOptions={{ hideAttribution: true }}
@@ -333,10 +346,15 @@ export default function Canvas() {
           x={nodeContextMenu.x}
           y={nodeContextMenu.y}
           noteId={nodeContextMenu.noteId}
+          selectedCount={nodes.filter((n) => n.selected).length}
           onEdit={(noteId) => setEditingNoteId(noteId)}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
+          }}
+          onDeleteSelected={async () => {
+            await handleDeleteSelected();
+            setNodeContextMenu(null);
           }}
           onClose={() => setNodeContextMenu(null)}
         />
