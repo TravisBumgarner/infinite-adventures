@@ -35,7 +35,7 @@ tasks:
       - No Record<string, React.CSSProperties> pattern remains
     depends_on: []
     effort: 2
-    status: scoped
+    status: implementing
 
   - id: 2
     github_issue: 51

@@ -1,3 +1,13 @@
+import CloseIcon from "@mui/icons-material/Close";
+import SettingsIcon from "@mui/icons-material/Settings";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { SIDEBAR_WIDTH } from "../../../constants";
 import type { ThemePreference } from "../../../styles/styleConsts";
@@ -9,9 +19,22 @@ interface SettingsButtonProps {
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
-    <button type="button" style={styles.gearButton} onClick={onClick} title="Settings">
-      &#9881;
-    </button>
+    <IconButton
+      onClick={onClick}
+      title="Settings"
+      sx={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        zIndex: 50,
+        bgcolor: "var(--color-base)",
+        border: "1px solid var(--color-surface1)",
+        color: "var(--color-text)",
+        "&:hover": { bgcolor: "var(--color-surface0)" },
+      }}
+    >
+      <SettingsIcon />
+    </IconButton>
   );
 }
 
@@ -43,10 +66,13 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length > MAX_CHARS) return;
-    setFeedbackMessage(e.target.value);
-  }, []);
+  const handleMessageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (e.target.value.length > MAX_CHARS) return;
+      setFeedbackMessage(e.target.value);
+    },
+    [],
+  );
 
   const handleSubmitFeedback = async () => {
     const trimmed = feedbackMessage.trim();
@@ -73,187 +99,92 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
   };
 
   return (
-    <div style={styles.sidebar}>
-      <div style={styles.header}>
-        <h3 style={styles.title}>Settings</h3>
-        <button type="button" onClick={onClose} style={styles.closeBtn}>
-          &times;
-        </button>
-      </div>
+    <Drawer
+      variant="persistent"
+      anchor="left"
+      open
+      sx={{
+        "& .MuiDrawer-paper": {
+          width: SIDEBAR_WIDTH,
+          bgcolor: "var(--color-base)",
+          borderRight: "1px solid var(--color-surface1)",
+          p: 2.5,
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h6">Settings</Typography>
+        <IconButton onClick={onClose} sx={{ color: "var(--color-text)" }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
       {/* Theme */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>Theme</div>
-        <div style={styles.options}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+          Theme
+        </Typography>
+        <ToggleButtonGroup
+          value={preference}
+          exclusive
+          onChange={(_e, val) => {
+            if (val !== null) setPreference(val as ThemePreference);
+          }}
+          size="small"
+          fullWidth
+        >
           {THEME_OPTIONS.map((opt) => (
-            <button
-              type="button"
-              key={opt.value}
-              style={{
-                ...styles.optionCard,
-                borderColor:
-                  preference === opt.value ? "var(--color-blue)" : "var(--color-surface1)",
-              }}
-              onClick={() => setPreference(opt.value)}
-            >
+            <ToggleButton key={opt.value} value={opt.value}>
               {opt.label}
-            </button>
+            </ToggleButton>
           ))}
-        </div>
-      </div>
+        </ToggleButtonGroup>
+      </Box>
 
       {/* Feedback */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>Feedback</div>
-        <div style={styles.charCount}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+          Feedback
+        </Typography>
+        <Typography variant="caption" sx={{ color: "var(--color-overlay0)", textAlign: "right" }}>
           {feedbackMessage.length}/{MAX_CHARS} characters
-        </div>
-        <textarea
-          style={styles.textarea}
+        </Typography>
+        <TextField
+          multiline
+          rows={4}
           placeholder="Tell us what you think..."
           value={feedbackMessage}
           onChange={handleMessageChange}
-          rows={4}
+          size="small"
+          fullWidth
         />
-        <button
-          type="button"
-          style={{
-            ...styles.submitBtn,
-            opacity: submitting || !feedbackMessage.trim() ? 0.5 : 1,
-          }}
+        <Button
+          variant="contained"
           onClick={handleSubmitFeedback}
           disabled={submitting || !feedbackMessage.trim()}
         >
           {submitting ? "Sending..." : "Send Feedback"}
-        </button>
-      </div>
+        </Button>
+      </Box>
 
       {/* Discord */}
-      <div style={styles.section}>
-        <div style={styles.sectionLabel}>Community</div>
-        <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" style={styles.linkBtn}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+          Community
+        </Typography>
+        <Button
+          variant="outlined"
+          component="a"
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Join us on Discord
-        </a>
-      </div>
-    </div>
+        </Button>
+      </Box>
+    </Drawer>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  gearButton: {
-    position: "fixed",
-    top: 16,
-    right: 16,
-    zIndex: 50,
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    color: "var(--color-text)",
-    fontSize: 20,
-    width: 36,
-    height: 36,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  sidebar: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: SIDEBAR_WIDTH,
-    height: "100vh",
-    background: "var(--color-base)",
-    borderRight: "1px solid var(--color-surface1)",
-    zIndex: 200,
-    padding: 20,
-    overflowY: "auto",
-    fontFamily: "system-ui, sans-serif",
-    display: "flex",
-    flexDirection: "column",
-    gap: 24,
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    margin: 0,
-    fontSize: 18,
-    color: "var(--color-text)",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "var(--color-text)",
-    fontSize: 24,
-    cursor: "pointer",
-  },
-  section: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    color: "var(--color-subtext0)",
-    fontWeight: 600,
-  },
-  charCount: {
-    fontSize: 12,
-    color: "var(--color-overlay0)",
-    textAlign: "right",
-  },
-  options: {
-    display: "flex",
-    flexDirection: "row",
-    gap: 8,
-  },
-  optionCard: {
-    flex: 1,
-    padding: "8px 0",
-    background: "var(--color-surface0)",
-    border: "2px solid",
-    borderRadius: 8,
-    cursor: "pointer",
-    textAlign: "left",
-    fontFamily: "system-ui, sans-serif",
-  },
-  textarea: {
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    color: "var(--color-text)",
-    fontSize: 14,
-    padding: "10px 12px",
-    resize: "vertical",
-    fontFamily: "system-ui, sans-serif",
-    outline: "none",
-  },
-  submitBtn: {
-    background: "var(--color-blue)",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    padding: "8px 16px",
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-    fontWeight: 600,
-  },
-  linkBtn: {
-    display: "block",
-    padding: "10px 14px",
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    color: "var(--color-blue)",
-    fontSize: 14,
-    textDecoration: "none",
-    textAlign: "center",
-    fontWeight: 600,
-    fontFamily: "system-ui, sans-serif",
-  },
-};
