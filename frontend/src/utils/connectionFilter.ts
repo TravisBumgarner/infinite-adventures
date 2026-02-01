@@ -13,7 +13,21 @@ export function buildConnectionEntries(
   linksTo: NoteLink[],
   linkedFrom: NoteLink[]
 ): ConnectionEntry[] {
-  return [];
+  const seen = new Set<string>();
+  const entries: ConnectionEntry[] = [];
+
+  for (const link of linksTo) {
+    seen.add(link.id);
+    entries.push({ link, direction: "outgoing" });
+  }
+
+  for (const link of linkedFrom) {
+    if (!seen.has(link.id)) {
+      entries.push({ link, direction: "incoming" });
+    }
+  }
+
+  return entries;
 }
 
 /**
@@ -26,5 +40,14 @@ export function filterConnections(
   activeTypes: Set<NoteType>,
   search: string
 ): ConnectionEntry[] {
-  return [];
+  const lowerSearch = search.toLowerCase();
+  return entries.filter((entry) => {
+    if (activeTypes.size > 0 && !activeTypes.has(entry.link.type)) {
+      return false;
+    }
+    if (lowerSearch && !entry.link.title.toLowerCase().includes(lowerSearch)) {
+      return false;
+    }
+    return true;
+  });
 }

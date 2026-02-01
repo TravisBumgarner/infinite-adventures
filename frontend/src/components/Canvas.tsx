@@ -25,6 +25,7 @@ import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect
 import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
 import FilterBar from "./FilterBar";
+import ConnectionsBrowser from "./ConnectionsBrowser";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -95,6 +96,7 @@ export default function Canvas() {
     noteId: string;
     selectedIds: string[];
   } | null>(null);
+  const [browsingNoteId, setBrowsingNoteId] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
   const [filterSearch, setFilterSearch] = useState("");
   const reactFlowInstance = useReactFlow();
@@ -372,6 +374,7 @@ export default function Canvas() {
         nodeTypes={nodeTypes}
         onPaneClick={() => {
           setEditingNoteId(null);
+          setBrowsingNoteId(null);
           setContextMenu(null);
           setNodeContextMenu(null);
         }}
@@ -425,7 +428,14 @@ export default function Canvas() {
           y={nodeContextMenu.y}
           noteId={nodeContextMenu.noteId}
           selectedCount={nodeContextMenu.selectedIds.length}
-          onEdit={(noteId) => setEditingNoteId(noteId)}
+          onEdit={(noteId) => {
+            setBrowsingNoteId(null);
+            setEditingNoteId(noteId);
+          }}
+          onBrowseConnections={(noteId) => {
+            setEditingNoteId(null);
+            setBrowsingNoteId(noteId);
+          }}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
@@ -438,7 +448,7 @@ export default function Canvas() {
         />
       )}
 
-      {editingNoteId && (
+      {editingNoteId && !browsingNoteId && (
         <NoteEditor
           noteId={editingNoteId}
           onClose={() => setEditingNoteId(null)}
@@ -446,6 +456,15 @@ export default function Canvas() {
           onDeleted={handleDeleted}
           onNavigate={navigateToNote}
           notesCache={notesCache.current}
+        />
+      )}
+
+      {browsingNoteId && (
+        <ConnectionsBrowser
+          noteId={browsingNoteId}
+          notesCache={notesCache.current}
+          onNavigate={navigateToNote}
+          onClose={() => setBrowsingNoteId(null)}
         />
       )}
     </div>

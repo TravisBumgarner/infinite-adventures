@@ -6,6 +6,7 @@ interface NodeContextMenuProps {
   noteId: string;
   selectedCount: number;
   onEdit: (noteId: string) => void;
+  onBrowseConnections: (noteId: string) => void;
   onDelete: (noteId: string) => void;
   onDeleteSelected: () => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ export default function NodeContextMenu({
   noteId,
   selectedCount,
   onEdit,
+  onBrowseConnections,
   onDelete,
   onDeleteSelected,
   onClose,
@@ -53,6 +55,17 @@ export default function NodeContextMenu({
             }}
           >
             Edit
+          </button>
+        )}
+        {!isMulti && (
+          <button
+            style={styles.editItem}
+            onClick={() => {
+              onBrowseConnections(noteId);
+              onClose();
+            }}
+          >
+            Browse Connections
           </button>
         )}
         {isMulti ? (
