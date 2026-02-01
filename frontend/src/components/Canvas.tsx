@@ -28,6 +28,7 @@ import FilterBar from "./FilterBar";
 import ConnectionsBrowser from "./ConnectionsBrowser";
 import Toast from "./Toast";
 import { formatNoteExport } from "../utils/noteExport";
+import { findOpenPosition } from "../utils/findOpenPosition";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -198,19 +199,21 @@ export default function Canvas() {
   // Create a note at a specific flow position
   const createNoteAtPosition = useCallback(
     async (type: NoteType, flowX: number, flowY: number) => {
+      const existing = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
+      const pos = findOpenPosition(flowX, flowY, existing);
       const note = await api.createNote({
         type,
         title: "New Note",
         content: NOTE_TEMPLATES[type],
-        canvas_x: flowX,
-        canvas_y: flowY,
+        canvas_x: pos.x,
+        canvas_y: pos.y,
       });
       const fullNote = await api.fetchNote(note.id);
       notesCache.current.set(fullNote.id, fullNote);
       setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
     },
-    [setNodes, fitBothNotes]
+    [nodes, setNodes, fitBothNotes]
   );
 
   // Right-click canvas to open context menu
