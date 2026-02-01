@@ -1,28 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
+import { eq } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
+import { notes, noteLinks } from "../db/schema.js";
 
-const VALID_TYPES = [
-  "pc",
-  "npc",
-  "item",
-  "quest",
-  "location",
-  "goal",
-  "session",
-] as const;
+export type NoteType = typeof notes.$inferSelect.type;
 
-export type NoteType = (typeof VALID_TYPES)[number];
-
-export interface Note {
-  id: string;
-  type: NoteType;
-  title: string;
-  content: string;
-  canvas_x: number;
-  canvas_y: number;
-  created_at: string;
-  updated_at: string;
-}
+export type Note = typeof notes.$inferSelect;
 
 export interface NoteSummary {
   id: string;
@@ -32,15 +15,15 @@ export interface NoteSummary {
   canvas_y: number;
 }
 
-export interface NoteLink {
+export interface NoteLinkInfo {
   id: string;
   title: string;
   type: NoteType;
 }
 
 export interface NoteWithLinks extends Note {
-  links_to: NoteLink[];
-  linked_from: NoteLink[];
+  links_to: NoteLinkInfo[];
+  linked_from: NoteLinkInfo[];
 }
 
 export interface CreateNoteInput {
@@ -59,39 +42,61 @@ export interface UpdateNoteInput {
   canvas_y?: number;
 }
 
+const VALID_TYPES = [
+  "pc",
+  "npc",
+  "item",
+  "quest",
+  "location",
+  "goal",
+  "session",
+] as const;
+
 export function isValidNoteType(type: string): type is NoteType {
-  return VALID_TYPES.includes(type as NoteType);
+  return (VALID_TYPES as readonly string[]).includes(type);
 }
 
 export function listNotes(): NoteSummary[] {
   const db = getDb();
   return db
-    .prepare("SELECT id, type, title, canvas_x, canvas_y FROM notes ORDER BY created_at DESC")
-    .all() as NoteSummary[];
+    .select({
+      id: notes.id,
+      type: notes.type,
+      title: notes.title,
+      canvas_x: notes.canvas_x,
+      canvas_y: notes.canvas_y,
+    })
+    .from(notes)
+    .orderBy(notes.created_at)
+    .all();
 }
 
 export function getNote(id: string): NoteWithLinks | null {
   const db = getDb();
-  const note = db.prepare("SELECT * FROM notes WHERE id = ?").get(id) as
-    | Note
-    | undefined;
+  const note = db.select().from(notes).where(eq(notes.id, id)).get();
   if (!note) return null;
 
   const linksTo = db
-    .prepare(
-      `SELECT n.id, n.title, n.type FROM note_links nl
-       JOIN notes n ON n.id = nl.target_note_id
-       WHERE nl.source_note_id = ?`
-    )
-    .all(id) as NoteLink[];
+    .select({
+      id: notes.id,
+      title: notes.title,
+      type: notes.type,
+    })
+    .from(noteLinks)
+    .innerJoin(notes, eq(notes.id, noteLinks.target_note_id))
+    .where(eq(noteLinks.source_note_id, id))
+    .all();
 
   const linkedFrom = db
-    .prepare(
-      `SELECT n.id, n.title, n.type FROM note_links nl
-       JOIN notes n ON n.id = nl.source_note_id
-       WHERE nl.target_note_id = ?`
-    )
-    .all(id) as NoteLink[];
+    .select({
+      id: notes.id,
+      title: notes.title,
+      type: notes.type,
+    })
+    .from(noteLinks)
+    .innerJoin(notes, eq(notes.id, noteLinks.source_note_id))
+    .where(eq(noteLinks.target_note_id, id))
+    .all();
 
   return { ...note, links_to: linksTo, linked_from: linkedFrom };
 }
@@ -110,28 +115,25 @@ export function createNote(input: CreateNoteInput): Note {
     );
   }
 
-  db.prepare(
-    `INSERT INTO notes (id, type, title, content, canvas_x, canvas_y, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    input.type,
-    input.title,
-    input.content ?? "",
-    input.canvas_x ?? 0,
-    input.canvas_y ?? 0,
-    now,
-    now
-  );
+  db.insert(notes)
+    .values({
+      id,
+      type: input.type as NoteType,
+      title: input.title,
+      content: input.content ?? "",
+      canvas_x: input.canvas_x ?? 0,
+      canvas_y: input.canvas_y ?? 0,
+      created_at: now,
+      updated_at: now,
+    })
+    .run();
 
-  return db.prepare("SELECT * FROM notes WHERE id = ?").get(id) as Note;
+  return db.select().from(notes).where(eq(notes.id, id)).get()!;
 }
 
 export function updateNote(id: string, input: UpdateNoteInput): Note | null {
   const db = getDb();
-  const existing = db
-    .prepare("SELECT * FROM notes WHERE id = ?")
-    .get(id) as Note | undefined;
+  const existing = db.select().from(notes).where(eq(notes.id, id)).get();
   if (!existing) return null;
 
   if (input.type !== undefined && !isValidNoteType(input.type)) {
@@ -140,34 +142,24 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
     );
   }
 
-  const updated = {
-    type: input.type ?? existing.type,
-    title: input.title ?? existing.title,
-    content: input.content ?? existing.content,
-    canvas_x: input.canvas_x ?? existing.canvas_x,
-    canvas_y: input.canvas_y ?? existing.canvas_y,
-    updated_at: new Date().toISOString(),
-  };
+  db.update(notes)
+    .set({
+      type: (input.type as NoteType) ?? existing.type,
+      title: input.title ?? existing.title,
+      content: input.content ?? existing.content,
+      canvas_x: input.canvas_x ?? existing.canvas_x,
+      canvas_y: input.canvas_y ?? existing.canvas_y,
+      updated_at: new Date().toISOString(),
+    })
+    .where(eq(notes.id, id))
+    .run();
 
-  db.prepare(
-    `UPDATE notes SET type = ?, title = ?, content = ?, canvas_x = ?, canvas_y = ?, updated_at = ?
-     WHERE id = ?`
-  ).run(
-    updated.type,
-    updated.title,
-    updated.content,
-    updated.canvas_x,
-    updated.canvas_y,
-    updated.updated_at,
-    id
-  );
-
-  return db.prepare("SELECT * FROM notes WHERE id = ?").get(id) as Note;
+  return db.select().from(notes).where(eq(notes.id, id)).get()!;
 }
 
 export function deleteNote(id: string): boolean {
   const db = getDb();
-  const result = db.prepare("DELETE FROM notes WHERE id = ?").run(id);
+  const result = db.delete(notes).where(eq(notes.id, id)).run();
   return result.changes > 0;
 }
 
