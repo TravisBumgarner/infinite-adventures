@@ -15,8 +15,12 @@ import NoteNodeComponent from "./NoteNode";
 import type { NoteNodeData } from "./NoteNode";
 import NoteEditor from "./NoteEditor";
 import SearchBar from "./SearchBar";
-import type { Note } from "../types";
+import ContextMenu from "./ContextMenu";
+import NodeContextMenu from "./NodeContextMenu";
+import Toolbar from "./Toolbar";
+import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
+import { TYPE_COLORS } from "../constants";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -24,7 +28,14 @@ const nodeTypes: NodeTypes = {
 
 const VIEWPORT_KEY = "infinite-adventures-viewport";
 
-function toFlowNode(note: Note): Node<NoteNodeData> {
+function resolveContentForPreview(content: string, cache: Map<string, Note>): string {
+  return content.replace(/@\{([^}]+)\}/g, (_match, id: string) => {
+    const note = cache.get(id);
+    return note ? `@${note.title}` : `@${id}`;
+  });
+}
+
+function toFlowNode(note: Note, cache: Map<string, Note>): Node<NoteNodeData> {
   return {
     id: note.id,
     type: "note",
@@ -33,7 +44,7 @@ function toFlowNode(note: Note): Node<NoteNodeData> {
       noteId: note.id,
       type: note.type,
       title: note.title,
-      content: note.content,
+      content: resolveContentForPreview(note.content, cache),
     },
   };
 }
@@ -59,6 +70,17 @@ export default function Canvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NoteNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    flowX: number;
+    flowY: number;
+  } | null>(null);
+  const [nodeContextMenu, setNodeContextMenu] = useState<{
+    x: number;
+    y: number;
+    noteId: string;
+  } | null>(null);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
   const notesCache = useRef<Map<string, Note>>(new Map());
@@ -70,7 +92,7 @@ export default function Canvas() {
       summaries.map((n) => api.fetchNote(n.id))
     );
     notesCache.current = new Map(fullNotes.map((n) => [n.id, n]));
-    setNodes(fullNotes.map(toFlowNode));
+    setNodes(fullNotes.map((n) => toFlowNode(n, notesCache.current)));
     setEdges(buildEdges(fullNotes));
   }, [setNodes, setEdges]);
 
@@ -114,26 +136,70 @@ export default function Canvas() {
     [reactFlowInstance]
   );
 
-  // Double-click canvas to create new note
-  const onPaneDoubleClick = useCallback(
-    async (event: React.MouseEvent) => {
+  // Create a note at a specific flow position
+  const createNoteAtPosition = useCallback(
+    async (type: NoteType, flowX: number, flowY: number) => {
+      const note = await api.createNote({
+        type,
+        title: "New Note",
+        content: "",
+        canvas_x: flowX,
+        canvas_y: flowY,
+      });
+      const fullNote = await api.fetchNote(note.id);
+      notesCache.current.set(fullNote.id, fullNote);
+      setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current)]);
+      setEditingNoteId(note.id);
+    },
+    [setNodes]
+  );
+
+  // Right-click canvas to open context menu
+  const onPaneContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
-      const note = await api.createNote({
-        type: "npc",
-        title: "New Note",
-        content: "",
-        canvas_x: position.x,
-        canvas_y: position.y,
+      setContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        flowX: position.x,
+        flowY: position.y,
       });
-      const fullNote = await api.fetchNote(note.id);
-      notesCache.current.set(fullNote.id, fullNote);
-      setNodes((nds) => [...nds, toFlowNode(fullNote)]);
-      setEditingNoteId(note.id);
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance]
+  );
+
+  // Right-click a node to open node context menu
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setNodeContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        noteId: node.id,
+      });
+    },
+    []
+  );
+
+  // View All: fit all nodes in viewport
+  const handleViewAll = useCallback(() => {
+    reactFlowInstance.fitView({ duration: 500 });
+  }, [reactFlowInstance]);
+
+  // Toolbar: create note at viewport center
+  const handleToolbarCreate = useCallback(
+    (type: NoteType) => {
+      const center = reactFlowInstance.screenToFlowPosition({
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
+      });
+      createNoteAtPosition(type, center.x, center.y);
+    },
+    [reactFlowInstance, createNoteAtPosition]
   );
 
   // Click node to edit
@@ -183,7 +249,7 @@ export default function Canvas() {
 
       // Rebuild all nodes and edges
       const allNotes = Array.from(notesCache.current.values());
-      setNodes(allNotes.map(toFlowNode));
+      setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current)));
       setEdges(buildEdges(allNotes));
     },
     [setNodes, setEdges]
@@ -209,23 +275,58 @@ export default function Canvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        onPaneClick={() => setEditingNoteId(null)}
-        onDoubleClick={onPaneDoubleClick}
+        onPaneClick={() => {
+          setEditingNoteId(null);
+          setContextMenu(null);
+          setNodeContextMenu(null);
+        }}
+        onPaneContextMenu={onPaneContextMenu}
+        onNodeContextMenu={onNodeContextMenu}
         onNodeClick={onNodeClick}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
+        minZoom={0.1}
         fitView={!localStorage.getItem(VIEWPORT_KEY)}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} color="#313244" />
         <MiniMap
           style={{ background: "#181825" }}
-          nodeColor="#4a90d9"
+          nodeColor={(node) => TYPE_COLORS[(node.data as NoteNodeData).type] || "#4a90d9"}
           maskColor="rgba(0,0,0,0.4)"
+          pannable
+          zoomable
         />
       </ReactFlow>
 
       <SearchBar onNavigate={navigateToNote} />
+      <Toolbar onCreate={handleToolbarCreate} />
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onSelect={(type) => {
+            createNoteAtPosition(type, contextMenu.flowX, contextMenu.flowY);
+            setContextMenu(null);
+          }}
+          onViewAll={handleViewAll}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {nodeContextMenu && (
+        <NodeContextMenu
+          x={nodeContextMenu.x}
+          y={nodeContextMenu.y}
+          noteId={nodeContextMenu.noteId}
+          onDelete={async (noteId) => {
+            await api.deleteNote(noteId);
+            handleDeleted(noteId);
+          }}
+          onClose={() => setNodeContextMenu(null)}
+        />
+      )}
 
       {editingNoteId && (
         <NoteEditor
@@ -234,6 +335,7 @@ export default function Canvas() {
           onSaved={handleSaved}
           onDeleted={handleDeleted}
           onNavigate={navigateToNote}
+          notesCache={notesCache.current}
         />
       )}
     </div>
