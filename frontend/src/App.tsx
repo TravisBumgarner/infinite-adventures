@@ -1,15 +1,18 @@
+import { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "./auth/AuthProvider.js";
 import Router from "./components/Router";
+import { useAppStore } from "./stores/appStore";
 import { AppThemeProvider } from "./styles/Theme";
 
 function App() {
+  useEffect(() => {
+    useAppStore.getState().refreshUser();
+  }, []);
+
   return (
     <BrowserRouter>
       <AppThemeProvider>
-        <AuthProvider>
-          <Router />
-        </AuthProvider>
+        <Router />
       </AppThemeProvider>
     </BrowserRouter>
   );

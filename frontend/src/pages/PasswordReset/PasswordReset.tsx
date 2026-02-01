@@ -1,8 +1,8 @@
 import { Alert, Box, Button, Link as MuiLink, TextField, Typography } from "@mui/material";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider.js";
 import { resetPassword, updatePassword } from "../../auth/service.js";
+import { useAppStore } from "../../stores/appStore";
 
 function RequestResetForm() {
   const [email, setEmail] = useState("");
@@ -138,7 +138,7 @@ function UpdatePasswordForm() {
 }
 
 export default function PasswordReset() {
-  const { user } = useAuth();
+  const user = useAppStore((s) => s.user);
 
   return (
     <Box
