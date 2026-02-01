@@ -32,13 +32,28 @@ export type NoteNodeData = {
 
 type NoteNodeType = Node<NoteNodeData, "note">;
 
+/**
+ * Render content preview with @mentions styled as highlighted spans.
+ */
+function renderPreview(content: string) {
+  const preview = content.length > 80 ? content.slice(0, 80) + "..." : content;
+  // Match @[Multi Word] or @SingleWord
+  const parts = preview.split(/(@\[[^\]]+\]|@[\w-]+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@")) {
+      return (
+        <span key={i} style={{ color: "#89b4fa", fontWeight: 600 }}>
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
   const color = TYPE_COLORS[data.type];
   const label = TYPE_LABELS[data.type];
-  const preview =
-    data.content.length > 50
-      ? data.content.slice(0, 50) + "..."
-      : data.content;
 
   return (
     <>
@@ -81,9 +96,9 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
             {data.title}
           </span>
         </div>
-        {preview && (
+        {data.content && (
           <div style={{ fontSize: 12, color: "#a6adc8", marginTop: 4 }}>
-            {preview}
+            {renderPreview(data.content)}
           </div>
         )}
       </div>

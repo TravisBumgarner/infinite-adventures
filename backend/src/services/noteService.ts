@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { eq } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
 import { notes, noteLinks } from "../db/schema.js";
+import { resolveLinks } from "./linkService.js";
 
 export type NoteType = typeof notes.$inferSelect.type;
 
@@ -128,7 +129,13 @@ export function createNote(input: CreateNoteInput): Note {
     })
     .run();
 
-  return db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const note = db.select().from(notes).where(eq(notes.id, id)).get()!;
+
+  if (note.content) {
+    resolveLinks(id, note.content);
+  }
+
+  return note;
 }
 
 export function updateNote(id: string, input: UpdateNoteInput): Note | null {
@@ -154,7 +161,13 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
     .where(eq(notes.id, id))
     .run();
 
-  return db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const updatedNote = db.select().from(notes).where(eq(notes.id, id)).get()!;
+
+  if (input.content !== undefined) {
+    resolveLinks(id, updatedNote.content);
+  }
+
+  return updatedNote;
 }
 
 export function deleteNote(id: string): boolean {

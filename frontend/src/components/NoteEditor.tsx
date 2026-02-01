@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
+import MentionInput from "./MentionInput";
 
 const NOTE_TYPES: { value: NoteType; label: string }[] = [
   { value: "pc", label: "PC" },
@@ -17,6 +18,7 @@ interface NoteEditorProps {
   onClose: () => void;
   onSaved: (note: Note) => void;
   onDeleted: (noteId: string) => void;
+  onNavigate: (noteId: string) => void;
 }
 
 export default function NoteEditor({
@@ -24,6 +26,7 @@ export default function NoteEditor({
   onClose,
   onSaved,
   onDeleted,
+  onNavigate,
 }: NoteEditorProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
@@ -93,10 +96,10 @@ export default function NoteEditor({
       </label>
 
       <label style={styles.label}>
-        Content
-        <textarea
+        Content (type @ to mention other notes)
+        <MentionInput
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
           style={{ ...styles.input, minHeight: 200, resize: "vertical" }}
         />
       </label>
@@ -109,6 +112,39 @@ export default function NoteEditor({
           Delete
         </button>
       </div>
+
+      {(note.links_to.length > 0 || note.linked_from.length > 0) && (
+        <div style={styles.linksSection}>
+          {note.links_to.length > 0 && (
+            <div>
+              <div style={styles.linksLabel}>Links to:</div>
+              {note.links_to.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => onNavigate(link.id)}
+                  style={styles.linkBtn}
+                >
+                  @{link.title}
+                </button>
+              ))}
+            </div>
+          )}
+          {note.linked_from.length > 0 && (
+            <div>
+              <div style={styles.linksLabel}>Linked from:</div>
+              {note.linked_from.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => onNavigate(link.id)}
+                  style={styles.linkBtn}
+                >
+                  @{link.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -186,5 +222,25 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     cursor: "pointer",
     fontSize: 14,
+  },
+  linksSection: {
+    marginTop: 8,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  linksLabel: {
+    fontSize: 12,
+    color: "#6c7086",
+    marginBottom: 4,
+  },
+  linkBtn: {
+    background: "none",
+    border: "none",
+    color: "#89b4fa",
+    cursor: "pointer",
+    fontSize: 13,
+    padding: "2px 4px",
+    textAlign: "left" as const,
   },
 };
