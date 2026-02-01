@@ -1,1 +1,3 @@
 npx biome check --staged --no-errors-on-unmatched
+npm --prefix frontend test
+npm --prefix backend test

@@ -8,23 +8,31 @@ import { createNote } from "../services/noteService.js";
 describe("linkService", () => {
   describe("parseMentions", () => {
     it("extracts single mentions", () => {
-      expect(parseMentions("Hello @Gandalf")).toEqual(["Gandalf"]);
+      expect(parseMentions("Hello @Gandalf")).toEqual([{ type: "title", value: "Gandalf" }]);
     });
 
     it("extracts multiple mentions", () => {
-      expect(parseMentions("@Gandalf and @Frodo")).toEqual(["Gandalf", "Frodo"]);
+      expect(parseMentions("@Gandalf and @Frodo")).toEqual([
+        { type: "title", value: "Gandalf" },
+        { type: "title", value: "Frodo" },
+      ]);
     });
 
     it("handles multi-word mentions with brackets", () => {
-      expect(parseMentions("Met @[Gandalf the Grey] today")).toEqual(["Gandalf the Grey"]);
+      expect(parseMentions("Met @[Gandalf the Grey] today")).toEqual([
+        { type: "title", value: "Gandalf the Grey" },
+      ]);
     });
 
     it("handles mentions followed by punctuation", () => {
-      expect(parseMentions("Saw @Gandalf, @Frodo.")).toEqual(["Gandalf", "Frodo"]);
+      expect(parseMentions("Saw @Gandalf, @Frodo.")).toEqual([
+        { type: "title", value: "Gandalf" },
+        { type: "title", value: "Frodo" },
+      ]);
     });
 
     it("deduplicates mentions", () => {
-      expect(parseMentions("@Gandalf and @Gandalf")).toEqual(["Gandalf"]);
+      expect(parseMentions("@Gandalf and @Gandalf")).toEqual([{ type: "title", value: "Gandalf" }]);
     });
 
     it("returns empty array for no mentions", () => {
