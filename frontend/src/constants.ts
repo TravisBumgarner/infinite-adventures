@@ -20,6 +20,16 @@ export const TYPE_LABELS: Record<NoteType, string> = {
   session: "Session",
 };
 
+export const NOTE_TEMPLATES: Record<NoteType, string> = {
+  pc: "",
+  npc: "",
+  item: "",
+  quest: "",
+  location: "",
+  goal: "",
+  session: "",
+};
+
 export const NOTE_TYPES: { value: NoteType; label: string }[] = [
   { value: "pc", label: "PC" },
   { value: "npc", label: "NPC" },

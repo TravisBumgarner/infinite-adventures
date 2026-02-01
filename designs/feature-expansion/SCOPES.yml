@@ -1,0 +1,187 @@
+project: Infinite Adventures Feature Expansion
+repo: TravisBumgarner/infinite-adventures
+design_file: (inline scope from user feature list)
+scoping_date: 2026-02-01
+
+milestones:
+  - number: 5
+    title: "5. Editing & Content Enhancements"
+    description: Markdown preview in nodes, note templates per type, and rich text formatting in the TipTap editor.
+    branch:
+      working: 20-editing-content-enhancements
+      base: main
+
+  - number: 6
+    title: "6. Canvas Interactions"
+    description: Multi-select with bulk operations and manual edge creation between nodes.
+    branch:
+      working: 23-canvas-interactions
+      base: main
+
+  - number: 7
+    title: "7. Organization & Browsing"
+    description: Canvas filtering by type/search and a connections browser sidebar for exploring note relationships.
+    branch:
+      working: 25-organization-browsing
+      base: main
+
+  - number: 8
+    title: "8. Export & Save Indicators"
+    description: Export a note and its connections as text, and an auto-save status indicator.
+    branch:
+      working: 27-export-save-indicators
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 20
+    milestone: 5
+    title: Render markdown in NoteNode content preview
+    description: |
+      Replace plain-text truncation in `NoteNode.renderPreview` with lightweight markdown rendering.
+      Show **bold**, *italic*, and `inline code` alongside existing @mention highlighting.
+      Use a small markdown-to-React library constrained to inline elements. Preview remains ~80 chars.
+    acceptance_criteria:
+      - Bold, italic, and inline code render in node previews
+      - @mention clickable spans still work alongside markdown
+      - Block-level markdown stripped or rendered inline in preview
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    github_issue: 21
+    milestone: 5
+    title: Add note templates per type
+    description: |
+      Define a `NOTE_TEMPLATES` constant mapping NoteType to template strings. When creating a note,
+      pre-fill content with the type-specific template. Update `createNoteAtPosition` in Canvas.tsx
+      and the toolbar create flow to pass the template as initial content.
+    acceptance_criteria:
+      - NOTE_TEMPLATES record defined in constants.ts
+      - New notes start with type-appropriate template text
+      - Templates editable/deletable by the user in the editor
+    depends_on: []
+    effort: 1
+    status: testing
+
+  - id: 3
+    github_issue: 22
+    milestone: 5
+    title: Enable rich text formatting in TipTap editor
+    description: |
+      Re-enable bold, italic, bullet list, and ordered list in the TipTap StarterKit config.
+      Add a minimal formatting toolbar above the editor. Update serialization in MentionEditor
+      to round-trip these formats via markdown syntax in the stored plain text.
+    acceptance_criteria:
+      - Bold, italic, bullet list, ordered list available in editor
+      - Formatting toolbar with toggle buttons above editor content
+      - Content round-trips correctly (save and reopen preserves formatting)
+      - Markdown preview in NoteNode displays the formatting
+    depends_on: [1]
+    effort: 3
+    status: scoped
+
+  - id: 4
+    github_issue: 23
+    milestone: 6
+    title: Multi-select nodes with bulk move and delete
+    description: |
+      Enable React Flow multi-selection via `selectionOnDrag`, `multiSelectionKeyCode="Shift"`.
+      Shift-click toggles selection, drag-select on canvas selects enclosed nodes. Selected nodes
+      move together; right-click shows "Delete Selected (N)" with batch deletion through the API.
+    acceptance_criteria:
+      - Shift-click and drag-select work for multi-selection
+      - Dragging one selected node moves all; positions saved on drag end
+      - Right-click with multi-selection shows "Delete Selected (N)" with confirmation
+      - Single-selection behavior unchanged
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 24
+    milestone: 6
+    title: Manual edge creation by dragging between handles
+    description: |
+      Use React Flow's `onConnect` callback to handle drag-from-handle-to-handle connections.
+      On connect, append `@{targetId}` to the source note's content, call the update API
+      (triggering link resolution), and refresh the canvas nodes/edges.
+    acceptance_criteria:
+      - Dragging between handles creates a visible edge
+      - Source note content updated with @{targetId} mention
+      - Edge persists across reload (backed by link resolution)
+      - Duplicate connections are no-ops
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 25
+    milestone: 7
+    title: Filter canvas nodes by type and search term
+    description: |
+      Add a filter bar with toggleable type chips (one per NoteType with color dots) and a
+      text input for title/content substring filter. Filtering modifies the nodes/edges arrays
+      passed to ReactFlow without changing the underlying cache. Filters are combinable and
+      not persisted across reload.
+    acceptance_criteria:
+      - Type chips for all 7 types, toggleable on/off
+      - Text input filters by title/content substring (case-insensitive)
+      - Filters combinable (type AND text)
+      - Clearing all filters restores full canvas
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 7
+    github_issue: 26
+    milestone: 7
+    title: Browse connections sidebar via right-click menu
+    description: |
+      Add "Browse Connections" to NodeContextMenu. Opens a right-side sidebar showing all
+      linked notes (links_to + linked_from) with search input, type filter chips, direction
+      indicators, and click-to-navigate. Replaces editor panel if open.
+    acceptance_criteria:
+      - "Browse Connections" in node right-click menu
+      - Sidebar shows all linked notes with direction indicators
+      - Search and type filter chips work within the sidebar
+      - Clicking a connection navigates to that note
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 8
+    github_issue: 27
+    milestone: 8
+    title: Export note and connections as text via right-click
+    description: |
+      Add "Export as Text" to NodeContextMenu. Generates formatted plain text with the source
+      note and all connected notes, resolves @{id} mentions to titles, copies to clipboard,
+      and shows a brief toast confirmation.
+    acceptance_criteria:
+      - "Export as Text" in node right-click menu
+      - Formatted text includes source note and all connected notes
+      - @mentions resolved to readable titles
+      - Copied to clipboard with visual confirmation
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 9
+    github_issue: 28
+    milestone: 8
+    title: Add auto-save indicator to editor panel
+    description: |
+      Replace the manual Save button with auto-save (800ms debounce) and a status indicator
+      in the NoteEditor header: "Saving...", "Saved", "Unsaved changes", "Save failed".
+      Track save state, clean up timers on unmount/noteId change, flush pending saves
+      before switching notes.
+    acceptance_criteria:
+      - Changes auto-save after 800ms of inactivity
+      - Status indicator shows saving/saved/unsaved/error states
+      - "Saved" fades after 2 seconds
+      - Switching notes saves pending changes first
+    depends_on: []
+    effort: 2
+    status: scoped
