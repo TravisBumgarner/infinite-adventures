@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
 import { notes, noteLinks } from "../db/schema.js";
+import { resolveLinks } from "./linkService.js";
 
 export type NoteType = typeof notes.$inferSelect.type;
 
@@ -128,7 +129,13 @@ export function createNote(input: CreateNoteInput): Note {
     })
     .run();
 
-  return db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const note = db.select().from(notes).where(eq(notes.id, id)).get()!;
+
+  if (note.content) {
+    resolveLinks(id, note.content);
+  }
+
+  return note;
 }
 
 export function updateNote(id: string, input: UpdateNoteInput): Note | null {
@@ -154,13 +161,46 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
     .where(eq(notes.id, id))
     .run();
 
-  return db.select().from(notes).where(eq(notes.id, id)).get()!;
+  const updatedNote = db.select().from(notes).where(eq(notes.id, id)).get()!;
+
+  if (input.content !== undefined) {
+    resolveLinks(id, updatedNote.content);
+  }
+
+  return updatedNote;
 }
 
 export function deleteNote(id: string): boolean {
   const db = getDb();
   const result = db.delete(notes).where(eq(notes.id, id)).run();
   return result.changes > 0;
+}
+
+export interface SearchResult {
+  id: string;
+  type: NoteType;
+  title: string;
+  snippet: string;
+}
+
+export function searchNotes(query: string): SearchResult[] {
+  if (!query || !query.trim()) {
+    return [];
+  }
+
+  const db = getDb();
+  // Append * for prefix matching so partial words match
+  const ftsQuery = query.trim().replace(/"/g, '""') + "*";
+
+  return db.all<SearchResult>(sql.raw(
+    `SELECT n.id, n.type, n.title,
+            snippet(notes_fts, 1, '<b>', '</b>', '...', 32) as snippet
+     FROM notes_fts fts
+     JOIN notes n ON n.rowid = fts.rowid
+     WHERE notes_fts MATCH '${ftsQuery.replace(/'/g, "''")}'
+     ORDER BY rank
+     LIMIT 20`
+  ));
 }
 
 export class ValidationError extends Error {
