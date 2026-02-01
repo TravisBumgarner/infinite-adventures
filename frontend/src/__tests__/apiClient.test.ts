@@ -1,10 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchNotes, fetchNote } from "../api/client";
+
+vi.mock("../auth/service.js", () => ({
+  getToken: vi.fn(),
+}));
+
+import { fetchNote, fetchNotes } from "../api/client";
+import { getToken } from "../auth/service.js";
 
 const mockFetch = vi.fn();
+const mockGetToken = vi.mocked(getToken);
 
 beforeEach(() => {
   vi.stubGlobal("fetch", mockFetch);
+  mockGetToken.mockResolvedValue({ success: false, error: "no session" });
 });
 
 afterEach(() => {
@@ -25,7 +33,18 @@ describe("API client request handling", () => {
     });
 
     it("unwraps { success: true, data } envelope from get endpoint", async () => {
-      const note = { id: "1", type: "npc", title: "Gandalf", content: "", canvas_x: 0, canvas_y: 0, created_at: "", updated_at: "", links_to: [], linked_from: [] };
+      const note = {
+        id: "1",
+        type: "npc",
+        title: "Gandalf",
+        content: "",
+        canvas_x: 0,
+        canvas_y: 0,
+        created_at: "",
+        updated_at: "",
+        links_to: [],
+        linked_from: [],
+      };
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ success: true, data: note }),
@@ -56,6 +75,36 @@ describe("API client request handling", () => {
       });
 
       await expect(fetchNote("1")).rejects.toThrow("500");
+    });
+  });
+
+  describe("auth headers", () => {
+    it("includes Authorization header when token is available", async () => {
+      mockGetToken.mockResolvedValue({ success: true, data: "jwt-token-123" });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, data: [] }),
+      });
+
+      await fetchNotes();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const headers = fetchCall[1]?.headers;
+      expect(headers).toMatchObject({ Authorization: "Bearer jwt-token-123" });
+    });
+
+    it("omits Authorization header when no token is available", async () => {
+      mockGetToken.mockResolvedValue({ success: false, error: "no session" });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, data: [] }),
+      });
+
+      await fetchNotes();
+
+      const fetchCall = mockFetch.mock.calls[0];
+      const headers = fetchCall[1]?.headers;
+      expect(headers).not.toHaveProperty("Authorization");
     });
   });
 });
