@@ -1,8 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
 import MentionEditor from "./MentionEditor";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
+import { useAutoSave } from "../hooks/useAutoSave";
+import type { SaveStatus } from "../hooks/useAutoSave";
+
+function statusLabel(status: SaveStatus): string {
+  switch (status) {
+    case "saving":
+      return "Saving...";
+    case "saved":
+      return "Saved";
+    case "unsaved":
+      return "Unsaved changes";
+    case "error":
+      return "Save failed";
+    case "idle":
+    default:
+      return "";
+  }
+}
 
 interface NoteEditorProps {
   noteId: string;
@@ -25,26 +43,46 @@ export default function NoteEditor({
   const [title, setTitle] = useState("");
   const [type, setType] = useState<NoteType>("npc");
   const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
+  const loadedRef = useRef(false);
+
+  // Refs to hold latest values for the save function
+  const titleRef = useRef(title);
+  titleRef.current = title;
+  const typeRef = useRef(type);
+  typeRef.current = type;
+  const contentRef = useRef(content);
+  contentRef.current = content;
+  const noteIdRef = useRef(noteId);
+  noteIdRef.current = noteId;
+
+  const saveFn = useCallback(async () => {
+    const updated = await api.updateNote(noteIdRef.current, {
+      title: titleRef.current,
+      type: typeRef.current,
+      content: contentRef.current,
+    });
+    onSaved(updated);
+  }, [onSaved]);
+
+  const { status, markDirty, flush } = useAutoSave({ saveFn });
+
+  // Flush pending saves when noteId changes (switching notes)
+  useEffect(() => {
+    return () => {
+      flush();
+    };
+  }, [noteId, flush]);
 
   useEffect(() => {
+    loadedRef.current = false;
     api.fetchNote(noteId).then((n) => {
       setNote(n);
       setTitle(n.title);
       setType(n.type);
       setContent(n.content);
+      loadedRef.current = true;
     });
   }, [noteId]);
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const updated = await api.updateNote(noteId, { title, type, content });
-      onSaved(updated);
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleDelete() {
     if (!confirm("Delete this note? This cannot be undone.")) return;
@@ -68,7 +106,10 @@ export default function NoteEditor({
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            markDirty();
+          }}
           style={styles.input}
         />
       </label>
@@ -77,7 +118,10 @@ export default function NoteEditor({
         Type
         <select
           value={type}
-          onChange={(e) => setType(e.target.value as NoteType)}
+          onChange={(e) => {
+            setType(e.target.value as NoteType);
+            markDirty();
+          }}
           style={styles.input}
         >
           {NOTE_TYPES.map((t) => (
@@ -92,16 +136,17 @@ export default function NoteEditor({
         Start typing or @ mention another note
         <MentionEditor
           value={content}
-          onChange={setContent}
+          onChange={(val: string) => {
+            setContent(val);
+            markDirty();
+          }}
           notesCache={notesCache}
           style={{ ...styles.input, minHeight: 200, resize: "vertical" }}
         />
       </label>
 
       <div style={styles.actions}>
-        <button onClick={handleSave} disabled={saving} style={styles.saveBtn}>
-          {saving ? "Saving..." : "Save"}
-        </button>
+        <span style={styles.statusIndicator}>{statusLabel(status)}</span>
         <button onClick={handleDelete} style={styles.deleteBtn}>
           Delete
         </button>
@@ -198,15 +243,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
     marginTop: 8,
   },
-  saveBtn: {
+  statusIndicator: {
     flex: 1,
-    padding: "8px 12px",
-    background: "#4a90d9",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    fontSize: 14,
+    fontSize: 13,
+    color: "#a6adc8",
+    alignSelf: "center",
   },
   deleteBtn: {
     padding: "8px 12px",
