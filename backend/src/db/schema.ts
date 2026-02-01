@@ -27,6 +27,13 @@ export const noteLinks = sqliteTable(
   (table) => [primaryKey({ columns: [table.source_note_id, table.target_note_id] })],
 );
 
+export const feedback = sqliteTable("feedback", {
+  id: text("id").primaryKey(),
+  message: text("message").notNull(),
+  created_at: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = typeof notes.$inferInsert;
 export type NoteLink = typeof noteLinks.$inferSelect;
+export type Feedback = typeof feedback.$inferSelect;
