@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
+import config from "../config.js";
 import { getOrCreateUserByAuth } from "../db/queries/users.js";
 import { supabase } from "../lib/supabase.js";
-import { sendUnauthorized } from "../routes/shared/responses.js";
+import { sendInternalError, sendUnauthorized } from "../routes/shared/responses.js";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -17,6 +18,10 @@ export async function requireAuth(
   next: NextFunction,
 ): Promise<void> {
   if (!supabase) {
+    if (config.isProduction) {
+      sendInternalError(res);
+      return;
+    }
     next();
     return;
   }
