@@ -26,7 +26,7 @@ export async function processRequest(
   context: CreateValidationContext,
 ): Promise<void> {
   try {
-    const note = createNote(context.input);
+    const note = await createNote(context.input);
     sendSuccess(res, note, 201);
   } catch (err) {
     if (err instanceof ValidationError) {

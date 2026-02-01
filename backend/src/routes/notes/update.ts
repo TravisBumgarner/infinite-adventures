@@ -28,7 +28,7 @@ export async function processRequest(
   context: UpdateValidationContext,
 ): Promise<void> {
   try {
-    const note = updateNote(context.id, context.input);
+    const note = await updateNote(context.id, context.input);
     if (!note) {
       sendNotFound(res, "NOTE_NOT_FOUND");
       return;

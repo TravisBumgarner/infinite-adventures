@@ -1,16 +1,12 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import pg from "pg";
 import * as schema from "./schema.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 
 let db: DrizzleDb | null = null;
-let sqlite: Database.Database | null = null;
+let pool: pg.Pool | null = null;
 
 export function getDb(): DrizzleDb {
   if (!db) {
@@ -19,25 +15,25 @@ export function getDb(): DrizzleDb {
   return db;
 }
 
-export function initDb(
-  dbPath: string = process.env.DB_PATH || "./data/infinite-adventures.db",
-): DrizzleDb {
-  sqlite = new Database(dbPath);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
+export async function initDb(
+  connectionString: string = process.env.DATABASE_URL ||
+    "postgresql://infinite:infinite@localhost:5434/infinite_adventures",
+  options?: { skipMigrations?: boolean },
+): Promise<DrizzleDb> {
+  pool = new pg.Pool({ connectionString });
+  db = drizzle(pool, { schema });
 
-  // Create tables and FTS5 virtual table via raw SQL
-  const schemaSql = readFileSync(join(__dirname, "schema.sql"), "utf-8");
-  sqlite.exec(schemaSql);
+  if (!options?.skipMigrations) {
+    await migrate(db, { migrationsFolder: new URL("../../drizzle", import.meta.url).pathname });
+  }
 
-  db = drizzle(sqlite, { schema });
   return db;
 }
 
-export function closeDb(): void {
-  if (sqlite) {
-    sqlite.close();
-    sqlite = null;
+export async function closeDb(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    pool = null;
     db = null;
   }
 }

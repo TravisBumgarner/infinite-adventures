@@ -12,22 +12,24 @@ export interface UserRow {
   updated_at: string;
 }
 
-export function getUserByAuthId(authId: string): UserRow | undefined {
+export async function getUserByAuthId(authId: string): Promise<UserRow | undefined> {
   const db = getDb();
-  return db.select().from(users).where(eq(users.auth_id, authId)).get();
+  const [row] = await db.select().from(users).where(eq(users.auth_id, authId));
+  return row;
 }
 
-export function getUserById(id: string): UserRow | undefined {
+export async function getUserById(id: string): Promise<UserRow | undefined> {
   const db = getDb();
-  return db.select().from(users).where(eq(users.id, id)).get();
+  const [row] = await db.select().from(users).where(eq(users.id, id));
+  return row;
 }
 
-export function getOrCreateUserByAuth(input: {
+export async function getOrCreateUserByAuth(input: {
   authId: string;
   email: string;
   displayName?: string;
-}): UserRow {
-  const existing = getUserByAuthId(input.authId);
+}): Promise<UserRow> {
+  const existing = await getUserByAuthId(input.authId);
   if (existing) {
     return existing;
   }
@@ -36,14 +38,12 @@ export function getOrCreateUserByAuth(input: {
   const id = uuidv4();
   const displayName = input.displayName || input.email.split("@")[0];
 
-  db.insert(users)
-    .values({
-      id,
-      auth_id: input.authId,
-      email: input.email,
-      display_name: displayName,
-    })
-    .run();
+  await db.insert(users).values({
+    id,
+    auth_id: input.authId,
+    email: input.email,
+    display_name: displayName,
+  });
 
-  return getUserByAuthId(input.authId) as UserRow;
+  return (await getUserByAuthId(input.authId)) as UserRow;
 }
