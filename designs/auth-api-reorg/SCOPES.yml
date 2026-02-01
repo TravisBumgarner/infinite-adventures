@@ -123,7 +123,7 @@ tasks:
       - API_BASE uses config.apiBaseUrl
     depends_on: [2]
     effort: 1
-    status: scoped
+    status: completed
 
   - id: 4
     github_issue: 73

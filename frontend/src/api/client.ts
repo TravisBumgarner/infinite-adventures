@@ -1,17 +1,22 @@
 import type { CreateNoteInput, Note, NoteSummary, SearchResult, UpdateNoteInput } from "shared";
+import config from "../config.js";
 
-const API_BASE = "http://localhost:3021/api";
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  errorCode?: string;
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${config.apiBaseUrl}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+  const body: ApiResponse<T> = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string }).error || `HTTP ${res.status}`);
+    throw new Error(body.errorCode || `HTTP ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  return body.data as T;
 }
 
 export function fetchNotes(): Promise<NoteSummary[]> {
