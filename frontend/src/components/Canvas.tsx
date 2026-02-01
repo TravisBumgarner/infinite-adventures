@@ -177,15 +177,13 @@ export default function Canvas() {
     localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
   }, [reactFlowInstance]);
 
-  // Navigate to a note by ID, offsetting for the sidebar that will open
+  // Navigate to a note by ID
   const navigateToNote = useCallback(
     (noteId: string) => {
       const note = notesCache.current.get(noteId);
       if (note) {
-        const zoom = 1.2;
-        const offsetX = SIDEBAR_WIDTH / 2 / zoom;
-        reactFlowInstance.setCenter(note.canvas_x - offsetX, note.canvas_y, {
-          zoom,
+        reactFlowInstance.setCenter(note.canvas_x, note.canvas_y, {
+          zoom: 1.2,
           duration: 500,
         });
         setEditingNoteId(noteId);
@@ -266,18 +264,16 @@ export default function Canvas() {
     reactFlowInstance.fitView({ duration: 500 });
   }, [reactFlowInstance]);
 
-  // Toolbar: create note at viewport center (offset for sidebar if open)
+  // Toolbar: create note at viewport center
   const handleToolbarCreate = useCallback(
     (type: NoteType) => {
-      const sidebarOpen = editingNoteId || browsingNoteId;
-      const availableWidth = sidebarOpen ? window.innerWidth - SIDEBAR_WIDTH : window.innerWidth;
       const center = reactFlowInstance.screenToFlowPosition({
-        x: availableWidth / 2,
+        x: window.innerWidth / 2,
         y: window.innerHeight / 2,
       });
       createNoteAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition, editingNoteId, browsingNoteId]
+    [reactFlowInstance, createNoteAtPosition]
   );
 
   // Drag end to save positions for all selected nodes
@@ -369,7 +365,10 @@ export default function Canvas() {
   }, [setNodes, setEdges]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
+    <div style={{
+      width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+      height: "100vh",
+    }}>
       <ReactFlow
         nodes={filteredNodes}
         edges={filteredEdges}
