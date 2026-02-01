@@ -4,11 +4,12 @@ interface NodeContextMenuProps {
   x: number;
   y: number;
   noteId: string;
+  onEdit: (noteId: string) => void;
   onDelete: (noteId: string) => void;
   onClose: () => void;
 }
 
-export default function NodeContextMenu({ x, y, noteId, onDelete, onClose }: NodeContextMenuProps) {
+export default function NodeContextMenu({ x, y, noteId, onEdit, onDelete, onClose }: NodeContextMenuProps) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -30,6 +31,15 @@ export default function NodeContextMenu({ x, y, noteId, onDelete, onClose }: Nod
         style={{ ...styles.menu, left: x, top: y }}
         onMouseDown={(e) => e.stopPropagation()}
       >
+        <button
+          style={styles.editItem}
+          onClick={() => {
+            onEdit(noteId);
+            onClose();
+          }}
+        >
+          Edit
+        </button>
         <button
           style={styles.item}
           onClick={() => {
@@ -60,6 +70,18 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "4px 0",
     minWidth: 120,
     boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+  },
+  editItem: {
+    display: "flex",
+    alignItems: "center",
+    width: "100%",
+    padding: "8px 12px",
+    background: "none",
+    border: "none",
+    color: "#cdd6f4",
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "system-ui, sans-serif",
   },
   item: {
     display: "flex",

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 import type { NoteType } from "../types";
@@ -9,18 +9,59 @@ export type NoteNodeData = {
   type: NoteType;
   title: string;
   content: string;
+  mentionLabels: Record<string, string>;
+  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void;
 };
 
 type NoteNodeType = Node<NoteNodeData, "note">;
 
+function MentionSpan({ label, onClick }: { label: string; onClick: (e: React.MouseEvent) => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <span
+      style={{
+        color: hovered ? "#b4d0fb" : "#89b4fa",
+        fontWeight: 600,
+        cursor: "pointer",
+        textDecoration: hovered ? "underline" : "none",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
+    >
+      @{label}
+    </span>
+  );
+}
+
 /**
  * Render content preview with @mentions styled as highlighted spans.
+ * @{id} mentions are clickable; @[Title] and @Word are styled but not clickable.
  */
-function renderPreview(content: string) {
+function renderPreview(
+  content: string,
+  noteId: string,
+  mentionLabels: Record<string, string>,
+  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void
+) {
   const preview = content.length > 80 ? content.slice(0, 80) + "..." : content;
   // Match @{id}, @[Multi Word], or @SingleWord
   const parts = preview.split(/(@\{[^}]+\}|@\[[^\]]+\]|@[\w-]+)/g);
   return parts.map((part, i) => {
+    if (part.startsWith("@{")) {
+      const targetId = part.slice(2, -1);
+      const label = mentionLabels[targetId] || targetId;
+      return (
+        <MentionSpan
+          key={i}
+          label={label}
+          onClick={(e) => {
+            e.stopPropagation();
+            onMentionClick(noteId, targetId);
+          }}
+        />
+      );
+    }
     if (part.startsWith("@")) {
       return (
         <span key={i} style={{ color: "#89b4fa", fontWeight: 600 }}>
@@ -49,7 +90,6 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
           maxWidth: 240,
           color: "#cdd6f4",
           fontFamily: "system-ui, sans-serif",
-          cursor: "pointer",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -79,7 +119,7 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
         </div>
         {data.content && (
           <div style={{ fontSize: 12, color: "#a6adc8", marginTop: 4 }}>
-            {renderPreview(data.content)}
+            {renderPreview(data.content, data.noteId, data.mentionLabels, data.onMentionClick)}
           </div>
         )}
       </div>
