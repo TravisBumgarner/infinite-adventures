@@ -163,4 +163,4 @@ tasks:
       - Panel closes on X or canvas click
     depends_on: [3]
     effort: 3
-    status: implementing
+    status: completed
