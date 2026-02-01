@@ -149,7 +149,7 @@ tasks:
       - Clicking a connection navigates to that note
     depends_on: []
     effort: 3
-    status: scoped
+    status: testing
 
   - id: 8
     github_issue: 27
