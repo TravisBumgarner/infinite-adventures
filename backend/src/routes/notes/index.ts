@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requireAuth } from "../../middleware/auth.js";
 import { handler as createHandler } from "./create.js";
 import { handler as deleteHandler } from "./delete.js";
 import { handler as getHandler } from "./get.js";
@@ -8,6 +9,7 @@ import { handler as updateHandler } from "./update.js";
 
 const router = Router();
 
+router.use(requireAuth);
 router.get("/search", searchHandler);
 router.get("/", listHandler);
 router.get("/:id", getHandler);
