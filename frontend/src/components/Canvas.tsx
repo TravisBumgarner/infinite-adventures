@@ -26,6 +26,8 @@ import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
 import FilterBar from "./FilterBar";
 import ConnectionsBrowser from "./ConnectionsBrowser";
+import Toast from "./Toast";
+import { formatNoteExport } from "../utils/noteExport";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -97,6 +99,7 @@ export default function Canvas() {
     selectedIds: string[];
   } | null>(null);
   const [browsingNoteId, setBrowsingNoteId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
   const [filterSearch, setFilterSearch] = useState("");
   const reactFlowInstance = useReactFlow();
@@ -364,6 +367,15 @@ export default function Canvas() {
     setEditingNoteId(null);
   }, [setNodes, setEdges]);
 
+  // Export note and connections as text to clipboard
+  const handleExport = useCallback(async (noteId: string) => {
+    const note = notesCache.current.get(noteId);
+    if (!note) return;
+    const text = formatNoteExport(note, notesCache.current);
+    await navigator.clipboard.writeText(text);
+    setToastMessage("Copied to clipboard");
+  }, []);
+
   return (
     <div style={{
       width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
@@ -439,6 +451,7 @@ export default function Canvas() {
             setEditingNoteId(null);
             setBrowsingNoteId(noteId);
           }}
+          onExport={handleExport}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
@@ -469,6 +482,10 @@ export default function Canvas() {
           onNavigate={navigateToNote}
           onClose={() => setBrowsingNoteId(null)}
         />
+      )}
+
+      {toastMessage && (
+        <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
       )}
     </div>
   );

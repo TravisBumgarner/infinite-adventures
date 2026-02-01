@@ -7,6 +7,7 @@ interface NodeContextMenuProps {
   selectedCount: number;
   onEdit: (noteId: string) => void;
   onBrowseConnections: (noteId: string) => void;
+  onExport: (noteId: string) => void;
   onDelete: (noteId: string) => void;
   onDeleteSelected: () => void;
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function NodeContextMenu({
   selectedCount,
   onEdit,
   onBrowseConnections,
+  onExport,
   onDelete,
   onDeleteSelected,
   onClose,
@@ -66,6 +68,17 @@ export default function NodeContextMenu({
             }}
           >
             Browse Connections
+          </button>
+        )}
+        {!isMulti && (
+          <button
+            style={styles.editItem}
+            onClick={() => {
+              onExport(noteId);
+              onClose();
+            }}
+          >
+            Export as Text
           </button>
         )}
         {isMulti ? (
