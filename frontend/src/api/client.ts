@@ -1,4 +1,5 @@
 import type { CreateNoteInput, Note, NoteSummary, SearchResult, UpdateNoteInput } from "shared";
+import { getToken } from "../auth/service.js";
 import config from "../config.js";
 
 interface ApiResponse<T> {
@@ -7,9 +8,18 @@ interface ApiResponse<T> {
   errorCode?: string;
 }
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const result = await getToken();
+  if (result.success) {
+    return { Authorization: `Bearer ${result.data}` };
+  }
+  return {};
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch(`${config.apiBaseUrl}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     ...options,
   });
   const body: ApiResponse<T> = await res.json().catch(() => ({}));
