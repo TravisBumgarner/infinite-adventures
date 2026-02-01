@@ -1,11 +1,13 @@
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { TYPE_COLORS, TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { TYPE_LABELS, NOTE_TYPES } from "../constants";
 
 interface ToolbarProps {
   onCreate: (type: NoteType) => void;
 }
 
 export default function Toolbar({ onCreate }: ToolbarProps) {
+  const theme = useTheme();
   return (
     <div style={styles.bar}>
       {NOTE_TYPES.map((t) => (
@@ -18,7 +20,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
           <span
             style={{
               ...styles.square,
-              background: TYPE_COLORS[t.value],
+              background: theme.palette.nodeTypes[t.value].light,
             }}
           />
           <span style={styles.label}>{TYPE_LABELS[t.value]}</span>

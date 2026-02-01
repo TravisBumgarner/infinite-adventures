@@ -135,7 +135,7 @@ tasks:
       - All TYPE_COLORS usages migrated to theme
     depends_on: [3]
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 5
     github_issue: 44

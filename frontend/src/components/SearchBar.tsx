@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTheme } from "@mui/material";
 import type { SearchResult } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS } from "../constants";
 
 interface SearchBarProps {
   onNavigate: (noteId: string) => void;
 }
 
 export default function SearchBar({ onNavigate }: SearchBarProps) {
+  const theme = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -114,7 +115,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
                 <span
                   style={{
                     ...styles.badge,
-                    background: TYPE_COLORS[result.type],
+                    background: theme.palette.nodeTypes[result.type].light,
                   }}
                 >
                   {result.type.toUpperCase()}

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { NOTE_TYPES, TYPE_COLORS } from "../constants";
+import { NOTE_TYPES } from "../constants";
 
 interface FilterBarProps {
   activeTypes: Set<NoteType>;
@@ -15,6 +16,7 @@ export default function FilterBar({
   onToggleType,
   onSearchChange,
 }: FilterBarProps) {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
   const hasFilters = activeTypes.size > 0 || search.length > 0;
 
@@ -54,8 +56,8 @@ export default function FilterBar({
               key={value}
               style={{
                 ...styles.chip,
-                background: active ? TYPE_COLORS[value] : "transparent",
-                borderColor: TYPE_COLORS[value],
+                background: active ? theme.palette.nodeTypes[value].light : "transparent",
+                borderColor: theme.palette.nodeTypes[value].light,
                 color: active ? "#fff" : "#a6adc8",
               }}
               onClick={() => onToggleType(value)}
@@ -63,7 +65,7 @@ export default function FilterBar({
               <span
                 style={{
                   ...styles.dot,
-                  background: TYPE_COLORS[value],
+                  background: theme.palette.nodeTypes[value].light,
                   opacity: active ? 0 : 1,
                 }}
               />

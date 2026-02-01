@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
+import { useTheme } from "@mui/material";
 import type { Note, NoteType } from "../types";
-import { NOTE_TYPES, TYPE_COLORS, SIDEBAR_WIDTH } from "../constants";
+import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
 import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
 
 interface ConnectionsBrowserProps {
@@ -16,6 +17,7 @@ export default function ConnectionsBrowser({
   onNavigate,
   onClose,
 }: ConnectionsBrowserProps) {
+  const theme = useTheme();
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
 
@@ -72,8 +74,8 @@ export default function ConnectionsBrowser({
               key={value}
               style={{
                 ...styles.chip,
-                background: active ? TYPE_COLORS[value] : "transparent",
-                borderColor: TYPE_COLORS[value],
+                background: active ? theme.palette.nodeTypes[value].light : "transparent",
+                borderColor: theme.palette.nodeTypes[value].light,
                 color: active ? "#fff" : "#a6adc8",
               }}
               onClick={() => handleToggleType(value)}
@@ -81,7 +83,7 @@ export default function ConnectionsBrowser({
               <span
                 style={{
                   ...styles.dot,
-                  background: TYPE_COLORS[value],
+                  background: theme.palette.nodeTypes[value].light,
                   opacity: active ? 0 : 1,
                 }}
               />
@@ -112,7 +114,7 @@ export default function ConnectionsBrowser({
               <span
                 style={{
                   ...styles.typeBadge,
-                  background: TYPE_COLORS[entry.link.type],
+                  background: theme.palette.nodeTypes[entry.link.type].light,
                 }}
               >
                 {entry.link.type.toUpperCase()}

@@ -20,7 +20,8 @@ import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS, NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
+import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
+import { theme } from "../styles/Theme";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
@@ -446,7 +447,7 @@ export default function Canvas() {
         <Background variant={BackgroundVariant.Dots} gap={20} color="#313244" />
         <MiniMap
           style={{ background: "#181825" }}
-          nodeColor={(node) => TYPE_COLORS[(node.data as NoteNodeData).type] || "#4a90d9"}
+          nodeColor={(node) => theme.palette.nodeTypes[(node.data as NoteNodeData).type]?.light || "#4a90d9"}
           maskColor="rgba(0,0,0,0.4)"
           pannable
           zoomable

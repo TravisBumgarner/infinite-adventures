@@ -3,9 +3,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
-import type { Note, NoteSummary } from "../types";
+import type { Note, NoteSummary, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS } from "../constants";
+import { theme } from "../styles/Theme";
 import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
 
 interface MentionEditorProps {
@@ -60,7 +60,7 @@ function SuggestionPopup({
           <span
             style={{
               ...popupStyles.badge,
-              background: TYPE_COLORS[item.type as keyof typeof TYPE_COLORS] || "#585b70",
+              background: theme.palette.nodeTypes[item.type as NoteType]?.light || "#585b70",
             }}
           >
             {item.type.toUpperCase()}

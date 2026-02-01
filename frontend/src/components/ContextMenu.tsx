@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { TYPE_COLORS, TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { TYPE_LABELS, NOTE_TYPES } from "../constants";
 
 interface ContextMenuProps {
   x: number;
@@ -12,6 +13,7 @@ interface ContextMenuProps {
 }
 
 export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onClose }: ContextMenuProps) {
+  const theme = useTheme();
   const [showSubmenu, setShowSubmenu] = useState(false);
   const [showUtilities, setShowUtilities] = useState(false);
 
@@ -54,7 +56,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
                   <span
                     style={{
                       ...styles.dot,
-                      background: TYPE_COLORS[t.value],
+                      background: theme.palette.nodeTypes[t.value].light,
                     }}
                   />
                   {TYPE_LABELS[t.value]}

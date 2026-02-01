@@ -1,8 +1,9 @@
 import { memo, useState } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { TYPE_COLORS, TYPE_LABELS } from "../constants";
+import { TYPE_LABELS } from "../constants";
 import { parsePreviewContent } from "../utils/previewParser";
 import type { PreviewSegment } from "../utils/previewParser";
 
@@ -92,7 +93,8 @@ function renderSegment(
 }
 
 function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
-  const color = TYPE_COLORS[data.type];
+  const theme = useTheme();
+  const color = theme.palette.nodeTypes[data.type].light;
   const label = TYPE_LABELS[data.type];
   const segments = data.content
     ? parsePreviewContent(data.content, data.mentionLabels)
