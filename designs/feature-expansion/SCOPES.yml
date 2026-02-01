@@ -47,7 +47,7 @@ tasks:
       - Block-level markdown stripped or rendered inline in preview
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 2
     github_issue: 21
@@ -182,6 +182,24 @@ tasks:
       - Status indicator shows saving/saved/unsaved/error states
       - "Saved" fades after 2 seconds
       - Switching notes saves pending changes first
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 10
+    github_issue: 30
+    milestone: 6
+    title: Avoid stacking notes — find empty space near viewport center
+    description: |
+      Add a `findOpenPosition(targetX, targetY, existingNodes)` utility that starts at the
+      target point and spirals outward to find a non-overlapping position. Use this in
+      `createNoteAtPosition` so new notes don't stack on top of existing ones. The utility
+      should account for approximate node dimensions (~200x100px bounding box).
+    acceptance_criteria:
+      - New notes from toolbar don't stack on existing nodes
+      - New notes from context menu don't stack on existing nodes
+      - Algorithm prefers positions close to the original target
+      - Works correctly on an empty canvas (no offset needed)
     depends_on: []
     effort: 2
     status: scoped
