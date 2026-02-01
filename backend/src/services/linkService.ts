@@ -9,23 +9,39 @@ export interface ResolvedLink {
   created: boolean;
 }
 
+export interface ParsedMention {
+  type: "id" | "title";
+  value: string;
+}
+
 /**
  * Parse @mentions from note content.
- * Supports two forms:
- *   @SingleWord       — matches a single word (letters, digits, underscores, hyphens)
- *   @[Multi Word Name] — matches a bracketed multi-word name
+ * Supports three forms:
+ *   @{noteId}         — ID-based mention (UUID in curly braces)
+ *   @[Multi Word Name] — bracketed multi-word title
+ *   @SingleWord       — single word title (letters, digits, underscores, hyphens)
  */
-export function parseMentions(content: string): string[] {
-  const regex = /@\[([^\]]+)\]|@([\w-]+)/g;
-  const mentions: string[] = [];
+export function parseMentions(content: string): ParsedMention[] {
+  const regex = /@\{([^}]+)\}|@\[([^\]]+)\]|@([\w-]+)/g;
+  const mentions: ParsedMention[] = [];
+  const seen = new Set<string>();
   let match;
   while ((match = regex.exec(content)) !== null) {
-    const title = (match[1] ?? match[2])!.trim();
-    if (title) {
-      mentions.push(title);
+    if (match[1]) {
+      const id = match[1].trim();
+      if (id && !seen.has(`id:${id}`)) {
+        seen.add(`id:${id}`);
+        mentions.push({ type: "id", value: id });
+      }
+    } else {
+      const title = (match[2] ?? match[3])!.trim();
+      if (title && !seen.has(`title:${title.toLowerCase()}`)) {
+        seen.add(`title:${title.toLowerCase()}`);
+        mentions.push({ type: "title", value: title });
+      }
     }
   }
-  return [...new Set(mentions)];
+  return mentions;
 }
 
 /**
@@ -40,7 +56,7 @@ export function resolveLinks(
   content: string
 ): ResolvedLink[] {
   const db = getDb();
-  const mentionedTitles = parseMentions(content);
+  const mentions = parseMentions(content);
 
   // Get the source note for positioning new notes nearby
   const sourceNote = db
@@ -54,40 +70,51 @@ export function resolveLinks(
 
   const resolved: ResolvedLink[] = [];
 
-  for (let i = 0; i < mentionedTitles.length; i++) {
-    const title = mentionedTitles[i]!;
+  for (let i = 0; i < mentions.length; i++) {
+    const mention = mentions[i]!;
 
-    // Case-insensitive title lookup
-    let targetNote = db
-      .select({ id: notes.id, title: notes.title })
-      .from(notes)
-      .where(sql`LOWER(${notes.title}) = LOWER(${title})`)
-      .get();
-
+    let targetNote: { id: string; title: string } | undefined;
     let created = false;
 
-    if (!targetNote) {
-      // Auto-create a new note, offset from source
-      const newId = uuidv4();
-      const offsetX = baseX + 300 + i * 50;
-      const offsetY = baseY + 100 + i * 50;
-      const now = new Date().toISOString();
+    if (mention.type === "id") {
+      // ID-based mention: look up by ID, skip if not found
+      targetNote = db
+        .select({ id: notes.id, title: notes.title })
+        .from(notes)
+        .where(eq(notes.id, mention.value))
+        .get();
 
-      db.insert(notes)
-        .values({
-          id: newId,
-          type: "npc",
-          title,
-          content: "",
-          canvas_x: offsetX,
-          canvas_y: offsetY,
-          created_at: now,
-          updated_at: now,
-        })
-        .run();
+      if (!targetNote) continue;
+    } else {
+      // Title-based mention: case-insensitive lookup + auto-create
+      targetNote = db
+        .select({ id: notes.id, title: notes.title })
+        .from(notes)
+        .where(sql`LOWER(${notes.title}) = LOWER(${mention.value})`)
+        .get();
 
-      targetNote = { id: newId, title };
-      created = true;
+      if (!targetNote) {
+        const newId = uuidv4();
+        const offsetX = baseX + 300 + i * 50;
+        const offsetY = baseY + 100 + i * 50;
+        const now = new Date().toISOString();
+
+        db.insert(notes)
+          .values({
+            id: newId,
+            type: "npc",
+            title: mention.value,
+            content: "",
+            canvas_x: offsetX,
+            canvas_y: offsetY,
+            created_at: now,
+            updated_at: now,
+          })
+          .run();
+
+        targetNote = { id: newId, title: mention.value };
+        created = true;
+      }
     }
 
     // Don't link a note to itself

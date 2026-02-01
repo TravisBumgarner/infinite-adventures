@@ -2,26 +2,7 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 import type { NoteType } from "../types";
-
-const TYPE_COLORS: Record<NoteType, string> = {
-  pc: "#4a90d9",
-  npc: "#d94a4a",
-  item: "#d9a74a",
-  quest: "#8b5cf6",
-  location: "#22c55e",
-  goal: "#ec4899",
-  session: "#6b7280",
-};
-
-const TYPE_LABELS: Record<NoteType, string> = {
-  pc: "PC",
-  npc: "NPC",
-  item: "Item",
-  quest: "Quest",
-  location: "Location",
-  goal: "Goal",
-  session: "Session",
-};
+import { TYPE_COLORS, TYPE_LABELS } from "../constants";
 
 export type NoteNodeData = {
   noteId: string;
@@ -37,8 +18,8 @@ type NoteNodeType = Node<NoteNodeData, "note">;
  */
 function renderPreview(content: string) {
   const preview = content.length > 80 ? content.slice(0, 80) + "..." : content;
-  // Match @[Multi Word] or @SingleWord
-  const parts = preview.split(/(@\[[^\]]+\]|@[\w-]+)/g);
+  // Match @{id}, @[Multi Word], or @SingleWord
+  const parts = preview.split(/(@\{[^}]+\}|@\[[^\]]+\]|@[\w-]+)/g);
   return parts.map((part, i) => {
     if (part.startsWith("@")) {
       return (

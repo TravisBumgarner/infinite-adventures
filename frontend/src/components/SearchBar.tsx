@@ -1,16 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { SearchResult, NoteType } from "../types";
+import type { SearchResult } from "../types";
 import * as api from "../api/client";
-
-const TYPE_COLORS: Record<NoteType, string> = {
-  pc: "#4a90d9",
-  npc: "#d94a4a",
-  item: "#d9a74a",
-  quest: "#8b5cf6",
-  location: "#22c55e",
-  goal: "#ec4899",
-  session: "#6b7280",
-};
+import { TYPE_COLORS } from "../constants";
 
 interface SearchBarProps {
   onNavigate: (noteId: string) => void;

@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import MentionInput from "./MentionInput";
-
-const NOTE_TYPES: { value: NoteType; label: string }[] = [
-  { value: "pc", label: "PC" },
-  { value: "npc", label: "NPC" },
-  { value: "item", label: "Item" },
-  { value: "quest", label: "Quest" },
-  { value: "location", label: "Location" },
-  { value: "goal", label: "Goal" },
-  { value: "session", label: "Session" },
-];
+import MentionEditor from "./MentionEditor";
+import { NOTE_TYPES } from "../constants";
 
 interface NoteEditorProps {
   noteId: string;
@@ -19,6 +10,7 @@ interface NoteEditorProps {
   onSaved: (note: Note) => void;
   onDeleted: (noteId: string) => void;
   onNavigate: (noteId: string) => void;
+  notesCache: Map<string, Note>;
 }
 
 export default function NoteEditor({
@@ -27,6 +19,7 @@ export default function NoteEditor({
   onSaved,
   onDeleted,
   onNavigate,
+  notesCache,
 }: NoteEditorProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState("");
@@ -96,10 +89,11 @@ export default function NoteEditor({
       </label>
 
       <label style={styles.label}>
-        Content (type @ to mention other notes)
-        <MentionInput
+        Start typing or @ mention another note
+        <MentionEditor
           value={content}
           onChange={setContent}
+          notesCache={notesCache}
           style={{ ...styles.input, minHeight: 200, resize: "vertical" }}
         />
       </label>
