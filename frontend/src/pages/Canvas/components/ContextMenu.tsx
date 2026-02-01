@@ -1,5 +1,10 @@
-import { useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { useEffect, useRef, useState } from "react";
 import type { NoteType } from "shared";
 import { NOTE_TYPES, TYPE_LABELS } from "../../../constants";
 
@@ -21,160 +26,153 @@ export default function ContextMenu({
   onClose,
 }: ContextMenuProps) {
   const theme = useTheme();
-  const [showSubmenu, setShowSubmenu] = useState(false);
-  const [showUtilities, setShowUtilities] = useState(false);
+  const [noteAnchor, setNoteAnchor] = useState<HTMLElement | null>(null);
+  const [utilsAnchor, setUtilsAnchor] = useState<HTMLElement | null>(null);
+  const noteTimeout = useRef<ReturnType<typeof setTimeout>>(null);
+  const utilsTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
     function handleScroll() {
       onClose();
     }
-    document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("wheel", handleScroll, { passive: true });
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("wheel", handleScroll);
-    };
+    return () => document.removeEventListener("wheel", handleScroll);
   }, [onClose]);
 
   return (
-    <div style={styles.backdrop} onMouseDown={onClose}>
-      <div style={{ ...styles.menu, left: x, top: y }} onMouseDown={(e) => e.stopPropagation()}>
-        <div
-          style={styles.item}
-          onMouseEnter={() => setShowSubmenu(true)}
-          onMouseLeave={() => setShowSubmenu(false)}
+    <>
+      <Menu
+        open
+        onClose={onClose}
+        anchorReference="anchorPosition"
+        anchorPosition={{ top: y, left: x }}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              boxShadow: "0 8px 24px var(--color-backdrop)",
+              minWidth: 160,
+            },
+          },
+        }}
+      >
+        <MenuItem
+          onMouseEnter={(e) => {
+            if (noteTimeout.current) clearTimeout(noteTimeout.current);
+            setNoteAnchor(e.currentTarget);
+          }}
+          onMouseLeave={() => {
+            noteTimeout.current = setTimeout(() => setNoteAnchor(null), 150);
+          }}
+          sx={{ justifyContent: "space-between" }}
         >
-          <span>New Note</span>
-          <span style={styles.arrow}>&#9656;</span>
-          {showSubmenu && (
-            <div style={styles.submenu}>
-              {NOTE_TYPES.map((t) => (
-                <button
-                  type="button"
-                  key={t.value}
-                  style={styles.submenuItem}
-                  onClick={() => onSelect(t.value)}
-                >
-                  <span
-                    style={{
-                      ...styles.dot,
-                      background: theme.palette.nodeTypes[t.value].light,
-                    }}
-                  />
-                  {TYPE_LABELS[t.value]}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          style={styles.item}
+          New Note
+          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: 1 }}>
+            ▸
+          </Typography>
+        </MenuItem>
+        <MenuItem
           onClick={() => {
             onViewAll();
             onClose();
           }}
         >
           View All
-        </button>
-        <div style={styles.divider} />
-        <div
-          style={styles.item}
-          onMouseEnter={() => setShowUtilities(true)}
-          onMouseLeave={() => setShowUtilities(false)}
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onMouseEnter={(e) => {
+            if (utilsTimeout.current) clearTimeout(utilsTimeout.current);
+            setUtilsAnchor(e.currentTarget);
+          }}
+          onMouseLeave={() => {
+            utilsTimeout.current = setTimeout(() => setUtilsAnchor(null), 150);
+          }}
+          sx={{ justifyContent: "space-between" }}
         >
-          <span>Utilities</span>
-          <span style={styles.arrow}>&#9656;</span>
-          {showUtilities && (
-            <div style={styles.submenu}>
-              <button
-                type="button"
-                style={styles.submenuItem}
-                onClick={() => {
-                  onUnstack();
-                  onClose();
-                }}
-              >
-                Unstack Overlapping Notes
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+          Utilities
+          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: 1 }}>
+            ▸
+          </Typography>
+        </MenuItem>
+      </Menu>
+
+      {/* New Note submenu */}
+      <Menu
+        open={Boolean(noteAnchor)}
+        anchorEl={noteAnchor}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        onClose={() => setNoteAnchor(null)}
+        sx={{ pointerEvents: "none" }}
+        slotProps={{
+          paper: {
+            sx: {
+              pointerEvents: "auto",
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              boxShadow: "0 8px 24px var(--color-backdrop)",
+              minWidth: 150,
+            },
+            onMouseEnter: () => {
+              if (noteTimeout.current) clearTimeout(noteTimeout.current);
+            },
+            onMouseLeave: () => setNoteAnchor(null),
+          },
+        }}
+        disableAutoFocus
+      >
+        {NOTE_TYPES.map((t) => (
+          <MenuItem key={t.value} onClick={() => onSelect(t.value)} sx={{ gap: 1 }}>
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor: theme.palette.nodeTypes[t.value].light,
+                flexShrink: 0,
+              }}
+            />
+            {TYPE_LABELS[t.value]}
+          </MenuItem>
+        ))}
+      </Menu>
+
+      {/* Utilities submenu */}
+      <Menu
+        open={Boolean(utilsAnchor)}
+        anchorEl={utilsAnchor}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        onClose={() => setUtilsAnchor(null)}
+        sx={{ pointerEvents: "none" }}
+        slotProps={{
+          paper: {
+            sx: {
+              pointerEvents: "auto",
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              boxShadow: "0 8px 24px var(--color-backdrop)",
+              minWidth: 150,
+            },
+            onMouseEnter: () => {
+              if (utilsTimeout.current) clearTimeout(utilsTimeout.current);
+            },
+            onMouseLeave: () => setUtilsAnchor(null),
+          },
+        }}
+        disableAutoFocus
+      >
+        <MenuItem
+          onClick={() => {
+            onUnstack();
+            onClose();
+          }}
+        >
+          Unstack Overlapping Notes
+        </MenuItem>
+      </Menu>
+    </>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  backdrop: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 200,
-  },
-  menu: {
-    position: "absolute",
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    padding: "4px 0",
-    minWidth: 160,
-    boxShadow: "0 8px 24px var(--color-backdrop)",
-  },
-  item: {
-    position: "relative" as const,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    padding: "8px 12px",
-    background: "none",
-    border: "none",
-    color: "var(--color-text)",
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  divider: {
-    height: 1,
-    background: "var(--color-surface1)",
-    margin: "4px 0",
-  },
-  arrow: {
-    fontSize: 10,
-    color: "var(--color-overlay0)",
-    marginLeft: 8,
-  },
-  submenu: {
-    position: "absolute" as const,
-    left: "100%",
-    top: 0,
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    padding: "4px 0",
-    minWidth: 150,
-    boxShadow: "0 8px 24px var(--color-backdrop)",
-  },
-  submenuItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    width: "100%",
-    padding: "8px 12px",
-    background: "none",
-    border: "none",
-    color: "var(--color-text)",
-    fontSize: 14,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: "50%",
-    flexShrink: 0,
-  },
-};

@@ -90,6 +90,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
   return (
     <Box ref={containerRef} sx={{ position: "fixed", top: 16, left: 16, zIndex: 50, width: 320 }}>
       <TextField
+        variant="filled"
         size="small"
         fullWidth
         placeholder="Search notes..."
@@ -98,6 +99,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
         onFocus={() => {
           if (results.length > 0) setShowDropdown(true);
         }}
+        onBlur={() => setShowDropdown(false)}
         onKeyDown={handleKeyDown}
         slotProps={{
           input: {

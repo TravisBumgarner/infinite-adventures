@@ -1,9 +1,14 @@
-import { useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { memo, useState } from "react";
 import type { NoteType } from "shared";
 import { TYPE_LABELS } from "../../../constants";
+import { getContrastText } from "../../../utils/getContrastText";
 import type { PreviewSegment } from "../../../utils/previewParser";
 import { parsePreviewContent } from "../../../utils/previewParser";
 
@@ -27,19 +32,21 @@ function MentionSpan({
 }) {
   const [hovered, setHovered] = useState(false);
   return (
-    <span
-      style={{
+    <Typography
+      component="span"
+      sx={{
         color: hovered ? "var(--color-lavender)" : "var(--color-blue)",
         fontWeight: 600,
         cursor: "pointer",
         textDecoration: hovered ? "underline" : "none",
+        fontSize: "inherit",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={onClick}
     >
       @{label}
-    </span>
+    </Typography>
   );
 }
 
@@ -63,35 +70,44 @@ function renderSegment(
       );
     case "mention-static":
       return (
-        <span key={index} style={{ color: "var(--color-blue)", fontWeight: 600 }}>
+        <Typography
+          key={index}
+          component="span"
+          sx={{
+            color: "var(--color-blue)",
+            fontWeight: 600,
+            fontSize: "inherit",
+          }}
+        >
           {segment.text}
-        </span>
+        </Typography>
       );
     case "bold":
       return (
-        <span key={index} style={{ fontWeight: 700 }}>
+        <Typography key={index} component="span" sx={{ fontWeight: 700, fontSize: "inherit" }}>
           {segment.text}
-        </span>
+        </Typography>
       );
     case "italic":
       return (
-        <span key={index} style={{ fontStyle: "italic" }}>
+        <Typography key={index} component="span" sx={{ fontStyle: "italic", fontSize: "inherit" }}>
           {segment.text}
-        </span>
+        </Typography>
       );
     case "code":
       return (
-        <code
+        <Typography
           key={index}
-          style={{
-            background: "var(--color-surface0)",
-            borderRadius: 3,
-            padding: "1px 4px",
+          component="code"
+          sx={{
+            bgcolor: "var(--color-surface0)",
+            borderRadius: "3px",
+            px: 0.5,
             fontSize: 11,
           }}
         >
           {segment.text}
-        </code>
+        </Typography>
       );
     case "text":
       return <span key={index}>{segment.text}</span>;
@@ -107,49 +123,55 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
   return (
     <>
       <Handle type="target" position={Position.Top} />
-      <div
-        style={{
-          background: "var(--color-base)",
+      <Paper
+        sx={{
+          bgcolor: "var(--color-base)",
           border: `2px solid ${color}`,
-          borderRadius: 8,
-          padding: 12,
+          borderRadius: 2,
+          p: 1.5,
           minWidth: 180,
           maxWidth: 240,
           color: "var(--color-text)",
-          fontFamily: "system-ui, sans-serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <span
-            style={{
-              background: color,
-              color: "#fff",
-              borderRadius: 4,
-              padding: "2px 6px",
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+          <Chip
+            label={label}
+            size="small"
+            sx={{
+              bgcolor: color,
+              color: getContrastText(color),
               fontSize: 11,
               fontWeight: 600,
+              height: 20,
             }}
-          >
-            {label}
-          </span>
-          <span
-            style={{
+          />
+          <Typography
+            variant="body2"
+            sx={{
               fontWeight: 600,
-              fontSize: 14,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
             {data.title}
-          </span>
-        </div>
+          </Typography>
+        </Box>
         {segments.length > 0 && (
-          <div style={{ fontSize: 12, color: "var(--color-subtext0)", marginTop: 4 }}>
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{
+              color: "var(--color-subtext0)",
+              mt: 0.5,
+              whiteSpace: "pre-line",
+            }}
+          >
             {segments.map((seg, i) => renderSegment(seg, i, data.noteId, data.onMentionClick))}
-          </div>
+          </Typography>
         )}
-      </div>
+      </Paper>
       <Handle type="source" position={Position.Bottom} />
     </>
   );
