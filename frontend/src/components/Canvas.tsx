@@ -8,7 +8,7 @@ import {
   useReactFlow,
   BackgroundVariant,
 } from "@xyflow/react";
-import type { Node, Edge, NodeTypes, OnNodeDrag } from "@xyflow/react";
+import type { Node, Edge, NodeTypes, OnNodeDrag, Connection } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import NoteNodeComponent from "./NoteNode";
@@ -22,6 +22,7 @@ import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
 import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
+import { appendMentionIfNew } from "../utils/edgeConnect";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -255,6 +256,27 @@ export default function Canvas() {
     }
   }, []);
 
+  // Handle edge creation by dragging between handles
+  const onConnect = useCallback(
+    async (connection: Connection) => {
+      const sourceNote = notesCache.current.get(connection.source);
+      if (!sourceNote) return;
+
+      const newContent = appendMentionIfNew(sourceNote.content, connection.target);
+      if (newContent === null) return; // duplicate, no-op
+
+      const updated = await api.updateNote(sourceNote.id, { content: newContent });
+      // Re-fetch to get updated links and rebuild canvas
+      const fullNote = await api.fetchNote(updated.id);
+      notesCache.current.set(fullNote.id, fullNote);
+
+      const allNotes = Array.from(notesCache.current.values());
+      setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
+      setEdges(buildEdges(allNotes));
+    },
+    [setNodes, setEdges, fitBothNotes]
+  );
+
   // Editor callbacks
   const handleSaved = useCallback(
     async (note: Note) => {
@@ -327,6 +349,7 @@ export default function Canvas() {
         onNodeContextMenu={onNodeContextMenu}
         onSelectionContextMenu={onSelectionContextMenu}
         onNodeDragStop={onNodeDragStop}
+        onConnect={onConnect}
         onMoveEnd={onMoveEnd}
         selectionOnDrag
         multiSelectionKeyCode="Shift"

@@ -6,5 +6,13 @@ export function appendMentionIfNew(
   content: string,
   targetId: string
 ): string | null {
-  return null;
+  const mentionPattern = new RegExp(`@\\{${escapeRegExp(targetId)}\\}`);
+  if (mentionPattern.test(content)) {
+    return null;
+  }
+  return `${content}\n@{${targetId}}`;
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
