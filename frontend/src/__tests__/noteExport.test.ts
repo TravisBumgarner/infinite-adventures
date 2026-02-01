@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import type { Note } from "shared";
+import { describe, expect, it } from "vitest";
 import { formatNoteExport } from "../utils/noteExport";
 
 function makeNote(overrides: Partial<Note> & { id: string; title: string }): Note {
@@ -68,7 +68,12 @@ describe("formatNoteExport", () => {
   });
 
   it("includes connected notes from linked_from", () => {
-    const shire = makeNote({ id: "3", title: "The Shire", type: "location", content: "A peaceful place" });
+    const shire = makeNote({
+      id: "3",
+      title: "The Shire",
+      type: "location",
+      content: "A peaceful place",
+    });
     const note = makeNote({
       id: "1",
       title: "Gandalf",

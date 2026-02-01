@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import type { Note } from "shared";
-import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
+import { describe, expect, it } from "vitest";
+import { contentToHtml, serializeToMentionText } from "../utils/editorSerializer";
 
 // Helper to build a TipTap paragraph with inline content
 function paragraph(...content: Record<string, unknown>[]) {
@@ -49,17 +49,12 @@ function doc(...content: Record<string, unknown>[]) {
 
 describe("serializeToMentionText", () => {
   it("serializes plain text paragraphs", () => {
-    const json = doc(
-      paragraph(textNode("Hello world"))
-    );
+    const json = doc(paragraph(textNode("Hello world")));
     expect(serializeToMentionText(json)).toBe("Hello world");
   });
 
   it("serializes multiple paragraphs with newlines", () => {
-    const json = doc(
-      paragraph(textNode("Line one")),
-      paragraph(textNode("Line two"))
-    );
+    const json = doc(paragraph(textNode("Line one")), paragraph(textNode("Line two")));
     expect(serializeToMentionText(json)).toBe("Line one\nLine two");
   });
 
@@ -68,45 +63,31 @@ describe("serializeToMentionText", () => {
       paragraph(
         textNode("Talk to "),
         mentionNode("abc-123", "Gandalf"),
-        textNode(" about the ring")
-      )
+        textNode(" about the ring"),
+      ),
     );
     expect(serializeToMentionText(json)).toBe("Talk to @{abc-123} about the ring");
   });
 
   it("serializes bold text as **text**", () => {
-    const json = doc(
-      paragraph(
-        textNode("This is "),
-        boldTextNode("important"),
-        textNode(" text")
-      )
-    );
+    const json = doc(paragraph(textNode("This is "), boldTextNode("important"), textNode(" text")));
     expect(serializeToMentionText(json)).toBe("This is **important** text");
   });
 
   it("serializes italic text as *text*", () => {
     const json = doc(
-      paragraph(
-        textNode("This is "),
-        italicTextNode("emphasized"),
-        textNode(" text")
-      )
+      paragraph(textNode("This is "), italicTextNode("emphasized"), textNode(" text")),
     );
     expect(serializeToMentionText(json)).toBe("This is *emphasized* text");
   });
 
   it("serializes bullet list items with - prefix", () => {
-    const json = doc(
-      bulletList("First item", "Second item")
-    );
+    const json = doc(bulletList("First item", "Second item"));
     expect(serializeToMentionText(json)).toBe("- First item\n- Second item");
   });
 
   it("serializes ordered list items with numbered prefix", () => {
-    const json = doc(
-      orderedList("Step one", "Step two", "Step three")
-    );
+    const json = doc(orderedList("Step one", "Step two", "Step three"));
     expect(serializeToMentionText(json)).toBe("1. Step one\n2. Step two\n3. Step three");
   });
 
@@ -116,11 +97,7 @@ describe("serializeToMentionText", () => {
   });
 
   it("serializes empty paragraphs as blank lines", () => {
-    const json = doc(
-      paragraph(textNode("Before")),
-      paragraph(),
-      paragraph(textNode("After"))
-    );
+    const json = doc(paragraph(textNode("Before")), paragraph(), paragraph(textNode("After")));
     expect(serializeToMentionText(json)).toBe("Before\n\nAfter");
   });
 });

@@ -11,7 +11,7 @@ export interface ConnectionEntry {
  */
 export function buildConnectionEntries(
   linksTo: NoteLink[],
-  linkedFrom: NoteLink[]
+  linkedFrom: NoteLink[],
 ): ConnectionEntry[] {
   const seen = new Set<string>();
   const entries: ConnectionEntry[] = [];
@@ -38,7 +38,7 @@ export function buildConnectionEntries(
 export function filterConnections(
   entries: ConnectionEntry[],
   activeTypes: Set<NoteType>,
-  search: string
+  search: string,
 ): ConnectionEntry[] {
   const lowerSearch = search.toLowerCase();
   return entries.filter((entry) => {

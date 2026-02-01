@@ -1,6 +1,6 @@
 import { useTheme } from "@mui/material";
 import type { NoteType } from "shared";
-import { TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { NOTE_TYPES, TYPE_LABELS } from "../constants";
 
 interface ToolbarProps {
   onCreate: (type: NoteType) => void;
@@ -12,6 +12,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
     <div style={styles.bar}>
       {NOTE_TYPES.map((t) => (
         <button
+          type="button"
           key={t.value}
           style={styles.button}
           onClick={() => onCreate(t.value)}

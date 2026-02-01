@@ -1,5 +1,5 @@
-import { sqliteTable, text, real, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const notes = sqliteTable("notes", {
   id: text("id").primaryKey(),
@@ -10,12 +10,8 @@ export const notes = sqliteTable("notes", {
   content: text("content").notNull().default(""),
   canvas_x: real("canvas_x").notNull().default(0),
   canvas_y: real("canvas_y").notNull().default(0),
-  created_at: text("created_at")
-    .notNull()
-    .default(sql`(datetime('now'))`),
-  updated_at: text("updated_at")
-    .notNull()
-    .default(sql`(datetime('now'))`),
+  created_at: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updated_at: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
 export const noteLinks = sqliteTable(
@@ -28,7 +24,7 @@ export const noteLinks = sqliteTable(
       .notNull()
       .references(() => notes.id, { onDelete: "cascade" }),
   },
-  (table) => [primaryKey({ columns: [table.source_note_id, table.target_note_id] })]
+  (table) => [primaryKey({ columns: [table.source_note_id, table.target_note_id] })],
 );
 
 export type Note = typeof notes.$inferSelect;

@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  NoteTypeSchema,
-  NoteSummarySchema,
+  CreateNoteInputSchema,
   NoteLinkSchema,
   NoteSchema,
-  CreateNoteInputSchema,
-  UpdateNoteInputSchema,
+  NoteSummarySchema,
+  NoteTypeSchema,
   SearchResultSchema,
+  UpdateNoteInputSchema,
 } from "../index";
 
 describe("NoteTypeSchema", () => {
@@ -82,9 +82,7 @@ describe("NoteSchema", () => {
   });
 
   it("rejects when links_to contains invalid entries", () => {
-    expect(() =>
-      NoteSchema.parse({ ...valid, links_to: [{ id: "x" }] })
-    ).toThrow();
+    expect(() => NoteSchema.parse({ ...valid, links_to: [{ id: "x" }] })).toThrow();
   });
 });
 

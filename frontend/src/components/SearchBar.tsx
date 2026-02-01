@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SearchResult } from "shared";
 import * as api from "../api/client";
 
@@ -45,10 +45,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as HTMLElement)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as HTMLElement)) {
         setShowDropdown(false);
       }
     }
@@ -62,7 +59,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
       setShowDropdown(false);
       setQuery("");
     },
-    [onNavigate]
+    [onNavigate],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -102,8 +99,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
               key={result.id}
               style={{
                 ...styles.item,
-                background:
-                  i === selectedIndex ? "var(--color-surface1)" : "transparent",
+                background: i === selectedIndex ? "var(--color-surface1)" : "transparent",
               }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -122,10 +118,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
                 </span>
                 <span style={styles.title}>{result.title}</span>
               </div>
-              <div
-                style={styles.snippet}
-                dangerouslySetInnerHTML={{ __html: result.snippet }}
-              />
+              <div style={styles.snippet} dangerouslySetInnerHTML={{ __html: result.snippet }} />
             </div>
           ))}
         </div>

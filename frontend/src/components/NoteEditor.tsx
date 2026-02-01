@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Note, NoteType } from "shared";
 import * as api from "../api/client";
-import MentionEditor from "./MentionEditor";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
-import { useAutoSave } from "../hooks/useAutoSave";
 import type { SaveStatus } from "../hooks/useAutoSave";
+import { useAutoSave } from "../hooks/useAutoSave";
+import MentionEditor from "./MentionEditor";
 
 function statusLabel(status: SaveStatus): string {
   switch (status) {
@@ -16,7 +16,6 @@ function statusLabel(status: SaveStatus): string {
       return "Unsaved changes";
     case "error":
       return "Save failed";
-    case "idle":
     default:
       return "";
   }
@@ -71,7 +70,7 @@ export default function NoteEditor({
     return () => {
       flush();
     };
-  }, [noteId, flush]);
+  }, [flush]);
 
   useEffect(() => {
     noteIdRef.current = noteId;
@@ -95,7 +94,7 @@ export default function NoteEditor({
     <div style={styles.panel}>
       <div style={styles.header}>
         <h3 style={styles.headerTitle}>Edit Note</h3>
-        <button onClick={onClose} style={styles.closeBtn}>
+        <button type="button" onClick={onClose} style={styles.closeBtn}>
           &times;
         </button>
       </div>
@@ -146,7 +145,7 @@ export default function NoteEditor({
 
       <div style={styles.actions}>
         <span style={styles.statusIndicator}>{statusLabel(status)}</span>
-        <button onClick={handleDelete} style={styles.deleteBtn}>
+        <button type="button" onClick={handleDelete} style={styles.deleteBtn}>
           Delete
         </button>
       </div>
@@ -158,6 +157,7 @@ export default function NoteEditor({
               <div style={styles.linksLabel}>Links to:</div>
               {note.links_to.map((link) => (
                 <button
+                  type="button"
                   key={link.id}
                   onClick={() => onNavigate(link.id)}
                   style={styles.linkBtn}
@@ -172,6 +172,7 @@ export default function NoteEditor({
               <div style={styles.linksLabel}>Linked from:</div>
               {note.linked_from.map((link) => (
                 <button
+                  type="button"
                   key={link.id}
                   onClick={() => onNavigate(link.id)}
                   style={styles.linkBtn}

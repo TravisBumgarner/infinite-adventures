@@ -1,11 +1,4 @@
-export type NoteType =
-  | "pc"
-  | "npc"
-  | "item"
-  | "quest"
-  | "location"
-  | "goal"
-  | "session";
+export type NoteType = "pc" | "npc" | "item" | "quest" | "location" | "goal" | "session";
 
 export interface NoteSummary {
   id: string;

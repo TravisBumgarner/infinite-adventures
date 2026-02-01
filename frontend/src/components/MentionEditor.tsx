@@ -1,12 +1,12 @@
-import { useEffect, useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Mention from "@tiptap/extension-mention";
-import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
 import { useTheme } from "@mui/material";
+import Mention from "@tiptap/extension-mention";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Note, NoteSummary, NoteType } from "shared";
 import * as api from "../api/client";
-import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
+import { contentToHtml, serializeToMentionText } from "../utils/editorSerializer";
 
 interface MentionEditorProps {
   value: string;
@@ -35,7 +35,8 @@ function SuggestionPopup({
   onSelect: (item: SuggestionItem) => void;
   nodeTypes: Record<NoteType, { light: string; dark: string }>;
 }) {
-  const hasCreateOption = query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
+  const hasCreateOption =
+    query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
   const totalItems = items.length + (hasCreateOption ? 1 : 0);
 
   if (totalItems === 0) {
@@ -97,7 +98,10 @@ interface SuggestionComponentRef {
 
 const SuggestionController = forwardRef<
   SuggestionComponentRef,
-  { onRender: (element: React.ReactNode | null) => void; nodeTypes: Record<NoteType, { light: string; dark: string }> }
+  {
+    onRender: (element: React.ReactNode | null) => void;
+    nodeTypes: Record<NoteType, { light: string; dark: string }>;
+  }
 >(({ onRender, nodeTypes }, ref) => {
   const [items, setItems] = useState<SuggestionItem[]>([]);
   const [query, setQuery] = useState("");
@@ -106,7 +110,8 @@ const SuggestionController = forwardRef<
 
   useImperativeHandle(ref, () => ({
     onKeyDown(event: KeyboardEvent): boolean {
-      const hasCreateOption = query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
+      const hasCreateOption =
+        query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
       const totalItems = items.length + (hasCreateOption ? 1 : 0);
 
       if (event.key === "ArrowDown") {
@@ -141,8 +146,9 @@ const SuggestionController = forwardRef<
   }));
 
   useEffect(() => {
-    const hasCreateOption = query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
-    const totalItems = items.length + (hasCreateOption ? 1 : 0);
+    const hasCreateOption =
+      query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
+    const _totalItems = items.length + (hasCreateOption ? 1 : 0);
 
     onRender(
       <SuggestionPopup
@@ -153,7 +159,7 @@ const SuggestionController = forwardRef<
           commandRef.current?.({ id: item.id, label: item.title });
         }}
         nodeTypes={nodeTypes}
-      />
+      />,
     );
   }, [items, query, selectedIndex, onRender, nodeTypes]);
 
@@ -174,6 +180,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
   return (
     <div style={toolbarStyles.bar}>
       <button
+        type="button"
         style={btnStyle(editor.isActive("bold"))}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -184,6 +191,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
         B
       </button>
       <button
+        type="button"
         style={btnStyle(editor.isActive("italic"))}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -194,6 +202,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
         I
       </button>
       <button
+        type="button"
         style={btnStyle(editor.isActive("bulletList"))}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -204,6 +213,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
         &bull;
       </button>
       <button
+        type="button"
         style={btnStyle(editor.isActive("orderedList"))}
         onMouseDown={(e) => {
           e.preventDefault();
@@ -217,12 +227,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
   );
 }
 
-export default function MentionEditor({
-  value,
-  onChange,
-  notesCache,
-  style,
-}: MentionEditorProps) {
+export default function MentionEditor({ value, onChange, notesCache, style }: MentionEditorProps) {
   const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
   const suggestionRef = useRef<SuggestionComponentRef>(null);
@@ -248,9 +253,7 @@ export default function MentionEditor({
           items: async ({ query }: { query: string }) => {
             const summaries = await api.fetchNotes();
             return summaries
-              .filter((n: NoteSummary) =>
-                n.title.toLowerCase().includes(query.toLowerCase())
-              )
+              .filter((n: NoteSummary) => n.title.toLowerCase().includes(query.toLowerCase()))
               .map((n: NoteSummary) => ({
                 id: n.id,
                 title: n.title,
@@ -320,12 +323,12 @@ export default function MentionEditor({
       <div style={style} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
       </div>
-      <SuggestionController ref={suggestionRef} onRender={handleRender} nodeTypes={theme.palette.nodeTypes} />
-      {suggestionPopup && (
-        <div style={popupStyles.popupWrapper}>
-          {suggestionPopup}
-        </div>
-      )}
+      <SuggestionController
+        ref={suggestionRef}
+        onRender={handleRender}
+        nodeTypes={theme.palette.nodeTypes}
+      />
+      {suggestionPopup && <div style={popupStyles.popupWrapper}>{suggestionPopup}</div>}
     </div>
   );
 }

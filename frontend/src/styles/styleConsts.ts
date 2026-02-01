@@ -70,9 +70,7 @@ export type EffectiveMode = "light" | "dark";
 export function resolveThemeMode(pref: ThemePreference): EffectiveMode {
   if (pref === "light") return "light";
   if (pref === "dark") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function getPalette(mode: EffectiveMode) {

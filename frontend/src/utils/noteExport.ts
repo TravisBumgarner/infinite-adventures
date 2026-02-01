@@ -27,10 +27,7 @@ function formatNoteBlock(note: Note, notesCache: Map<string, Note>): string {
  * Format a note and its connections as readable plain text.
  * Resolves @{id} mentions in content to note titles.
  */
-export function formatNoteExport(
-  note: Note,
-  notesCache: Map<string, Note>
-): string {
+export function formatNoteExport(note: Note, notesCache: Map<string, Note>): string {
   const parts: string[] = [formatNoteBlock(note, notesCache)];
 
   // Collect connected note IDs, deduplicating

@@ -1,12 +1,12 @@
-import { Router } from "express";
 import type { Request, Response } from "express";
+import { Router } from "express";
 import {
-  listNotes,
-  getNote,
   createNote,
-  updateNote,
   deleteNote,
+  getNote,
+  listNotes,
   searchNotes,
+  updateNote,
   ValidationError,
 } from "../services/noteService.js";
 
@@ -18,13 +18,13 @@ notesRouter.get("/", (_req: Request, res: Response) => {
 });
 
 notesRouter.get("/search", (req: Request, res: Response) => {
-  const q = (req.query["q"] as string) ?? "";
+  const q = (req.query.q as string) ?? "";
   const results = searchNotes(q);
   res.json({ results });
 });
 
-notesRouter.get("/:id", (req: Request, res: Response) => {
-  const note = getNote(req.params["id"]!);
+notesRouter.get("/:id", (req: Request<{ id: string }>, res: Response) => {
+  const note = getNote(req.params.id);
   if (!note) {
     res.status(404).json({ error: "Note not found" });
     return;
@@ -45,9 +45,9 @@ notesRouter.post("/", (req: Request, res: Response) => {
   }
 });
 
-notesRouter.put("/:id", (req: Request, res: Response) => {
+notesRouter.put("/:id", (req: Request<{ id: string }>, res: Response) => {
   try {
-    const note = updateNote(req.params["id"]!, req.body);
+    const note = updateNote(req.params.id, req.body);
     if (!note) {
       res.status(404).json({ error: "Note not found" });
       return;
@@ -62,8 +62,8 @@ notesRouter.put("/:id", (req: Request, res: Response) => {
   }
 });
 
-notesRouter.delete("/:id", (req: Request, res: Response) => {
-  const deleted = deleteNote(req.params["id"]!);
+notesRouter.delete("/:id", (req: Request<{ id: string }>, res: Response) => {
+  const deleted = deleteNote(req.params.id);
   if (!deleted) {
     res.status(404).json({ error: "Note not found" });
     return;

@@ -1,16 +1,16 @@
-import { v4 as uuidv4 } from "uuid";
 import { eq, sql } from "drizzle-orm";
-import { getDb } from "../db/connection.js";
-import { notes, noteLinks } from "../db/schema.js";
-import { resolveLinks } from "./linkService.js";
 import type {
-  NoteType,
+  CreateNoteInput,
   NoteLink as NoteLinkInfo,
   NoteSummary,
-  CreateNoteInput,
-  UpdateNoteInput,
+  NoteType,
   SearchResult,
+  UpdateNoteInput,
 } from "shared";
+import { v4 as uuidv4 } from "uuid";
+import { getDb } from "../db/connection.js";
+import { noteLinks, notes } from "../db/schema.js";
+import { resolveLinks } from "./linkService.js";
 
 export type { NoteType, NoteSummary, CreateNoteInput, UpdateNoteInput };
 export type { NoteLinkInfo };
@@ -22,15 +22,7 @@ export interface NoteWithLinks extends Note {
   linked_from: NoteLinkInfo[];
 }
 
-const VALID_TYPES = [
-  "pc",
-  "npc",
-  "item",
-  "quest",
-  "location",
-  "goal",
-  "session",
-] as const;
+const VALID_TYPES = ["pc", "npc", "item", "quest", "location", "goal", "session"] as const;
 
 export function isValidNoteType(type: string): type is NoteType {
   return (VALID_TYPES as readonly string[]).includes(type);
@@ -91,7 +83,7 @@ export function createNote(input: CreateNoteInput): Note {
   }
   if (!isValidNoteType(input.type)) {
     throw new ValidationError(
-      `Invalid type "${input.type}". Must be one of: ${VALID_TYPES.join(", ")}`
+      `Invalid type "${input.type}". Must be one of: ${VALID_TYPES.join(", ")}`,
     );
   }
 
@@ -124,7 +116,7 @@ export function updateNote(id: string, input: UpdateNoteInput): Note | null {
 
   if (input.type !== undefined && !isValidNoteType(input.type)) {
     throw new ValidationError(
-      `Invalid type "${input.type}". Must be one of: ${VALID_TYPES.join(", ")}`
+      `Invalid type "${input.type}". Must be one of: ${VALID_TYPES.join(", ")}`,
     );
   }
 
@@ -164,17 +156,19 @@ export function searchNotes(query: string): SearchResult[] {
 
   const db = getDb();
   // Append * for prefix matching so partial words match
-  const ftsQuery = query.trim().replace(/"/g, '""') + "*";
+  const ftsQuery = `${query.trim().replace(/"/g, '""')}*`;
 
-  return db.all<SearchResult>(sql.raw(
-    `SELECT n.id, n.type, n.title,
+  return db.all<SearchResult>(
+    sql.raw(
+      `SELECT n.id, n.type, n.title,
             snippet(notes_fts, 1, '<b>', '</b>', '...', 32) as snippet
      FROM notes_fts fts
      JOIN notes n ON n.rowid = fts.rowid
      WHERE notes_fts MATCH '${ftsQuery.replace(/'/g, "''")}'
      ORDER BY rank
-     LIMIT 20`
-  ));
+     LIMIT 20`,
+    ),
+  );
 }
 
 export class ValidationError extends Error {

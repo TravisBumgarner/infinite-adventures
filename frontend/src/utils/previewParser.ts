@@ -27,19 +27,18 @@ const TOKEN_REGEX = /@\{([^}]+)\}|@\[[^\]]+\]|@[\w-]+|`([^`]+)`|\*\*([^*]+)\*\*|
 export function parsePreviewContent(
   content: string,
   mentionLabels: Record<string, string>,
-  maxLength = 80
+  maxLength = 80,
 ): PreviewSegment[] {
   if (!content) return [];
 
-  const preview = content.length > maxLength ? content.slice(0, maxLength) + "..." : content;
+  const preview = content.length > maxLength ? `${content.slice(0, maxLength)}...` : content;
   const segments: PreviewSegment[] = [];
   let lastIndex = 0;
-  let match;
-
   // Reset regex state
   TOKEN_REGEX.lastIndex = 0;
 
-  while ((match = TOKEN_REGEX.exec(preview)) !== null) {
+  let match: RegExpExecArray | null = TOKEN_REGEX.exec(preview);
+  while (match !== null) {
     // Add plain text before this match
     if (match.index > lastIndex) {
       segments.push({ type: "text", text: preview.slice(lastIndex, match.index) });
@@ -67,6 +66,7 @@ export function parsePreviewContent(
     }
 
     lastIndex = match.index + fullMatch.length;
+    match = TOKEN_REGEX.exec(preview);
   }
 
   // Add remaining plain text

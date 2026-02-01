@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { eq } from "drizzle-orm";
-import { initDb, closeDb, getDb } from "../db/connection.js";
-import { notes, noteLinks } from "../db/schema.js";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { closeDb, getDb, initDb } from "../db/connection.js";
+import { noteLinks, notes } from "../db/schema.js";
 import { parseMentions, resolveLinks } from "../services/linkService.js";
 import { createNote } from "../services/noteService.js";
 
@@ -12,23 +12,15 @@ describe("linkService", () => {
     });
 
     it("extracts multiple mentions", () => {
-      expect(parseMentions("@Gandalf and @Frodo")).toEqual([
-        "Gandalf",
-        "Frodo",
-      ]);
+      expect(parseMentions("@Gandalf and @Frodo")).toEqual(["Gandalf", "Frodo"]);
     });
 
     it("handles multi-word mentions with brackets", () => {
-      expect(parseMentions("Met @[Gandalf the Grey] today")).toEqual([
-        "Gandalf the Grey",
-      ]);
+      expect(parseMentions("Met @[Gandalf the Grey] today")).toEqual(["Gandalf the Grey"]);
     });
 
     it("handles mentions followed by punctuation", () => {
-      expect(parseMentions("Saw @Gandalf, @Frodo.")).toEqual([
-        "Gandalf",
-        "Frodo",
-      ]);
+      expect(parseMentions("Saw @Gandalf, @Frodo.")).toEqual(["Gandalf", "Frodo"]);
     });
 
     it("deduplicates mentions", () => {
@@ -56,8 +48,8 @@ describe("linkService", () => {
       const resolved = resolveLinks(source.id, "I met @Gandalf today");
 
       expect(resolved).toHaveLength(1);
-      expect(resolved[0]!.title).toBe("Gandalf");
-      expect(resolved[0]!.created).toBe(false);
+      expect(resolved[0]?.title).toBe("Gandalf");
+      expect(resolved[0]?.created).toBe(false);
 
       // Verify the link exists in the DB
       const db = getDb();
@@ -75,18 +67,14 @@ describe("linkService", () => {
       const resolved = resolveLinks(source.id, "Going to @Rivendell");
 
       expect(resolved).toHaveLength(1);
-      expect(resolved[0]!.title).toBe("Rivendell");
-      expect(resolved[0]!.created).toBe(true);
+      expect(resolved[0]?.title).toBe("Rivendell");
+      expect(resolved[0]?.created).toBe(true);
 
       // Verify the new note was created
       const db = getDb();
-      const newNote = db
-        .select()
-        .from(notes)
-        .where(eq(notes.id, resolved[0]!.targetNoteId))
-        .get();
-      expect(newNote!.type).toBe("npc");
-      expect(newNote!.title).toBe("Rivendell");
+      const newNote = db.select().from(notes).where(eq(notes.id, resolved[0]?.targetNoteId)).get();
+      expect(newNote?.type).toBe("npc");
+      expect(newNote?.title).toBe("Rivendell");
     });
 
     it("removes stale links when mentions are removed", () => {
@@ -98,21 +86,13 @@ describe("linkService", () => {
       resolveLinks(source.id, "@Gandalf in @Shire");
 
       const db = getDb();
-      let links = db
-        .select()
-        .from(noteLinks)
-        .where(eq(noteLinks.source_note_id, source.id))
-        .all();
+      let links = db.select().from(noteLinks).where(eq(noteLinks.source_note_id, source.id)).all();
       expect(links).toHaveLength(2);
 
       // Now remove Shire mention
       resolveLinks(source.id, "@Gandalf alone");
 
-      links = db
-        .select()
-        .from(noteLinks)
-        .where(eq(noteLinks.source_note_id, source.id))
-        .all();
+      links = db.select().from(noteLinks).where(eq(noteLinks.source_note_id, source.id)).all();
       expect(links).toHaveLength(1);
     });
 
@@ -121,7 +101,7 @@ describe("linkService", () => {
       createNote({ type: "npc", title: "Gandalf", content: "" });
 
       const resolved = resolveLinks(source.id, "Met @gandalf");
-      expect(resolved[0]!.created).toBe(false);
+      expect(resolved[0]?.created).toBe(false);
     });
 
     it("does not link a note to itself", () => {

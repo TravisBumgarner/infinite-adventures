@@ -1,6 +1,6 @@
-import type { Node, Edge } from "@xyflow/react";
-import type { NoteNodeData } from "../components/NoteNode";
+import type { Edge, Node } from "@xyflow/react";
 import type { NoteType } from "shared";
+import type { NoteNodeData } from "../components/NoteNode";
 
 /**
  * Filter nodes by active types and search text.
@@ -11,7 +11,7 @@ import type { NoteType } from "shared";
 export function filterNodes(
   nodes: Node<NoteNodeData>[],
   activeTypes: Set<NoteType>,
-  search: string
+  search: string,
 ): Node<NoteNodeData>[] {
   const hasTypeFilter = activeTypes.size > 0;
   const searchLower = search.toLowerCase();
@@ -35,11 +35,6 @@ export function filterNodes(
 /**
  * Filter edges to only include those where both source and target are in the visible node set.
  */
-export function filterEdges(
-  edges: Edge[],
-  visibleNodeIds: Set<string>
-): Edge[] {
-  return edges.filter(
-    (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
-  );
+export function filterEdges(edges: Edge[], visibleNodeIds: Set<string>): Edge[] {
+  return edges.filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target));
 }

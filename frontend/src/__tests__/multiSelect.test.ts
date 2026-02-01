@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import type { Node } from "@xyflow/react";
-import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
+import { describe, expect, it, vi } from "vitest";
+import { batchDeleteNotes, getSelectedNodePositions } from "../utils/multiSelect";
 
 function makeNode(id: string, x: number, y: number, selected: boolean): Node {
   return {
@@ -53,7 +53,8 @@ describe("batchDeleteNotes", () => {
   });
 
   it("returns only successfully deleted IDs when some fail", async () => {
-    const deleteFn = vi.fn()
+    const deleteFn = vi
+      .fn()
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("fail"))
       .mockResolvedValueOnce(undefined);

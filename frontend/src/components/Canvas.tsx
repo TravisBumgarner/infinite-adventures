@@ -1,36 +1,36 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Connection, Edge, Node, NodeTypes, OnNodeDrag } from "@xyflow/react";
 import {
-  ReactFlow,
-  MiniMap,
   Background,
-  useNodesState,
-  useEdgesState,
-  useReactFlow,
   BackgroundVariant,
+  MiniMap,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+  useReactFlow,
 } from "@xyflow/react";
-import type { Node, Edge, NodeTypes, OnNodeDrag, Connection } from "@xyflow/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 
 import { useTheme } from "@mui/material";
-import NoteNodeComponent from "./NoteNode";
-import type { NoteNodeData } from "./NoteNode";
-import NoteEditor from "./NoteEditor";
-import SearchBar from "./SearchBar";
-import ContextMenu from "./ContextMenu";
-import NodeContextMenu from "./NodeContextMenu";
-import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "shared";
 import * as api from "../api/client";
 import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
-import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
+import { filterEdges, filterNodes } from "../utils/canvasFilter";
 import { appendMentionIfNew } from "../utils/edgeConnect";
-import { filterNodes, filterEdges } from "../utils/canvasFilter";
-import FilterBar from "./FilterBar";
-import ConnectionsBrowser from "./ConnectionsBrowser";
-import Toast from "./Toast";
-import { SettingsButton, SettingsModal } from "./SettingsModal";
-import { formatNoteExport } from "../utils/noteExport";
 import { findOpenPosition, unstackNodes } from "../utils/findOpenPosition";
+import { batchDeleteNotes, getSelectedNodePositions } from "../utils/multiSelect";
+import { formatNoteExport } from "../utils/noteExport";
+import ConnectionsBrowser from "./ConnectionsBrowser";
+import ContextMenu from "./ContextMenu";
+import FilterBar from "./FilterBar";
+import NodeContextMenu from "./NodeContextMenu";
+import NoteEditor from "./NoteEditor";
+import type { NoteNodeData } from "./NoteNode";
+import NoteNodeComponent from "./NoteNode";
+import SearchBar from "./SearchBar";
+import { SettingsButton, SettingsModal } from "./SettingsModal";
+import Toast from "./Toast";
+import Toolbar from "./Toolbar";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -41,16 +41,17 @@ const VIEWPORT_KEY = "infinite-adventures-viewport";
 function toFlowNode(
   note: Note,
   cache: Map<string, Note>,
-  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void
+  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void,
 ): Node<NoteNodeData> {
   // Build mentionLabels: scan content for @{id} and map each to the cached note title
   const mentionLabels: Record<string, string> = {};
   const mentionRegex = /@\{([^}]+)\}/g;
-  let match;
-  while ((match = mentionRegex.exec(note.content)) !== null) {
+  let match: RegExpExecArray | null = mentionRegex.exec(note.content);
+  while (match !== null) {
     const id = match[1];
     const cached = cache.get(id);
     mentionLabels[id] = cached ? cached.title : id;
+    match = mentionRegex.exec(note.content);
   }
 
   return {
@@ -114,16 +115,10 @@ export default function Canvas() {
   // Compute filtered nodes and edges for display
   const filteredNodes = useMemo(
     () => filterNodes(nodes, activeTypes, filterSearch),
-    [nodes, activeTypes, filterSearch]
+    [nodes, activeTypes, filterSearch],
   );
-  const visibleNodeIds = useMemo(
-    () => new Set(filteredNodes.map((n) => n.id)),
-    [filteredNodes]
-  );
-  const filteredEdges = useMemo(
-    () => filterEdges(edges, visibleNodeIds),
-    [edges, visibleNodeIds]
-  );
+  const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
+  const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 
   const handleToggleType = useCallback((type: NoteType) => {
     setActiveTypes((prev) => {
@@ -146,15 +141,13 @@ export default function Canvas() {
         padding: 0.3,
       });
     },
-    [reactFlowInstance]
+    [reactFlowInstance],
   );
 
   // Load all notes and edges on mount
   const loadAllNotes = useCallback(async () => {
     const summaries = await api.fetchNotes();
-    const fullNotes = await Promise.all(
-      summaries.map((n) => api.fetchNote(n.id))
-    );
+    const fullNotes = await Promise.all(summaries.map((n) => api.fetchNote(n.id)));
     notesCache.current = new Map(fullNotes.map((n) => [n.id, n]));
     setNodes(fullNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
     setEdges(buildEdges(fullNotes));
@@ -197,7 +190,7 @@ export default function Canvas() {
         setEditingNoteId(noteId);
       }
     },
-    [reactFlowInstance]
+    [reactFlowInstance],
   );
 
   // Create a note at a specific flow position
@@ -224,7 +217,7 @@ export default function Canvas() {
         reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
       }, 50);
     },
-    [nodes, setNodes, fitBothNotes, reactFlowInstance]
+    [nodes, setNodes, fitBothNotes, reactFlowInstance],
   );
 
   // Right-click canvas to open context menu
@@ -242,7 +235,7 @@ export default function Canvas() {
         flowY: position.y,
       });
     },
-    [reactFlowInstance]
+    [reactFlowInstance],
   );
 
   // Right-click a node to open node context menu
@@ -258,23 +251,20 @@ export default function Canvas() {
         selectedIds,
       });
     },
-    [nodes]
+    [nodes],
   );
 
   // Right-click a multi-selection area to open context menu
-  const onSelectionContextMenu = useCallback(
-    (event: React.MouseEvent, selectedNodes: Node[]) => {
-      event.preventDefault();
-      const selectedIds = selectedNodes.map((n) => n.id);
-      setNodeContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        noteId: selectedIds[0],
-        selectedIds,
-      });
-    },
-    []
-  );
+  const onSelectionContextMenu = useCallback((event: React.MouseEvent, selectedNodes: Node[]) => {
+    event.preventDefault();
+    const selectedIds = selectedNodes.map((n) => n.id);
+    setNodeContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      noteId: selectedIds[0],
+      selectedIds,
+    });
+  }, []);
 
   // View All: fit all nodes in viewport
   const handleViewAll = useCallback(() => {
@@ -305,7 +295,7 @@ export default function Canvas() {
       nds.map((n) => {
         const newPos = moves.get(n.id);
         return newPos ? { ...n, position: newPos } : n;
-      })
+      }),
     );
   }, [nodes, setNodes]);
 
@@ -318,7 +308,7 @@ export default function Canvas() {
       });
       createNoteAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition]
+    [reactFlowInstance, createNoteAtPosition],
   );
 
   // Drag end to save positions for all selected nodes
@@ -351,7 +341,7 @@ export default function Canvas() {
       setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
       setEdges(buildEdges(allNotes));
     },
-    [setNodes, setEdges, fitBothNotes]
+    [setNodes, setEdges, fitBothNotes],
   );
 
   // Editor callbacks
@@ -363,13 +353,9 @@ export default function Canvas() {
 
       // Check if new notes were auto-created by link resolution
       const summaries = await api.fetchNotes();
-      const newNoteIds = summaries
-        .map((s) => s.id)
-        .filter((id) => !notesCache.current.has(id));
+      const newNoteIds = summaries.map((s) => s.id).filter((id) => !notesCache.current.has(id));
 
-      const newNotes = await Promise.all(
-        newNoteIds.map((id) => api.fetchNote(id))
-      );
+      const newNotes = await Promise.all(newNoteIds.map((id) => api.fetchNote(id)));
       for (const n of newNotes) {
         notesCache.current.set(n.id, n);
       }
@@ -379,35 +365,34 @@ export default function Canvas() {
       setNodes(allNotes.map((n) => toFlowNode(n, notesCache.current, fitBothNotes)));
       setEdges(buildEdges(allNotes));
     },
-    [setNodes, setEdges, fitBothNotes]
+    [setNodes, setEdges, fitBothNotes],
   );
 
   const handleDeleted = useCallback(
     (noteId: string) => {
       notesCache.current.delete(noteId);
       setNodes((nds) => nds.filter((n) => n.id !== noteId));
-      setEdges((eds) =>
-        eds.filter((e) => e.source !== noteId && e.target !== noteId)
-      );
+      setEdges((eds) => eds.filter((e) => e.source !== noteId && e.target !== noteId));
       setEditingNoteId(null);
     },
-    [setNodes, setEdges]
+    [setNodes, setEdges],
   );
 
   // Batch-delete nodes by explicit IDs
-  const handleDeleteSelected = useCallback(async (idsToDelete: string[]) => {
-    if (idsToDelete.length === 0) return;
-    const deletedIds = await batchDeleteNotes(idsToDelete, api.deleteNote);
-    for (const id of deletedIds) {
-      notesCache.current.delete(id);
-    }
-    const deletedSet = new Set(deletedIds);
-    setNodes((nds) => nds.filter((n) => !deletedSet.has(n.id)));
-    setEdges((eds) =>
-      eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target))
-    );
-    setEditingNoteId(null);
-  }, [setNodes, setEdges]);
+  const handleDeleteSelected = useCallback(
+    async (idsToDelete: string[]) => {
+      if (idsToDelete.length === 0) return;
+      const deletedIds = await batchDeleteNotes(idsToDelete, api.deleteNote);
+      for (const id of deletedIds) {
+        notesCache.current.delete(id);
+      }
+      const deletedSet = new Set(deletedIds);
+      setNodes((nds) => nds.filter((n) => !deletedSet.has(n.id)));
+      setEdges((eds) => eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target)));
+      setEditingNoteId(null);
+    },
+    [setNodes, setEdges],
+  );
 
   // Export note and connections as text to clipboard
   const handleExport = useCallback(async (noteId: string) => {
@@ -419,10 +404,12 @@ export default function Canvas() {
   }, []);
 
   return (
-    <div style={{
-      width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
-      height: "100vh",
-    }}>
+    <div
+      style={{
+        width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+        height: "100vh",
+      }}
+    >
       <ReactFlow
         nodes={filteredNodes}
         edges={filteredEdges}
@@ -450,7 +437,9 @@ export default function Canvas() {
         <Background variant={BackgroundVariant.Dots} gap={20} color="var(--color-surface0)" />
         <MiniMap
           style={{ background: "var(--color-mantle)" }}
-          nodeColor={(node) => theme.palette.nodeTypes[(node.data as NoteNodeData).type]?.light || "#4a90d9"}
+          nodeColor={(node) =>
+            theme.palette.nodeTypes[(node.data as NoteNodeData).type]?.light || "#4a90d9"
+          }
           maskColor="var(--color-backdrop)"
           pannable
           zoomable
@@ -527,14 +516,10 @@ export default function Canvas() {
         />
       )}
 
-      {toastMessage && (
-        <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
-      )}
+      {toastMessage && <Toast message={toastMessage} onDone={() => setToastMessage(null)} />}
 
       <SettingsButton onClick={() => setShowSettings(true)} />
-      {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
-      )}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

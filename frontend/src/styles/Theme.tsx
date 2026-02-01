@@ -1,21 +1,10 @@
-import {
-  createTheme,
-  CssBaseline,
-  ThemeProvider,
-} from "@mui/material";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from "react";
+import { CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import type { ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { NoteType } from "shared";
-import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
-import type { ThemePreference, EffectiveMode } from "./styleConsts";
 import { applyCssVars } from "./cssVars";
+import type { EffectiveMode, ThemePreference } from "./styleConsts";
+import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
 
 // Augment MUI theme types with nodeTypes palette
 declare module "@mui/material/styles" {
@@ -116,7 +105,7 @@ function readStoredPreference(): ThemePreference {
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(readStoredPreference);
   const [effectiveMode, setEffectiveMode] = useState<EffectiveMode>(() =>
-    resolveThemeMode(readStoredPreference())
+    resolveThemeMode(readStoredPreference()),
   );
 
   const setPreference = useCallback((pref: ThemePreference) => {
@@ -146,7 +135,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
 
   const ctx = useMemo<ThemePreferenceContextValue>(
     () => ({ preference, setPreference, effectiveMode }),
-    [preference, setPreference, effectiveMode]
+    [preference, setPreference, effectiveMode],
   );
 
   return (
