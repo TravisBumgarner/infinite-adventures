@@ -1,0 +1,241 @@
+project: Infinite Adventures
+repo: TravisBumgarner/infinite-adventures
+design_file: designs/infinite-canvas/DESIGN.md
+scoping_date: 2026-01-31
+
+milestones:
+  - number: 1
+    title: "1. Project Setup & Backend API"
+    description: Scaffold frontend and backend projects, set up SQLite database with schema and migrations, implement notes CRUD service and REST routes.
+    branch:
+      working: 1-project-setup-backend-api
+      base: main
+
+  - number: 2
+    title: "2. Canvas & Note Management"
+    description: Build the React Flow infinite canvas with custom note nodes, note editor panel, and canvas interactions.
+    branch:
+      working: 4-canvas-note-management
+      base: 1-project-setup-backend-api
+
+  - number: 3
+    title: "3. @Mention Linking"
+    description: Backend link resolution service, @mention autocomplete input, edge rendering on canvas, and click-to-navigate.
+    branch:
+      working: 7-mention-linking
+      base: 4-canvas-note-management
+
+  - number: 4
+    title: "4. Search"
+    description: Backend full-text search endpoint using SQLite FTS5, search bar UI with results dropdown and canvas navigation.
+    branch:
+      working: 10-search
+      base: 7-mention-linking
+
+tasks:
+  - id: 1
+    github_issue: 1
+    milestone: 1
+    title: Scaffold frontend project with Vite, React, and TypeScript
+    description: |
+      Initialize the frontend project in a `frontend/` directory using Vite with the React + TypeScript
+      template. Install React Flow. Set up tsconfig with strict mode. Verify dev server starts and
+      production build succeeds.
+    acceptance_criteria:
+      - frontend/ directory created with Vite + React + TypeScript template
+      - package.json includes react, react-dom, reactflow, and appropriate dev dependencies
+      - tsconfig.json configured with strict mode
+      - npm run dev and npm run build both work
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 2
+    github_issue: 2
+    milestone: 1
+    title: Scaffold backend project with Express, TypeScript, and SQLite database layer
+    description: |
+      Initialize the backend project in a `backend/` directory with Express and TypeScript. Set up SQLite
+      via better-sqlite3 with WAL mode and foreign keys. Create the full schema (notes, note_links,
+      notes_fts with triggers) in schema.sql. Implement an idempotent migration runner that applies the
+      schema on startup. Configure tsx watch for dev mode.
+    acceptance_criteria:
+      - backend/ directory with Express + TypeScript + better-sqlite3
+      - Database connection module with WAL mode and foreign keys enabled
+      - schema.sql with notes, note_links, notes_fts tables and sync triggers
+      - Idempotent migration runner (IF NOT EXISTS)
+      - Configurable database path and server port
+      - Tests verify schema creation
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 3
+    milestone: 1
+    title: Implement notes CRUD service and REST routes
+    description: |
+      Build noteService with listNotes, getNote, createNote, updateNote, deleteNote. Expose via Express
+      routes at /api/notes. listNotes returns lightweight data (no content). getNote returns full note
+      with links_to/linked_from (empty arrays until link resolution is built). Validate type enum and
+      required fields. Return proper HTTP status codes.
+    acceptance_criteria:
+      - noteService implements list, get, create, update, delete operations
+      - REST routes at GET/POST/PUT/DELETE /api/notes[/:id]
+      - Proper HTTP status codes (200, 201, 404, 400)
+      - Input validation for type enum and required title
+      - Tests cover all CRUD operations and error cases
+    depends_on: [2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    github_issue: 4
+    milestone: 2
+    title: Build React Flow canvas with API client and NoteNode display
+    description: |
+      Create the API client module (fetch wrapper for all backend endpoints). Build the React Flow canvas
+      component with pan/zoom. Implement a custom NoteNode that shows a type badge (color-coded), title,
+      and content preview. On mount, fetch all notes and render them at their stored canvas positions.
+      Define shared TypeScript types.
+    acceptance_criteria:
+      - API client with functions for all note CRUD endpoints
+      - React Flow canvas with pan, zoom, and minimap
+      - Custom NoteNode with type badge, title, and content preview
+      - Different colors per note type
+      - Notes loaded from backend and rendered at stored positions
+      - Shared TypeScript types defined
+    depends_on: [3]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    github_issue: 5
+    milestone: 2
+    title: Build note editor panel with create, edit, and delete
+    description: |
+      Implement a side panel or modal that opens when a note is clicked on the canvas. The editor has
+      fields for title (text input), type (dropdown), and content (textarea). Save on button click or
+      debounce. Delete with confirmation. A "New Note" action creates a note with defaults.
+    acceptance_criteria:
+      - NoteEditor component with title, type dropdown, and content fields
+      - Opens on single-click of a NoteNode
+      - Save persists changes via API and updates canvas node
+      - Delete with confirmation removes note from backend and canvas
+      - New Note action creates a note with default values
+      - Editor can be closed/dismissed
+    depends_on: [4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 6
+    milestone: 2
+    title: Implement canvas interactions — double-click to create, drag to reposition
+    description: |
+      Double-clicking empty canvas space creates a new note at that position and opens the editor.
+      Dragging a NoteNode saves its new position to the backend on drag end. Persist canvas viewport
+      (pan and zoom) in localStorage across page reloads.
+    acceptance_criteria:
+      - Double-click on empty canvas creates note at click coordinates and opens editor
+      - Dragging a NoteNode persists new position via updateNote API call on drag end
+      - Canvas viewport (pan/zoom) persists across reloads via localStorage
+    depends_on: [5]
+    effort: 2
+    status: scoped
+
+  - id: 7
+    github_issue: 7
+    milestone: 3
+    title: Implement backend link resolution service
+    description: |
+      Build linkService.resolveLinks(noteId, content) that parses @mentions from content, resolves them
+      to existing notes by case-insensitive title match, creates note_links entries, auto-creates new
+      notes for unknown mentions (defaulting to type npc, positioned near source), and removes stale links
+      when mentions are deleted from content. Wire into createNote and updateNote. Update getNote to
+      populate links_to and linked_from arrays.
+    acceptance_criteria:
+      - linkService.resolveLinks parses @mentions from content
+      - Case-insensitive title matching against existing notes
+      - Auto-creates new notes for unresolved mentions (type npc, near source position)
+      - Creates note_links entries; removes stale links on content change
+      - getNote returns populated links_to and linked_from arrays
+      - Tests cover creating, removing, and auto-creating linked notes
+    depends_on: [3]
+    effort: 3
+    status: scoped
+
+  - id: 8
+    github_issue: 8
+    milestone: 3
+    title: Build @mention autocomplete input component
+    description: |
+      Replace the plain textarea in NoteEditor with a MentionInput component. Typing @ triggers an
+      autocomplete popup that filters existing note titles. Selecting a result inserts @Title at the
+      cursor. A "Create [text]" option appears when no matches exist. Style @mentions in NoteNode
+      content preview.
+    acceptance_criteria:
+      - MentionInput component detects @ keystrokes and shows autocomplete popup
+      - Popup filters notes by typed text after @
+      - Selecting a result inserts @Title at cursor position
+      - "Create [typed text]" option when no matches found
+      - Popup positioned near cursor/caret
+      - NoteEditor uses MentionInput for content field
+      - @mentions visually styled in NoteNode preview
+    depends_on: [5, 7]
+    effort: 3
+    status: scoped
+
+  - id: 9
+    github_issue: 9
+    milestone: 3
+    title: Render link edges on canvas and navigate on mention click
+    description: |
+      When notes are loaded, render React Flow edges between linked notes based on links_to data.
+      Clicking an @mention in the editor or NoteNode navigates the canvas to the target note. Update
+      edges when note links change.
+    acceptance_criteria:
+      - React Flow edges rendered between linked notes
+      - Edges visually styled as connection lines
+      - Clicking an @mention centers canvas on the target note
+      - Edges update when note links change (add/remove)
+    depends_on: [7, 4]
+    effort: 2
+    status: scoped
+
+  - id: 10
+    github_issue: 10
+    milestone: 4
+    title: Implement backend full-text search endpoint
+    description: |
+      Add searchNotes(query) to noteService that queries the notes_fts FTS5 table. Return results with
+      id, type, title, and a snippet from FTS5's snippet() function. Expose via GET /api/notes/search?q=.
+      Handle empty queries. Support prefix matching.
+    acceptance_criteria:
+      - searchNotes function queries notes_fts with FTS5 syntax
+      - Returns id, type, title, and highlighted snippet
+      - GET /api/notes/search?q= route exposed
+      - Empty/whitespace query returns empty array
+      - Tests cover title match, content match, no results, empty query
+    depends_on: [3]
+    effort: 2
+    status: scoped
+
+  - id: 11
+    github_issue: 11
+    milestone: 4
+    title: Build search bar UI with results dropdown and canvas navigation
+    description: |
+      Add a SearchBar component fixed in the top-left corner. Debounced input (300ms) queries the search
+      API. Results dropdown shows title, type badge, and snippet with highlighted match. Clicking a result
+      centers the canvas on that note. Escape or click-outside dismisses the dropdown.
+    acceptance_criteria:
+      - SearchBar fixed in top-left corner above canvas
+      - Debounced input (300ms) queries search endpoint
+      - Dropdown shows title, type badge, and highlighted snippet
+      - Clicking result centers canvas on target note
+      - Escape and click-outside dismiss dropdown
+      - searchNotes function added to API client
+    depends_on: [10, 4]
+    effort: 2
+    status: scoped
