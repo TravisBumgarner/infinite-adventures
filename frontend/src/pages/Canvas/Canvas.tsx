@@ -13,24 +13,24 @@ import "@xyflow/react/dist/style.css";
 
 import { useTheme } from "@mui/material";
 import type { Note, NoteType } from "shared";
-import * as api from "../api/client";
-import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
-import { filterEdges, filterNodes } from "../utils/canvasFilter";
-import { appendMentionIfNew } from "../utils/edgeConnect";
-import { findOpenPosition, unstackNodes } from "../utils/findOpenPosition";
-import { batchDeleteNotes, getSelectedNodePositions } from "../utils/multiSelect";
-import { formatNoteExport } from "../utils/noteExport";
-import ConnectionsBrowser from "./ConnectionsBrowser";
-import ContextMenu from "./ContextMenu";
-import FilterBar from "./FilterBar";
-import NodeContextMenu from "./NodeContextMenu";
-import NoteEditor from "./NoteEditor";
-import type { NoteNodeData } from "./NoteNode";
-import NoteNodeComponent from "./NoteNode";
-import SearchBar from "./SearchBar";
-import { SettingsButton, SettingsModal } from "./SettingsModal";
-import Toast from "./Toast";
-import Toolbar from "./Toolbar";
+import * as api from "../../api/client";
+import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../../constants";
+import Toast from "../../sharedComponents/Toast";
+import { filterEdges, filterNodes } from "../../utils/canvasFilter";
+import { appendMentionIfNew } from "../../utils/edgeConnect";
+import { findOpenPosition, unstackNodes } from "../../utils/findOpenPosition";
+import { batchDeleteNotes, getSelectedNodePositions } from "../../utils/multiSelect";
+import { formatNoteExport } from "../../utils/noteExport";
+import ConnectionsBrowser from "./components/ConnectionsBrowser";
+import ContextMenu from "./components/ContextMenu";
+import FilterBar from "./components/FilterBar";
+import NodeContextMenu from "./components/NodeContextMenu";
+import NoteEditor from "./components/NoteEditor";
+import type { NoteNodeData } from "./components/NoteNode";
+import NoteNodeComponent from "./components/NoteNode";
+import SearchBar from "./components/SearchBar";
+import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
+import Toolbar from "./components/Toolbar";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -406,8 +406,12 @@ export default function Canvas() {
   return (
     <div
       style={{
-        width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+        width:
+          editingNoteId || browsingNoteId || showSettings
+            ? `calc(100vw - ${SIDEBAR_WIDTH}px)`
+            : "100vw",
         height: "100vh",
+        marginLeft: showSettings ? SIDEBAR_WIDTH : 0,
       }}
     >
       <ReactFlow
@@ -421,6 +425,7 @@ export default function Canvas() {
           setBrowsingNoteId(null);
           setContextMenu(null);
           setNodeContextMenu(null);
+          setShowSettings(false);
         }}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
@@ -519,7 +524,12 @@ export default function Canvas() {
       {toastMessage && <Toast message={toastMessage} onDone={() => setToastMessage(null)} />}
 
       <SettingsButton onClick={() => setShowSettings(true)} />
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsSidebar
+          onClose={() => setShowSettings(false)}
+          onToast={(msg) => setToastMessage(msg)}
+        />
+      )}
     </div>
   );
 }

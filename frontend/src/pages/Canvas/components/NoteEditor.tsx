@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Note, NoteType } from "shared";
-import * as api from "../api/client";
-import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
-import type { SaveStatus } from "../hooks/useAutoSave";
-import { useAutoSave } from "../hooks/useAutoSave";
+import * as api from "../../../api/client";
+import { NOTE_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import type { SaveStatus } from "../../../hooks/useAutoSave";
+import { useAutoSave } from "../../../hooks/useAutoSave";
 import MentionEditor from "./MentionEditor";
 
 function statusLabel(status: SaveStatus): string {

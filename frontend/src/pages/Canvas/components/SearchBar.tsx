@@ -1,7 +1,7 @@
 import { useTheme } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SearchResult } from "shared";
-import * as api from "../api/client";
+import * as api from "../../../api/client";
 
 interface SearchBarProps {
   onNavigate: (noteId: string) => void;
