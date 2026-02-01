@@ -162,7 +162,7 @@ tasks:
       - User type exported from shared package
     depends_on: [1]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 5
     github_issue: 74

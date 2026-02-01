@@ -54,6 +54,12 @@ export const SearchResultSchema = z.object({
   snippet: z.string(),
 });
 
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  displayName: z.string(),
+});
+
 // --- Error codes ---
 
 export const ERROR_CODES = [
@@ -77,3 +83,4 @@ export type Note = z.infer<typeof NoteSchema>;
 export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
+export type User = z.infer<typeof UserSchema>;

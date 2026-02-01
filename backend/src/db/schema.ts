@@ -14,6 +14,15 @@ export const notes = sqliteTable("notes", {
   updated_at: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  auth_id: text("auth_id").unique().notNull(),
+  email: text("email").unique().notNull(),
+  display_name: text("display_name").notNull(),
+  created_at: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updated_at: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 export const noteLinks = sqliteTable(
   "note_links",
   {

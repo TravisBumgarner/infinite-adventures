@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS notes (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  auth_id TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  display_name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS note_links (
   source_note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
   target_note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,

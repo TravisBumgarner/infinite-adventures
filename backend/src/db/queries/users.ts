@@ -1,3 +1,8 @@
+import { eq } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
+import { getDb } from "../connection.js";
+import { users } from "../schema.js";
+
 export interface UserRow {
   id: string;
   auth_id: string;
@@ -7,18 +12,38 @@ export interface UserRow {
   updated_at: string;
 }
 
-export function getUserByAuthId(_authId: string): UserRow | undefined {
-  return undefined;
+export function getUserByAuthId(authId: string): UserRow | undefined {
+  const db = getDb();
+  return db.select().from(users).where(eq(users.auth_id, authId)).get();
 }
 
-export function getUserById(_id: string): UserRow | undefined {
-  return undefined;
+export function getUserById(id: string): UserRow | undefined {
+  const db = getDb();
+  return db.select().from(users).where(eq(users.id, id)).get();
 }
 
-export function getOrCreateUserByAuth(_input: {
+export function getOrCreateUserByAuth(input: {
   authId: string;
   email: string;
   displayName?: string;
 }): UserRow {
-  throw new Error("not implemented");
+  const existing = getUserByAuthId(input.authId);
+  if (existing) {
+    return existing;
+  }
+
+  const db = getDb();
+  const id = uuidv4();
+  const displayName = input.displayName || input.email.split("@")[0];
+
+  db.insert(users)
+    .values({
+      id,
+      auth_id: input.authId,
+      email: input.email,
+      display_name: displayName,
+    })
+    .run();
+
+  return getUserByAuthId(input.authId) as UserRow;
 }
