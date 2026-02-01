@@ -165,7 +165,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 9
     github_issue: 58
