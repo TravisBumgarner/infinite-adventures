@@ -13,7 +13,23 @@ export function filterNodes(
   activeTypes: Set<NoteType>,
   search: string
 ): Node<NoteNodeData>[] {
-  return [];
+  const hasTypeFilter = activeTypes.size > 0;
+  const searchLower = search.toLowerCase();
+  const hasSearch = searchLower.length > 0;
+
+  return nodes.filter((node) => {
+    if (hasTypeFilter && !activeTypes.has(node.data.type)) {
+      return false;
+    }
+    if (hasSearch) {
+      const titleMatch = node.data.title.toLowerCase().includes(searchLower);
+      const contentMatch = node.data.content.toLowerCase().includes(searchLower);
+      if (!titleMatch && !contentMatch) {
+        return false;
+      }
+    }
+    return true;
+  });
 }
 
 /**
@@ -23,5 +39,7 @@ export function filterEdges(
   edges: Edge[],
   visibleNodeIds: Set<string>
 ): Edge[] {
-  return [];
+  return edges.filter(
+    (edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
+  );
 }

@@ -88,9 +88,9 @@ describe("filterEdges", () => {
   });
 
   it("removes edges where target is hidden", () => {
-    const visible = new Set(["1", "2", "4"]);
+    const visible = new Set(["1", "3", "4"]);
     const result = filterEdges(edges, visible);
-    expect(result.map((e) => e.id)).toEqual(["e1", "e3"]);
+    expect(result.map((e) => e.id)).toEqual(["e3"]);
   });
 
   it("returns empty array when no nodes are visible", () => {

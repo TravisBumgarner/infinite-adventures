@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   MiniMap,
@@ -23,6 +23,8 @@ import * as api from "../api/client";
 import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 import { appendMentionIfNew } from "../utils/edgeConnect";
+import { filterNodes, filterEdges } from "../utils/canvasFilter";
+import FilterBar from "./FilterBar";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -93,9 +95,37 @@ export default function Canvas() {
     noteId: string;
     selectedIds: string[];
   } | null>(null);
+  const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
+  const [filterSearch, setFilterSearch] = useState("");
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
   const notesCache = useRef<Map<string, Note>>(new Map());
+
+  // Compute filtered nodes and edges for display
+  const filteredNodes = useMemo(
+    () => filterNodes(nodes, activeTypes, filterSearch),
+    [nodes, activeTypes, filterSearch]
+  );
+  const visibleNodeIds = useMemo(
+    () => new Set(filteredNodes.map((n) => n.id)),
+    [filteredNodes]
+  );
+  const filteredEdges = useMemo(
+    () => filterEdges(edges, visibleNodeIds),
+    [edges, visibleNodeIds]
+  );
+
+  const handleToggleType = useCallback((type: NoteType) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }, []);
 
   // Fit viewport to show both source and target notes
   const fitBothNotes = useCallback(
@@ -335,8 +365,8 @@ export default function Canvas() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={filteredNodes}
+        edges={filteredEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
@@ -368,6 +398,12 @@ export default function Canvas() {
       </ReactFlow>
 
       <SearchBar onNavigate={navigateToNote} />
+      <FilterBar
+        activeTypes={activeTypes}
+        search={filterSearch}
+        onToggleType={handleToggleType}
+        onSearchChange={setFilterSearch}
+      />
       <Toolbar onCreate={handleToolbarCreate} />
 
       {contextMenu && (
