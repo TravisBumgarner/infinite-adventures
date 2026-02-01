@@ -28,6 +28,7 @@ import FilterBar from "./FilterBar";
 import ConnectionsBrowser from "./ConnectionsBrowser";
 import Toast from "./Toast";
 import { formatNoteExport } from "../utils/noteExport";
+import { findOpenPosition, unstackNodes } from "../utils/findOpenPosition";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -198,19 +199,28 @@ export default function Canvas() {
   // Create a note at a specific flow position
   const createNoteAtPosition = useCallback(
     async (type: NoteType, flowX: number, flowY: number) => {
+      const existing = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
+      const pos = findOpenPosition(flowX, flowY, existing);
       const note = await api.createNote({
         type,
         title: "New Note",
         content: NOTE_TEMPLATES[type],
-        canvas_x: flowX,
-        canvas_y: flowY,
+        canvas_x: pos.x,
+        canvas_y: pos.y,
       });
       const fullNote = await api.fetchNote(note.id);
       notesCache.current.set(fullNote.id, fullNote);
       setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
+      // Race condition: sidebar open triggers canvas resize via CSS, but React Flow
+      // needs time to recalculate its internal dimensions. Without the delay, setCenter
+      // uses the old (full-width) dimensions and the note ends up under the sidebar.
+      setTimeout(() => {
+        const zoom = reactFlowInstance.getZoom();
+        reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
+      }, 50);
     },
-    [setNodes, fitBothNotes]
+    [nodes, setNodes, fitBothNotes, reactFlowInstance]
   );
 
   // Right-click canvas to open context menu
@@ -266,6 +276,34 @@ export default function Canvas() {
   const handleViewAll = useCallback(() => {
     reactFlowInstance.fitView({ duration: 500 });
   }, [reactFlowInstance]);
+
+  // Unstack overlapping notes
+  const handleUnstack = useCallback(async () => {
+    const identified = nodes.map((n) => ({
+      id: n.id,
+      x: n.position.x,
+      y: n.position.y,
+    }));
+    const moves = unstackNodes(identified);
+    if (moves.size === 0) return;
+
+    // Update positions in backend and cache
+    for (const [id, pos] of moves) {
+      api.updateNote(id, { canvas_x: pos.x, canvas_y: pos.y });
+      const cached = notesCache.current.get(id);
+      if (cached) {
+        notesCache.current.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
+      }
+    }
+
+    // Update node positions in state
+    setNodes((nds) =>
+      nds.map((n) => {
+        const newPos = moves.get(n.id);
+        return newPos ? { ...n, position: newPos } : n;
+      })
+    );
+  }, [nodes, setNodes]);
 
   // Toolbar: create note at viewport center
   const handleToolbarCreate = useCallback(
@@ -433,6 +471,7 @@ export default function Canvas() {
             setContextMenu(null);
           }}
           onViewAll={handleViewAll}
+          onUnstack={handleUnstack}
           onClose={() => setContextMenu(null)}
         />
       )}
