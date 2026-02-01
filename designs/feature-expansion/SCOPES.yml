@@ -132,7 +132,7 @@ tasks:
       - Clearing all filters restores full canvas
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 7
     github_issue: 26
