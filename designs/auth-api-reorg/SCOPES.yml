@@ -289,4 +289,4 @@ tasks:
       - Auth state persists across page navigation
     depends_on: [6]
     effort: 3
-    status: implementing
+    status: completed
