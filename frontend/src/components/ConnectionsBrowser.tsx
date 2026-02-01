@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import type { Note, NoteType } from "../types";
-import { NOTE_TYPES, TYPE_COLORS } from "../constants";
+import { NOTE_TYPES, TYPE_COLORS, SIDEBAR_WIDTH } from "../constants";
 import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
 
 interface ConnectionsBrowserProps {
@@ -131,7 +131,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "fixed",
     top: 0,
     right: 0,
-    width: 360,
+    width: SIDEBAR_WIDTH,
     height: "100vh",
     background: "#1e1e2e",
     borderLeft: "1px solid #313244",

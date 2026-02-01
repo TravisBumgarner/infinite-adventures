@@ -20,7 +20,7 @@ import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
+import { TYPE_COLORS, NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
@@ -264,16 +264,18 @@ export default function Canvas() {
     reactFlowInstance.fitView({ duration: 500 });
   }, [reactFlowInstance]);
 
-  // Toolbar: create note at viewport center
+  // Toolbar: create note at viewport center (offset for sidebar if open)
   const handleToolbarCreate = useCallback(
     (type: NoteType) => {
+      const sidebarOpen = editingNoteId || browsingNoteId;
+      const availableWidth = sidebarOpen ? window.innerWidth - SIDEBAR_WIDTH : window.innerWidth;
       const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2,
+        x: availableWidth / 2,
         y: window.innerHeight / 2,
       });
       createNoteAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition]
+    [reactFlowInstance, createNoteAtPosition, editingNoteId, browsingNoteId]
   );
 
   // Drag end to save positions for all selected nodes
