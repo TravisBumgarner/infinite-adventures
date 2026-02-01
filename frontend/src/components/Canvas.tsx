@@ -211,6 +211,21 @@ export default function Canvas() {
     [nodes]
   );
 
+  // Right-click a multi-selection area to open context menu
+  const onSelectionContextMenu = useCallback(
+    (event: React.MouseEvent, selectedNodes: Node[]) => {
+      event.preventDefault();
+      const selectedIds = selectedNodes.map((n) => n.id);
+      setNodeContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        noteId: selectedIds[0],
+        selectedIds,
+      });
+    },
+    []
+  );
+
   // View All: fit all nodes in viewport
   const handleViewAll = useCallback(() => {
     reactFlowInstance.fitView({ duration: 500 });
@@ -310,6 +325,7 @@ export default function Canvas() {
         }}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
+        onSelectionContextMenu={onSelectionContextMenu}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
         selectionOnDrag
