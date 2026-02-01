@@ -271,15 +271,19 @@ export default function Canvas() {
   }, [reactFlowInstance]);
 
   // Toolbar: create note at viewport center
+  const sidebarOpen = !!(editingNoteId || browsingNoteId);
   const handleToolbarCreate = useCallback(
     (type: NoteType) => {
+      const canvasWidth = sidebarOpen
+        ? window.innerWidth - SIDEBAR_WIDTH
+        : window.innerWidth;
       const center = reactFlowInstance.screenToFlowPosition({
-        x: window.innerWidth / 2,
+        x: canvasWidth / 2,
         y: window.innerHeight / 2,
       });
       createNoteAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition]
+    [reactFlowInstance, createNoteAtPosition, sidebarOpen]
   );
 
   // Drag end to save positions for all selected nodes
