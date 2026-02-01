@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTheme } from "@mui/material";
-import type { SearchResult } from "../types";
+import type { SearchResult } from "shared";
 import * as api from "../api/client";
 
 interface SearchBarProps {

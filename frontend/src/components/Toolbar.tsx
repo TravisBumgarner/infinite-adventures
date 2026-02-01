@@ -1,5 +1,5 @@
 import { useTheme } from "@mui/material";
-import type { NoteType } from "../types";
+import type { NoteType } from "shared";
 import { TYPE_LABELS, NOTE_TYPES } from "../constants";
 
 interface ToolbarProps {

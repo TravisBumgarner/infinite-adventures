@@ -4,7 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
 import { useTheme } from "@mui/material";
-import type { Note, NoteSummary, NoteType } from "../types";
+import type { Note, NoteSummary, NoteType } from "shared";
 import * as api from "../api/client";
 import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
 

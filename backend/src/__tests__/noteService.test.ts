@@ -54,7 +54,7 @@ describe("noteService", () => {
 
     it("throws ValidationError for invalid type", () => {
       expect(() =>
-        createNote({ type: "dragon", title: "Smaug" })
+        createNote({ type: "dragon" as any, title: "Smaug" })
       ).toThrow(ValidationError);
     });
   });
@@ -121,7 +121,7 @@ describe("noteService", () => {
 
     it("throws ValidationError for invalid type", () => {
       const created = createNote({ type: "npc", title: "Gandalf" });
-      expect(() => updateNote(created.id, { type: "dragon" })).toThrow(
+      expect(() => updateNote(created.id, { type: "dragon" as any })).toThrow(
         ValidationError
       );
     });

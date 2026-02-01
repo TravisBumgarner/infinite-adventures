@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTheme } from "@mui/material";
-import type { Note, NoteType } from "../types";
+import type { Note, NoteType } from "shared";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
 import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
 

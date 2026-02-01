@@ -1,4 +1,4 @@
-import type { Note, NoteSummary, CreateNoteInput, UpdateNoteInput, SearchResult } from "../types";
+import type { Note, NoteSummary, CreateNoteInput, UpdateNoteInput, SearchResult } from "shared";
 
 const API_BASE = "http://localhost:3021/api";
 
