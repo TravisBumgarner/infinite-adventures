@@ -63,7 +63,7 @@ tasks:
       - Templates editable/deletable by the user in the editor
     depends_on: []
     effort: 1
-    status: testing
+    status: implementing
 
   - id: 3
     github_issue: 22

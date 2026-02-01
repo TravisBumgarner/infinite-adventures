@@ -20,7 +20,7 @@ import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS } from "../constants";
+import { TYPE_COLORS, NOTE_TEMPLATES } from "../constants";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -163,7 +163,7 @@ export default function Canvas() {
       const note = await api.createNote({
         type,
         title: "New Note",
-        content: "",
+        content: NOTE_TEMPLATES[type],
         canvas_x: flowX,
         canvas_y: flowY,
       });
