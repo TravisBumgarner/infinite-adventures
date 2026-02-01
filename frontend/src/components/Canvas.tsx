@@ -14,6 +14,7 @@ import "@xyflow/react/dist/style.css";
 import NoteNodeComponent from "./NoteNode";
 import type { NoteNodeData } from "./NoteNode";
 import NoteEditor from "./NoteEditor";
+import SearchBar from "./SearchBar";
 import type { Note } from "../types";
 import * as api from "../api/client";
 
@@ -223,6 +224,8 @@ export default function Canvas() {
           maskColor="rgba(0,0,0,0.4)"
         />
       </ReactFlow>
+
+      <SearchBar onNavigate={navigateToNote} />
 
       {editingNoteId && (
         <NoteEditor

@@ -6,6 +6,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  searchNotes,
   ValidationError,
 } from "../services/noteService.js";
 
@@ -14,6 +15,12 @@ export const notesRouter = Router();
 notesRouter.get("/", (_req: Request, res: Response) => {
   const notes = listNotes();
   res.json(notes);
+});
+
+notesRouter.get("/search", (req: Request, res: Response) => {
+  const q = (req.query["q"] as string) ?? "";
+  const results = searchNotes(q);
+  res.json({ results });
 });
 
 notesRouter.get("/:id", (req: Request, res: Response) => {

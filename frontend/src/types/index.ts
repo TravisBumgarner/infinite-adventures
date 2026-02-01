@@ -44,3 +44,10 @@ export interface UpdateNoteInput {
   canvas_x?: number;
   canvas_y?: number;
 }
+
+export interface SearchResult {
+  id: string;
+  type: NoteType;
+  title: string;
+  snippet: string;
+}
