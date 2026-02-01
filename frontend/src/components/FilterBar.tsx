@@ -78,10 +78,10 @@ export default function FilterBar({
 
 const styles: Record<string, React.CSSProperties> = {
   toggleButton: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    zIndex: 10,
+    position: "fixed",
+    top: 20,
+    left: 344,
+    zIndex: 50,
     background: "#1e1e2e",
     border: "1px solid #45475a",
     borderRadius: 6,
@@ -92,10 +92,10 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "system-ui, sans-serif",
   },
   bar: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    zIndex: 10,
+    position: "fixed",
+    top: 16,
+    left: 344,
+    zIndex: 50,
     background: "#1e1e2e",
     border: "1px solid #45475a",
     borderRadius: 8,
