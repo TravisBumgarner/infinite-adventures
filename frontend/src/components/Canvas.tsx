@@ -177,13 +177,15 @@ export default function Canvas() {
     localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
   }, [reactFlowInstance]);
 
-  // Navigate to a note by ID
+  // Navigate to a note by ID, offsetting for the sidebar that will open
   const navigateToNote = useCallback(
     (noteId: string) => {
       const note = notesCache.current.get(noteId);
       if (note) {
-        reactFlowInstance.setCenter(note.canvas_x, note.canvas_y, {
-          zoom: 1.2,
+        const zoom = 1.2;
+        const offsetX = SIDEBAR_WIDTH / 2 / zoom;
+        reactFlowInstance.setCenter(note.canvas_x - offsetX, note.canvas_y, {
+          zoom,
           duration: 500,
         });
         setEditingNoteId(noteId);
