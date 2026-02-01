@@ -23,7 +23,7 @@ function MentionSpan({ label, onClick }: { label: string; onClick: (e: React.Mou
   return (
     <span
       style={{
-        color: hovered ? "#b4d0fb" : "#89b4fa",
+        color: hovered ? "var(--color-lavender)" : "var(--color-blue)",
         fontWeight: 600,
         cursor: "pointer",
         textDecoration: hovered ? "underline" : "none",
@@ -57,7 +57,7 @@ function renderSegment(
       );
     case "mention-static":
       return (
-        <span key={index} style={{ color: "#89b4fa", fontWeight: 600 }}>
+        <span key={index} style={{ color: "var(--color-blue)", fontWeight: 600 }}>
           {segment.text}
         </span>
       );
@@ -78,7 +78,7 @@ function renderSegment(
         <code
           key={index}
           style={{
-            background: "#313244",
+            background: "var(--color-surface0)",
             borderRadius: 3,
             padding: "1px 4px",
             fontSize: 11,
@@ -105,13 +105,13 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
       <Handle type="target" position={Position.Top} />
       <div
         style={{
-          background: "#1e1e2e",
+          background: "var(--color-base)",
           border: `2px solid ${color}`,
           borderRadius: 8,
           padding: 12,
           minWidth: 180,
           maxWidth: 240,
-          color: "#cdd6f4",
+          color: "var(--color-text)",
           fontFamily: "system-ui, sans-serif",
         }}
       >
@@ -141,7 +141,7 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
           </span>
         </div>
         {segments.length > 0 && (
-          <div style={{ fontSize: 12, color: "#a6adc8", marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: "var(--color-subtext0)", marginTop: 4 }}>
             {segments.map((seg, i) =>
               renderSegment(seg, i, data.noteId, data.onMentionClick)
             )}

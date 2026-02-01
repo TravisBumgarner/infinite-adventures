@@ -3,9 +3,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Mention from "@tiptap/extension-mention";
 import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
+import { useTheme } from "@mui/material";
 import type { Note, NoteSummary, NoteType } from "../types";
 import * as api from "../api/client";
-import { theme } from "../styles/Theme";
 import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
 
 interface MentionEditorProps {
@@ -27,11 +27,13 @@ function SuggestionPopup({
   query,
   selectedIndex,
   onSelect,
+  nodeTypes,
 }: {
   items: SuggestionItem[];
   query: string;
   selectedIndex: number;
   onSelect: (item: SuggestionItem) => void;
+  nodeTypes: Record<NoteType, { light: string; dark: string }>;
 }) {
   const hasCreateOption = query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
   const totalItems = items.length + (hasCreateOption ? 1 : 0);
@@ -47,7 +49,7 @@ function SuggestionPopup({
           key={item.id}
           style={{
             ...popupStyles.item,
-            background: i === selectedIndex ? "#45475a" : "transparent",
+            background: i === selectedIndex ? "var(--color-surface1)" : "transparent",
           }}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -60,7 +62,7 @@ function SuggestionPopup({
           <span
             style={{
               ...popupStyles.badge,
-              background: theme.palette.nodeTypes[item.type as NoteType]?.light || "#585b70",
+              background: nodeTypes[item.type as NoteType]?.light || "#585b70",
             }}
           >
             {item.type.toUpperCase()}
@@ -73,7 +75,7 @@ function SuggestionPopup({
           style={{
             ...popupStyles.item,
             ...popupStyles.createItem,
-            background: selectedIndex === items.length ? "#45475a" : "transparent",
+            background: selectedIndex === items.length ? "var(--color-surface1)" : "transparent",
           }}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -95,8 +97,8 @@ interface SuggestionComponentRef {
 
 const SuggestionController = forwardRef<
   SuggestionComponentRef,
-  { onRender: (element: React.ReactNode | null) => void }
->(({ onRender }, ref) => {
+  { onRender: (element: React.ReactNode | null) => void; nodeTypes: Record<NoteType, { light: string; dark: string }> }
+>(({ onRender, nodeTypes }, ref) => {
   const [items, setItems] = useState<SuggestionItem[]>([]);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -150,9 +152,10 @@ const SuggestionController = forwardRef<
         onSelect={(item) => {
           commandRef.current?.({ id: item.id, label: item.title });
         }}
+        nodeTypes={nodeTypes}
       />
     );
-  }, [items, query, selectedIndex, onRender]);
+  }, [items, query, selectedIndex, onRender, nodeTypes]);
 
   return null;
 });
@@ -164,8 +167,8 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
 
   const btnStyle = (active: boolean): React.CSSProperties => ({
     ...toolbarStyles.button,
-    background: active ? "#45475a" : "transparent",
-    color: active ? "#cdd6f4" : "#a6adc8",
+    background: active ? "var(--color-surface1)" : "transparent",
+    color: active ? "var(--color-text)" : "var(--color-subtext0)",
   });
 
   return (
@@ -220,6 +223,7 @@ export default function MentionEditor({
   notesCache,
   style,
 }: MentionEditorProps) {
+  const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
   const suggestionRef = useRef<SuggestionComponentRef>(null);
   const isInternalChange = useRef(false);
@@ -316,7 +320,7 @@ export default function MentionEditor({
       <div style={style} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
       </div>
-      <SuggestionController ref={suggestionRef} onRender={handleRender} />
+      <SuggestionController ref={suggestionRef} onRender={handleRender} nodeTypes={theme.palette.nodeTypes} />
       {suggestionPopup && (
         <div style={popupStyles.popupWrapper}>
           {suggestionPopup}
@@ -331,8 +335,8 @@ const toolbarStyles: Record<string, React.CSSProperties> = {
     display: "flex",
     gap: 2,
     padding: "4px 4px",
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderBottom: "none",
     borderRadius: "6px 6px 0 0",
   },
@@ -360,15 +364,15 @@ const popupStyles: Record<string, React.CSSProperties> = {
   container: {
     maxHeight: 200,
     overflowY: "auto",
-    background: "#313244",
-    border: "1px solid #45475a",
+    background: "var(--color-surface0)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 6,
   },
   item: {
     padding: "6px 10px",
     cursor: "pointer",
     fontSize: 13,
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     display: "flex",
     alignItems: "center",
     gap: 8,
@@ -382,11 +386,11 @@ const popupStyles: Record<string, React.CSSProperties> = {
   },
   createItem: {
     fontStyle: "italic",
-    color: "#a6adc8",
+    color: "var(--color-subtext0)",
   },
   empty: {
     padding: "8px 10px",
     fontSize: 13,
-    color: "#6c7086",
+    color: "var(--color-overlay0)",
   },
 };
