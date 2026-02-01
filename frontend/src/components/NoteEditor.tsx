@@ -131,8 +131,8 @@ export default function NoteEditor({
         </select>
       </label>
 
-      <label style={styles.label}>
-        Start typing or @ mention another note
+      <div style={styles.label}>
+        <span>Start typing or @ mention another note</span>
         <MentionEditor
           value={content}
           onChange={(val: string) => {
@@ -142,7 +142,7 @@ export default function NoteEditor({
           notesCache={notesCache}
           style={{ ...styles.input, minHeight: 200, resize: "vertical" }}
         />
-      </label>
+      </div>
 
       <div style={styles.actions}>
         <span style={styles.statusIndicator}>{statusLabel(status)}</span>
