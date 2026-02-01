@@ -103,7 +103,7 @@ tasks:
       - App wrapped in AppThemeProvider with CssBaseline
     depends_on: []
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 4
     github_issue: 43
