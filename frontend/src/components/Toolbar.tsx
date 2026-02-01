@@ -1,11 +1,13 @@
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { TYPE_COLORS, TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { TYPE_LABELS, NOTE_TYPES } from "../constants";
 
 interface ToolbarProps {
   onCreate: (type: NoteType) => void;
 }
 
 export default function Toolbar({ onCreate }: ToolbarProps) {
+  const theme = useTheme();
   return (
     <div style={styles.bar}>
       {NOTE_TYPES.map((t) => (
@@ -18,7 +20,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
           <span
             style={{
               ...styles.square,
-              background: TYPE_COLORS[t.value],
+              background: theme.palette.nodeTypes[t.value].light,
             }}
           />
           <span style={styles.label}>{TYPE_LABELS[t.value]}</span>
@@ -37,9 +39,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     gap: 4,
     padding: "6px 8px",
-    background: "rgba(30, 30, 46, 0.85)",
+    background: "var(--color-chrome-bg)",
     backdropFilter: "blur(8px)",
-    border: "1px solid #45475a",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 12,
     zIndex: 50,
     fontFamily: "system-ui, sans-serif",
@@ -52,7 +54,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "none",
     border: "none",
     borderRadius: 8,
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 13,
     cursor: "pointer",
     fontFamily: "system-ui, sans-serif",

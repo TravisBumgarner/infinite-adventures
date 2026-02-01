@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { TYPE_COLORS, TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { TYPE_LABELS, NOTE_TYPES } from "../constants";
 
 interface ContextMenuProps {
   x: number;
@@ -12,6 +13,7 @@ interface ContextMenuProps {
 }
 
 export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onClose }: ContextMenuProps) {
+  const theme = useTheme();
   const [showSubmenu, setShowSubmenu] = useState(false);
   const [showUtilities, setShowUtilities] = useState(false);
 
@@ -54,7 +56,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
                   <span
                     style={{
                       ...styles.dot,
-                      background: TYPE_COLORS[t.value],
+                      background: theme.palette.nodeTypes[t.value].light,
                     }}
                   />
                   {TYPE_LABELS[t.value]}
@@ -107,12 +109,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   menu: {
     position: "absolute",
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 8,
     padding: "4px 0",
     minWidth: 160,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    boxShadow: "0 8px 24px var(--color-backdrop)",
   },
   item: {
     position: "relative" as const,
@@ -123,31 +125,31 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "8px 12px",
     background: "none",
     border: "none",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 14,
     cursor: "pointer",
     fontFamily: "system-ui, sans-serif",
   },
   divider: {
     height: 1,
-    background: "#45475a",
+    background: "var(--color-surface1)",
     margin: "4px 0",
   },
   arrow: {
     fontSize: 10,
-    color: "#6c7086",
+    color: "var(--color-overlay0)",
     marginLeft: 8,
   },
   submenu: {
     position: "absolute" as const,
     left: "100%",
     top: 0,
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 8,
     padding: "4px 0",
     minWidth: 150,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    boxShadow: "0 8px 24px var(--color-backdrop)",
   },
   submenuItem: {
     display: "flex",
@@ -157,7 +159,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "8px 12px",
     background: "none",
     border: "none",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 14,
     cursor: "pointer",
     fontFamily: "system-ui, sans-serif",

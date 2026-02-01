@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useTheme } from "@mui/material";
 import type { NoteType } from "../types";
-import { NOTE_TYPES, TYPE_COLORS } from "../constants";
+import { NOTE_TYPES } from "../constants";
 
 interface FilterBarProps {
   activeTypes: Set<NoteType>;
@@ -15,6 +16,7 @@ export default function FilterBar({
   onToggleType,
   onSearchChange,
 }: FilterBarProps) {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
   const hasFilters = activeTypes.size > 0 || search.length > 0;
 
@@ -54,16 +56,16 @@ export default function FilterBar({
               key={value}
               style={{
                 ...styles.chip,
-                background: active ? TYPE_COLORS[value] : "transparent",
-                borderColor: TYPE_COLORS[value],
-                color: active ? "#fff" : "#a6adc8",
+                background: active ? theme.palette.nodeTypes[value].light : "transparent",
+                borderColor: theme.palette.nodeTypes[value].light,
+                color: active ? "#fff" : "var(--color-subtext0)",
               }}
               onClick={() => onToggleType(value)}
             >
               <span
                 style={{
                   ...styles.dot,
-                  background: TYPE_COLORS[value],
+                  background: theme.palette.nodeTypes[value].light,
                   opacity: active ? 0 : 1,
                 }}
               />
@@ -82,10 +84,10 @@ const styles: Record<string, React.CSSProperties> = {
     top: 20,
     left: 344,
     zIndex: 50,
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 6,
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     padding: "6px 12px",
     fontSize: 13,
     cursor: "pointer",
@@ -96,8 +98,8 @@ const styles: Record<string, React.CSSProperties> = {
     top: 16,
     left: 344,
     zIndex: 50,
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 8,
     padding: 8,
     display: "flex",
@@ -110,10 +112,10 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
   },
   input: {
-    background: "#313244",
-    border: "1px solid #45475a",
+    background: "var(--color-surface0)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 4,
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     padding: "4px 8px",
     fontSize: 13,
     fontFamily: "system-ui, sans-serif",
@@ -123,7 +125,7 @@ const styles: Record<string, React.CSSProperties> = {
   closeButton: {
     background: "none",
     border: "none",
-    color: "#a6adc8",
+    color: "var(--color-subtext0)",
     cursor: "pointer",
     fontSize: 13,
     padding: "4px 6px",

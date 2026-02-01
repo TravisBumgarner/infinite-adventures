@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTheme } from "@mui/material";
 import type { SearchResult } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS } from "../constants";
 
 interface SearchBarProps {
   onNavigate: (noteId: string) => void;
 }
 
 export default function SearchBar({ onNavigate }: SearchBarProps) {
+  const theme = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -102,7 +103,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
               style={{
                 ...styles.item,
                 background:
-                  i === selectedIndex ? "#45475a" : "transparent",
+                  i === selectedIndex ? "var(--color-surface1)" : "transparent",
               }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -114,7 +115,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
                 <span
                   style={{
                     ...styles.badge,
-                    background: TYPE_COLORS[result.type],
+                    background: theme.palette.nodeTypes[result.type].light,
                   }}
                 >
                   {result.type.toUpperCase()}
@@ -149,18 +150,18 @@ const styles: Record<string, React.CSSProperties> = {
   input: {
     width: "100%",
     padding: "10px 14px",
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 8,
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 14,
     outline: "none",
     fontFamily: "system-ui, sans-serif",
   },
   dropdown: {
     marginTop: 4,
-    background: "#1e1e2e",
-    border: "1px solid #45475a",
+    background: "var(--color-base)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 8,
     maxHeight: 300,
     overflowY: "auto",
@@ -168,7 +169,7 @@ const styles: Record<string, React.CSSProperties> = {
   item: {
     padding: "8px 12px",
     cursor: "pointer",
-    borderBottom: "1px solid #313244",
+    borderBottom: "1px solid var(--color-surface0)",
   },
   itemHeader: {
     display: "flex",
@@ -184,18 +185,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
   title: {
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 14,
     fontWeight: 600,
   },
   snippet: {
-    color: "#a6adc8",
+    color: "var(--color-subtext0)",
     fontSize: 12,
     lineHeight: 1.4,
   },
   empty: {
     padding: "12px",
-    color: "#6c7086",
+    color: "var(--color-overlay0)",
     fontSize: 13,
     textAlign: "center" as const,
   },

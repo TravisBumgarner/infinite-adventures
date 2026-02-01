@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
+import { useTheme } from "@mui/material";
 import type { Note, NoteType } from "../types";
-import { NOTE_TYPES, TYPE_COLORS, SIDEBAR_WIDTH } from "../constants";
+import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
 import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
 
 interface ConnectionsBrowserProps {
@@ -16,6 +17,7 @@ export default function ConnectionsBrowser({
   onNavigate,
   onClose,
 }: ConnectionsBrowserProps) {
+  const theme = useTheme();
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
 
@@ -72,16 +74,16 @@ export default function ConnectionsBrowser({
               key={value}
               style={{
                 ...styles.chip,
-                background: active ? TYPE_COLORS[value] : "transparent",
-                borderColor: TYPE_COLORS[value],
-                color: active ? "#fff" : "#a6adc8",
+                background: active ? theme.palette.nodeTypes[value].light : "transparent",
+                borderColor: theme.palette.nodeTypes[value].light,
+                color: active ? "#fff" : "var(--color-subtext0)",
               }}
               onClick={() => handleToggleType(value)}
             >
               <span
                 style={{
                   ...styles.dot,
-                  background: TYPE_COLORS[value],
+                  background: theme.palette.nodeTypes[value].light,
                   opacity: active ? 0 : 1,
                 }}
               />
@@ -104,7 +106,7 @@ export default function ConnectionsBrowser({
               <span
                 style={{
                   ...styles.directionBadge,
-                  background: entry.direction === "outgoing" ? "#45475a" : "#313244",
+                  background: entry.direction === "outgoing" ? "var(--color-surface1)" : "var(--color-surface0)",
                 }}
               >
                 {entry.direction === "outgoing" ? "→" : "←"}
@@ -112,7 +114,7 @@ export default function ConnectionsBrowser({
               <span
                 style={{
                   ...styles.typeBadge,
-                  background: TYPE_COLORS[entry.link.type],
+                  background: theme.palette.nodeTypes[entry.link.type].light,
                 }}
               >
                 {entry.link.type.toUpperCase()}
@@ -133,15 +135,15 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     width: SIDEBAR_WIDTH,
     height: "100vh",
-    background: "#1e1e2e",
-    borderLeft: "1px solid #313244",
+    background: "var(--color-base)",
+    borderLeft: "1px solid var(--color-surface0)",
     padding: 20,
     display: "flex",
     flexDirection: "column",
     gap: 12,
     zIndex: 100,
     overflowY: "auto",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontFamily: "system-ui, sans-serif",
   },
   header: {
@@ -156,22 +158,22 @@ const styles: Record<string, React.CSSProperties> = {
   closeBtn: {
     background: "none",
     border: "none",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 24,
     cursor: "pointer",
   },
   noteTitle: {
     fontSize: 14,
-    color: "#a6adc8",
+    color: "var(--color-subtext0)",
     paddingBottom: 4,
-    borderBottom: "1px solid #313244",
+    borderBottom: "1px solid var(--color-surface0)",
   },
   input: {
-    background: "#313244",
-    border: "1px solid #45475a",
+    background: "var(--color-surface0)",
+    border: "1px solid var(--color-surface1)",
     borderRadius: 6,
     padding: "8px 10px",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 14,
     outline: "none",
   },
@@ -206,7 +208,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   empty: {
     fontSize: 13,
-    color: "#6c7086",
+    color: "var(--color-overlay0)",
     padding: "12px 0",
     textAlign: "center",
   },
@@ -219,7 +221,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     borderRadius: 6,
     cursor: "pointer",
-    color: "#cdd6f4",
+    color: "var(--color-text)",
     fontSize: 13,
     fontFamily: "system-ui, sans-serif",
     textAlign: "left",
@@ -228,7 +230,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     padding: "2px 6px",
     borderRadius: 4,
-    color: "#a6adc8",
+    color: "var(--color-subtext0)",
     flexShrink: 0,
   },
   typeBadge: {

@@ -2,6 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { resolveThemeMode } from './styles/styleConsts'
+import type { ThemePreference } from './styles/styleConsts'
+import { applyCssVars } from './styles/cssVars'
+
+// Apply CSS vars synchronously before first paint to avoid flash
+const stored = localStorage.getItem('infinite-adventures-theme') as ThemePreference | null;
+applyCssVars(resolveThemeMode(stored || 'system'));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

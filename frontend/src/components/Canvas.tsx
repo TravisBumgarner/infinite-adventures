@@ -11,6 +11,7 @@ import {
 import type { Node, Edge, NodeTypes, OnNodeDrag, Connection } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import { useTheme } from "@mui/material";
 import NoteNodeComponent from "./NoteNode";
 import type { NoteNodeData } from "./NoteNode";
 import NoteEditor from "./NoteEditor";
@@ -20,13 +21,14 @@ import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
 import type { Note, NoteType } from "../types";
 import * as api from "../api/client";
-import { TYPE_COLORS, NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
+import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";
 import { appendMentionIfNew } from "../utils/edgeConnect";
 import { filterNodes, filterEdges } from "../utils/canvasFilter";
 import FilterBar from "./FilterBar";
 import ConnectionsBrowser from "./ConnectionsBrowser";
 import Toast from "./Toast";
+import { SettingsButton, SettingsModal } from "./SettingsModal";
 import { formatNoteExport } from "../utils/noteExport";
 import { findOpenPosition, unstackNodes } from "../utils/findOpenPosition";
 
@@ -75,7 +77,7 @@ function buildEdges(notes: Note[]): Edge[] {
         id: `${note.id}->${link.id}`,
         source: note.id,
         target: link.id,
-        style: { stroke: "#585b70", strokeWidth: 1.5 },
+        style: { stroke: "var(--color-surface2)", strokeWidth: 1.5 },
         animated: false,
       });
     }
@@ -84,6 +86,7 @@ function buildEdges(notes: Note[]): Edge[] {
 }
 
 export default function Canvas() {
+  const theme = useTheme();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NoteNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -103,6 +106,7 @@ export default function Canvas() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
   const [filterSearch, setFilterSearch] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
   const notesCache = useRef<Map<string, Note>>(new Map());
@@ -443,11 +447,11 @@ export default function Canvas() {
         fitView={!localStorage.getItem(VIEWPORT_KEY)}
         proOptions={{ hideAttribution: true }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} color="#313244" />
+        <Background variant={BackgroundVariant.Dots} gap={20} color="var(--color-surface0)" />
         <MiniMap
-          style={{ background: "#181825" }}
-          nodeColor={(node) => TYPE_COLORS[(node.data as NoteNodeData).type] || "#4a90d9"}
-          maskColor="rgba(0,0,0,0.4)"
+          style={{ background: "var(--color-mantle)" }}
+          nodeColor={(node) => theme.palette.nodeTypes[(node.data as NoteNodeData).type]?.light || "#4a90d9"}
+          maskColor="var(--color-backdrop)"
           pannable
           zoomable
         />
@@ -525,6 +529,11 @@ export default function Canvas() {
 
       {toastMessage && (
         <Toast message={toastMessage} onDone={() => setToastMessage(null)} />
+      )}
+
+      <SettingsButton onClick={() => setShowSettings(true)} />
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
       )}
     </div>
   );
