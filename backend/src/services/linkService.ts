@@ -1,7 +1,7 @@
+import { and, eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
-import { notes, noteLinks } from "../db/schema.js";
+import { noteLinks, notes } from "../db/schema.js";
 
 export interface ResolvedLink {
   targetNoteId: string;
@@ -25,8 +25,8 @@ export function parseMentions(content: string): ParsedMention[] {
   const regex = /@\{([^}]+)\}|@\[([^\]]+)\]|@([\w-]+)/g;
   const mentions: ParsedMention[] = [];
   const seen = new Set<string>();
-  let match;
-  while ((match = regex.exec(content)) !== null) {
+  let match: RegExpExecArray | null = regex.exec(content);
+  while (match !== null) {
     if (match[1]) {
       const id = match[1].trim();
       if (id && !seen.has(`id:${id}`)) {
@@ -34,12 +34,13 @@ export function parseMentions(content: string): ParsedMention[] {
         mentions.push({ type: "id", value: id });
       }
     } else {
-      const title = (match[2] ?? match[3])!.trim();
+      const title = (match[2] ?? match[3])?.trim();
       if (title && !seen.has(`title:${title.toLowerCase()}`)) {
         seen.add(`title:${title.toLowerCase()}`);
         mentions.push({ type: "title", value: title });
       }
     }
+    match = regex.exec(content);
   }
   return mentions;
 }
@@ -51,10 +52,7 @@ export function parseMentions(content: string): ParsedMention[] {
  * 3. Create note_links entries
  * 4. Remove stale links for mentions that were removed
  */
-export function resolveLinks(
-  sourceNoteId: string,
-  content: string
-): ResolvedLink[] {
+export function resolveLinks(sourceNoteId: string, content: string): ResolvedLink[] {
   const db = getDb();
   const mentions = parseMentions(content);
 
@@ -149,12 +147,7 @@ export function resolveLinks(
 
   for (const staleId of staleIds) {
     db.delete(noteLinks)
-      .where(
-        and(
-          eq(noteLinks.source_note_id, sourceNoteId),
-          eq(noteLinks.target_note_id, staleId)
-        )
-      )
+      .where(and(eq(noteLinks.source_note_id, sourceNoteId), eq(noteLinks.target_note_id, staleId)))
       .run();
   }
 

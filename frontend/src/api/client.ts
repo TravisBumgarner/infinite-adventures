@@ -1,4 +1,4 @@
-import type { Note, NoteSummary, CreateNoteInput, UpdateNoteInput, SearchResult } from "shared";
+import type { CreateNoteInput, Note, NoteSummary, SearchResult, UpdateNoteInput } from "shared";
 
 const API_BASE = "http://localhost:3021/api";
 
@@ -42,7 +42,7 @@ export function deleteNote(id: string): Promise<void> {
 
 export async function searchNotes(query: string): Promise<SearchResult[]> {
   const data = await request<{ results: SearchResult[] }>(
-    `/notes/search?q=${encodeURIComponent(query)}`
+    `/notes/search?q=${encodeURIComponent(query)}`,
   );
   return data.results;
 }

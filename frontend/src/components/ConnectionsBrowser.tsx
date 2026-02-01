@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
 import { useTheme } from "@mui/material";
+import { useMemo, useState } from "react";
 import type { Note, NoteType } from "shared";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";
 import { buildConnectionEntries, filterConnections } from "../utils/connectionFilter";
@@ -30,7 +30,7 @@ export default function ConnectionsBrowser({
 
   const filtered = useMemo(
     () => filterConnections(allEntries, activeTypes, search),
-    [allEntries, activeTypes, search]
+    [allEntries, activeTypes, search],
   );
 
   const handleToggleType = (type: NoteType) => {
@@ -51,7 +51,7 @@ export default function ConnectionsBrowser({
     <div style={styles.panel}>
       <div style={styles.header}>
         <h3 style={styles.headerTitle}>Connections</h3>
-        <button onClick={onClose} style={styles.closeBtn}>
+        <button type="button" onClick={onClose} style={styles.closeBtn}>
           &times;
         </button>
       </div>
@@ -71,6 +71,7 @@ export default function ConnectionsBrowser({
           const active = activeTypes.has(value);
           return (
             <button
+              type="button"
               key={value}
               style={{
                 ...styles.chip,
@@ -99,6 +100,7 @@ export default function ConnectionsBrowser({
         ) : (
           filtered.map((entry) => (
             <button
+              type="button"
               key={`${entry.direction}-${entry.link.id}`}
               style={styles.connectionItem}
               onClick={() => onNavigate(entry.link.id)}
@@ -106,7 +108,10 @@ export default function ConnectionsBrowser({
               <span
                 style={{
                   ...styles.directionBadge,
-                  background: entry.direction === "outgoing" ? "var(--color-surface1)" : "var(--color-surface0)",
+                  background:
+                    entry.direction === "outgoing"
+                      ? "var(--color-surface1)"
+                      : "var(--color-surface0)",
                 }}
               >
                 {entry.direction === "outgoing" ? "→" : "←"}

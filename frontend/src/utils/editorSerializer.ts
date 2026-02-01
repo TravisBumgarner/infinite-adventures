@@ -38,9 +38,7 @@ function serializeInline(nodes: TipTapNode[]): string {
  * Serialize TipTap JSON document to plain text with @{id} mentions
  * and markdown syntax for bold, italic, bullet lists, and ordered lists.
  */
-export function serializeToMentionText(
-  json: Record<string, unknown>
-): string {
+export function serializeToMentionText(json: Record<string, unknown>): string {
   const doc = json as TipTapNode;
   if (!doc.content) return "";
 
@@ -102,10 +100,7 @@ function formatInlineMarkdown(line: string): string {
  * Convert plain text with @{id} mentions and markdown formatting
  * into TipTap-compatible HTML.
  */
-export function contentToHtml(
-  content: string,
-  notesCache: Map<string, Note>
-): string {
+export function contentToHtml(content: string, notesCache: Map<string, Note>): string {
   if (!content) return "<p></p>";
 
   // Build a title->id lookup for legacy mentions
@@ -125,7 +120,7 @@ export function contentToHtml(
     if (/^- /.test(line)) {
       const items: string[] = [];
       while (i < lines.length && /^- /.test(lines[i]!)) {
-        items.push(lines[i]!.slice(2));
+        items.push(lines[i]?.slice(2));
         i++;
       }
       const lis = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
@@ -137,7 +132,7 @@ export function contentToHtml(
     if (/^\d+\. /.test(line)) {
       const items: string[] = [];
       while (i < lines.length && /^\d+\. /.test(lines[i]!)) {
-        items.push(lines[i]!.replace(/^\d+\. /, ""));
+        items.push(lines[i]?.replace(/^\d+\. /, ""));
         i++;
       }
       const lis = items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
@@ -156,15 +151,14 @@ export function contentToHtml(
 function renderParagraph(
   line: string,
   notesCache: Map<string, Note>,
-  titleToId: Map<string, string>
+  titleToId: Map<string, string>,
 ): string {
   // Match @{id}, @[Title], or @Word
   const regex = /@\{([^}]+)\}|@\[([^\]]+)\]|@([\w-]+)/g;
   let result = "";
   let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(line)) !== null) {
+  let match: RegExpExecArray | null = regex.exec(line);
+  while (match !== null) {
     // Add text before the match (with inline formatting)
     const before = line.slice(lastIndex, match.index);
     result += formatInlineMarkdown(escapeHtml(before));
@@ -186,6 +180,7 @@ function renderParagraph(
       }
     }
     lastIndex = match.index + match[0].length;
+    match = regex.exec(line);
   }
 
   // Add remaining text with inline formatting

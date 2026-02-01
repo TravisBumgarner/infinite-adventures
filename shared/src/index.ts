@@ -2,15 +2,7 @@ import { z } from "zod";
 
 // --- Schemas ---
 
-export const NoteTypeSchema = z.enum([
-  "pc",
-  "npc",
-  "item",
-  "quest",
-  "location",
-  "goal",
-  "session",
-]);
+export const NoteTypeSchema = z.enum(["pc", "npc", "item", "quest", "location", "goal", "session"]);
 
 export const NoteSummarySchema = z.object({
   id: z.string(),

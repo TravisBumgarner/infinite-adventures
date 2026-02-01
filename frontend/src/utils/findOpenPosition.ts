@@ -6,11 +6,7 @@ export interface NodePosition {
 const NODE_W = 200;
 const NODE_H = 100;
 
-function hasOverlap(
-  x: number,
-  y: number,
-  existingNodes: NodePosition[]
-): boolean {
+function hasOverlap(x: number, y: number, existingNodes: NodePosition[]): boolean {
   return existingNodes.some((node) => overlaps({ x, y }, node));
 }
 
@@ -26,7 +22,7 @@ function overlaps(a: NodePosition, b: NodePosition): boolean {
 export function findOpenPosition(
   targetX: number,
   targetY: number,
-  existingNodes: NodePosition[]
+  existingNodes: NodePosition[],
 ): { x: number; y: number } {
   if (!hasOverlap(targetX, targetY, existingNodes)) {
     return { x: targetX, y: targetY };
@@ -64,7 +60,7 @@ export interface IdentifiedNodePosition extends NodePosition {
  * to avoid infinite repositioning loops.
  */
 export function unstackNodes(
-  nodes: IdentifiedNodePosition[]
+  nodes: IdentifiedNodePosition[],
 ): Map<string, { x: number; y: number }> {
   const moves = new Map<string, { x: number; y: number }>();
   // settled tracks the final positions — start with all nodes, update as we go

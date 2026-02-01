@@ -1,8 +1,8 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { readFileSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -20,7 +20,7 @@ export function getDb(): DrizzleDb {
 }
 
 export function initDb(
-  dbPath: string = process.env["DB_PATH"] || "./data/infinite-adventures.db"
+  dbPath: string = process.env.DB_PATH || "./data/infinite-adventures.db",
 ): DrizzleDb {
   sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");

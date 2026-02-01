@@ -1,16 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { findOpenPosition } from "../utils/findOpenPosition";
+import { describe, expect, it } from "vitest";
 import type { NodePosition } from "../utils/findOpenPosition";
+import { findOpenPosition } from "../utils/findOpenPosition";
 
 // Approximate node bounding box from the task description
 const NODE_W = 200;
 const NODE_H = 100;
 
 function overlaps(a: { x: number; y: number }, b: NodePosition): boolean {
-  return (
-    Math.abs(a.x - b.x) < NODE_W &&
-    Math.abs(a.y - b.y) < NODE_H
-  );
+  return Math.abs(a.x - b.x) < NODE_W && Math.abs(a.y - b.y) < NODE_H;
 }
 
 describe("findOpenPosition", () => {
@@ -41,9 +38,7 @@ describe("findOpenPosition", () => {
     const existing: NodePosition[] = [{ x: 500, y: 300 }];
     const result = findOpenPosition(500, 300, existing);
 
-    const distance = Math.sqrt(
-      (result.x - 500) ** 2 + (result.y - 300) ** 2
-    );
+    const distance = Math.sqrt((result.x - 500) ** 2 + (result.y - 300) ** 2);
     // Should be within a reasonable range (a few node widths away)
     expect(distance).toBeLessThan(NODE_W * 3);
   });

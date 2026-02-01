@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
 import type { NoteType } from "shared";
-import { TYPE_LABELS, NOTE_TYPES } from "../constants";
+import { NOTE_TYPES, TYPE_LABELS } from "../constants";
 
 interface ContextMenuProps {
   x: number;
@@ -12,7 +12,14 @@ interface ContextMenuProps {
   onClose: () => void;
 }
 
-export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onClose }: ContextMenuProps) {
+export default function ContextMenu({
+  x,
+  y,
+  onSelect,
+  onViewAll,
+  onUnstack,
+  onClose,
+}: ContextMenuProps) {
   const theme = useTheme();
   const [showSubmenu, setShowSubmenu] = useState(false);
   const [showUtilities, setShowUtilities] = useState(false);
@@ -34,10 +41,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
 
   return (
     <div style={styles.backdrop} onMouseDown={onClose}>
-      <div
-        style={{ ...styles.menu, left: x, top: y }}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div style={{ ...styles.menu, left: x, top: y }} onMouseDown={(e) => e.stopPropagation()}>
         <div
           style={styles.item}
           onMouseEnter={() => setShowSubmenu(true)}
@@ -49,6 +53,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
             <div style={styles.submenu}>
               {NOTE_TYPES.map((t) => (
                 <button
+                  type="button"
                   key={t.value}
                   style={styles.submenuItem}
                   onClick={() => onSelect(t.value)}
@@ -66,6 +71,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
           )}
         </div>
         <button
+          type="button"
           style={styles.item}
           onClick={() => {
             onViewAll();
@@ -85,6 +91,7 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onCl
           {showUtilities && (
             <div style={styles.submenu}>
               <button
+                type="button"
                 style={styles.submenuItem}
                 onClick={() => {
                   onUnstack();

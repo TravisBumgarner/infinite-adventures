@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
-import type { Node, Edge } from "@xyflow/react";
-import type { NoteNodeData } from "../components/NoteNode";
+import type { Edge, Node } from "@xyflow/react";
 import type { NoteType } from "shared";
-import { filterNodes, filterEdges } from "../utils/canvasFilter";
+import { describe, expect, it } from "vitest";
+import type { NoteNodeData } from "../components/NoteNode";
+import { filterEdges, filterNodes } from "../utils/canvasFilter";
 
 function makeNode(id: string, type: NoteType, title: string, content: string): Node<NoteNodeData> {
   return {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAutoSave } from "../hooks/useAutoSave";
 
 beforeEach(() => {
@@ -42,7 +43,10 @@ describe("useAutoSave", () => {
   it("shows saving status during save", async () => {
     let resolveSave: () => void;
     const saveFn = vi.fn().mockImplementation(
-      () => new Promise<void>((resolve) => { resolveSave = resolve; })
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
     );
     const { result } = renderHook(() => useAutoSave({ saveFn, delay: 100 }));
 
@@ -54,7 +58,7 @@ describe("useAutoSave", () => {
     expect(result.current.status).toBe("saving");
 
     await act(async () => {
-      resolveSave!();
+      resolveSave?.();
     });
 
     expect(result.current.status).toBe("saved");
@@ -62,9 +66,7 @@ describe("useAutoSave", () => {
 
   it("returns to idle after savedDuration", async () => {
     const saveFn = vi.fn().mockResolvedValue(undefined);
-    const { result } = renderHook(() =>
-      useAutoSave({ saveFn, delay: 100, savedDuration: 2000 })
-    );
+    const { result } = renderHook(() => useAutoSave({ saveFn, delay: 100, savedDuration: 2000 }));
 
     act(() => result.current.markDirty());
     await act(async () => {

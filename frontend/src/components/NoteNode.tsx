@@ -1,11 +1,11 @@
-import { memo, useState } from "react";
-import { Handle, Position } from "@xyflow/react";
-import type { NodeProps, Node } from "@xyflow/react";
 import { useTheme } from "@mui/material";
+import type { Node, NodeProps } from "@xyflow/react";
+import { Handle, Position } from "@xyflow/react";
+import { memo, useState } from "react";
 import type { NoteType } from "shared";
 import { TYPE_LABELS } from "../constants";
-import { parsePreviewContent } from "../utils/previewParser";
 import type { PreviewSegment } from "../utils/previewParser";
+import { parsePreviewContent } from "../utils/previewParser";
 
 export type NoteNodeData = {
   noteId: string;
@@ -18,7 +18,13 @@ export type NoteNodeData = {
 
 type NoteNodeType = Node<NoteNodeData, "note">;
 
-function MentionSpan({ label, onClick }: { label: string; onClick: (e: React.MouseEvent) => void }) {
+function MentionSpan({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <span
@@ -41,7 +47,7 @@ function renderSegment(
   segment: PreviewSegment,
   index: number,
   noteId: string,
-  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void
+  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void,
 ): React.ReactNode {
   switch (segment.type) {
     case "mention-clickable":
@@ -96,9 +102,7 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
   const theme = useTheme();
   const color = theme.palette.nodeTypes[data.type].light;
   const label = TYPE_LABELS[data.type];
-  const segments = data.content
-    ? parsePreviewContent(data.content, data.mentionLabels)
-    : [];
+  const segments = data.content ? parsePreviewContent(data.content, data.mentionLabels) : [];
 
   return (
     <>
@@ -142,9 +146,7 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
         </div>
         {segments.length > 0 && (
           <div style={{ fontSize: 12, color: "var(--color-subtext0)", marginTop: 4 }}>
-            {segments.map((seg, i) =>
-              renderSegment(seg, i, data.noteId, data.onMentionClick)
-            )}
+            {segments.map((seg, i) => renderSegment(seg, i, data.noteId, data.onMentionClick))}
           </div>
         )}
       </div>

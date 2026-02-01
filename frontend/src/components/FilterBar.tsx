@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useTheme } from "@mui/material";
+import { useState } from "react";
 import type { NoteType } from "shared";
 import { NOTE_TYPES } from "../constants";
 
@@ -22,10 +22,7 @@ export default function FilterBar({
 
   if (!expanded) {
     return (
-      <button
-        style={styles.toggleButton}
-        onClick={() => setExpanded(true)}
-      >
+      <button type="button" style={styles.toggleButton} onClick={() => setExpanded(true)}>
         Filter{hasFilters ? " *" : ""}
       </button>
     );
@@ -41,10 +38,7 @@ export default function FilterBar({
           onChange={(e) => onSearchChange(e.target.value)}
           style={styles.input}
         />
-        <button
-          style={styles.closeButton}
-          onClick={() => setExpanded(false)}
-        >
+        <button type="button" style={styles.closeButton} onClick={() => setExpanded(false)}>
           X
         </button>
       </div>
@@ -53,6 +47,7 @@ export default function FilterBar({
           const active = activeTypes.has(value);
           return (
             <button
+              type="button"
               key={value}
               style={{
                 ...styles.chip,

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useThemePreference } from "../styles/Theme";
 import type { ThemePreference } from "../styles/styleConsts";
+import { useThemePreference } from "../styles/Theme";
 
 interface SettingsButtonProps {
   onClick: () => void;
@@ -8,7 +8,7 @@ interface SettingsButtonProps {
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
-    <button style={styles.gearButton} onClick={onClick} title="Settings">
+    <button type="button" style={styles.gearButton} onClick={onClick} title="Settings">
       &#9881;
     </button>
   );
@@ -40,7 +40,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       <div style={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <h3 style={styles.title}>Settings</h3>
-          <button onClick={onClose} style={styles.closeBtn}>
+          <button type="button" onClick={onClose} style={styles.closeBtn}>
             &times;
           </button>
         </div>
@@ -50,13 +50,12 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           <div style={styles.options}>
             {OPTIONS.map((opt) => (
               <button
+                type="button"
                 key={opt.value}
                 style={{
                   ...styles.optionCard,
                   borderColor:
-                    preference === opt.value
-                      ? "var(--color-blue)"
-                      : "var(--color-surface1)",
+                    preference === opt.value ? "var(--color-blue)" : "var(--color-surface1)",
                 }}
                 onClick={() => setPreference(opt.value)}
               >

@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
 import type { NoteLink, NoteType } from "shared";
+import { describe, expect, it } from "vitest";
 import {
   buildConnectionEntries,
-  filterConnections,
   type ConnectionEntry,
+  filterConnections,
 } from "../utils/connectionFilter";
 
 function makeLink(id: string, title: string, type: NoteType): NoteLink {

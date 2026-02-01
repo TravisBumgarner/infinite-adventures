@@ -44,12 +44,10 @@ export default function NodeContextMenu({
 
   return (
     <div style={styles.backdrop} onMouseDown={onClose}>
-      <div
-        style={{ ...styles.menu, left: x, top: y }}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div style={{ ...styles.menu, left: x, top: y }} onMouseDown={(e) => e.stopPropagation()}>
         {!isMulti && (
           <button
+            type="button"
             style={styles.editItem}
             onClick={() => {
               onEdit(noteId);
@@ -61,6 +59,7 @@ export default function NodeContextMenu({
         )}
         {!isMulti && (
           <button
+            type="button"
             style={styles.editItem}
             onClick={() => {
               onBrowseConnections(noteId);
@@ -72,6 +71,7 @@ export default function NodeContextMenu({
         )}
         {!isMulti && (
           <button
+            type="button"
             style={styles.editItem}
             onClick={() => {
               onExport(noteId);
@@ -83,13 +83,10 @@ export default function NodeContextMenu({
         )}
         {isMulti ? (
           <button
+            type="button"
             style={styles.item}
             onClick={() => {
-              if (
-                confirm(
-                  `Delete ${selectedCount} selected notes? This cannot be undone.`
-                )
-              ) {
+              if (confirm(`Delete ${selectedCount} selected notes? This cannot be undone.`)) {
                 onDeleteSelected();
               }
               onClose();
@@ -99,6 +96,7 @@ export default function NodeContextMenu({
           </button>
         ) : (
           <button
+            type="button"
             style={styles.item}
             onClick={() => {
               if (confirm("Delete this note? This cannot be undone.")) {

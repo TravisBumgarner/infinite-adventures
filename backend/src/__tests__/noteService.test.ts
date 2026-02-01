@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { initDb, closeDb } from "../db/connection.js";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { closeDb, initDb } from "../db/connection.js";
 import {
-  listNotes,
-  getNote,
   createNote,
-  updateNote,
   deleteNote,
+  getNote,
+  listNotes,
   searchNotes,
+  updateNote,
   ValidationError,
 } from "../services/noteService.js";
 
@@ -47,15 +47,11 @@ describe("noteService", () => {
     });
 
     it("throws ValidationError for missing title", () => {
-      expect(() => createNote({ type: "npc", title: "" })).toThrow(
-        ValidationError
-      );
+      expect(() => createNote({ type: "npc", title: "" })).toThrow(ValidationError);
     });
 
     it("throws ValidationError for invalid type", () => {
-      expect(() =>
-        createNote({ type: "dragon" as any, title: "Smaug" })
-      ).toThrow(ValidationError);
+      expect(() => createNote({ type: "dragon" as any, title: "Smaug" })).toThrow(ValidationError);
     });
   });
 
@@ -85,10 +81,10 @@ describe("noteService", () => {
       const note = getNote(created.id);
 
       expect(note).not.toBeNull();
-      expect(note!.id).toBe(created.id);
-      expect(note!.title).toBe("Gandalf");
-      expect(note!.links_to).toEqual([]);
-      expect(note!.linked_from).toEqual([]);
+      expect(note?.id).toBe(created.id);
+      expect(note?.title).toBe("Gandalf");
+      expect(note?.links_to).toEqual([]);
+      expect(note?.linked_from).toEqual([]);
     });
 
     it("returns null for non-existent id", () => {
@@ -110,9 +106,9 @@ describe("noteService", () => {
       });
 
       expect(updated).not.toBeNull();
-      expect(updated!.title).toBe("Gandalf the Grey");
-      expect(updated!.content).toBe("A wise wizard");
-      expect(updated!.type).toBe("npc"); // unchanged
+      expect(updated?.title).toBe("Gandalf the Grey");
+      expect(updated?.content).toBe("A wise wizard");
+      expect(updated?.type).toBe("npc"); // unchanged
     });
 
     it("returns null for non-existent id", () => {
@@ -121,9 +117,7 @@ describe("noteService", () => {
 
     it("throws ValidationError for invalid type", () => {
       const created = createNote({ type: "npc", title: "Gandalf" });
-      expect(() => updateNote(created.id, { type: "dragon" as any })).toThrow(
-        ValidationError
-      );
+      expect(() => updateNote(created.id, { type: "dragon" as any })).toThrow(ValidationError);
     });
   });
 
@@ -146,8 +140,8 @@ describe("noteService", () => {
 
       const results = searchNotes("Gandalf");
       expect(results).toHaveLength(1);
-      expect(results[0]!.title).toBe("Gandalf");
-      expect(results[0]!.type).toBe("npc");
+      expect(results[0]?.title).toBe("Gandalf");
+      expect(results[0]?.type).toBe("npc");
     });
 
     it("finds notes by content", () => {
@@ -155,8 +149,8 @@ describe("noteService", () => {
 
       const results = searchNotes("wizard");
       expect(results).toHaveLength(1);
-      expect(results[0]!.title).toBe("Gandalf");
-      expect(results[0]!.snippet).toContain("wizard");
+      expect(results[0]?.title).toBe("Gandalf");
+      expect(results[0]?.snippet).toContain("wizard");
     });
 
     it("returns empty array for no matches", () => {
@@ -178,7 +172,7 @@ describe("noteService", () => {
 
       const results = searchNotes("Gan");
       expect(results).toHaveLength(1);
-      expect(results[0]!.title).toBe("Gandalf");
+      expect(results[0]?.title).toBe("Gandalf");
     });
   });
 });
