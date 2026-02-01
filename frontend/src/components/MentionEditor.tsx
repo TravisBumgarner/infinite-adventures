@@ -6,6 +6,7 @@ import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion
 import type { Note, NoteSummary } from "../types";
 import * as api from "../api/client";
 import { TYPE_COLORS } from "../constants";
+import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
 
 interface MentionEditorProps {
   value: string;
@@ -18,95 +19,6 @@ interface SuggestionItem {
   id: string;
   title: string;
   type: string;
-}
-
-// Serialize TipTap JSON to plain text with @{id} mentions
-function serializeToMentionText(json: Record<string, unknown>): string {
-  const doc = json as { type: string; content?: Array<Record<string, unknown>> };
-  if (!doc.content) return "";
-
-  const lines: string[] = [];
-  for (const block of doc.content) {
-    if (block.type === "paragraph") {
-      const content = block.content as Array<Record<string, unknown>> | undefined;
-      if (!content) {
-        lines.push("");
-        continue;
-      }
-      let line = "";
-      for (const node of content) {
-        if (node.type === "mention") {
-          const attrs = node.attrs as { id: string; label?: string };
-          line += `@{${attrs.id}}`;
-        } else if (node.type === "text") {
-          line += node.text as string;
-        }
-      }
-      lines.push(line);
-    }
-  }
-  return lines.join("\n");
-}
-
-// Parse plain text content with @{id} / @[Title] / @Title into TipTap HTML
-function contentToHtml(content: string, notesCache: Map<string, Note>): string {
-  if (!content) return "<p></p>";
-
-  // Build a title->id lookup for legacy mentions
-  const titleToId = new Map<string, string>();
-  for (const [id, note] of notesCache) {
-    titleToId.set(note.title.toLowerCase(), id);
-  }
-
-  const lines = content.split("\n");
-  const paragraphs = lines.map((line) => {
-    // Match @{id}, @[Title], or @Word
-    const regex = /@\{([^}]+)\}|@\[([^\]]+)\]|@([\w-]+)/g;
-    let result = "";
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(line)) !== null) {
-      // Add text before the match
-      result += escapeHtml(line.slice(lastIndex, match.index));
-
-      if (match[1]) {
-        // @{id} format
-        const id = match[1];
-        const note = notesCache.get(id);
-        const label = note ? note.title : id;
-        result += `<span data-type="mention" data-id="${escapeAttr(id)}" data-label="${escapeAttr(label)}">@${escapeHtml(label)}</span>`;
-      } else {
-        // Legacy @[Title] or @Title format
-        const title = (match[2] ?? match[3])!;
-        const id = titleToId.get(title.toLowerCase());
-        if (id) {
-          result += `<span data-type="mention" data-id="${escapeAttr(id)}" data-label="${escapeAttr(title)}">@${escapeHtml(title)}</span>`;
-        } else {
-          // No matching note found, render as plain text
-          result += escapeHtml(match[0]);
-        }
-      }
-      lastIndex = match.index + match[0].length;
-    }
-
-    result += escapeHtml(line.slice(lastIndex));
-    return `<p>${result || "<br>"}</p>`;
-  });
-
-  return paragraphs.join("");
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function escapeAttr(text: string): string {
-  return text.replace(/"/g, "&quot;").replace(/&/g, "&amp;");
 }
 
 // Suggestion popup as a React component rendered in the editor's parent
@@ -247,6 +159,61 @@ const SuggestionController = forwardRef<
 
 SuggestionController.displayName = "SuggestionController";
 
+function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  if (!editor) return null;
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    ...toolbarStyles.button,
+    background: active ? "#45475a" : "transparent",
+    color: active ? "#cdd6f4" : "#a6adc8",
+  });
+
+  return (
+    <div style={toolbarStyles.bar}>
+      <button
+        style={btnStyle(editor.isActive("bold"))}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          editor.chain().focus().toggleBold().run();
+        }}
+        title="Bold"
+      >
+        B
+      </button>
+      <button
+        style={btnStyle(editor.isActive("italic"))}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          editor.chain().focus().toggleItalic().run();
+        }}
+        title="Italic"
+      >
+        I
+      </button>
+      <button
+        style={btnStyle(editor.isActive("bulletList"))}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          editor.chain().focus().toggleBulletList().run();
+        }}
+        title="Bullet List"
+      >
+        &bull;
+      </button>
+      <button
+        style={btnStyle(editor.isActive("orderedList"))}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          editor.chain().focus().toggleOrderedList().run();
+        }}
+        title="Ordered List"
+      >
+        1.
+      </button>
+    </div>
+  );
+}
+
 export default function MentionEditor({
   value,
   onChange,
@@ -264,14 +231,10 @@ export default function MentionEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable features we don't need for a simple text editor
         heading: false,
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
       }),
       Mention.configure({
         HTMLAttributes: {
@@ -349,6 +312,7 @@ export default function MentionEditor({
 
   return (
     <div style={{ position: "relative" }}>
+      <FormattingToolbar editor={editor} />
       <div style={style} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
       </div>
@@ -361,6 +325,28 @@ export default function MentionEditor({
     </div>
   );
 }
+
+const toolbarStyles: Record<string, React.CSSProperties> = {
+  bar: {
+    display: "flex",
+    gap: 2,
+    padding: "4px 4px",
+    background: "#1e1e2e",
+    border: "1px solid #45475a",
+    borderBottom: "none",
+    borderRadius: "6px 6px 0 0",
+  },
+  button: {
+    border: "none",
+    borderRadius: 4,
+    padding: "4px 8px",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "system-ui, sans-serif",
+    lineHeight: 1,
+  },
+};
 
 const popupStyles: Record<string, React.CSSProperties> = {
   popupWrapper: {
