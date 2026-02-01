@@ -184,7 +184,7 @@ tasks:
       - Switching notes saves pending changes first
     depends_on: []
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 10
     github_issue: 30
