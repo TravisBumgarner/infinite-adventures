@@ -238,7 +238,7 @@ tasks:
       - API client includes Bearer token in all requests
     depends_on: [3]
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 7
     github_issue: 76
