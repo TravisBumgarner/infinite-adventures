@@ -1,5 +1,5 @@
-import { createContext, useContext, type ReactNode } from "react";
-import type { AuthUser } from "./service.js";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { type AuthUser, getUser } from "./service.js";
 
 export interface AuthState {
   user: AuthUser | null;
@@ -18,6 +18,24 @@ export function useAuth(): AuthState {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Stub: will be implemented in ralph-code phase
-  return <>{children}</>;
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    const result = await getUser();
+    if (result.success) {
+      setUser(result.data);
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>{children}</AuthContext.Provider>
+  );
 }
