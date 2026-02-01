@@ -1,0 +1,166 @@
+project: Infinite Adventures Tooling, Theme & Settings
+repo: TravisBumgarner/infinite-adventures
+design_file: (inline scope from user feature list)
+scoping_date: 2026-02-01
+
+milestones:
+  - number: 9
+    title: "9. Tooling & Workspaces"
+    description: Replace ESLint with Biome, setup npm workspaces, create shared types package with Zod schemas, and configure pre-commit hooks.
+    branch:
+      working: 40-tooling-workspaces
+      base: main
+
+  - number: 10
+    title: "10. MUI Theme & Styling"
+    description: Install Material UI, configure theme following photo-palettes pattern, store node type colors in theme, and add contrast text utility.
+    branch:
+      working: 42-mui-theme-styling
+      base: main
+
+  - number: 11
+    title: "11. Settings Menu"
+    description: Add a settings menu with feedback form, Discord link, and GitHub link.
+    branch:
+      working: 44-settings-menu
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 40
+    milestone: 9
+    title: Setup npm workspaces and shared types package with Zod
+    description: |
+      Convert the monorepo to use npm workspaces. Create a `shared/` package with Zod schemas
+      for all types duplicated between frontend and backend: NoteType, NoteSummary, NoteLink,
+      Note, CreateNoteInput, UpdateNoteInput, SearchResult. Export TypeScript types via `z.infer<>`.
+      Update frontend to import from `shared` instead of `./types/index.ts`. Update backend
+      `noteService.ts` to import from `shared` instead of its inline type definitions.
+
+      The shared package should have:
+      - `shared/package.json` with name `shared`, zod dependency
+      - `shared/tsconfig.json` targeting ES2022
+      - `shared/src/index.ts` exporting all schemas and types
+      - Root `package.json` with `"workspaces": ["frontend", "backend", "shared"]`
+
+      Frontend and backend `package.json` files should add `"shared": "*"` as a dependency.
+    acceptance_criteria:
+      - Root package.json has workspaces configured
+      - shared/ package exists with Zod schemas for all 7 shared types
+      - Frontend imports from shared instead of local types/index.ts
+      - Backend imports from shared instead of inline definitions
+      - npm install at root works and all tests pass
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 2
+    github_issue: 41
+    milestone: 9
+    title: Replace ESLint with Biome and configure pre-commit hook
+    description: |
+      Remove ESLint and all ESLint plugins from the frontend. Delete `frontend/eslint.config.js`.
+      Install Biome at the root level. Create `biome.json` with recommended linting and formatting
+      rules applied to all workspaces. Add `lint` and `format` scripts to the root `package.json`.
+
+      Setup a pre-commit hook using lefthook (or a simple `.git/hooks/pre-commit` script) that
+      runs `biome check --staged` before allowing commits.
+
+      Fix any Biome violations in existing code across frontend, backend, and shared.
+    acceptance_criteria:
+      - ESLint removed, eslint.config.js deleted
+      - Biome installed with biome.json at root
+      - Pre-commit hook runs Biome check on staged files
+      - All existing code passes Biome checks
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 42
+    milestone: 10
+    title: Install MUI and setup theme following photo-palettes pattern
+    description: |
+      Install `@mui/material`, `@emotion/react`, `@emotion/styled` in the frontend.
+
+      Create `frontend/src/styles/styleConsts.ts` with:
+      - PALETTE using Catppuccin Mocha colors (base=#1e1e2e, mantle=#181825, surface0=#313244,
+        surface1=#45475a, text=#cdd6f4, subtext0=#a6adc8, overlay0=#6c7086, etc.)
+      - SPACING, FONT_SIZES, BORDER_RADIUS mirroring the photo-palettes structure
+
+      Create `frontend/src/styles/Theme.tsx` with:
+      - `createTheme` call using the Catppuccin palette for dark mode
+      - Component overrides matching photo-palettes style (square corners, no shadows,
+        no text transform on buttons)
+      - `AppThemeProvider` component with ThemeProvider + CssBaseline
+      - Dark-mode only (no light mode needed — this app is always dark)
+
+      Wrap the app in `AppThemeProvider` in `App.tsx` or `main.tsx`.
+    acceptance_criteria:
+      - MUI v7 + Emotion installed in frontend
+      - styleConsts.ts with Catppuccin Mocha palette
+      - Theme.tsx with AppThemeProvider using createTheme
+      - App wrapped in AppThemeProvider with CssBaseline
+    depends_on: []
+    effort: 2
+    status: testing
+
+  - id: 4
+    github_issue: 43
+    milestone: 10
+    title: Store node type colors in MUI theme and add contrast text utility
+    description: |
+      Move TYPE_COLORS into the MUI theme as a custom `nodeTypes` palette section. Each type
+      should have a `light` and `dark` variant (e.g., pc light=#4a90d9, pc dark=#2a5a8a).
+
+      Augment the MUI theme types with a TypeScript module declaration:
+      ```
+      declare module "@mui/material/styles" {
+        interface Palette { nodeTypes: Record<NoteType, { light: string; dark: string }> }
+        interface PaletteOptions { nodeTypes?: Record<NoteType, { light: string; dark: string }> }
+      }
+      ```
+
+      Create a `getContrastText(backgroundColor: string): "#fff" | "#000"` utility that:
+      - Parses a hex color string
+      - Computes WCAG relative luminance
+      - Returns "#fff" for dark backgrounds, "#000" for light backgrounds
+
+      Update all TYPE_COLORS usages across the codebase to use `theme.palette.nodeTypes[type]`
+      instead. Remove the TYPE_COLORS constant from constants.ts.
+    acceptance_criteria:
+      - MUI theme augmented with nodeTypes palette (light + dark per type)
+      - TypeScript module declaration for type safety
+      - getContrastText utility returns white or black based on luminance
+      - All TYPE_COLORS usages migrated to theme
+    depends_on: [3]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    github_issue: 44
+    milestone: 11
+    title: Add settings menu with feedback form, Discord link, and GitHub link
+    description: |
+      Add a gear icon button in the top-left corner of the canvas (using MUI IconButton).
+      Clicking it opens a settings sidebar (same SIDEBAR_WIDTH pattern, slides in from the left
+      instead of right, pushes canvas like the editor sidebar does).
+
+      The settings panel contains:
+      1. **Feedback form**: MUI TextField (multiline) + Button. On submit, POST to
+         `/api/feedback` with `{ message: string }`. Backend writes to a `feedback` SQLite table
+         (id, message, created_at). Show a confirmation toast on success.
+      2. **Discord link**: MUI Button or Link that opens the Discord URL in a new tab.
+      3. **GitHub link**: MUI Button or Link that opens the GitHub repo URL in a new tab.
+
+      The panel closes on X button click or pane click (same pattern as editor sidebar).
+    acceptance_criteria:
+      - Gear icon in top-left corner of canvas
+      - Settings sidebar opens on click
+      - Feedback form submits to backend and shows confirmation
+      - Discord link opens in new tab
+      - GitHub link opens in new tab
+      - Panel closes on X or canvas click
+    depends_on: [3]
+    effort: 3
+    status: scoped
