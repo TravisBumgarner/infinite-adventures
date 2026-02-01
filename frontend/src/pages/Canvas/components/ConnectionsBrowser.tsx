@@ -1,8 +1,18 @@
-import { useTheme } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import type { Note, NoteType } from "shared";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
+import { getContrastText } from "../../../utils/getContrastText";
 
 interface ConnectionsBrowserProps {
   noteId: string;
@@ -45,210 +55,163 @@ export default function ConnectionsBrowser({
     });
   };
 
-  if (!note) return <div style={styles.panel}>Note not found</div>;
+  if (!note) {
+    return (
+      <Drawer
+        variant="persistent"
+        anchor="right"
+        open
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: SIDEBAR_WIDTH,
+            bgcolor: "var(--color-base)",
+            borderLeft: "1px solid var(--color-surface0)",
+            p: 2.5,
+          },
+        }}
+      >
+        <Typography>Note not found</Typography>
+      </Drawer>
+    );
+  }
 
   return (
-    <div style={styles.panel}>
-      <div style={styles.header}>
-        <h3 style={styles.headerTitle}>Connections</h3>
-        <button type="button" onClick={onClose} style={styles.closeBtn}>
-          &times;
-        </button>
-      </div>
+    <Drawer
+      variant="persistent"
+      anchor="right"
+      open
+      sx={{
+        "& .MuiDrawer-paper": {
+          width: SIDEBAR_WIDTH,
+          bgcolor: "var(--color-base)",
+          borderLeft: "1px solid var(--color-surface0)",
+          p: 2.5,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+          overflowY: "auto",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6">Connections</Typography>
+        <IconButton onClick={onClose} sx={{ color: "var(--color-text)" }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
-      <div style={styles.noteTitle}>{note.title}</div>
+      <Typography
+        variant="body2"
+        sx={{
+          color: "var(--color-subtext0)",
+          pb: 0.5,
+          borderBottom: "1px solid var(--color-surface0)",
+        }}
+      >
+        {note.title}
+      </Typography>
 
-      <input
-        type="text"
+      <TextField
+        size="small"
+        fullWidth
         placeholder="Search connections..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={styles.input}
       />
 
-      <div style={styles.chips}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
         {NOTE_TYPES.map(({ value, label }) => {
           const active = activeTypes.has(value);
+          const bgColor = theme.palette.nodeTypes[value].light;
           return (
-            <button
-              type="button"
+            <Chip
               key={value}
-              style={{
-                ...styles.chip,
-                background: active ? theme.palette.nodeTypes[value].light : "transparent",
-                borderColor: theme.palette.nodeTypes[value].light,
-                color: active ? "#fff" : "var(--color-subtext0)",
-              }}
+              label={label}
+              size="small"
               onClick={() => handleToggleType(value)}
-            >
-              <span
-                style={{
-                  ...styles.dot,
-                  background: theme.palette.nodeTypes[value].light,
-                  opacity: active ? 0 : 1,
-                }}
-              />
-              {label}
-            </button>
+              variant={active ? "filled" : "outlined"}
+              sx={{
+                bgcolor: active ? bgColor : "transparent",
+                borderColor: bgColor,
+                color: active ? getContrastText(bgColor) : "var(--color-subtext0)",
+                fontWeight: 600,
+                fontSize: 11,
+                "&:hover": {
+                  bgcolor: active ? bgColor : "transparent",
+                },
+              }}
+            />
           );
         })}
-      </div>
+      </Box>
 
-      <div style={styles.list}>
+      <List sx={{ flex: 1, overflowY: "auto", p: 0 }}>
         {filtered.length === 0 ? (
-          <div style={styles.empty}>No connections found</div>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "var(--color-overlay0)",
+              py: 1.5,
+              textAlign: "center",
+            }}
+          >
+            No connections found
+          </Typography>
         ) : (
-          filtered.map((entry) => (
-            <button
-              type="button"
-              key={`${entry.direction}-${entry.link.id}`}
-              style={styles.connectionItem}
-              onClick={() => onNavigate(entry.link.id)}
-            >
-              <span
-                style={{
-                  ...styles.directionBadge,
-                  background:
-                    entry.direction === "outgoing"
-                      ? "var(--color-surface1)"
-                      : "var(--color-surface0)",
-                }}
+          filtered.map((entry) => {
+            const typeBgColor = theme.palette.nodeTypes[entry.link.type].light;
+            return (
+              <ListItemButton
+                key={`${entry.direction}-${entry.link.id}`}
+                onClick={() => onNavigate(entry.link.id)}
+                sx={{ borderRadius: 1.5, gap: 1, py: 1 }}
               >
-                {entry.direction === "outgoing" ? "→" : "←"}
-              </span>
-              <span
-                style={{
-                  ...styles.typeBadge,
-                  background: theme.palette.nodeTypes[entry.link.type].light,
-                }}
-              >
-                {entry.link.type.toUpperCase()}
-              </span>
-              <span style={styles.connectionTitle}>{entry.link.title}</span>
-            </button>
-          ))
+                <Chip
+                  label={entry.direction === "outgoing" ? "→" : "←"}
+                  size="small"
+                  sx={{
+                    bgcolor:
+                      entry.direction === "outgoing"
+                        ? "var(--color-surface1)"
+                        : "var(--color-surface0)",
+                    color: "var(--color-subtext0)",
+                    fontSize: 12,
+                    height: 24,
+                    minWidth: 28,
+                  }}
+                />
+                <Chip
+                  label={entry.link.type.toUpperCase()}
+                  size="small"
+                  sx={{
+                    bgcolor: typeBgColor,
+                    color: getContrastText(typeBgColor),
+                    fontSize: 10,
+                    fontWeight: 600,
+                    height: 20,
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {entry.link.title}
+                </Typography>
+              </ListItemButton>
+            );
+          })
         )}
-      </div>
-    </div>
+      </List>
+    </Drawer>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  panel: {
-    position: "fixed",
-    top: 0,
-    right: 0,
-    width: SIDEBAR_WIDTH,
-    height: "100vh",
-    background: "var(--color-base)",
-    borderLeft: "1px solid var(--color-surface0)",
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    zIndex: 100,
-    overflowY: "auto",
-    color: "var(--color-text)",
-    fontFamily: "system-ui, sans-serif",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: 18,
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "var(--color-text)",
-    fontSize: 24,
-    cursor: "pointer",
-  },
-  noteTitle: {
-    fontSize: 14,
-    color: "var(--color-subtext0)",
-    paddingBottom: 4,
-    borderBottom: "1px solid var(--color-surface0)",
-  },
-  input: {
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 6,
-    padding: "8px 10px",
-    color: "var(--color-text)",
-    fontSize: 14,
-    outline: "none",
-  },
-  chips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  chip: {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "3px 8px",
-    borderRadius: 12,
-    border: "1px solid",
-    fontSize: 11,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: "50%",
-  },
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-    flex: 1,
-    overflowY: "auto",
-  },
-  empty: {
-    fontSize: 13,
-    color: "var(--color-overlay0)",
-    padding: "12px 0",
-    textAlign: "center",
-  },
-  connectionItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 10px",
-    background: "none",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    color: "var(--color-text)",
-    fontSize: 13,
-    fontFamily: "system-ui, sans-serif",
-    textAlign: "left",
-  },
-  directionBadge: {
-    fontSize: 12,
-    padding: "2px 6px",
-    borderRadius: 4,
-    color: "var(--color-subtext0)",
-    flexShrink: 0,
-  },
-  typeBadge: {
-    fontSize: 10,
-    padding: "1px 4px",
-    borderRadius: 3,
-    color: "#fff",
-    fontWeight: 600,
-    flexShrink: 0,
-  },
-  connectionTitle: {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-};

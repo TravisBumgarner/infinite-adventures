@@ -1,7 +1,15 @@
-import { useTheme } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import InputAdornment from "@mui/material/InputAdornment";
+import Paper from "@mui/material/Paper";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SearchResult } from "shared";
 import * as api from "../../../api/client";
+import { getContrastText } from "../../../utils/getContrastText";
 
 interface SearchBarProps {
   onNavigate: (noteId: string) => void;
@@ -80,117 +88,98 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
   };
 
   return (
-    <div ref={containerRef} style={styles.container}>
-      <input
-        type="text"
+    <Box ref={containerRef} sx={{ position: "fixed", top: 16, left: 16, zIndex: 50, width: 320 }}>
+      <TextField
+        variant="filled"
+        size="small"
+        fullWidth
         placeholder="Search notes..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => {
           if (results.length > 0) setShowDropdown(true);
         }}
+        onBlur={() => setShowDropdown(false)}
         onKeyDown={handleKeyDown}
-        style={styles.input}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ fontSize: 20, color: "var(--color-overlay0)" }} />
+              </InputAdornment>
+            ),
+          },
+        }}
       />
       {showDropdown && results.length > 0 && (
-        <div style={styles.dropdown}>
-          {results.map((result, i) => (
-            <div
-              key={result.id}
-              style={{
-                ...styles.item,
-                background: i === selectedIndex ? "var(--color-surface1)" : "transparent",
-              }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                selectResult(result);
-              }}
-              onMouseEnter={() => setSelectedIndex(i)}
-            >
-              <div style={styles.itemHeader}>
-                <span
-                  style={{
-                    ...styles.badge,
-                    background: theme.palette.nodeTypes[result.type].light,
-                  }}
-                >
-                  {result.type.toUpperCase()}
-                </span>
-                <span style={styles.title}>{result.title}</span>
-              </div>
-              <div style={styles.snippet} dangerouslySetInnerHTML={{ __html: result.snippet }} />
-            </div>
-          ))}
-        </div>
+        <Paper
+          sx={{
+            mt: 0.5,
+            maxHeight: 300,
+            overflowY: "auto",
+            bgcolor: "var(--color-base)",
+            border: "1px solid var(--color-surface1)",
+          }}
+        >
+          {results.map((result, i) => {
+            const bgColor = theme.palette.nodeTypes[result.type].light;
+            return (
+              <Box
+                key={result.id}
+                sx={{
+                  p: "8px 12px",
+                  cursor: "pointer",
+                  bgcolor: i === selectedIndex ? "var(--color-surface1)" : "transparent",
+                  borderBottom: "1px solid var(--color-surface0)",
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectResult(result);
+                }}
+                onMouseEnter={() => setSelectedIndex(i)}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.25 }}>
+                  <Chip
+                    label={result.type.toUpperCase()}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      bgcolor: bgColor,
+                      color: getContrastText(bgColor),
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {result.title}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "var(--color-subtext0)", lineHeight: 1.4 }}
+                  dangerouslySetInnerHTML={{ __html: result.snippet }}
+                />
+              </Box>
+            );
+          })}
+        </Paper>
       )}
       {showDropdown && query.trim() && results.length === 0 && (
-        <div style={styles.dropdown}>
-          <div style={styles.empty}>No results found</div>
-        </div>
+        <Paper
+          sx={{
+            mt: 0.5,
+            bgcolor: "var(--color-base)",
+            border: "1px solid var(--color-surface1)",
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ p: 1.5, color: "var(--color-overlay0)", textAlign: "center" }}
+          >
+            No results found
+          </Typography>
+        </Paper>
       )}
-    </div>
+    </Box>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    position: "fixed",
-    top: 16,
-    left: 16,
-    zIndex: 50,
-    width: 320,
-  },
-  input: {
-    width: "100%",
-    padding: "10px 14px",
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    color: "var(--color-text)",
-    fontSize: 14,
-    outline: "none",
-    fontFamily: "system-ui, sans-serif",
-  },
-  dropdown: {
-    marginTop: 4,
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    maxHeight: 300,
-    overflowY: "auto",
-  },
-  item: {
-    padding: "8px 12px",
-    cursor: "pointer",
-    borderBottom: "1px solid var(--color-surface0)",
-  },
-  itemHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 2,
-  },
-  badge: {
-    fontSize: 10,
-    padding: "1px 5px",
-    borderRadius: 3,
-    color: "#fff",
-    fontWeight: 600,
-  },
-  title: {
-    color: "var(--color-text)",
-    fontSize: 14,
-    fontWeight: 600,
-  },
-  snippet: {
-    color: "var(--color-subtext0)",
-    fontSize: 12,
-    lineHeight: 1.4,
-  },
-  empty: {
-    padding: "12px",
-    color: "var(--color-overlay0)",
-    fontSize: 13,
-    textAlign: "center" as const,
-  },
-};

@@ -1,4 +1,9 @@
-import { useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import { useTheme } from "@mui/material/styles";
 import Mention from "@tiptap/extension-mention";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -7,6 +12,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import type { Note, NoteSummary, NoteType } from "shared";
 import * as api from "../../../api/client";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
+import { getContrastText } from "../../../utils/getContrastText";
 
 interface MentionEditorProps {
   value: string;
@@ -21,7 +27,6 @@ interface SuggestionItem {
   type: string;
 }
 
-// Suggestion popup as a React component rendered in the editor's parent
 function SuggestionPopup({
   items,
   query,
@@ -44,53 +49,61 @@ function SuggestionPopup({
   }
 
   return (
-    <div style={popupStyles.container}>
-      {items.map((item, i) => (
-        <div
-          key={item.id}
-          style={{
-            ...popupStyles.item,
-            background: i === selectedIndex ? "var(--color-surface1)" : "transparent",
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onSelect(item);
-          }}
-          onMouseEnter={() => {
-            // handled via parent state
-          }}
-        >
-          <span
-            style={{
-              ...popupStyles.badge,
-              background: nodeTypes[item.type as NoteType]?.light || "#585b70",
+    <Paper
+      sx={{
+        maxHeight: 200,
+        overflowY: "auto",
+        bgcolor: "var(--color-surface0)",
+        border: "1px solid var(--color-surface1)",
+      }}
+    >
+      {items.map((item, i) => {
+        const bgColor = nodeTypes[item.type as NoteType]?.light || "#585b70";
+        return (
+          <MenuItem
+            key={item.id}
+            selected={i === selectedIndex}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onSelect(item);
             }}
+            sx={{ gap: 1, fontSize: 13 }}
           >
-            {item.type.toUpperCase()}
-          </span>
-          {item.title}
-        </div>
-      ))}
+            <Chip
+              label={item.type.toUpperCase()}
+              size="small"
+              sx={{
+                bgcolor: bgColor,
+                color: getContrastText(bgColor),
+                fontSize: 10,
+                fontWeight: 600,
+                height: 18,
+              }}
+            />
+            {item.title}
+          </MenuItem>
+        );
+      })}
       {hasCreateOption && (
-        <div
-          style={{
-            ...popupStyles.item,
-            ...popupStyles.createItem,
-            background: selectedIndex === items.length ? "var(--color-surface1)" : "transparent",
-          }}
+        <MenuItem
+          selected={selectedIndex === items.length}
           onMouseDown={(e) => {
             e.preventDefault();
             onSelect({ id: "", title: query, type: "npc" });
           }}
+          sx={{
+            fontStyle: "italic",
+            color: "var(--color-subtext0)",
+            fontSize: 13,
+          }}
         >
           Create &ldquo;{query}&rdquo;
-        </div>
+        </MenuItem>
       )}
-    </div>
+    </Paper>
   );
 }
 
-// Ref type for the suggestion component rendered via React
 interface SuggestionComponentRef {
   onKeyDown: (event: KeyboardEvent) => boolean;
   updateProps: (props: SuggestionProps<SuggestionItem>) => void;
@@ -146,10 +159,6 @@ const SuggestionController = forwardRef<
   }));
 
   useEffect(() => {
-    const hasCreateOption =
-      query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
-    const _totalItems = items.length + (hasCreateOption ? 1 : 0);
-
     onRender(
       <SuggestionPopup
         items={items}
@@ -171,59 +180,88 @@ SuggestionController.displayName = "SuggestionController";
 function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
   if (!editor) return null;
 
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    ...toolbarStyles.button,
-    background: active ? "var(--color-surface1)" : "transparent",
-    color: active ? "var(--color-text)" : "var(--color-subtext0)",
-  });
-
   return (
-    <div style={toolbarStyles.bar}>
-      <button
-        type="button"
-        style={btnStyle(editor.isActive("bold"))}
+    <Box
+      sx={{
+        display: "flex",
+        gap: 0.25,
+        p: 0.5,
+        bgcolor: "var(--color-base)",
+        border: "1px solid var(--color-surface1)",
+        borderBottom: "none",
+        borderRadius: "6px 6px 0 0",
+      }}
+    >
+      <IconButton
+        size="small"
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleBold().run();
         }}
         title="Bold"
+        sx={{
+          borderRadius: 1,
+          fontSize: 13,
+          fontWeight: 700,
+          color: editor.isActive("bold") ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: editor.isActive("bold") ? "var(--color-surface1)" : "transparent",
+        }}
       >
         B
-      </button>
-      <button
-        type="button"
-        style={btnStyle(editor.isActive("italic"))}
+      </IconButton>
+      <IconButton
+        size="small"
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleItalic().run();
         }}
         title="Italic"
+        sx={{
+          borderRadius: 1,
+          fontSize: 13,
+          fontWeight: 700,
+          fontStyle: "italic",
+          color: editor.isActive("italic") ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: editor.isActive("italic") ? "var(--color-surface1)" : "transparent",
+        }}
       >
         I
-      </button>
-      <button
-        type="button"
-        style={btnStyle(editor.isActive("bulletList"))}
+      </IconButton>
+      <IconButton
+        size="small"
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleBulletList().run();
         }}
         title="Bullet List"
+        sx={{
+          borderRadius: 1,
+          fontSize: 13,
+          fontWeight: 700,
+          color: editor.isActive("bulletList") ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: editor.isActive("bulletList") ? "var(--color-surface1)" : "transparent",
+        }}
       >
-        &bull;
-      </button>
-      <button
-        type="button"
-        style={btnStyle(editor.isActive("orderedList"))}
+        •
+      </IconButton>
+      <IconButton
+        size="small"
         onMouseDown={(e) => {
           e.preventDefault();
           editor.chain().focus().toggleOrderedList().run();
         }}
         title="Ordered List"
+        sx={{
+          borderRadius: 1,
+          fontSize: 13,
+          fontWeight: 700,
+          color: editor.isActive("orderedList") ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: editor.isActive("orderedList") ? "var(--color-surface1)" : "transparent",
+        }}
       >
         1.
-      </button>
-    </div>
+      </IconButton>
+    </Box>
   );
 }
 
@@ -301,7 +339,6 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
     },
   });
 
-  // Update editor content when value changes externally (e.g., loading a new note)
   const prevValue = useRef(value);
   useEffect(() => {
     if (!editor) return;
@@ -318,7 +355,7 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
   }, [value, editor, notesCache]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <Box sx={{ position: "relative" }}>
       <FormattingToolbar editor={editor} />
       <div style={style} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
@@ -328,72 +365,20 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
         onRender={handleRender}
         nodeTypes={theme.palette.nodeTypes}
       />
-      {suggestionPopup && <div style={popupStyles.popupWrapper}>{suggestionPopup}</div>}
-    </div>
+      {suggestionPopup && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "100%",
+            left: 0,
+            right: 0,
+            mb: 0.5,
+            zIndex: 200,
+          }}
+        >
+          {suggestionPopup}
+        </Box>
+      )}
+    </Box>
   );
 }
-
-const toolbarStyles: Record<string, React.CSSProperties> = {
-  bar: {
-    display: "flex",
-    gap: 2,
-    padding: "4px 4px",
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderBottom: "none",
-    borderRadius: "6px 6px 0 0",
-  },
-  button: {
-    border: "none",
-    borderRadius: 4,
-    padding: "4px 8px",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 700,
-    fontFamily: "system-ui, sans-serif",
-    lineHeight: 1,
-  },
-};
-
-const popupStyles: Record<string, React.CSSProperties> = {
-  popupWrapper: {
-    position: "absolute",
-    bottom: "100%",
-    left: 0,
-    right: 0,
-    marginBottom: 4,
-    zIndex: 200,
-  },
-  container: {
-    maxHeight: 200,
-    overflowY: "auto",
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 6,
-  },
-  item: {
-    padding: "6px 10px",
-    cursor: "pointer",
-    fontSize: 13,
-    color: "var(--color-text)",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  badge: {
-    fontSize: 10,
-    padding: "1px 4px",
-    borderRadius: 3,
-    color: "#fff",
-    fontWeight: 600,
-  },
-  createItem: {
-    fontStyle: "italic",
-    color: "var(--color-subtext0)",
-  },
-  empty: {
-    padding: "8px 10px",
-    fontSize: 13,
-    color: "var(--color-overlay0)",
-  },
-};

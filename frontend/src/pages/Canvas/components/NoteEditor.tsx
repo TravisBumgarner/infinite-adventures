@@ -1,3 +1,14 @@
+import CloseIcon from "@mui/icons-material/Close";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Drawer from "@mui/material/Drawer";
+import FormLabel from "@mui/material/FormLabel";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Note, NoteType } from "shared";
 import * as api from "../../../api/client";
@@ -43,15 +54,12 @@ export default function NoteEditor({
   const [type, setType] = useState<NoteType>("npc");
   const [content, setContent] = useState("");
 
-  // Refs to hold latest values for the save function
   const titleRef = useRef(title);
   titleRef.current = title;
   const typeRef = useRef(type);
   typeRef.current = type;
   const contentRef = useRef(content);
   contentRef.current = content;
-  // noteIdRef is updated only in the fetch effect, not during render,
-  // so cleanup effects still see the previous noteId.
   const noteIdRef = useRef(noteId);
 
   const saveFn = useCallback(async () => {
@@ -65,7 +73,6 @@ export default function NoteEditor({
 
   const { status, markDirty, flush } = useAutoSave({ saveFn });
 
-  // Flush pending saves when noteId changes (switching notes)
   useEffect(() => {
     return () => {
       flush();
@@ -88,50 +95,93 @@ export default function NoteEditor({
     onDeleted(noteId);
   }
 
-  if (!note) return <div style={styles.panel}>Loading...</div>;
+  if (!note) {
+    return (
+      <Drawer
+        variant="persistent"
+        anchor="right"
+        open
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: SIDEBAR_WIDTH,
+            bgcolor: "var(--color-base)",
+            borderLeft: "1px solid var(--color-surface0)",
+            p: 2.5,
+          },
+        }}
+      >
+        <Typography>Loading...</Typography>
+      </Drawer>
+    );
+  }
 
   return (
-    <div style={styles.panel}>
-      <div style={styles.header}>
-        <h3 style={styles.headerTitle}>Edit Note</h3>
-        <button type="button" onClick={onClose} style={styles.closeBtn}>
-          &times;
-        </button>
-      </div>
+    <Drawer
+      variant="persistent"
+      anchor="right"
+      open
+      sx={{
+        "& .MuiDrawer-paper": {
+          width: SIDEBAR_WIDTH,
+          bgcolor: "var(--color-base)",
+          borderLeft: "1px solid var(--color-surface0)",
+          p: 2.5,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+          overflowY: "auto",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6">Edit Note</Typography>
+        <IconButton onClick={onClose} sx={{ color: "var(--color-text)" }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
-      <label style={styles.label}>
-        Title
-        <input
-          type="text"
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <FormLabel sx={{ fontSize: 13, color: "var(--color-subtext0)" }}>Title</FormLabel>
+        <TextField
+          size="small"
+          fullWidth
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
             markDirty();
           }}
-          style={styles.input}
         />
-      </label>
+      </Box>
 
-      <label style={styles.label}>
-        Type
-        <select
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <FormLabel sx={{ fontSize: 13, color: "var(--color-subtext0)" }}>Type</FormLabel>
+        <Select
+          size="small"
+          fullWidth
           value={type}
           onChange={(e) => {
             setType(e.target.value as NoteType);
             markDirty();
           }}
-          style={styles.input}
         >
           {NOTE_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
+            <MenuItem key={t.value} value={t.value}>
               {t.label}
-            </option>
+            </MenuItem>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Box>
 
-      <div style={styles.label}>
-        <span>Start typing or @ mention another note</span>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <FormLabel sx={{ fontSize: 13, color: "var(--color-subtext0)" }}>
+          Start typing or @ mention another note
+        </FormLabel>
         <MentionEditor
           value={content}
           onChange={(val: string) => {
@@ -139,143 +189,89 @@ export default function NoteEditor({
             markDirty();
           }}
           notesCache={notesCache}
-          style={{ ...styles.input, minHeight: 200, resize: "vertical" }}
+          style={{
+            background: "var(--color-surface0)",
+            border: "1px solid var(--color-surface1)",
+            borderRadius: "0 0 6px 6px",
+            padding: "8px 10px",
+            color: "var(--color-text)",
+            fontSize: 14,
+            minHeight: 200,
+          }}
         />
-      </div>
+      </Box>
 
-      <div style={styles.actions}>
-        <span style={styles.statusIndicator}>{statusLabel(status)}</span>
-        <button type="button" onClick={handleDelete} style={styles.deleteBtn}>
-          Delete
-        </button>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
+        <Typography variant="caption" sx={{ flex: 1, color: "var(--color-subtext0)" }}>
+          {statusLabel(status)}
+        </Typography>
+      </Box>
+
+      <Button
+        variant="outlined"
+        color="error"
+        onClick={handleDelete}
+        sx={{ alignSelf: "flex-start" }}
+      >
+        Delete
+      </Button>
 
       {(note.links_to.length > 0 || note.linked_from.length > 0) && (
-        <div style={styles.linksSection}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
           {note.links_to.length > 0 && (
-            <div>
-              <div style={styles.linksLabel}>Links to:</div>
-              {note.links_to.map((link) => (
-                <button
-                  type="button"
-                  key={link.id}
-                  onClick={() => onNavigate(link.id)}
-                  style={styles.linkBtn}
-                >
-                  @{link.title}
-                </button>
-              ))}
-            </div>
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "var(--color-overlay0)",
+                  mb: 0.5,
+                  display: "block",
+                }}
+              >
+                Links to:
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {note.links_to.map((link) => (
+                  <Chip
+                    key={link.id}
+                    label={`@${link.title}`}
+                    size="small"
+                    clickable
+                    onClick={() => onNavigate(link.id)}
+                    sx={{ color: "var(--color-blue)" }}
+                  />
+                ))}
+              </Box>
+            </Box>
           )}
           {note.linked_from.length > 0 && (
-            <div>
-              <div style={styles.linksLabel}>Linked from:</div>
-              {note.linked_from.map((link) => (
-                <button
-                  type="button"
-                  key={link.id}
-                  onClick={() => onNavigate(link.id)}
-                  style={styles.linkBtn}
-                >
-                  @{link.title}
-                </button>
-              ))}
-            </div>
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "var(--color-overlay0)",
+                  mb: 0.5,
+                  display: "block",
+                }}
+              >
+                Linked from:
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {note.linked_from.map((link) => (
+                  <Chip
+                    key={link.id}
+                    label={`@${link.title}`}
+                    size="small"
+                    clickable
+                    onClick={() => onNavigate(link.id)}
+                    sx={{ color: "var(--color-blue)" }}
+                  />
+                ))}
+              </Box>
+            </Box>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Drawer>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  panel: {
-    position: "fixed",
-    top: 0,
-    right: 0,
-    width: SIDEBAR_WIDTH,
-    height: "100vh",
-    background: "var(--color-base)",
-    borderLeft: "1px solid var(--color-surface0)",
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    zIndex: 100,
-    overflowY: "auto",
-    color: "var(--color-text)",
-    fontFamily: "system-ui, sans-serif",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: 18,
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    color: "var(--color-text)",
-    fontSize: 24,
-    cursor: "pointer",
-  },
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-    fontSize: 13,
-    color: "var(--color-subtext0)",
-  },
-  input: {
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 6,
-    padding: "8px 10px",
-    color: "var(--color-text)",
-    fontSize: 14,
-    outline: "none",
-  },
-  actions: {
-    display: "flex",
-    gap: 8,
-    marginTop: 8,
-  },
-  statusIndicator: {
-    flex: 1,
-    fontSize: 13,
-    color: "var(--color-subtext0)",
-    alignSelf: "center",
-  },
-  deleteBtn: {
-    padding: "8px 12px",
-    background: "#d94a4a",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  linksSection: {
-    marginTop: 8,
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  linksLabel: {
-    fontSize: 12,
-    color: "var(--color-overlay0)",
-    marginBottom: 4,
-  },
-  linkBtn: {
-    background: "none",
-    border: "none",
-    color: "var(--color-blue)",
-    cursor: "pointer",
-    fontSize: 13,
-    padding: "2px 4px",
-    textAlign: "left" as const,
-  },
-};

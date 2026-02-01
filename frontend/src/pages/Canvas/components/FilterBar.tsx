@@ -1,7 +1,14 @@
-import { useTheme } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import { useState } from "react";
 import type { NoteType } from "shared";
 import { NOTE_TYPES } from "../../../constants";
+import { getContrastText } from "../../../utils/getContrastText";
 
 interface FilterBarProps {
   activeTypes: Set<NoteType>;
@@ -22,130 +29,98 @@ export default function FilterBar({
 
   if (!expanded) {
     return (
-      <button type="button" style={styles.toggleButton} onClick={() => setExpanded(true)}>
-        Filter{hasFilters ? " *" : ""}
-      </button>
+      <IconButton
+        onClick={() => setExpanded(true)}
+        title="Filter"
+        sx={{
+          position: "fixed",
+          top: 16,
+          left: 344,
+          zIndex: 50,
+          bgcolor: "var(--color-base)",
+          border: "1px solid var(--color-surface1)",
+          borderRadius: 2,
+          color: "var(--color-text)",
+          height: 40,
+          width: 40,
+          "&:hover": { bgcolor: "var(--color-surface0)" },
+        }}
+      >
+        <FilterListIcon fontSize="small" />
+        {hasFilters && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              bgcolor: "primary.main",
+            }}
+          />
+        )}
+      </IconButton>
     );
   }
 
   return (
-    <div style={styles.bar}>
-      <div style={styles.row}>
-        <input
-          type="text"
+    <Box
+      sx={{
+        position: "fixed",
+        top: 16,
+        left: 344,
+        zIndex: 50,
+        bgcolor: "var(--color-base)",
+        border: "1px solid var(--color-surface1)",
+        borderRadius: 2,
+        p: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 0.75,
+      }}
+    >
+      <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
+        <TextField
+          size="small"
           placeholder="Filter by text..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          style={styles.input}
+          sx={{ width: 180 }}
         />
-        <button type="button" style={styles.closeButton} onClick={() => setExpanded(false)}>
-          X
-        </button>
-      </div>
-      <div style={styles.chips}>
+        <IconButton
+          onClick={() => setExpanded(false)}
+          size="small"
+          sx={{ color: "var(--color-subtext0)" }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
         {NOTE_TYPES.map(({ value, label }) => {
           const active = activeTypes.has(value);
+          const bgColor = theme.palette.nodeTypes[value].light;
           return (
-            <button
-              type="button"
+            <Chip
               key={value}
-              style={{
-                ...styles.chip,
-                background: active ? theme.palette.nodeTypes[value].light : "transparent",
-                borderColor: theme.palette.nodeTypes[value].light,
-                color: active ? "#fff" : "var(--color-subtext0)",
-              }}
+              label={label}
+              size="small"
               onClick={() => onToggleType(value)}
-            >
-              <span
-                style={{
-                  ...styles.dot,
-                  background: theme.palette.nodeTypes[value].light,
-                  opacity: active ? 0 : 1,
-                }}
-              />
-              {label}
-            </button>
+              variant={active ? "filled" : "outlined"}
+              sx={{
+                bgcolor: active ? bgColor : "transparent",
+                borderColor: bgColor,
+                color: active ? getContrastText(bgColor) : "var(--color-subtext0)",
+                fontWeight: 600,
+                fontSize: 11,
+                "&:hover": {
+                  bgcolor: active ? bgColor : "transparent",
+                },
+              }}
+            />
           );
         })}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toggleButton: {
-    position: "fixed",
-    top: 20,
-    left: 344,
-    zIndex: 50,
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 6,
-    color: "var(--color-text)",
-    padding: "6px 12px",
-    fontSize: 13,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  bar: {
-    position: "fixed",
-    top: 16,
-    left: 344,
-    zIndex: 50,
-    background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 8,
-    padding: 8,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
-  row: {
-    display: "flex",
-    gap: 6,
-    alignItems: "center",
-  },
-  input: {
-    background: "var(--color-surface0)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 4,
-    color: "var(--color-text)",
-    padding: "4px 8px",
-    fontSize: 13,
-    fontFamily: "system-ui, sans-serif",
-    outline: "none",
-    width: 180,
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    color: "var(--color-subtext0)",
-    cursor: "pointer",
-    fontSize: 13,
-    padding: "4px 6px",
-    fontFamily: "system-ui, sans-serif",
-  },
-  chips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  chip: {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "3px 8px",
-    borderRadius: 12,
-    border: "1px solid",
-    fontSize: 11,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: "50%",
-  },
-};

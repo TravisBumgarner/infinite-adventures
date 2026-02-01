@@ -33,3 +33,13 @@ html, body, #root {
   border-radius: 4px;
   padding: 1px 4px;
 }
+
+.mention-editor-wrapper .ProseMirror ul,
+.mention-editor-wrapper .ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.mention-editor-wrapper .ProseMirror li {
+  margin: 0.1em 0;
+}

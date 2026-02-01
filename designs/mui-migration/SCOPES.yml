@@ -72,7 +72,7 @@ tasks:
       - No inline style objects remain in either file
     depends_on: []
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 4
     github_issue: 53
@@ -91,7 +91,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 5
     github_issue: 54
@@ -109,7 +109,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 6
     github_issue: 55
@@ -129,7 +129,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 7
     github_issue: 56
@@ -148,7 +148,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 8
     github_issue: 57
@@ -184,7 +184,7 @@ tasks:
       - No inline style objects remain
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 10
     github_issue: 59
@@ -203,4 +203,4 @@ tasks:
       - No inline style objects remain for toolbar and popup
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
