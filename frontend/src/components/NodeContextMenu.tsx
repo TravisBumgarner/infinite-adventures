@@ -44,15 +44,17 @@ export default function NodeContextMenu({
         style={{ ...styles.menu, left: x, top: y }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <button
-          style={styles.editItem}
-          onClick={() => {
-            onEdit(noteId);
-            onClose();
-          }}
-        >
-          Edit
-        </button>
+        {!isMulti && (
+          <button
+            style={styles.editItem}
+            onClick={() => {
+              onEdit(noteId);
+              onClose();
+            }}
+          >
+            Edit
+          </button>
+        )}
         {isMulti ? (
           <button
             style={styles.item}
