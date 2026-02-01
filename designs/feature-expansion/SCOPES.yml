@@ -80,7 +80,7 @@ tasks:
       - Markdown preview in NoteNode displays the formatting
     depends_on: [1]
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 4
     github_issue: 23
