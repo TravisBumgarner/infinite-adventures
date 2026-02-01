@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 import { useTheme } from "@mui/material";
-import type { NoteType } from "../types";
+import type { NoteType } from "shared";
 import { TYPE_LABELS } from "../constants";
 import { parsePreviewContent } from "../utils/previewParser";
 import type { PreviewSegment } from "../utils/previewParser";

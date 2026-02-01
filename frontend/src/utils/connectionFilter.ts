@@ -1,4 +1,4 @@
-import type { NoteLink, NoteType } from "../types";
+import type { NoteLink, NoteType } from "shared";
 
 export interface ConnectionEntry {
   link: NoteLink;

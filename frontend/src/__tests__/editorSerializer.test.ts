@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Note } from "../types";
+import type { Note } from "shared";
 import { serializeToMentionText, contentToHtml } from "../utils/editorSerializer";
 
 // Helper to build a TipTap paragraph with inline content

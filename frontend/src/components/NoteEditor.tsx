@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Note, NoteType } from "../types";
+import type { Note, NoteType } from "shared";
 import * as api from "../api/client";
 import MentionEditor from "./MentionEditor";
 import { NOTE_TYPES, SIDEBAR_WIDTH } from "../constants";

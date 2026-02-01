@@ -3,44 +3,23 @@ import { eq, sql } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
 import { notes, noteLinks } from "../db/schema.js";
 import { resolveLinks } from "./linkService.js";
+import type {
+  NoteType,
+  NoteLink as NoteLinkInfo,
+  NoteSummary,
+  CreateNoteInput,
+  UpdateNoteInput,
+  SearchResult,
+} from "shared";
 
-export type NoteType = typeof notes.$inferSelect.type;
+export type { NoteType, NoteSummary, CreateNoteInput, UpdateNoteInput };
+export type { NoteLinkInfo };
 
-export type Note = typeof notes.$inferSelect;
-
-export interface NoteSummary {
-  id: string;
-  type: NoteType;
-  title: string;
-  canvas_x: number;
-  canvas_y: number;
-}
-
-export interface NoteLinkInfo {
-  id: string;
-  title: string;
-  type: NoteType;
-}
+type Note = typeof notes.$inferSelect;
 
 export interface NoteWithLinks extends Note {
   links_to: NoteLinkInfo[];
   linked_from: NoteLinkInfo[];
-}
-
-export interface CreateNoteInput {
-  type: string;
-  title: string;
-  content?: string;
-  canvas_x?: number;
-  canvas_y?: number;
-}
-
-export interface UpdateNoteInput {
-  type?: string;
-  title?: string;
-  content?: string;
-  canvas_x?: number;
-  canvas_y?: number;
 }
 
 const VALID_TYPES = [
@@ -176,12 +155,7 @@ export function deleteNote(id: string): boolean {
   return result.changes > 0;
 }
 
-export interface SearchResult {
-  id: string;
-  type: NoteType;
-  title: string;
-  snippet: string;
-}
+export type { SearchResult };
 
 export function searchNotes(query: string): SearchResult[] {
   if (!query || !query.trim()) {

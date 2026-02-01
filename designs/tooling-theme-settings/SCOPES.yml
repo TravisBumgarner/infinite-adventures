@@ -52,7 +52,7 @@ tasks:
       - npm install at root works and all tests pass
     depends_on: []
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 2
     github_issue: 41

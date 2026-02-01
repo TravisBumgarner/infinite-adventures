@@ -1,4 +1,4 @@
-import type { Note } from "../types";
+import type { Note } from "shared";
 
 /**
  * Resolve @{id} mentions in text to @title format using the cache.

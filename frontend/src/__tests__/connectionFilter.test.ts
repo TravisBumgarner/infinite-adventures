@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { NoteLink, NoteType } from "../types";
+import type { NoteLink, NoteType } from "shared";
 import {
   buildConnectionEntries,
   filterConnections,

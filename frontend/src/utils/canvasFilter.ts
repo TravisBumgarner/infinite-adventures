@@ -1,6 +1,6 @@
 import type { Node, Edge } from "@xyflow/react";
 import type { NoteNodeData } from "../components/NoteNode";
-import type { NoteType } from "../types";
+import type { NoteType } from "shared";
 
 /**
  * Filter nodes by active types and search text.

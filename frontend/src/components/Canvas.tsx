@@ -19,7 +19,7 @@ import SearchBar from "./SearchBar";
 import ContextMenu from "./ContextMenu";
 import NodeContextMenu from "./NodeContextMenu";
 import Toolbar from "./Toolbar";
-import type { Note, NoteType } from "../types";
+import type { Note, NoteType } from "shared";
 import * as api from "../api/client";
 import { NOTE_TEMPLATES, SIDEBAR_WIDTH } from "../constants";
 import { getSelectedNodePositions, batchDeleteNotes } from "../utils/multiSelect";

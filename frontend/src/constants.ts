@@ -1,4 +1,4 @@
-import type { NoteType } from "./types";
+import type { NoteType } from "shared";
 
 export const SIDEBAR_WIDTH = 360;
 

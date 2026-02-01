@@ -12,7 +12,7 @@ import {
   useCallback,
 } from "react";
 import type { ReactNode } from "react";
-import type { NoteType } from "../types";
+import type { NoteType } from "shared";
 import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
 import type { ThemePreference, EffectiveMode } from "./styleConsts";
 import { applyCssVars } from "./cssVars";

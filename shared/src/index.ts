@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// --- Schemas (stubs — will be fleshed out in the green phase) ---
+// --- Schemas ---
 
 export const NoteTypeSchema = z.enum([
   "pc",
@@ -12,17 +12,55 @@ export const NoteTypeSchema = z.enum([
   "session",
 ]);
 
-export const NoteSummarySchema = z.object({});
+export const NoteSummarySchema = z.object({
+  id: z.string(),
+  type: NoteTypeSchema,
+  title: z.string(),
+  canvas_x: z.number(),
+  canvas_y: z.number(),
+});
 
-export const NoteLinkSchema = z.object({});
+export const NoteLinkSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  type: NoteTypeSchema,
+});
 
-export const NoteSchema = z.object({});
+export const NoteSchema = z.object({
+  id: z.string(),
+  type: NoteTypeSchema,
+  title: z.string(),
+  content: z.string(),
+  canvas_x: z.number(),
+  canvas_y: z.number(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  links_to: z.array(NoteLinkSchema),
+  linked_from: z.array(NoteLinkSchema),
+});
 
-export const CreateNoteInputSchema = z.object({});
+export const CreateNoteInputSchema = z.object({
+  type: NoteTypeSchema,
+  title: z.string(),
+  content: z.string().optional(),
+  canvas_x: z.number().optional(),
+  canvas_y: z.number().optional(),
+});
 
-export const UpdateNoteInputSchema = z.object({});
+export const UpdateNoteInputSchema = z.object({
+  type: NoteTypeSchema.optional(),
+  title: z.string().optional(),
+  content: z.string().optional(),
+  canvas_x: z.number().optional(),
+  canvas_y: z.number().optional(),
+});
 
-export const SearchResultSchema = z.object({});
+export const SearchResultSchema = z.object({
+  id: z.string(),
+  type: NoteTypeSchema,
+  title: z.string(),
+  snippet: z.string(),
+});
 
 // --- Inferred types ---
 

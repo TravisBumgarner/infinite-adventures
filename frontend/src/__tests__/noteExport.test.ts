@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Note } from "../types";
+import type { Note } from "shared";
 import { formatNoteExport } from "../utils/noteExport";
 
 function makeNote(overrides: Partial<Note> & { id: string; title: string }): Note {
