@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import * as api from "../api/client";
+import { SIDEBAR_WIDTH } from "../constants";
 import type { ThemePreference } from "../styles/styleConsts";
 import { useThemePreference } from "../styles/Theme";
 
@@ -14,18 +16,23 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
   );
 }
 
-interface SettingsModalProps {
+interface SettingsSidebarProps {
   onClose: () => void;
+  onToast: (message: string) => void;
 }
 
-const OPTIONS: { value: ThemePreference; label: string; description: string }[] = [
+const THEME_OPTIONS: { value: ThemePreference; label: string; description: string }[] = [
   { value: "system", label: "System", description: "Follow your OS preference" },
   { value: "light", label: "Light", description: "Catppuccin Latte" },
   { value: "dark", label: "Dark", description: "Catppuccin Mocha" },
 ];
 
-export function SettingsModal({ onClose }: SettingsModalProps) {
+const DISCORD_URL = "https://discord.com/invite/J8jwMxEEff";
+
+export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
   const { preference, setPreference } = useThemePreference();
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -35,36 +42,82 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  return (
-    <div style={styles.backdrop} onMouseDown={onClose}>
-      <div style={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
-        <div style={styles.header}>
-          <h3 style={styles.title}>Settings</h3>
-          <button type="button" onClick={onClose} style={styles.closeBtn}>
-            &times;
-          </button>
-        </div>
+  const handleSubmitFeedback = async () => {
+    const trimmed = feedbackMessage.trim();
+    if (!trimmed) return;
 
-        <div style={styles.section}>
-          <div style={styles.sectionLabel}>Theme</div>
-          <div style={styles.options}>
-            {OPTIONS.map((opt) => (
-              <button
-                type="button"
-                key={opt.value}
-                style={{
-                  ...styles.optionCard,
-                  borderColor:
-                    preference === opt.value ? "var(--color-blue)" : "var(--color-surface1)",
-                }}
-                onClick={() => setPreference(opt.value)}
-              >
-                <div style={styles.optionLabel}>{opt.label}</div>
-                <div style={styles.optionDesc}>{opt.description}</div>
-              </button>
-            ))}
-          </div>
+    setSubmitting(true);
+    try {
+      await api.submitFeedback(trimmed);
+      setFeedbackMessage("");
+      onToast("Feedback sent — thank you!");
+    } catch {
+      onToast("Failed to send feedback");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={styles.sidebar}>
+      <div style={styles.header}>
+        <h3 style={styles.title}>Settings</h3>
+        <button type="button" onClick={onClose} style={styles.closeBtn}>
+          &times;
+        </button>
+      </div>
+
+      {/* Theme */}
+      <div style={styles.section}>
+        <div style={styles.sectionLabel}>Theme</div>
+        <div style={styles.options}>
+          {THEME_OPTIONS.map((opt) => (
+            <button
+              type="button"
+              key={opt.value}
+              style={{
+                ...styles.optionCard,
+                borderColor:
+                  preference === opt.value ? "var(--color-blue)" : "var(--color-surface1)",
+              }}
+              onClick={() => setPreference(opt.value)}
+            >
+              <div style={styles.optionLabel}>{opt.label}</div>
+              <div style={styles.optionDesc}>{opt.description}</div>
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* Feedback */}
+      <div style={styles.section}>
+        <div style={styles.sectionLabel}>Feedback</div>
+        <textarea
+          style={styles.textarea}
+          placeholder="Tell us what you think..."
+          value={feedbackMessage}
+          onChange={(e) => setFeedbackMessage(e.target.value)}
+          rows={4}
+        />
+        <button
+          type="button"
+          style={{
+            ...styles.submitBtn,
+            opacity: submitting || !feedbackMessage.trim() ? 0.5 : 1,
+          }}
+          onClick={handleSubmitFeedback}
+          disabled={submitting || !feedbackMessage.trim()}
+        >
+          {submitting ? "Sending..." : "Send Feedback"}
+        </button>
+      </div>
+
+      {/* Discord */}
+      <div style={styles.section}>
+        <div style={styles.sectionLabel}>Community</div>
+        <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" style={styles.linkBtn}>
+          Join us on Discord
+        </a>
       </div>
     </div>
   );
@@ -74,7 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
   gearButton: {
     position: "fixed",
     top: 16,
-    right: 16,
+    left: 16,
     zIndex: 50,
     background: "var(--color-base)",
     border: "1px solid var(--color-surface1)",
@@ -89,30 +142,26 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontFamily: "system-ui, sans-serif",
   },
-  backdrop: {
+  sidebar: {
     position: "fixed",
-    inset: 0,
-    zIndex: 250,
-    background: "var(--color-backdrop)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modal: {
+    top: 0,
+    left: 0,
+    width: SIDEBAR_WIDTH,
+    height: "100vh",
     background: "var(--color-base)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 12,
-    padding: 24,
-    width: 360,
-    maxWidth: "90vw",
-    boxShadow: "0 16px 48px var(--color-backdrop)",
+    borderRight: "1px solid var(--color-surface1)",
+    zIndex: 200,
+    padding: 20,
+    overflowY: "auto",
     fontFamily: "system-ui, sans-serif",
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
   },
   title: {
     margin: 0,
@@ -161,5 +210,40 @@ const styles: Record<string, React.CSSProperties> = {
   optionDesc: {
     fontSize: 12,
     color: "var(--color-subtext0)",
+  },
+  textarea: {
+    background: "var(--color-surface0)",
+    border: "1px solid var(--color-surface1)",
+    borderRadius: 8,
+    color: "var(--color-text)",
+    fontSize: 14,
+    padding: "10px 12px",
+    resize: "vertical",
+    fontFamily: "system-ui, sans-serif",
+    outline: "none",
+  },
+  submitBtn: {
+    background: "var(--color-blue)",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "8px 16px",
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "system-ui, sans-serif",
+    fontWeight: 600,
+  },
+  linkBtn: {
+    display: "block",
+    padding: "10px 14px",
+    background: "var(--color-surface0)",
+    border: "1px solid var(--color-surface1)",
+    borderRadius: 8,
+    color: "var(--color-blue)",
+    fontSize: 14,
+    textDecoration: "none",
+    textAlign: "center",
+    fontWeight: 600,
+    fontFamily: "system-ui, sans-serif",
   },
 };

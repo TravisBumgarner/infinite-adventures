@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { initDb } from "./db/connection.js";
+import { feedbackRouter } from "./routes/feedback.js";
 import { notesRouter } from "./routes/notes.js";
 
 const PORT = parseInt(process.env.PORT || "3021", 10);
@@ -12,6 +13,7 @@ app.use(express.json());
 initDb();
 
 app.use("/api/notes", notesRouter);
+app.use("/api/feedback", feedbackRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

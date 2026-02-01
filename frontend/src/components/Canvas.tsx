@@ -28,7 +28,7 @@ import NoteEditor from "./NoteEditor";
 import type { NoteNodeData } from "./NoteNode";
 import NoteNodeComponent from "./NoteNode";
 import SearchBar from "./SearchBar";
-import { SettingsButton, SettingsModal } from "./SettingsModal";
+import { SettingsButton, SettingsSidebar } from "./SettingsModal";
 import Toast from "./Toast";
 import Toolbar from "./Toolbar";
 
@@ -406,8 +406,12 @@ export default function Canvas() {
   return (
     <div
       style={{
-        width: editingNoteId || browsingNoteId ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+        width:
+          editingNoteId || browsingNoteId || showSettings
+            ? `calc(100vw - ${SIDEBAR_WIDTH}px)`
+            : "100vw",
         height: "100vh",
+        marginLeft: showSettings ? SIDEBAR_WIDTH : 0,
       }}
     >
       <ReactFlow
@@ -421,6 +425,7 @@ export default function Canvas() {
           setBrowsingNoteId(null);
           setContextMenu(null);
           setNodeContextMenu(null);
+          setShowSettings(false);
         }}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
@@ -519,7 +524,12 @@ export default function Canvas() {
       {toastMessage && <Toast message={toastMessage} onDone={() => setToastMessage(null)} />}
 
       <SettingsButton onClick={() => setShowSettings(true)} />
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsSidebar
+          onClose={() => setShowSettings(false)}
+          onToast={(msg) => setToastMessage(msg)}
+        />
+      )}
     </div>
   );
 }

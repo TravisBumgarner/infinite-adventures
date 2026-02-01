@@ -46,3 +46,10 @@ export async function searchNotes(query: string): Promise<SearchResult[]> {
   );
   return data.results;
 }
+
+export function submitFeedback(message: string): Promise<{ id: string; message: string }> {
+  return request<{ id: string; message: string }>("/feedback", {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
