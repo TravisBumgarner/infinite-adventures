@@ -1,0 +1,292 @@
+project: Auth & API Reorganization
+repo: TravisBumgarner/infinite-adventures
+design_file: (user directive — add Supabase auth, reorganize API following just-recordings patterns)
+scoping_date: 2026-02-01
+
+milestones:
+  - number: 15
+    title: "15. API Reorganization"
+    description: >
+      Adopt just-recordings API patterns: config module, response helpers, validation utilities,
+      route handler structure (validate/processRequest/handler), and shared error codes.
+    branch:
+      working: 70-api-reorganization
+      base: main
+
+  - number: 16
+    title: "16. Supabase Auth"
+    description: >
+      Add Supabase authentication with users table, backend auth middleware, frontend auth pages
+      (login, signup, password reset), route guards, and token-based API calls.
+    branch:
+      working: 73-supabase-auth
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 70
+    milestone: 15
+    title: Add config module, response helpers, and validation utilities
+    description: |
+      Adopt the just-recordings API patterns by adding foundational utilities to the backend.
+
+      **Config module** (`backend/src/config.ts`):
+      - Zod schema validating env vars: PORT, NODE_ENV, DB_PATH, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+      - Export typed `config` object with parsed values and convenience flags (`isProduction`, `isDevelopment`)
+      - Install `zod` in backend package
+
+      **Response helpers** (`backend/src/routes/shared/responses.ts`):
+      - `sendSuccess<T>(res, data, status?)` → `{ success: true, data }`
+      - `sendError(res, errorCode, status)` → `{ success: false, errorCode }`
+      - Typed helpers: `sendUnauthorized`, `sendForbidden`, `sendNotFound`, `sendBadRequest`, `sendInternalError`
+
+      **Shared error codes** (`shared/src/index.ts`):
+      - Add `ErrorCode` type: `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `INVALID_INPUT`, `INVALID_UUID`,
+        `INTERNAL_ERROR`, `NOTE_NOT_FOUND`
+
+      **Validation utilities** (`backend/src/routes/shared/validation.ts`):
+      - `isValidUUID(id: string): boolean` — UUID v4 format check
+    acceptance_criteria:
+      - Config module reads env vars through Zod with defaults for dev
+      - Response helpers return consistent { success, data/errorCode } format
+      - ErrorCode type exported from shared package
+      - isValidUUID validates UUID v4 format
+    depends_on: []
+    effort: 2
+    status: completed
+
+  - id: 2
+    github_issue: 71
+    milestone: 15
+    title: Refactor note routes to validate/processRequest/handler pattern
+    description: |
+      Restructure the notes router from a single `routes/notes.ts` file to a directory-based pattern
+      following just-recordings conventions.
+
+      New structure:
+      ```
+      backend/src/routes/
+      ├── notes/
+      │   ├── index.ts        # Router definition with route → handler mapping
+      │   ├── list.ts         # GET /api/notes
+      │   ├── get.ts          # GET /api/notes/:id
+      │   ├── create.ts       # POST /api/notes
+      │   ├── update.ts       # PUT /api/notes/:id
+      │   ├── delete.ts       # DELETE /api/notes/:id
+      │   └── search.ts       # GET /api/notes/search
+      └── shared/
+          ├── responses.ts    # (from task 1)
+          └── validation.ts   # (from task 1)
+      ```
+
+      Each route file exports three functions:
+      1. `validate(req, res)` — validates params/body, returns typed context or null
+      2. `processRequest(req, res, context)` — business logic using validated context
+      3. `handler(req, res)` — orchestrator that calls validate then processRequest
+
+      Use response helpers (`sendSuccess`, `sendNotFound`, `sendBadRequest`) instead of raw
+      `res.status().json()`. Use `isValidUUID` for ID param validation. Keep noteService functions
+      unchanged. Delete the old `routes/notes.ts` file.
+    acceptance_criteria:
+      - Each note endpoint is in its own file with validate/processRequest/handler
+      - All responses use sendSuccess/sendError helpers
+      - UUID params validated with isValidUUID
+      - Router index.ts maps routes to handlers
+      - Old routes/notes.ts is deleted
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 72
+    milestone: 15
+    title: Update frontend API client to handle structured responses
+    description: |
+      Update `frontend/src/api/client.ts` to handle the new structured response format
+      `{ success: true, data }` from the backend.
+
+      The `request<T>()` helper currently returns the raw JSON body. Update it to:
+      1. Parse the response as `{ success: boolean, data?: T, errorCode?: string }`
+      2. If `success` is true, return `data`
+      3. If `success` is false, throw an error with the `errorCode`
+
+      Also add a frontend config module (`frontend/src/config.ts`) with Zod-validated env vars:
+      - `VITE_API_URL` (default: `http://localhost:3021/api`)
+      - `VITE_SUPABASE_URL` (default: empty)
+      - `VITE_SUPABASE_ANON_KEY` (default: empty)
+
+      Update `API_BASE` in client.ts to use the config module.
+    acceptance_criteria:
+      - request() helper unwraps { success, data } responses
+      - Errors include errorCode from backend
+      - Frontend config module validates env vars with Zod
+      - API_BASE uses config.apiBaseUrl
+    depends_on: [2]
+    effort: 1
+    status: scoped
+
+  - id: 4
+    github_issue: 73
+    milestone: 16
+    title: Add users table and Supabase client to backend
+    description: |
+      Add Supabase integration and a users table to the backend.
+
+      **Users table** (schema.sql + schema.ts):
+      - `id` TEXT PK (UUID)
+      - `auth_id` TEXT UNIQUE NOT NULL (Supabase user ID)
+      - `email` TEXT UNIQUE NOT NULL
+      - `display_name` TEXT NOT NULL
+      - `created_at` TEXT NOT NULL DEFAULT datetime('now')
+      - `updated_at` TEXT NOT NULL DEFAULT datetime('now')
+
+      **Supabase client** (`backend/src/lib/supabase.ts`):
+      - Create Supabase client using `config.supabaseUrl` and `config.supabaseServiceRoleKey`
+      - Export null if env vars are empty (graceful fallback for dev without Supabase)
+
+      **User queries** (`backend/src/db/queries/users.ts`):
+      - `getUserByAuthId(authId)` — lookup by Supabase auth ID
+      - `getOrCreateUserByAuth({ authId, email, displayName? })` — find or create
+      - `getUserById(id)` — lookup by internal user ID
+
+      Install `@supabase/supabase-js` in the backend package.
+
+      Add shared types to `shared/src/index.ts`:
+      - `UserSchema` (id, email, displayName)
+      - `User` type
+    acceptance_criteria:
+      - users table created in schema.sql and schema.ts
+      - Supabase client created from config (null if unconfigured)
+      - User query functions work with SQLite via Drizzle
+      - "@supabase/supabase-js" installed in backend
+      - User type exported from shared package
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 74
+    milestone: 16
+    title: Add requireAuth middleware and protect note routes
+    description: |
+      Add authentication middleware following the just-recordings pattern and apply it to note routes.
+
+      **Auth middleware** (`backend/src/middleware/auth.ts`):
+      - `AuthenticatedRequest` interface extending Express Request with optional `user` property
+        (`{ authId, userId, email }`)
+      - `requireAuth(req, res, next)` middleware:
+        1. Extract Bearer token from Authorization header
+        2. Validate with `supabase.auth.getUser(token)`
+        3. Look up or create user via `getOrCreateUserByAuth()`
+        4. Set `req.user` with authId, userId, email
+        5. Return 401 if token missing/invalid
+        6. If Supabase client is null (dev mode), skip auth (pass through)
+
+      **Auth route helper** (`backend/src/routes/shared/auth.ts`):
+      - `requireUserId(req, res): { userId } | null` — extracts userId from req.user, sends 401 if missing
+
+      **Apply to note routes:**
+      - Add `router.use(requireAuth)` in `routes/notes/index.ts`
+
+      **Add user_id FK to notes table:**
+      - Add `user_id` TEXT column to notes (nullable initially for backward compatibility)
+      - Notes created after auth is enabled will have user_id set
+    acceptance_criteria:
+      - requireAuth middleware validates Bearer tokens via Supabase
+      - Dev mode (no Supabase config) passes through without auth
+      - AuthenticatedRequest type includes user property
+      - requireUserId helper extracts userId or sends 401
+      - Note routes protected by requireAuth
+      - Notes table has user_id column
+    depends_on: [2, 4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 75
+    milestone: 16
+    title: Add frontend Supabase client and auth service
+    description: |
+      Add Supabase client and auth service to the frontend, following the just-recordings pattern.
+
+      **Supabase client** (`frontend/src/lib/supabase.ts`):
+      - Create client with `config.supabaseUrl` and `config.supabaseAnonKey`
+      - Export null if env vars are empty
+
+      **Auth service** (`frontend/src/auth/service.ts`):
+      - `getUser()` — get current authenticated user from session
+      - `login({ email, password })` — sign in with Supabase
+      - `signup({ email, password })` — create account with Supabase
+      - `logout()` — sign out
+      - `getToken()` — get access token from current session
+      - `resetPassword(email, redirectUrl)` — send password reset email
+      - `updatePassword(password)` — update password for authenticated user
+
+      All functions return discriminated union types:
+      `{ success: true, data? }` | `{ success: false, error }`.
+
+      Install `@supabase/supabase-js` in the frontend package.
+
+      Update API client (`frontend/src/api/client.ts`):
+      - Add `getAuthHeaders()` helper that gets token and returns `{ Authorization: 'Bearer ...' }`
+      - Include auth headers in all `request()` calls
+    acceptance_criteria:
+      - Supabase client created from frontend config
+      - Auth service exports login, signup, logout, getToken, resetPassword, updatePassword
+      - All return discriminated union success/error types
+      - "@supabase/supabase-js" installed in frontend
+      - API client includes Bearer token in all requests
+    depends_on: [3]
+    effort: 2
+    status: scoped
+
+  - id: 7
+    github_issue: 76
+    milestone: 16
+    title: Add auth pages (Login, Signup, Password Reset) and route guards
+    description: |
+      Add authentication pages and route guards to the frontend. Install `react-router-dom` and set
+      up client-side routing.
+
+      **Router setup** (`frontend/src/components/Router.tsx`):
+      - Install `react-router-dom`
+      - Add `BrowserRouter` wrapper in App.tsx
+      - Define routes:
+        - `/` — Canvas page (protected, requires auth)
+        - `/login` — Login page (anonymous only, redirects to / if authenticated)
+        - `/signup` — Signup page (anonymous only)
+        - `/password-reset` — Password reset page (public)
+      - `MemberRoute` wrapper — redirects to /login if no user
+      - `AnonymousRoute` wrapper — redirects to / if user exists
+
+      **Auth state** — simple React context or lightweight store:
+      - `AuthProvider` wraps the app, checks session on mount via `getUser()`
+      - Provides `{ user, loading }` to children
+      - Login/signup/logout update the auth state
+
+      **Login page** (`frontend/src/pages/Login/Login.tsx`):
+      - Email + password form using MUI TextField + Button
+      - Calls `login()` from auth service, redirects to / on success
+      - Link to signup and password reset pages
+
+      **Signup page** (`frontend/src/pages/Signup/Signup.tsx`):
+      - Email + password + confirm password form
+      - Calls `signup()`, shows "Check your email for confirmation" on success
+      - Link to login page
+
+      **Password Reset page** (`frontend/src/pages/PasswordReset/PasswordReset.tsx`):
+      - Two modes: unauthenticated (email → reset email) and authenticated (new password form)
+      - Link to login page
+
+      All pages use MUI components and respect the theme (CSS vars).
+    acceptance_criteria:
+      - react-router-dom installed and routes configured
+      - Login page authenticates and redirects to canvas
+      - Signup page creates account and shows confirmation
+      - Password reset sends email or updates password
+      - MemberRoute redirects unauthenticated users to /login
+      - AnonymousRoute redirects authenticated users to /
+      - Auth state persists across page navigation
+    depends_on: [6]
+    effort: 3
+    status: scoped

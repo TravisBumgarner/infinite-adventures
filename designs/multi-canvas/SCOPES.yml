@@ -1,0 +1,180 @@
+project: Multi-Canvas Support
+repo: TravisBumgarner/infinite-adventures
+design_file: (user directive — canvas picker, top-bar layout, multi-canvas support)
+scoping_date: 2026-02-01
+
+milestones:
+  - number: 13
+    title: "13. Multi-Canvas Backend"
+    description: Add canvases table, canvas_id to notes, canvas CRUD API, and scope note queries by canvas.
+    branch:
+      working: 64-multi-canvas-backend
+      base: main
+
+  - number: 14
+    title: "14. Multi-Canvas Frontend"
+    description: Canvas picker component, top-bar layout reorganization, per-canvas viewport persistence, and canvas-scoped data loading.
+    branch:
+      working: 67-multi-canvas-frontend
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 64
+    milestone: 13
+    title: Add canvases table and canvas_id to notes
+    description: |
+      Create a `canvases` table (id TEXT PK, name TEXT NOT NULL, created_at TEXT, updated_at TEXT)
+      and add a `canvas_id` TEXT FK column to the `notes` table referencing `canvases.id`.
+
+      Update both `schema.sql` (raw SQL with migration for existing data) and `schema.ts` (Drizzle
+      ORM definition). Add shared Zod schemas and TypeScript types for Canvas (CanvasSummary, Canvas,
+      CreateCanvasInput, UpdateCanvasInput).
+
+      The migration must:
+      1. Create the canvases table
+      2. Insert a default canvas named "Default"
+      3. Add `canvas_id` column to notes with the default canvas ID
+      4. Make `canvas_id` NOT NULL after backfilling
+    acceptance_criteria:
+      - canvases table exists with id, name, created_at, updated_at columns
+      - notes.canvas_id FK references canvases.id
+      - Existing notes are assigned to a "Default" canvas on migration
+      - Drizzle schema.ts includes canvases table and updated notes table
+      - Shared types exported: CanvasSummary, Canvas, CreateCanvasInput, UpdateCanvasInput
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    github_issue: 65
+    milestone: 13
+    title: Add canvas CRUD API and service
+    description: |
+      Create `canvasService.ts` with CRUD operations (listCanvases, getCanvas, createCanvas,
+      updateCanvas, deleteCanvas). Create `routes/canvases.ts` Express router mounted at
+      `/api/canvases`. Wire into `index.ts`.
+
+      Deleting a canvas should also delete all its notes (cascade). Prevent deleting the last canvas.
+    acceptance_criteria:
+      - GET /api/canvases returns all canvases
+      - GET /api/canvases/:id returns a single canvas
+      - POST /api/canvases creates a canvas
+      - PUT /api/canvases/:id updates canvas name
+      - DELETE /api/canvases/:id deletes canvas and its notes
+      - Cannot delete the last remaining canvas (returns 400)
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 66
+    milestone: 13
+    title: Scope note APIs by canvas_id
+    description: |
+      Update noteService and note routes so that listing, creating, and searching notes are scoped
+      to a specific canvas.
+
+      New routes nested under canvases:
+      - `GET /api/canvases/:canvasId/notes` — list notes for a canvas
+      - `POST /api/canvases/:canvasId/notes` — create note on a canvas
+      - `GET /api/canvases/:canvasId/notes/search?q=` — search within a canvas
+
+      Keep `GET /api/notes/:id`, `PUT /api/notes/:id`, `DELETE /api/notes/:id` as-is (note IDs
+      are globally unique).
+
+      Update `listNotes(canvasId)` to filter by canvas_id. Update `createNote(input)` to accept
+      and store canvas_id. Update `searchNotes(query, canvasId)` to filter FTS results by canvas_id.
+      Update `resolveLinks` to create auto-created notes on the same canvas as the source note.
+    acceptance_criteria:
+      - listNotes accepts canvasId and filters by it
+      - createNote stores canvas_id on the new note
+      - searchNotes filters results to the given canvas
+      - resolveLinks auto-creates notes on the same canvas as the source
+      - Old GET/PUT/DELETE by note ID still work without canvas scoping
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    github_issue: 67
+    milestone: 14
+    title: Add frontend canvas API client functions
+    description: |
+      Update `frontend/src/api/client.ts` to add canvas CRUD functions and update note functions
+      to use canvas-scoped endpoints.
+
+      New functions:
+      - `fetchCanvases(): Promise<CanvasSummary[]>`
+      - `createCanvas(input: CreateCanvasInput): Promise<Canvas>`
+      - `updateCanvas(id: string, input: UpdateCanvasInput): Promise<Canvas>`
+      - `deleteCanvas(id: string): Promise<void>`
+
+      Updated functions:
+      - `fetchNotes(canvasId: string)` → calls `/api/canvases/:canvasId/notes`
+      - `createNote(canvasId: string, input)` → calls `/api/canvases/:canvasId/notes`
+      - `searchNotes(query, canvasId)` → calls `/api/canvases/:canvasId/notes/search`
+    acceptance_criteria:
+      - Canvas CRUD client functions exist and use correct endpoints
+      - fetchNotes, createNote, searchNotes accept canvasId parameter
+      - All functions use the shared Canvas types from the shared package
+    depends_on: [2, 3]
+    effort: 1
+    status: scoped
+
+  - id: 5
+    github_issue: 68
+    milestone: 14
+    title: Build CanvasPicker component and top-bar layout
+    description: |
+      Create a CanvasPicker component and reorganize the top bar into a single row layout:
+      - **Left**: CanvasPicker (select/create/rename/delete canvases)
+      - **Center**: SearchBar + FilterBar
+      - **Right**: SettingsButton
+
+      The CanvasPicker should show the current canvas name in a dropdown/select, allow switching
+      between canvases, provide a "New Canvas" option, allow renaming the current canvas, and allow
+      deleting the current canvas (with confirmation, disabled if only one canvas).
+
+      Reorganize the top bar from fixed-position individual elements to a single flex row container
+      (fixed, top: 16, left: 16, right: 16, zIndex: 50) with three groups: left, center, right.
+      Remove individual fixed positioning from SearchBar, FilterBar, and SettingsButton — they
+      become children of the top-bar flex container.
+    acceptance_criteria:
+      - CanvasPicker shows current canvas name and allows switching
+      - New Canvas creates a canvas and switches to it
+      - Rename edits the canvas name in-place
+      - Delete removes canvas (disabled when only one canvas remains)
+      - Top bar is a single flex row with left/center/right groups
+      - SearchBar, FilterBar, SettingsButton no longer use fixed positioning
+    depends_on: [4]
+    effort: 3
+    status: scoped
+
+  - id: 6
+    github_issue: 69
+    milestone: 14
+    title: Wire Canvas.tsx to active canvas with per-canvas viewport
+    description: |
+      Update Canvas.tsx to load and manage notes for the active canvas. Add canvas state management
+      (active canvas ID stored in localStorage). When the user switches canvases, reload notes/edges
+      for the new canvas and restore its saved viewport.
+
+      Key changes:
+      - Add `activeCanvasId` state (initialized from localStorage or the first canvas from API)
+      - `loadAllNotes` takes canvasId, calls canvas-scoped fetchNotes
+      - `createNoteAtPosition` passes canvasId to createNote
+      - SearchBar's searchNotes passes canvasId
+      - Viewport key includes canvas ID: `infinite-adventures-viewport-{canvasId}`
+      - On canvas switch: save current viewport, load new canvas notes, restore new canvas viewport
+      - Pass canvasId down to components that need it (SearchBar, Toolbar create flow)
+    acceptance_criteria:
+      - Notes load for the active canvas only
+      - Switching canvases loads the correct set of notes
+      - Each canvas has its own saved viewport position
+      - Creating a note assigns it to the active canvas
+      - Search returns results from the active canvas only
+      - Active canvas ID persists across page reload (localStorage)
+    depends_on: [5]
+    effort: 3
+    status: scoped

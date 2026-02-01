@@ -54,6 +54,20 @@ export const SearchResultSchema = z.object({
   snippet: z.string(),
 });
 
+// --- Error codes ---
+
+export const ERROR_CODES = [
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "INVALID_INPUT",
+  "INVALID_UUID",
+  "INTERNAL_ERROR",
+  "NOTE_NOT_FOUND",
+] as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[number];
+
 // --- Inferred types ---
 
 export type NoteType = z.infer<typeof NoteTypeSchema>;
