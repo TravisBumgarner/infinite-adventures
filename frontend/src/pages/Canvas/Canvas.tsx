@@ -521,7 +521,11 @@ export default function Canvas() {
         />
       )}
 
-      {toastMessage && <Toast message={toastMessage} onDone={() => setToastMessage(null)} />}
+      <Toast
+        open={!!toastMessage}
+        message={toastMessage ?? ""}
+        onClose={() => setToastMessage(null)}
+      />
 
       <SettingsButton onClick={() => setShowSettings(true)} />
       {showSettings && (

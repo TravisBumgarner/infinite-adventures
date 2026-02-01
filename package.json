@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,green \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "test": "npm --prefix frontend test && npm --prefix backend test",
     "lint": "biome check .",
     "format": "biome format --write .",
     "prepare": "husky"

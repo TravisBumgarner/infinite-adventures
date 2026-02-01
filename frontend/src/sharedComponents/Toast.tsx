@@ -1,33 +1,24 @@
-import { useEffect } from "react";
+import Alert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
 
 interface ToastProps {
+  open: boolean;
   message: string;
-  onDone: () => void;
+  onClose: () => void;
   duration?: number;
 }
 
-export default function Toast({ message, onDone, duration = 2000 }: ToastProps) {
-  useEffect(() => {
-    const timer = setTimeout(onDone, duration);
-    return () => clearTimeout(timer);
-  }, [onDone, duration]);
-
-  return <div style={styles.toast}>{message}</div>;
+export default function Toast({ open, message, onClose, duration = 2000 }: ToastProps) {
+  return (
+    <Snackbar
+      open={open}
+      autoHideDuration={duration}
+      onClose={onClose}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+    >
+      <Alert onClose={onClose} severity="info" variant="filled">
+        {message}
+      </Alert>
+    </Snackbar>
+  );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toast: {
-    position: "fixed",
-    bottom: 24,
-    left: "50%",
-    transform: "translateX(-50%)",
-    background: "var(--color-surface0)",
-    color: "var(--color-text)",
-    padding: "10px 20px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontFamily: "system-ui, sans-serif",
-    zIndex: 300,
-    boxShadow: "0 4px 12px var(--color-backdrop)",
-  },
-};

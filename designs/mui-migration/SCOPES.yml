@@ -1,0 +1,206 @@
+project: MUI Component Migration
+repo: TravisBumgarner/infinite-adventures
+design_file: (user directive — replace all custom HTML with MUI components)
+scoping_date: 2026-02-01
+
+milestones:
+  - number: 12
+    title: "12. MUI Component Migration"
+    description: Replace all custom HTML elements and inline styles with MUI components following photo-palettes conventions.
+    branch:
+      working: 50-mui-component-migration
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 50
+    milestone: 12
+    title: Migrate SettingsModal to MUI (Drawer, IconButton, ToggleButtonGroup, TextField, Link)
+    description: |
+      Rewrite SettingsModal.tsx to use MUI components. Replace the custom SettingsButton with
+      MUI IconButton + Settings icon from @mui/icons-material. Replace the sidebar div with
+      MUI Drawer (anchor="left", variant="persistent"). Replace theme option buttons with
+      ToggleButtonGroup + ToggleButton. Replace feedback textarea with TextField (multiline).
+      Replace submit button with Button (variant="contained"). Replace Discord link with
+      Button (variant="outlined", component="a"). Replace all text with Typography. Replace
+      all layout divs with Box + sx. Remove the entire styles Record object.
+
+      Install @mui/icons-material if not already present.
+    acceptance_criteria:
+      - SettingsButton is a MUI IconButton with Settings icon
+      - Sidebar uses MUI Drawer
+      - Theme selector uses ToggleButtonGroup (horizontal)
+      - Feedback form uses MUI TextField and Button
+      - Discord link uses MUI Button with href
+      - No Record<string, React.CSSProperties> pattern remains
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    github_issue: 51
+    milestone: 12
+    title: Migrate Toast to MUI Snackbar + Alert
+    description: |
+      Replace the custom Toast shared component with MUI Snackbar + Alert. Remove the manual
+      setTimeout fade logic — Snackbar handles auto-hide natively. Update Canvas.tsx to use the
+      Snackbar open/onClose API instead of the current message/onDone pattern.
+    acceptance_criteria:
+      - Toast uses MUI Snackbar + Alert
+      - Auto-hide after timeout
+      - Canvas.tsx updated for Snackbar API
+      - No inline style objects remain
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 3
+    github_issue: 52
+    milestone: 12
+    title: Migrate ContextMenu and NodeContextMenu to MUI Menu
+    description: |
+      Replace both context menus with MUI Menu + MenuItem. Use anchorReference="anchorPosition"
+      with anchorPosition={{ top, left }} for positioning. Replace the "New Note" submenu with
+      a nested Menu pattern. Replace note type buttons with MenuItem + ListItemIcon (colored dot).
+      Replace dividers with MUI Divider. For NodeContextMenu, style the delete option with
+      sx={{ color: 'error.main' }}. Remove both styles Record objects.
+    acceptance_criteria:
+      - ContextMenu uses MUI Menu + MenuItem with anchorPosition
+      - Note type submenu uses MUI Menu with colored indicators
+      - NodeContextMenu uses MUI Menu + MenuItem
+      - Delete option styled with error color
+      - No inline style objects remain in either file
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 4
+    github_issue: 53
+    milestone: 12
+    title: Migrate SearchBar to MUI TextField and Paper
+    description: |
+      Replace the search input with MUI TextField (size="small") with a search icon via
+      InputAdornment. Replace the dropdown with MUI Paper. Replace result items with styled
+      Box or MenuItem. Replace type badges with MUI Chip (size="small", colored by node type
+      from theme). Replace text with Typography. Remove the styles Record object.
+    acceptance_criteria:
+      - Search input uses MUI TextField with InputAdornment
+      - Dropdown uses MUI Paper
+      - Type badges use MUI Chip with theme node type colors
+      - All text uses Typography
+      - No inline style objects remain
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 54
+    milestone: 12
+    title: Migrate FilterBar to MUI Chip and TextField
+    description: |
+      Replace the filter toggle button with MUI IconButton (FilterList icon). Replace type
+      filter buttons with MUI Chip (clickable, colored by node type, outlined when inactive).
+      Replace the search input with MUI TextField (size="small"). Replace close button with
+      MUI IconButton (Close icon). Remove the styles Record object.
+    acceptance_criteria:
+      - Filter toggle uses MUI IconButton
+      - Type chips use MUI Chip with theme node type colors
+      - Search input uses MUI TextField
+      - No inline style objects remain
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 55
+    milestone: 12
+    title: Migrate NoteEditor sidebar to MUI Drawer, TextField, Select, Button
+    description: |
+      Replace the editor sidebar div with MUI Drawer (anchor="right", variant="persistent").
+      Replace title input with TextField, type dropdown with Select + MenuItem, close button
+      with IconButton (Close icon), delete button with Button (color="error"). Replace all
+      labels with Typography or FormLabel, headers with Typography variant="h6". Replace linked
+      note buttons with Chip or styled Button. Remove the styles Record object.
+    acceptance_criteria:
+      - Editor panel uses MUI Drawer (anchor right, persistent)
+      - Title uses MUI TextField, type uses MUI Select
+      - Close/delete use MUI IconButton/Button
+      - All text uses Typography
+      - No inline style objects remain
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 7
+    github_issue: 56
+    milestone: 12
+    title: Migrate ConnectionsBrowser sidebar to MUI Drawer, List, Chip, TextField
+    description: |
+      Replace the connections sidebar div with MUI Drawer (anchor="right", variant="persistent").
+      Replace filter chips with MUI Chip (clickable, colored by node type). Replace search input
+      with MUI TextField. Replace connection items with ListItemButton inside List. Replace type
+      badges with Chip (size="small"). Remove the styles Record object.
+    acceptance_criteria:
+      - Panel uses MUI Drawer (anchor right, persistent)
+      - Filter chips use MUI Chip
+      - Search uses MUI TextField
+      - Connection list uses MUI List + ListItemButton
+      - No inline style objects remain
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 8
+    github_issue: 57
+    milestone: 12
+    title: Migrate Toolbar to MUI Button and Box
+    description: |
+      Replace the toolbar container with MUI Paper or Box. Replace note type buttons with MUI
+      Button (size="small") with a colored square indicator via a small Box in startIcon or as
+      a child element. Remove the styles Record object.
+    acceptance_criteria:
+      - Toolbar container uses MUI Paper or Box
+      - Note type buttons use MUI Button
+      - Color indicators use Box with theme nodeTypes colors
+      - No inline style objects remain
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 9
+    github_issue: 58
+    milestone: 12
+    title: Migrate NoteNode to MUI Paper, Chip, and Typography
+    description: |
+      Replace the node card div with MUI Paper. Replace type badge with Chip (size="small").
+      Replace title and content with Typography. Replace MentionTag span with Chip (size="small",
+      clickable). Replace code segments with Typography component="code". React Flow Handle
+      components must remain unchanged. Only the inner card content becomes MUI.
+    acceptance_criteria:
+      - Node card uses MUI Paper
+      - Type badge and mention tags use MUI Chip
+      - Title and content use MUI Typography
+      - React Flow Handles unchanged
+      - No inline style objects remain
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 10
+    github_issue: 59
+    milestone: 12
+    title: Migrate MentionEditor toolbar and popup to MUI IconButton and Paper
+    description: |
+      Replace the FormattingToolbar buttons with MUI IconButton (size="small"). Replace the
+      toolbar container with MUI Box. Replace the SuggestionPopup container with MUI Paper.
+      Replace suggestion items with MenuItem or ListItemButton. Replace type badges with
+      Chip (size="small"). The Tiptap EditorContent stays as-is.
+    acceptance_criteria:
+      - Toolbar buttons use MUI IconButton
+      - Suggestion popup uses MUI Paper
+      - Suggestion items use MUI MenuItem or ListItemButton
+      - Tiptap EditorContent unchanged
+      - No inline style objects remain for toolbar and popup
+    depends_on: []
+    effort: 2
+    status: scoped
