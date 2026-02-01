@@ -166,7 +166,7 @@ tasks:
       - Copied to clipboard with visual confirmation
     depends_on: []
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 9
     github_issue: 28
