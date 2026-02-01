@@ -1,4 +1,6 @@
-import { useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import { useTheme } from "@mui/material/styles";
 import type { NoteType } from "shared";
 import { NOTE_TYPES, TYPE_LABELS } from "../../../constants";
 
@@ -9,65 +11,48 @@ interface ToolbarProps {
 export default function Toolbar({ onCreate }: ToolbarProps) {
   const theme = useTheme();
   return (
-    <div style={styles.bar}>
+    <Box
+      sx={{
+        position: "fixed",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        gap: 0.5,
+        p: "6px 8px",
+        bgcolor: "var(--color-chrome-bg)",
+        backdropFilter: "blur(8px)",
+        border: "1px solid var(--color-surface1)",
+        borderRadius: 3,
+        zIndex: 50,
+      }}
+    >
       {NOTE_TYPES.map((t) => (
-        <button
-          type="button"
+        <Button
           key={t.value}
-          style={styles.button}
+          size="small"
           onClick={() => onCreate(t.value)}
           title={`New ${TYPE_LABELS[t.value]}`}
+          sx={{
+            color: "var(--color-text)",
+            fontSize: 13,
+            textTransform: "none",
+            whiteSpace: "nowrap",
+            gap: 0.75,
+          }}
         >
-          <span
-            style={{
-              ...styles.square,
-              background: theme.palette.nodeTypes[t.value].light,
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: "3px",
+              flexShrink: 0,
+              bgcolor: theme.palette.nodeTypes[t.value].light,
             }}
           />
-          <span style={styles.label}>{TYPE_LABELS[t.value]}</span>
-        </button>
+          {TYPE_LABELS[t.value]}
+        </Button>
       ))}
-    </div>
+    </Box>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  bar: {
-    position: "fixed",
-    bottom: 16,
-    left: "50%",
-    transform: "translateX(-50%)",
-    display: "flex",
-    gap: 4,
-    padding: "6px 8px",
-    background: "var(--color-chrome-bg)",
-    backdropFilter: "blur(8px)",
-    border: "1px solid var(--color-surface1)",
-    borderRadius: 12,
-    zIndex: 50,
-    fontFamily: "system-ui, sans-serif",
-  },
-  button: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "6px 10px",
-    background: "none",
-    border: "none",
-    borderRadius: 8,
-    color: "var(--color-text)",
-    fontSize: 13,
-    cursor: "pointer",
-    fontFamily: "system-ui, sans-serif",
-    whiteSpace: "nowrap" as const,
-  },
-  square: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    flexShrink: 0,
-  },
-  label: {
-    fontWeight: 500,
-  },
-};
