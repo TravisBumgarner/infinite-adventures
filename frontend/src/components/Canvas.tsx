@@ -28,7 +28,7 @@ import FilterBar from "./FilterBar";
 import ConnectionsBrowser from "./ConnectionsBrowser";
 import Toast from "./Toast";
 import { formatNoteExport } from "../utils/noteExport";
-import { findOpenPosition } from "../utils/findOpenPosition";
+import { findOpenPosition, unstackNodes } from "../utils/findOpenPosition";
 
 const nodeTypes: NodeTypes = {
   note: NoteNodeComponent,
@@ -212,9 +212,12 @@ export default function Canvas() {
       notesCache.current.set(fullNote.id, fullNote);
       setNodes((nds) => [...nds, toFlowNode(fullNote, notesCache.current, fitBothNotes)]);
       setEditingNoteId(note.id);
-      // Center viewport on the new note after the sidebar opens and canvas resizes
+      // Double rAF: first for React to commit the DOM, second for layout to settle
       requestAnimationFrame(() => {
-        reactFlowInstance.setCenter(pos.x, pos.y, { duration: 300 });
+        requestAnimationFrame(() => {
+          const zoom = reactFlowInstance.getZoom();
+          reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
+        });
       });
     },
     [nodes, setNodes, fitBothNotes, reactFlowInstance]
@@ -273,6 +276,34 @@ export default function Canvas() {
   const handleViewAll = useCallback(() => {
     reactFlowInstance.fitView({ duration: 500 });
   }, [reactFlowInstance]);
+
+  // Unstack overlapping notes
+  const handleUnstack = useCallback(async () => {
+    const identified = nodes.map((n) => ({
+      id: n.id,
+      x: n.position.x,
+      y: n.position.y,
+    }));
+    const moves = unstackNodes(identified);
+    if (moves.size === 0) return;
+
+    // Update positions in backend and cache
+    for (const [id, pos] of moves) {
+      api.updateNote(id, { canvas_x: pos.x, canvas_y: pos.y });
+      const cached = notesCache.current.get(id);
+      if (cached) {
+        notesCache.current.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
+      }
+    }
+
+    // Update node positions in state
+    setNodes((nds) =>
+      nds.map((n) => {
+        const newPos = moves.get(n.id);
+        return newPos ? { ...n, position: newPos } : n;
+      })
+    );
+  }, [nodes, setNodes]);
 
   // Toolbar: create note at viewport center
   const handleToolbarCreate = useCallback(
@@ -440,6 +471,7 @@ export default function Canvas() {
             setContextMenu(null);
           }}
           onViewAll={handleViewAll}
+          onUnstack={handleUnstack}
           onClose={() => setContextMenu(null)}
         />
       )}

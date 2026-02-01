@@ -11,9 +11,11 @@ function hasOverlap(
   y: number,
   existingNodes: NodePosition[]
 ): boolean {
-  return existingNodes.some(
-    (node) => Math.abs(x - node.x) < NODE_W && Math.abs(y - node.y) < NODE_H
-  );
+  return existingNodes.some((node) => overlaps({ x, y }, node));
+}
+
+function overlaps(a: NodePosition, b: NodePosition): boolean {
+  return Math.abs(a.x - b.x) < NODE_W && Math.abs(a.y - b.y) < NODE_H;
 }
 
 /**
@@ -49,4 +51,32 @@ export function findOpenPosition(
 
   // Fallback: offset far enough that it won't overlap
   return { x: targetX + 21 * NODE_W, y: targetY };
+}
+
+export interface IdentifiedNodePosition extends NodePosition {
+  id: string;
+}
+
+/**
+ * Find all overlapping nodes and move them to non-overlapping positions.
+ * Returns a map of nodeId → new position for nodes that were moved.
+ * Processes nodes in order, settling each against already-placed nodes
+ * to avoid infinite repositioning loops.
+ */
+export function unstackNodes(
+  nodes: IdentifiedNodePosition[]
+): Map<string, { x: number; y: number }> {
+  const moves = new Map<string, { x: number; y: number }>();
+  // settled tracks the final positions — start with all nodes, update as we go
+  const settled: NodePosition[] = [];
+
+  for (const node of nodes) {
+    const pos = findOpenPosition(node.x, node.y, settled);
+    settled.push(pos);
+    if (pos.x !== node.x || pos.y !== node.y) {
+      moves.set(node.id, pos);
+    }
+  }
+
+  return moves;
 }

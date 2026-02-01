@@ -7,11 +7,13 @@ interface ContextMenuProps {
   y: number;
   onSelect: (type: NoteType) => void;
   onViewAll: () => void;
+  onUnstack: () => void;
   onClose: () => void;
 }
 
-export default function ContextMenu({ x, y, onSelect, onViewAll, onClose }: ContextMenuProps) {
+export default function ContextMenu({ x, y, onSelect, onViewAll, onUnstack, onClose }: ContextMenuProps) {
   const [showSubmenu, setShowSubmenu] = useState(false);
+  const [showUtilities, setShowUtilities] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -70,6 +72,28 @@ export default function ContextMenu({ x, y, onSelect, onViewAll, onClose }: Cont
         >
           View All
         </button>
+        <div style={styles.divider} />
+        <div
+          style={styles.item}
+          onMouseEnter={() => setShowUtilities(true)}
+          onMouseLeave={() => setShowUtilities(false)}
+        >
+          <span>Utilities</span>
+          <span style={styles.arrow}>&#9656;</span>
+          {showUtilities && (
+            <div style={styles.submenu}>
+              <button
+                style={styles.submenuItem}
+                onClick={() => {
+                  onUnstack();
+                  onClose();
+                }}
+              >
+                Unstack Overlapping Notes
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -103,6 +127,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     cursor: "pointer",
     fontFamily: "system-ui, sans-serif",
+  },
+  divider: {
+    height: 1,
+    background: "#45475a",
+    margin: "4px 0",
   },
   arrow: {
     fontSize: 10,
