@@ -43,7 +43,6 @@ export default function NoteEditor({
   const [title, setTitle] = useState("");
   const [type, setType] = useState<NoteType>("npc");
   const [content, setContent] = useState("");
-  const loadedRef = useRef(false);
 
   // Refs to hold latest values for the save function
   const titleRef = useRef(title);
@@ -52,8 +51,9 @@ export default function NoteEditor({
   typeRef.current = type;
   const contentRef = useRef(content);
   contentRef.current = content;
+  // noteIdRef is updated only in the fetch effect, not during render,
+  // so cleanup effects still see the previous noteId.
   const noteIdRef = useRef(noteId);
-  noteIdRef.current = noteId;
 
   const saveFn = useCallback(async () => {
     const updated = await api.updateNote(noteIdRef.current, {
@@ -74,13 +74,12 @@ export default function NoteEditor({
   }, [noteId, flush]);
 
   useEffect(() => {
-    loadedRef.current = false;
+    noteIdRef.current = noteId;
     api.fetchNote(noteId).then((n) => {
       setNote(n);
       setTitle(n.title);
       setType(n.type);
       setContent(n.content);
-      loadedRef.current = true;
     });
   }, [noteId]);
 

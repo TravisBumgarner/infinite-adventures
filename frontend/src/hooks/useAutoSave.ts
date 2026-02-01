@@ -32,6 +32,7 @@ export function useAutoSave({
   saveFnRef.current = saveFn;
 
   const doSave = useCallback(async () => {
+    if (!dirtyRef.current) return;
     dirtyRef.current = false;
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -45,6 +46,7 @@ export function useAutoSave({
         setStatus("idle");
       }, savedDuration);
     } catch {
+      dirtyRef.current = true;
       setStatus("error");
     }
   }, [savedDuration]);
@@ -66,7 +68,6 @@ export function useAutoSave({
   }, [delay, doSave]);
 
   const flush = useCallback(async () => {
-    if (!dirtyRef.current) return;
     await doSave();
   }, [doSave]);
 
