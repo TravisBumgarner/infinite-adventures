@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 
-import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../auth/service.js", () => ({
@@ -8,62 +7,50 @@ vi.mock("../auth/service.js", () => ({
 }));
 
 import { getUser } from "../auth/service.js";
-import { AuthProvider, useAuth } from "../auth/AuthProvider";
+import { useAppStore } from "../stores/appStore";
 
 const mockGetUser = vi.mocked(getUser);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useAppStore.setState({ user: null, authLoading: true, toastMessage: null });
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function AuthConsumer() {
-  const { user, loading } = useAuth();
-  if (loading) return <div>loading</div>;
-  if (user) return <div>user:{user.email}</div>;
-  return <div>no-user</div>;
-}
+describe("appStore auth", () => {
+  it("starts in loading state with no user", () => {
+    const state = useAppStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.authLoading).toBe(true);
+  });
 
-describe("AuthProvider", () => {
-  it("shows loading state initially then resolves to user", async () => {
+  it("refreshUser resolves to user on success", async () => {
     mockGetUser.mockResolvedValue({
       success: true,
       data: { id: "u1", email: "gandalf@middle.earth" },
     });
 
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-      </AuthProvider>,
-    );
+    await useAppStore.getState().refreshUser();
 
-    expect(screen.getByText("loading")).toBeDefined();
-
-    await waitFor(() => {
-      expect(screen.getByText("user:gandalf@middle.earth")).toBeDefined();
-    });
+    const state = useAppStore.getState();
+    expect(state.user).toEqual({ id: "u1", email: "gandalf@middle.earth" });
+    expect(state.authLoading).toBe(false);
   });
 
-  it("resolves to no-user when getUser fails", async () => {
+  it("refreshUser resolves to null on failure", async () => {
     mockGetUser.mockResolvedValue({ success: false, error: "Not authenticated" });
 
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-      </AuthProvider>,
-    );
+    await useAppStore.getState().refreshUser();
 
-    await waitFor(() => {
-      expect(screen.getByText("no-user")).toBeDefined();
-    });
+    const state = useAppStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.authLoading).toBe(false);
   });
 
   it("refreshUser re-fetches the current user", async () => {
-    let capturedRefresh: (() => Promise<void>) | null = null;
-
     mockGetUser
       .mockResolvedValueOnce({ success: false, error: "Not authenticated" })
       .mockResolvedValueOnce({
@@ -71,29 +58,23 @@ describe("AuthProvider", () => {
         data: { id: "u1", email: "frodo@shire.me" },
       });
 
-    function RefreshCapture() {
-      const { refreshUser } = useAuth();
-      capturedRefresh = refreshUser;
-      return null;
-    }
+    await useAppStore.getState().refreshUser();
+    expect(useAppStore.getState().user).toBeNull();
 
-    render(
-      <AuthProvider>
-        <AuthConsumer />
-        <RefreshCapture />
-      </AuthProvider>,
-    );
+    await useAppStore.getState().refreshUser();
+    expect(useAppStore.getState().user).toEqual({ id: "u1", email: "frodo@shire.me" });
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText("no-user")).toBeDefined();
+  it("clearUser sets user to null", async () => {
+    mockGetUser.mockResolvedValue({
+      success: true,
+      data: { id: "u1", email: "gandalf@middle.earth" },
     });
 
-    await act(async () => {
-      await capturedRefresh!();
-    });
+    await useAppStore.getState().refreshUser();
+    expect(useAppStore.getState().user).not.toBeNull();
 
-    await waitFor(() => {
-      expect(screen.getByText("user:frodo@shire.me")).toBeDefined();
-    });
+    useAppStore.getState().clearUser();
+    expect(useAppStore.getState().user).toBeNull();
   });
 });

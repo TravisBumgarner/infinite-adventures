@@ -1,12 +1,12 @@
 import { Alert, Box, Button, Link as MuiLink, TextField, Typography } from "@mui/material";
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/AuthProvider.js";
 import { login } from "../../auth/service.js";
+import { useAppStore } from "../../stores/appStore";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const refreshUser = useAppStore((s) => s.refreshUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

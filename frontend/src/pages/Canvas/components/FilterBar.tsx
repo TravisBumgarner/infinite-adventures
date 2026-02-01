@@ -6,26 +6,18 @@ import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
-import type { NoteType } from "shared";
 import { NOTE_TYPES } from "../../../constants";
+import { useCanvasStore } from "../../../stores/canvasStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
-interface FilterBarProps {
-  activeTypes: Set<NoteType>;
-  search: string;
-  onToggleType: (type: NoteType) => void;
-  onSearchChange: (search: string) => void;
-}
-
-export default function FilterBar({
-  activeTypes,
-  search,
-  onToggleType,
-  onSearchChange,
-}: FilterBarProps) {
+export default function FilterBar() {
   const theme = useTheme();
+  const activeTypes = useCanvasStore((s) => s.activeTypes);
+  const filterSearch = useCanvasStore((s) => s.filterSearch);
+  const toggleType = useCanvasStore((s) => s.toggleType);
+  const setFilterSearch = useCanvasStore((s) => s.setFilterSearch);
   const [expanded, setExpanded] = useState(false);
-  const hasFilters = activeTypes.size > 0 || search.length > 0;
+  const hasFilters = activeTypes.size > 0 || filterSearch.length > 0;
 
   if (!expanded) {
     return (
@@ -84,8 +76,8 @@ export default function FilterBar({
         <TextField
           size="small"
           placeholder="Filter by text..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={filterSearch}
+          onChange={(e) => setFilterSearch(e.target.value)}
           sx={{ width: 180 }}
         />
         <IconButton
@@ -105,7 +97,7 @@ export default function FilterBar({
               key={value}
               label={label}
               size="small"
-              onClick={() => onToggleType(value)}
+              onClick={() => toggleType(value)}
               variant={active ? "filled" : "outlined"}
               sx={{
                 bgcolor: active ? bgColor : "transparent",

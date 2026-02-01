@@ -10,6 +10,8 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { SIDEBAR_WIDTH } from "../../../constants";
+import { useAppStore } from "../../../stores/appStore";
+import { useCanvasStore } from "../../../stores/canvasStore";
 import type { ThemePreference } from "../../../styles/styleConsts";
 import { useThemePreference } from "../../../styles/Theme";
 
@@ -38,11 +40,6 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
   );
 }
 
-interface SettingsSidebarProps {
-  onClose: () => void;
-  onToast: (message: string) => void;
-}
-
 const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "system", label: "System" },
   { value: "light", label: "Light" },
@@ -53,10 +50,14 @@ const DISCORD_URL = "https://discord.com/invite/J8jwMxEEff";
 const CONTACT_FORM_URL = "https://contact-form.nfshost.com/contact";
 const MAX_CHARS = 800;
 
-export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
+export function SettingsSidebar() {
+  const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const showToast = useAppStore((s) => s.showToast);
   const { preference, setPreference } = useThemePreference();
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const onClose = useCallback(() => setShowSettings(false), [setShowSettings]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -87,12 +88,12 @@ export function SettingsSidebar({ onClose, onToast }: SettingsSidebarProps) {
       });
       if (response.ok) {
         setFeedbackMessage("");
-        onToast("Feedback sent — thank you!");
+        showToast("Feedback sent — thank you!");
       } else {
-        onToast("Failed to send feedback");
+        showToast("Failed to send feedback");
       }
     } catch {
-      onToast("Failed to send feedback");
+      showToast("Failed to send feedback");
     } finally {
       setSubmitting(false);
     }
