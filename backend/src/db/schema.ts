@@ -1,18 +1,31 @@
 import { sql } from "drizzle-orm";
-import { doublePrecision, pgTable, primaryKey, text } from "drizzle-orm/pg-core";
+import { customType, doublePrecision, index, pgTable, primaryKey, text } from "drizzle-orm/pg-core";
 
-export const notes = pgTable("notes", {
-  id: text("id").primaryKey(),
-  type: text("type", {
-    enum: ["pc", "npc", "item", "quest", "location", "goal", "session"],
-  }).notNull(),
-  title: text("title").notNull(),
-  content: text("content").notNull().default(""),
-  canvas_x: doublePrecision("canvas_x").notNull().default(0),
-  canvas_y: doublePrecision("canvas_y").notNull().default(0),
-  created_at: text("created_at").notNull().default(sql`now()::text`),
-  updated_at: text("updated_at").notNull().default(sql`now()::text`),
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
 });
+
+export const notes = pgTable(
+  "notes",
+  {
+    id: text("id").primaryKey(),
+    type: text("type", {
+      enum: ["pc", "npc", "item", "quest", "location", "goal", "session"],
+    }).notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull().default(""),
+    canvas_x: doublePrecision("canvas_x").notNull().default(0),
+    canvas_y: doublePrecision("canvas_y").notNull().default(0),
+    created_at: text("created_at").notNull().default(sql`now()::text`),
+    updated_at: text("updated_at").notNull().default(sql`now()::text`),
+    search_vector: tsvector("search_vector").generatedAlwaysAs(
+      sql`setweight(to_tsvector('english', coalesce("title", '')), 'A') || setweight(to_tsvector('english', coalesce("content", '')), 'B')`,
+    ),
+  },
+  (table) => [index("notes_search_vector_idx").using("gin", table.search_vector)],
+);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),

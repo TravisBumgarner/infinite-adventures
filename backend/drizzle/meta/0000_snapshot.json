@@ -1,5 +1,5 @@
 {
-  "id": "c343b3ca-73b3-4db4-b137-61db2a2de376",
+  "id": "69012dd1-e62b-48af-aa0c-7dbf2ab081ed",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -120,9 +120,35 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()::text"
+        },
+        "search_vector": {
+          "name": "search_vector",
+          "type": "tsvector",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "as": "setweight(to_tsvector('english', coalesce(\"title\", '')), 'A') || setweight(to_tsvector('english', coalesce(\"content\", '')), 'B')",
+            "type": "stored"
+          }
         }
       },
-      "indexes": {},
+      "indexes": {
+        "notes_search_vector_idx": {
+          "name": "notes_search_vector_idx",
+          "columns": [
+            {
+              "expression": "search_vector",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

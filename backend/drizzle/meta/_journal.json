@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769977915907,
-      "tag": "0000_simple_baron_strucker",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1769977915908,
-      "tag": "0001_add_fts_search_vector",
+      "when": 1769978893738,
+      "tag": "0000_ambiguous_midnight",
       "breakpoints": true
     }
   ]

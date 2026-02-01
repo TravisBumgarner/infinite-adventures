@@ -12,7 +12,8 @@ CREATE TABLE "notes" (
 	"canvas_x" double precision DEFAULT 0 NOT NULL,
 	"canvas_y" double precision DEFAULT 0 NOT NULL,
 	"created_at" text DEFAULT now()::text NOT NULL,
-	"updated_at" text DEFAULT now()::text NOT NULL
+	"updated_at" text DEFAULT now()::text NOT NULL,
+	"search_vector" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('english', coalesce("title", '')), 'A') || setweight(to_tsvector('english', coalesce("content", '')), 'B')) STORED
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -27,4 +28,5 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 ALTER TABLE "note_links" ADD CONSTRAINT "note_links_source_note_id_notes_id_fk" FOREIGN KEY ("source_note_id") REFERENCES "public"."notes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "note_links" ADD CONSTRAINT "note_links_target_note_id_notes_id_fk" FOREIGN KEY ("target_note_id") REFERENCES "public"."notes"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "note_links" ADD CONSTRAINT "note_links_target_note_id_notes_id_fk" FOREIGN KEY ("target_note_id") REFERENCES "public"."notes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "notes_search_vector_idx" ON "notes" USING gin ("search_vector");
