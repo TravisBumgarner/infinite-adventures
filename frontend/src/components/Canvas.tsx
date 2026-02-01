@@ -90,6 +90,7 @@ export default function Canvas() {
     x: number;
     y: number;
     noteId: string;
+    selectedIds: string[];
   } | null>(null);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
@@ -198,13 +199,16 @@ export default function Canvas() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
+      // Snapshot selected IDs now, before React Flow changes selection
+      const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
       setNodeContextMenu({
         x: event.clientX,
         y: event.clientY,
         noteId: node.id,
+        selectedIds,
       });
     },
-    []
+    [nodes]
   );
 
   // View All: fit all nodes in viewport
@@ -276,11 +280,10 @@ export default function Canvas() {
     [setNodes, setEdges]
   );
 
-  // Batch-delete all selected nodes
-  const handleDeleteSelected = useCallback(async () => {
-    const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
-    if (selectedIds.length === 0) return;
-    const deletedIds = await batchDeleteNotes(selectedIds, api.deleteNote);
+  // Batch-delete nodes by explicit IDs
+  const handleDeleteSelected = useCallback(async (idsToDelete: string[]) => {
+    if (idsToDelete.length === 0) return;
+    const deletedIds = await batchDeleteNotes(idsToDelete, api.deleteNote);
     for (const id of deletedIds) {
       notesCache.current.delete(id);
     }
@@ -290,7 +293,7 @@ export default function Canvas() {
       eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target))
     );
     setEditingNoteId(null);
-  }, [nodes, setNodes, setEdges]);
+  }, [setNodes, setEdges]);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -346,14 +349,14 @@ export default function Canvas() {
           x={nodeContextMenu.x}
           y={nodeContextMenu.y}
           noteId={nodeContextMenu.noteId}
-          selectedCount={nodes.filter((n) => n.selected).length}
+          selectedCount={nodeContextMenu.selectedIds.length}
           onEdit={(noteId) => setEditingNoteId(noteId)}
           onDelete={async (noteId) => {
             await api.deleteNote(noteId);
             handleDeleted(noteId);
           }}
           onDeleteSelected={async () => {
-            await handleDeleteSelected();
+            await handleDeleteSelected(nodeContextMenu.selectedIds);
             setNodeContextMenu(null);
           }}
           onClose={() => setNodeContextMenu(null)}
