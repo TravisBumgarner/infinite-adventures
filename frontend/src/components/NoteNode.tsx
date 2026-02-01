@@ -3,6 +3,8 @@ import { Handle, Position } from "@xyflow/react";
 import type { NodeProps, Node } from "@xyflow/react";
 import type { NoteType } from "../types";
 import { TYPE_COLORS, TYPE_LABELS } from "../constants";
+import { parsePreviewContent } from "../utils/previewParser";
+import type { PreviewSegment } from "../utils/previewParser";
 
 export type NoteNodeData = {
   noteId: string;
@@ -34,48 +36,67 @@ function MentionSpan({ label, onClick }: { label: string; onClick: (e: React.Mou
   );
 }
 
-/**
- * Render content preview with @mentions styled as highlighted spans.
- * @{id} mentions are clickable; @[Title] and @Word are styled but not clickable.
- */
-function renderPreview(
-  content: string,
+function renderSegment(
+  segment: PreviewSegment,
+  index: number,
   noteId: string,
-  mentionLabels: Record<string, string>,
   onMentionClick: (sourceNoteId: string, targetNoteId: string) => void
-) {
-  const preview = content.length > 80 ? content.slice(0, 80) + "..." : content;
-  // Match @{id}, @[Multi Word], or @SingleWord
-  const parts = preview.split(/(@\{[^}]+\}|@\[[^\]]+\]|@[\w-]+)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("@{")) {
-      const targetId = part.slice(2, -1);
-      const label = mentionLabels[targetId] || targetId;
+): React.ReactNode {
+  switch (segment.type) {
+    case "mention-clickable":
       return (
         <MentionSpan
-          key={i}
-          label={label}
+          key={index}
+          label={segment.text}
           onClick={(e) => {
             e.stopPropagation();
-            onMentionClick(noteId, targetId);
+            onMentionClick(noteId, segment.targetId);
           }}
         />
       );
-    }
-    if (part.startsWith("@")) {
+    case "mention-static":
       return (
-        <span key={i} style={{ color: "#89b4fa", fontWeight: 600 }}>
-          {part}
+        <span key={index} style={{ color: "#89b4fa", fontWeight: 600 }}>
+          {segment.text}
         </span>
       );
-    }
-    return part;
-  });
+    case "bold":
+      return (
+        <span key={index} style={{ fontWeight: 700 }}>
+          {segment.text}
+        </span>
+      );
+    case "italic":
+      return (
+        <span key={index} style={{ fontStyle: "italic" }}>
+          {segment.text}
+        </span>
+      );
+    case "code":
+      return (
+        <code
+          key={index}
+          style={{
+            background: "#313244",
+            borderRadius: 3,
+            padding: "1px 4px",
+            fontSize: 11,
+          }}
+        >
+          {segment.text}
+        </code>
+      );
+    case "text":
+      return <span key={index}>{segment.text}</span>;
+  }
 }
 
 function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
   const color = TYPE_COLORS[data.type];
   const label = TYPE_LABELS[data.type];
+  const segments = data.content
+    ? parsePreviewContent(data.content, data.mentionLabels)
+    : [];
 
   return (
     <>
@@ -117,9 +138,11 @@ function NoteNodeComponent({ data }: NodeProps<NoteNodeType>) {
             {data.title}
           </span>
         </div>
-        {data.content && (
+        {segments.length > 0 && (
           <div style={{ fontSize: 12, color: "#a6adc8", marginTop: 4 }}>
-            {renderPreview(data.content, data.noteId, data.mentionLabels, data.onMentionClick)}
+            {segments.map((seg, i) =>
+              renderSegment(seg, i, data.noteId, data.onMentionClick)
+            )}
           </div>
         )}
       </div>
