@@ -45,30 +45,39 @@ export function fetchCanvases(): Promise<CanvasSummary[]> {
   return request<CanvasSummary[]>("/canvases");
 }
 
-export function createCanvas(_input: CreateCanvasInput): Promise<Canvas> {
-  return request<Canvas>("/canvases");
+export function createCanvas(input: CreateCanvasInput): Promise<Canvas> {
+  return request<Canvas>("/canvases", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export function updateCanvas(_id: string, _input: UpdateCanvasInput): Promise<Canvas> {
-  return request<Canvas>("/canvases");
+export function updateCanvas(id: string, input: UpdateCanvasInput): Promise<Canvas> {
+  return request<Canvas>(`/canvases/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
 }
 
-export function deleteCanvas(_id: string): Promise<void> {
-  return request<void>("/canvases");
+export function deleteCanvas(id: string): Promise<void> {
+  return request<void>(`/canvases/${id}`, { method: "DELETE" });
 }
 
 // --- Note functions ---
 
-export function fetchNotes(_canvasId: string): Promise<NoteSummary[]> {
-  return request<NoteSummary[]>("/notes");
+export function fetchNotes(canvasId: string): Promise<NoteSummary[]> {
+  return request<NoteSummary[]>(`/canvases/${canvasId}/notes`);
 }
 
 export function fetchNote(id: string): Promise<Note> {
   return request<Note>(`/notes/${id}`);
 }
 
-export function createNote(_canvasId: string, _input: CreateNoteInput): Promise<Note> {
-  return request<Note>("/notes");
+export function createNote(canvasId: string, input: CreateNoteInput): Promise<Note> {
+  return request<Note>(`/canvases/${canvasId}/notes`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export function updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
@@ -82,7 +91,10 @@ export function deleteNote(id: string): Promise<void> {
   return request<void>(`/notes/${id}`, { method: "DELETE" });
 }
 
-export async function searchNotes(_query: string, _canvasId: string): Promise<SearchResult[]> {
-  const data = await request<{ results: SearchResult[] }>("/notes/search");
+export async function searchNotes(query: string, canvasId: string): Promise<SearchResult[]> {
+  const encoded = encodeURIComponent(query);
+  const data = await request<{ results: SearchResult[] }>(
+    `/canvases/${canvasId}/notes/search?q=${encoded}`,
+  );
   return data.results;
 }
