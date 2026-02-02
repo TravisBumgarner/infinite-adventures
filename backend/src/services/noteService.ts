@@ -30,7 +30,7 @@ export function isValidNoteType(type: string): type is NoteType {
   return (VALID_TYPES as readonly string[]).includes(type);
 }
 
-export async function listNotes(_canvasId: string): Promise<NoteSummary[]> {
+export async function listNotes(canvasId: string): Promise<NoteSummary[]> {
   const db = getDb();
   return db
     .select({
@@ -41,6 +41,7 @@ export async function listNotes(_canvasId: string): Promise<NoteSummary[]> {
       canvas_y: notes.canvas_y,
     })
     .from(notes)
+    .where(eq(notes.canvas_id, canvasId))
     .orderBy(notes.created_at);
 }
 
@@ -147,7 +148,7 @@ export async function deleteNote(id: string): Promise<boolean> {
 
 export type { SearchResult };
 
-export async function searchNotes(query: string, _canvasId: string): Promise<SearchResult[]> {
+export async function searchNotes(query: string, canvasId: string): Promise<SearchResult[]> {
   if (!query || !query.trim()) {
     return [];
   }
@@ -171,6 +172,7 @@ export async function searchNotes(query: string, _canvasId: string): Promise<Sea
             'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet
      FROM notes n
      WHERE n.search_vector @@ to_tsquery('english', ${tsquery})
+       AND n.canvas_id = ${canvasId}
      ORDER BY ts_rank(n.search_vector, to_tsquery('english', ${tsquery})) DESC
      LIMIT 20`,
   );
