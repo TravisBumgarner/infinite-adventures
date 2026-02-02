@@ -5,11 +5,11 @@ CREATE TABLE "canvases" (
 	"updated_at" text DEFAULT now()::text NOT NULL
 );
 --> statement-breakpoint
-INSERT INTO "canvases" ("id", "name") VALUES ('default', 'Default');
+INSERT INTO "canvases" ("id", "name") VALUES ('00000000-0000-4000-8000-000000000000', 'Default');
 --> statement-breakpoint
 ALTER TABLE "notes" ADD COLUMN "canvas_id" text;
 --> statement-breakpoint
-UPDATE "notes" SET "canvas_id" = 'default' WHERE "canvas_id" IS NULL;
+UPDATE "notes" SET "canvas_id" = '00000000-0000-4000-8000-000000000000' WHERE "canvas_id" IS NULL;
 --> statement-breakpoint
 ALTER TABLE "notes" ALTER COLUMN "canvas_id" SET NOT NULL;
 --> statement-breakpoint
