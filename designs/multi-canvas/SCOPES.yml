@@ -120,7 +120,7 @@ tasks:
       - All functions use the shared Canvas types from the shared package
     depends_on: [2, 3]
     effort: 1
-    status: scoped
+    status: completed
 
   - id: 5
     github_issue: 68
