@@ -177,4 +177,4 @@ tasks:
       - Active canvas ID persists across page reload (localStorage)
     depends_on: [5]
     effort: 3
-    status: implementing
+    status: completed
