@@ -60,6 +60,19 @@ export const noteLinks = pgTable(
   (table) => [primaryKey({ columns: [table.source_note_id, table.target_note_id] })],
 );
 
+export const canvasUsers = pgTable(
+  "canvas_users",
+  {
+    canvas_id: text("canvas_id")
+      .notNull()
+      .references(() => canvases.id, { onDelete: "cascade" }),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.canvas_id, table.user_id] })],
+);
+
 export type Canvas = typeof canvases.$inferSelect;
 export type InsertCanvas = typeof canvases.$inferInsert;
 export type Note = typeof notes.$inferSelect;

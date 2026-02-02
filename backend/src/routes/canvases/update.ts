@@ -1,17 +1,22 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { updateCanvas } from "../../services/canvasService.js";
+import { requireUserId } from "../shared/auth.js";
 import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { isValidUUID } from "../shared/validation.js";
 
 export interface UpdateValidationContext {
   id: string;
   name: string;
+  userId: string;
 }
 
 export function validate(
   req: Request<{ id: string }>,
   res: Response,
 ): UpdateValidationContext | null {
+  const auth = requireUserId(req as AuthenticatedRequest, res);
+  if (!auth) return null;
   const { id } = req.params;
   if (!isValidUUID(id)) {
     sendBadRequest(res, "INVALID_UUID");
@@ -22,7 +27,7 @@ export function validate(
     sendBadRequest(res);
     return null;
   }
-  return { id, name: name.trim() };
+  return { id, name: name.trim(), userId: auth.userId };
 }
 
 export async function processRequest(
@@ -30,7 +35,7 @@ export async function processRequest(
   res: Response,
   context: UpdateValidationContext,
 ): Promise<void> {
-  const canvas = await updateCanvas(context.id, context.name);
+  const canvas = await updateCanvas(context.id, context.name, context.userId);
   if (!canvas) {
     sendNotFound(res, "CANVAS_NOT_FOUND");
     return;

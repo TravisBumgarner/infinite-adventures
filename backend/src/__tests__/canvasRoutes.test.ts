@@ -5,7 +5,13 @@ import { handler as getHandler, validate as getValidate } from "../routes/canvas
 import { handler as listHandler } from "../routes/canvases/list.js";
 import { handler as updateHandler, validate as updateValidate } from "../routes/canvases/update.js";
 import { createCanvas } from "../services/canvasService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import {
+  setupTestDb,
+  TEST_USER_AUTH_ID,
+  TEST_USER_ID,
+  teardownTestDb,
+  truncateAllTables,
+} from "./helpers/setup.js";
 
 function createMockRes() {
   const res = {
@@ -20,6 +26,7 @@ function createMockReq(overrides: Record<string, unknown> = {}) {
     params: {},
     query: {},
     body: {},
+    user: { authId: TEST_USER_AUTH_ID, userId: TEST_USER_ID, email: "test@example.com" },
     ...overrides,
   } as unknown as import("express").Request;
 }
@@ -41,7 +48,7 @@ describe("canvas routes", () => {
     it("handler returns canvases in success envelope", async () => {
       const req = createMockReq();
       const res = createMockRes();
-      await listHandler(req, res);
+      await listHandler(req as any, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -60,7 +67,7 @@ describe("canvas routes", () => {
     });
 
     it("handler returns canvas in success envelope", async () => {
-      const canvas = await createCanvas("Test Canvas");
+      const canvas = await createCanvas("Test Canvas", TEST_USER_ID);
       const req = createMockReq({ params: { id: canvas.id } });
       const res = createMockRes();
       await getHandler(req as import("express").Request<{ id: string }>, res);
@@ -124,7 +131,7 @@ describe("canvas routes", () => {
     });
 
     it("handler updates canvas and returns success", async () => {
-      const canvas = await createCanvas("Old Name");
+      const canvas = await createCanvas("Old Name", TEST_USER_ID);
       const req = createMockReq({
         params: { id: canvas.id },
         body: { name: "New Name" },
@@ -160,7 +167,7 @@ describe("canvas routes", () => {
     });
 
     it("handler deletes canvas and returns success", async () => {
-      const canvas = await createCanvas("To Delete");
+      const canvas = await createCanvas("To Delete", TEST_USER_ID);
       const req = createMockReq({ params: { id: canvas.id } });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
@@ -179,7 +186,9 @@ describe("canvas routes", () => {
     });
 
     it("handler returns 400 with LAST_CANVAS when deleting the only canvas", async () => {
-      const canvases = await (await import("../services/canvasService.js")).listCanvases();
+      const canvases = await (await import("../services/canvasService.js")).listCanvases(
+        TEST_USER_ID,
+      );
       const req = createMockReq({ params: { id: canvases[0]!.id } });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
