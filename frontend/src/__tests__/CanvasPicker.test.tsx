@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CanvasPicker from "../pages/Canvas/components/CanvasPicker";

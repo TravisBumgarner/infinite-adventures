@@ -6,8 +6,8 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .default("postgresql://infinite:infinite@localhost:5434/infinite_adventures"),
-  SUPABASE_URL: z.string().default(""),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().default(""),
+  SUPABASE_URL: z.string().optional().default(""),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(""),
 });
 
 const parsed = envSchema.safeParse({

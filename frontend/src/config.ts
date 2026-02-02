@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  VITE_API_URL: z.string().default("http://localhost:3021/api"),
-  VITE_SUPABASE_URL: z.string().default(""),
-  VITE_SUPABASE_ANON_KEY: z.string().default(""),
+  VITE_API_URL: z.string(),
+  VITE_SUPABASE_URL: z.string(),
+  VITE_SUPABASE_ANON_KEY: z.string(),
 });
 
 const parsed = envSchema.safeParse({

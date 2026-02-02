@@ -3,6 +3,7 @@ import { Background, BackgroundVariant, MiniMap, ReactFlow } from "@xyflow/react
 import "@xyflow/react/dist/style.css";
 
 import { useTheme } from "@mui/material";
+import { useCallback, useEffect } from "react";
 import * as api from "../../api/client";
 import { SIDEBAR_WIDTH } from "../../constants";
 import Toast from "../../sharedComponents/Toast";
@@ -29,6 +30,11 @@ const nodeTypes: NodeTypes = {
 export default function Canvas() {
   const theme = useTheme();
 
+  const canvases = useCanvasStore((s) => s.canvases);
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+  const setCanvases = useCanvasStore((s) => s.setCanvases);
+  const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
+  const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const editingNoteId = useCanvasStore((s) => s.editingNoteId);
   const browsingNoteId = useCanvasStore((s) => s.browsingNoteId);
   const showSettings = useCanvasStore((s) => s.showSettings);
@@ -43,6 +49,38 @@ export default function Canvas() {
 
   const toastMessage = useAppStore((s) => s.toastMessage);
   const clearToast = useAppStore((s) => s.clearToast);
+
+  // Fetch canvases on mount and initialize the active canvas
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const list = await api.fetchCanvases();
+        if (!cancelled) {
+          initActiveCanvas(list);
+        }
+      } catch {
+        // Auth token may not be ready yet — retry once after a short delay
+        if (!cancelled) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            const list = await api.fetchCanvases();
+            if (!cancelled) {
+              initActiveCanvas(list);
+            }
+          } catch {
+            // Still failing — session is likely invalid
+          }
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initActiveCanvas]);
 
   const {
     filteredNodes,
@@ -67,6 +105,45 @@ export default function Canvas() {
     onPaneClick,
     viewportKey,
   } = useCanvasActions();
+
+  // Canvas picker handlers
+  const handleSwitchCanvas = useCallback(
+    (canvasId: string) => {
+      setActiveCanvasId(canvasId);
+    },
+    [setActiveCanvasId],
+  );
+
+  const handleCreateCanvas = useCallback(async () => {
+    const canvas = await api.createCanvas({ name: "New Canvas" });
+    setCanvases([...useCanvasStore.getState().canvases, canvas]);
+    setActiveCanvasId(canvas.id);
+  }, [setCanvases, setActiveCanvasId]);
+
+  const handleRenameCanvas = useCallback(
+    async (canvasId: string, newName: string) => {
+      const updated = await api.updateCanvas(canvasId, { name: newName });
+      setCanvases(
+        useCanvasStore.getState().canvases.map((c) => (c.id === updated.id ? updated : c)),
+      );
+    },
+    [setCanvases],
+  );
+
+  const handleDeleteCanvas = useCallback(
+    async (canvasId: string) => {
+      await api.deleteCanvas(canvasId);
+      const remaining = useCanvasStore.getState().canvases.filter((c) => c.id !== canvasId);
+      setCanvases(remaining);
+      if (activeCanvasId === canvasId && remaining.length > 0) {
+        setActiveCanvasId(remaining[0].id);
+      }
+    },
+    [setCanvases, setActiveCanvasId, activeCanvasId],
+  );
+
+  // Don't render until we have an active canvas
+  if (!activeCanvasId) return null;
 
   return (
     <div
@@ -113,17 +190,17 @@ export default function Canvas() {
       <TopBar
         left={
           <CanvasPicker
-            canvases={[]}
-            activeCanvasId=""
-            onSwitch={() => {}}
-            onCreate={() => {}}
-            onRename={() => {}}
-            onDelete={() => {}}
+            canvases={canvases}
+            activeCanvasId={activeCanvasId}
+            onSwitch={handleSwitchCanvas}
+            onCreate={handleCreateCanvas}
+            onRename={handleRenameCanvas}
+            onDelete={handleDeleteCanvas}
           />
         }
         center={
           <>
-            <SearchBar onNavigate={navigateToNote} />
+            <SearchBar canvasId={activeCanvasId} onNavigate={navigateToNote} />
             <FilterBar />
           </>
         }
