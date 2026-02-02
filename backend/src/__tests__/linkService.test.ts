@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "../db/connection.js";
 import { noteLinks, notes } from "../db/schema.js";
 import { parseMentions, resolveLinks } from "../services/linkService.js";
-import { createNote } from "../services/noteService.js";
+import { createNote, DEFAULT_CANVAS_ID } from "../services/noteService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("linkService", () => {
@@ -55,8 +55,11 @@ describe("linkService", () => {
     });
 
     it("creates links to existing notes", async () => {
-      const source = await createNote({ type: "pc", title: "Frodo", content: "" });
-      await createNote({ type: "npc", title: "Gandalf", content: "" });
+      const source = await createNote(
+        { type: "pc", title: "Frodo", content: "" },
+        DEFAULT_CANVAS_ID,
+      );
+      await createNote({ type: "npc", title: "Gandalf", content: "" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveLinks(source.id, "I met @Gandalf today");
 
@@ -73,8 +76,11 @@ describe("linkService", () => {
       expect(links).toHaveLength(1);
     });
 
-    it("auto-creates notes for unknown mentions", async () => {
-      const source = await createNote({ type: "pc", title: "Frodo", content: "" });
+    it("auto-creates notes on the same canvas as the source", async () => {
+      const source = await createNote(
+        { type: "pc", title: "Frodo", content: "" },
+        DEFAULT_CANVAS_ID,
+      );
 
       const resolved = await resolveLinks(source.id, "Going to @Rivendell");
 
@@ -82,7 +88,7 @@ describe("linkService", () => {
       expect(resolved[0]?.title).toBe("Rivendell");
       expect(resolved[0]?.created).toBe(true);
 
-      // Verify the new note was created
+      // Verify the new note inherits source's canvas_id
       const db = getDb();
       const [newNote] = await db
         .select()
@@ -90,12 +96,16 @@ describe("linkService", () => {
         .where(eq(notes.id, resolved[0]?.targetNoteId));
       expect(newNote?.type).toBe("npc");
       expect(newNote?.title).toBe("Rivendell");
+      expect(newNote?.canvas_id).toBe(DEFAULT_CANVAS_ID);
     });
 
     it("removes stale links when mentions are removed", async () => {
-      const source = await createNote({ type: "pc", title: "Frodo", content: "" });
-      await createNote({ type: "npc", title: "Gandalf", content: "" });
-      await createNote({ type: "location", title: "Shire", content: "" });
+      const source = await createNote(
+        { type: "pc", title: "Frodo", content: "" },
+        DEFAULT_CANVAS_ID,
+      );
+      await createNote({ type: "npc", title: "Gandalf", content: "" }, DEFAULT_CANVAS_ID);
+      await createNote({ type: "location", title: "Shire", content: "" }, DEFAULT_CANVAS_ID);
 
       // First, link to both
       await resolveLinks(source.id, "@Gandalf in @Shire");
@@ -112,19 +122,25 @@ describe("linkService", () => {
     });
 
     it("is case-insensitive when matching titles", async () => {
-      const source = await createNote({ type: "pc", title: "Frodo", content: "" });
-      await createNote({ type: "npc", title: "Gandalf", content: "" });
+      const source = await createNote(
+        { type: "pc", title: "Frodo", content: "" },
+        DEFAULT_CANVAS_ID,
+      );
+      await createNote({ type: "npc", title: "Gandalf", content: "" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveLinks(source.id, "Met @gandalf");
       expect(resolved[0]?.created).toBe(false);
     });
 
     it("does not link a note to itself", async () => {
-      const source = await createNote({
-        type: "pc",
-        title: "Frodo",
-        content: "",
-      });
+      const source = await createNote(
+        {
+          type: "pc",
+          title: "Frodo",
+          content: "",
+        },
+        DEFAULT_CANVAS_ID,
+      );
 
       await resolveLinks(source.id, "I am @Frodo");
 

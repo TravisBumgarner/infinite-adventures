@@ -2,7 +2,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db/connection.js";
 import { noteLinks, notes } from "../db/schema.js";
-import { DEFAULT_CANVAS_ID } from "./noteService.js";
 
 export interface ResolvedLink {
   targetNoteId: string;
@@ -57,9 +56,9 @@ export async function resolveLinks(sourceNoteId: string, content: string): Promi
   const db = getDb();
   const mentions = parseMentions(content);
 
-  // Get the source note for positioning new notes nearby
+  // Get the source note for positioning new notes nearby and inheriting canvas_id
   const [sourceNote] = await db
-    .select({ canvas_x: notes.canvas_x, canvas_y: notes.canvas_y })
+    .select({ canvas_x: notes.canvas_x, canvas_y: notes.canvas_y, canvas_id: notes.canvas_id })
     .from(notes)
     .where(eq(notes.id, sourceNoteId));
 
@@ -105,7 +104,7 @@ export async function resolveLinks(sourceNoteId: string, content: string): Promi
           content: "",
           canvas_x: offsetX,
           canvas_y: offsetY,
-          canvas_id: DEFAULT_CANVAS_ID,
+          canvas_id: sourceNote?.canvas_id ?? "",
           created_at: now,
           updated_at: now,
         });

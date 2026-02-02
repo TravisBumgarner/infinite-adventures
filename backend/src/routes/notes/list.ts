@@ -2,16 +2,21 @@ import type { Request, Response } from "express";
 import { listNotes } from "../../services/noteService.js";
 import { sendSuccess } from "../shared/responses.js";
 
-export function validate(_req: Request, _res: Response): Record<string, never> | null {
-  return {};
+export interface ListValidationContext {
+  canvasId: string;
+}
+
+export function validate(req: Request, _res: Response): ListValidationContext | null {
+  const canvasId = req.params.canvasId ?? "";
+  return { canvasId };
 }
 
 export async function processRequest(
   _req: Request,
   res: Response,
-  _context: Record<string, never>,
+  context: ListValidationContext,
 ): Promise<void> {
-  const notes = await listNotes();
+  const notes = await listNotes(context.canvasId);
   sendSuccess(res, notes);
 }
 

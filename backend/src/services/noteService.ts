@@ -30,7 +30,7 @@ export function isValidNoteType(type: string): type is NoteType {
   return (VALID_TYPES as readonly string[]).includes(type);
 }
 
-export async function listNotes(): Promise<NoteSummary[]> {
+export async function listNotes(_canvasId: string): Promise<NoteSummary[]> {
   const db = getDb();
   return db
     .select({
@@ -72,7 +72,7 @@ export async function getNote(id: string): Promise<NoteWithLinks | null> {
   return { ...note, links_to: linksTo, linked_from: linkedFrom };
 }
 
-export async function createNote(input: CreateNoteInput): Promise<Note> {
+export async function createNote(input: CreateNoteInput, canvasId: string): Promise<Note> {
   const db = getDb();
   const id = uuidv4();
   const now = new Date().toISOString();
@@ -93,7 +93,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
     content: input.content ?? "",
     canvas_x: input.canvas_x ?? 0,
     canvas_y: input.canvas_y ?? 0,
-    canvas_id: DEFAULT_CANVAS_ID,
+    canvas_id: canvasId,
     created_at: now,
     updated_at: now,
   });
@@ -147,7 +147,7 @@ export async function deleteNote(id: string): Promise<boolean> {
 
 export type { SearchResult };
 
-export async function searchNotes(query: string): Promise<SearchResult[]> {
+export async function searchNotes(query: string, _canvasId: string): Promise<SearchResult[]> {
   if (!query || !query.trim()) {
     return [];
   }

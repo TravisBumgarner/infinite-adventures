@@ -94,7 +94,7 @@ tasks:
       - Old GET/PUT/DELETE by note ID still work without canvas scoping
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: testing
 
   - id: 4
     github_issue: 67

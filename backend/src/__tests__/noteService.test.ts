@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createCanvas } from "../services/canvasService.js";
 import {
   createNote,
+  DEFAULT_CANVAS_ID,
   deleteNote,
   getNote,
   listNotes,
@@ -8,7 +10,7 @@ import {
   updateNote,
   ValidationError,
 } from "../services/noteService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("noteService", () => {
   beforeAll(async () => {
@@ -25,13 +27,16 @@ describe("noteService", () => {
 
   describe("createNote", () => {
     it("creates a note with valid input", async () => {
-      const note = await createNote({
-        type: "npc",
-        title: "Gandalf",
-        content: "A wise wizard",
-        canvas_x: 100,
-        canvas_y: 200,
-      });
+      const note = await createNote(
+        {
+          type: "npc",
+          title: "Gandalf",
+          content: "A wise wizard",
+          canvas_x: 100,
+          canvas_y: 200,
+        },
+        DEFAULT_CANVAS_ID,
+      );
 
       expect(note.id).toBeDefined();
       expect(note.type).toBe("npc");
@@ -43,35 +48,58 @@ describe("noteService", () => {
       expect(note.updated_at).toBeDefined();
     });
 
+    it("stores the provided canvas_id on the note", async () => {
+      const canvas = await createCanvas("Test Canvas", TEST_USER_ID);
+      const note = await createNote({ type: "npc", title: "Gandalf" }, canvas.id);
+
+      expect(note.canvas_id).toBe(canvas.id);
+    });
+
     it("defaults content to empty string and position to 0,0", async () => {
-      const note = await createNote({ type: "pc", title: "Frodo" });
+      const note = await createNote({ type: "pc", title: "Frodo" }, DEFAULT_CANVAS_ID);
       expect(note.content).toBe("");
       expect(note.canvas_x).toBe(0);
       expect(note.canvas_y).toBe(0);
     });
 
     it("throws ValidationError for missing title", async () => {
-      await expect(createNote({ type: "npc", title: "" })).rejects.toThrow(ValidationError);
+      await expect(createNote({ type: "npc", title: "" }, DEFAULT_CANVAS_ID)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it("throws ValidationError for invalid type", async () => {
-      await expect(createNote({ type: "dragon" as any, title: "Smaug" })).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(
+        createNote({ type: "dragon" as any, title: "Smaug" }, DEFAULT_CANVAS_ID),
+      ).rejects.toThrow(ValidationError);
     });
   });
 
   describe("listNotes", () => {
-    it("returns empty array when no notes exist", async () => {
-      expect(await listNotes()).toEqual([]);
+    it("returns empty array when no notes exist on the canvas", async () => {
+      expect(await listNotes(DEFAULT_CANVAS_ID)).toEqual([]);
     });
 
-    it("returns all notes without content", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
-      await createNote({ type: "pc", title: "Frodo", content: "A hobbit" });
+    it("returns notes for the specified canvas only", async () => {
+      const otherCanvas = await createCanvas("Other Canvas", TEST_USER_ID);
 
-      const notes = await listNotes();
-      expect(notes).toHaveLength(2);
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
+      await createNote({ type: "pc", title: "Frodo", content: "A hobbit" }, DEFAULT_CANVAS_ID);
+      await createNote({ type: "item", title: "Ring", content: "One ring" }, otherCanvas.id);
+
+      const defaultNotes = await listNotes(DEFAULT_CANVAS_ID);
+      expect(defaultNotes).toHaveLength(2);
+
+      const otherNotes = await listNotes(otherCanvas.id);
+      expect(otherNotes).toHaveLength(1);
+      expect(otherNotes[0]?.title).toBe("Ring");
+    });
+
+    it("returns notes without content", async () => {
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
+
+      const notes = await listNotes(DEFAULT_CANVAS_ID);
+      expect(notes).toHaveLength(1);
       expect(notes[0]).not.toHaveProperty("content");
       expect(notes[0]).toHaveProperty("id");
       expect(notes[0]).toHaveProperty("type");
@@ -83,7 +111,7 @@ describe("noteService", () => {
 
   describe("getNote", () => {
     it("returns a note with links arrays", async () => {
-      const created = await createNote({ type: "npc", title: "Gandalf" });
+      const created = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const note = await getNote(created.id);
 
       expect(note).not.toBeNull();
@@ -100,11 +128,14 @@ describe("noteService", () => {
 
   describe("updateNote", () => {
     it("updates specified fields", async () => {
-      const created = await createNote({
-        type: "npc",
-        title: "Gandalf",
-        content: "A wizard",
-      });
+      const created = await createNote(
+        {
+          type: "npc",
+          title: "Gandalf",
+          content: "A wizard",
+        },
+        DEFAULT_CANVAS_ID,
+      );
 
       const updated = await updateNote(created.id, {
         title: "Gandalf the Grey",
@@ -122,7 +153,7 @@ describe("noteService", () => {
     });
 
     it("throws ValidationError for invalid type", async () => {
-      const created = await createNote({ type: "npc", title: "Gandalf" });
+      const created = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       await expect(updateNote(created.id, { type: "dragon" as any })).rejects.toThrow(
         ValidationError,
       );
@@ -131,7 +162,7 @@ describe("noteService", () => {
 
   describe("deleteNote", () => {
     it("deletes an existing note", async () => {
-      const created = await createNote({ type: "npc", title: "Gandalf" });
+      const created = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       expect(await deleteNote(created.id)).toBe(true);
       expect(await getNote(created.id)).toBeNull();
     });
@@ -142,47 +173,64 @@ describe("noteService", () => {
   });
 
   describe("searchNotes", () => {
-    it("finds notes by title", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
-      await createNote({ type: "pc", title: "Frodo", content: "A hobbit" });
+    it("finds notes by title within a canvas", async () => {
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
+      await createNote({ type: "pc", title: "Frodo", content: "A hobbit" }, DEFAULT_CANVAS_ID);
 
-      const results = await searchNotes("Gandalf");
+      const results = await searchNotes("Gandalf", DEFAULT_CANVAS_ID);
       expect(results).toHaveLength(1);
       expect(results[0]?.title).toBe("Gandalf");
       expect(results[0]?.type).toBe("npc");
     });
 
-    it("finds notes by content", async () => {
-      await createNote({
-        type: "npc",
-        title: "Gandalf",
-        content: "A wise wizard from Middle Earth",
-      });
+    it("does not return notes from other canvases", async () => {
+      const otherCanvas = await createCanvas("Other Canvas", TEST_USER_ID);
 
-      const results = await searchNotes("wizard");
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
+      await createNote(
+        { type: "npc", title: "Gandalf Clone", content: "A wizard clone" },
+        otherCanvas.id,
+      );
+
+      const results = await searchNotes("wizard", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.title).toBe("Gandalf");
+    });
+
+    it("finds notes by content", async () => {
+      await createNote(
+        {
+          type: "npc",
+          title: "Gandalf",
+          content: "A wise wizard from Middle Earth",
+        },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const results = await searchNotes("wizard", DEFAULT_CANVAS_ID);
       expect(results).toHaveLength(1);
       expect(results[0]?.title).toBe("Gandalf");
       expect(results[0]?.snippet).toContain("wizard");
     });
 
     it("returns empty array for no matches", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
 
-      const results = await searchNotes("dragon");
+      const results = await searchNotes("dragon", DEFAULT_CANVAS_ID);
       expect(results).toEqual([]);
     });
 
     it("returns empty array for empty query", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
 
-      expect(await searchNotes("")).toEqual([]);
-      expect(await searchNotes("   ")).toEqual([]);
+      expect(await searchNotes("", DEFAULT_CANVAS_ID)).toEqual([]);
+      expect(await searchNotes("   ", DEFAULT_CANVAS_ID)).toEqual([]);
     });
 
     it("supports prefix matching", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
 
-      const results = await searchNotes("Gan");
+      const results = await searchNotes("Gan", DEFAULT_CANVAS_ID);
       expect(results).toHaveLength(1);
       expect(results[0]?.title).toBe("Gandalf");
     });
