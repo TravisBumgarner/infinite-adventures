@@ -1,4 +1,4 @@
-import type { Note, NoteType } from "shared";
+import type { CanvasSummary, Note, NoteType } from "shared";
 import { create } from "zustand";
 
 interface ContextMenuState {
@@ -15,7 +15,20 @@ interface NodeContextMenuState {
   selectedIds: string[];
 }
 
+const ACTIVE_CANVAS_KEY = "infinite-adventures-active-canvas";
+
+export function getViewportKey(canvasId: string): string {
+  return `infinite-adventures-viewport-${canvasId}`;
+}
+
 interface CanvasState {
+  canvases: CanvasSummary[];
+  setCanvases: (canvases: CanvasSummary[]) => void;
+
+  activeCanvasId: string | null;
+  setActiveCanvasId: (id: string) => void;
+  initActiveCanvas: (canvases: CanvasSummary[]) => string;
+
   notesCache: Map<string, Note>;
   setNotesCache: (cache: Map<string, Note>) => void;
   updateCachedNote: (note: Note) => void;
@@ -46,6 +59,23 @@ interface CanvasState {
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
+  canvases: [],
+  setCanvases: (canvases) => set({ canvases }),
+
+  activeCanvasId: null,
+  setActiveCanvasId: (id) => {
+    localStorage.setItem(ACTIVE_CANVAS_KEY, id);
+    set({ activeCanvasId: id });
+  },
+  initActiveCanvas: (canvases) => {
+    const saved = localStorage.getItem(ACTIVE_CANVAS_KEY);
+    const match = canvases.find((c) => c.id === saved);
+    const activeId = match ? match.id : canvases[0]?.id ?? "";
+    localStorage.setItem(ACTIVE_CANVAS_KEY, activeId);
+    set({ canvases, activeCanvasId: activeId });
+    return activeId;
+  },
+
   notesCache: new Map(),
   setNotesCache: (cache) => set({ notesCache: cache }),
   updateCachedNote: (note) =>
