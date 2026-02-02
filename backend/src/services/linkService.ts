@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db/connection.js";
 import { noteLinks, notes } from "../db/schema.js";
+import { DEFAULT_CANVAS_ID } from "./noteService.js";
 
 export interface ResolvedLink {
   targetNoteId: string;
@@ -104,6 +105,7 @@ export async function resolveLinks(sourceNoteId: string, content: string): Promi
           content: "",
           canvas_x: offsetX,
           canvas_y: offsetY,
+          canvas_id: DEFAULT_CANVAS_ID,
           created_at: now,
           updated_at: now,
         });

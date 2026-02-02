@@ -68,6 +68,8 @@ export const CanvasSummarySchema = z.object({
 export const CanvasSchema = z.object({
   id: z.string(),
   name: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export const CreateCanvasInputSchema = z.object({
@@ -75,7 +77,7 @@ export const CreateCanvasInputSchema = z.object({
 });
 
 export const UpdateCanvasInputSchema = z.object({
-  name: z.string(),
+  name: z.string().optional(),
 });
 
 // --- Error codes ---

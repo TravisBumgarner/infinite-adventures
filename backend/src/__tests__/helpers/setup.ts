@@ -15,5 +15,8 @@ export async function teardownTestDb() {
 
 export async function truncateAllTables() {
   const db = getDb();
-  await db.execute(sql`TRUNCATE TABLE note_links, notes, users CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE note_links, notes, canvases, users CASCADE`);
+  await db.execute(
+    sql`INSERT INTO canvases (id, name) VALUES ('default', 'Default') ON CONFLICT (id) DO NOTHING`,
+  );
 }
