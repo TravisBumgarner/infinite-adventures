@@ -5,15 +5,13 @@ import type { Note, NoteType } from "shared";
 import * as api from "../../../api/client";
 import { NOTE_TEMPLATES } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
-import { useCanvasStore } from "../../../stores/canvasStore";
+import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
 import { appendMentionIfNew } from "../../../utils/edgeConnect";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
 import { batchDeleteNotes, getSelectedNodePositions } from "../../../utils/multiSelect";
 import { formatNoteExport } from "../../../utils/noteExport";
 import type { NoteNodeData } from "../components/NoteNode";
-
-const VIEWPORT_KEY = "infinite-adventures-viewport";
 
 function toFlowNode(
   note: Note,
@@ -80,6 +78,8 @@ export function useCanvasActions() {
     setShowSettings,
   } = useCanvasStore();
 
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+
   const showToast = useAppStore((s) => s.showToast);
 
   // Compute filtered nodes and edges for display
@@ -102,24 +102,31 @@ export function useCanvasActions() {
     [reactFlowInstance],
   );
 
-  // Load all notes and edges on mount
-  const loadAllNotes = useCallback(async () => {
-    const summaries = await api.fetchNotes();
-    const fullNotes = await Promise.all(summaries.map((n) => api.fetchNote(n.id)));
-    const cache = new Map(fullNotes.map((n) => [n.id, n]));
-    setNotesCache(cache);
-    setNodes(fullNotes.map((n) => toFlowNode(n, cache, fitBothNotes)));
-    setEdges(buildEdges(fullNotes));
-  }, [setNodes, setEdges, fitBothNotes, setNotesCache]);
+  // Load all notes and edges for a canvas
+  const loadAllNotes = useCallback(
+    async (canvasId: string) => {
+      const summaries = await api.fetchNotes(canvasId);
+      const fullNotes = await Promise.all(summaries.map((n) => api.fetchNote(n.id)));
+      const cache = new Map(fullNotes.map((n) => [n.id, n]));
+      setNotesCache(cache);
+      setNodes(fullNotes.map((n) => toFlowNode(n, cache, fitBothNotes)));
+      setEdges(buildEdges(fullNotes));
+    },
+    [setNodes, setEdges, fitBothNotes, setNotesCache],
+  );
 
+  // Load notes when activeCanvasId changes
   useEffect(() => {
-    loadAllNotes();
-  }, [loadAllNotes]);
+    if (activeCanvasId) {
+      loadAllNotes(activeCanvasId);
+    }
+  }, [activeCanvasId, loadAllNotes]);
 
-  // Restore viewport from localStorage
+  // Restore viewport from localStorage when canvas changes
   useEffect(() => {
-    if (initialized.current) return;
-    const saved = localStorage.getItem(VIEWPORT_KEY);
+    if (!activeCanvasId) return;
+    const key = getViewportKey(activeCanvasId);
+    const saved = localStorage.getItem(key);
     if (saved) {
       try {
         const viewport = JSON.parse(saved);
@@ -129,12 +136,14 @@ export function useCanvasActions() {
       }
     }
     initialized.current = true;
-  }, [reactFlowInstance]);
+  }, [activeCanvasId, reactFlowInstance]);
 
   // Save viewport on move
   const onMoveEnd = useCallback(() => {
+    const canvasId = useCanvasStore.getState().activeCanvasId;
+    if (!canvasId) return;
     const viewport = reactFlowInstance.getViewport();
-    localStorage.setItem(VIEWPORT_KEY, JSON.stringify(viewport));
+    localStorage.setItem(getViewportKey(canvasId), JSON.stringify(viewport));
   }, [reactFlowInstance]);
 
   // Navigate to a note by ID
@@ -155,9 +164,11 @@ export function useCanvasActions() {
   // Create a note at a specific flow position
   const createNoteAtPosition = useCallback(
     async (type: NoteType, flowX: number, flowY: number) => {
+      const canvasId = useCanvasStore.getState().activeCanvasId;
+      if (!canvasId) return;
       const existing = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
       const pos = findOpenPosition(flowX, flowY, existing);
-      const note = await api.createNote({
+      const note = await api.createNote(canvasId, {
         type,
         title: "New Note",
         content: NOTE_TEMPLATES[type],
@@ -317,12 +328,14 @@ export function useCanvasActions() {
   // Editor callbacks
   const handleSaved = useCallback(
     async (note: Note) => {
+      const canvasId = useCanvasStore.getState().activeCanvasId;
+      if (!canvasId) return;
       const fullNote = await api.fetchNote(note.id);
       const cache = useCanvasStore.getState().notesCache;
       const nextCache = new Map(cache);
       nextCache.set(fullNote.id, fullNote);
 
-      const summaries = await api.fetchNotes();
+      const summaries = await api.fetchNotes(canvasId);
       const newNoteIds = summaries.map((s) => s.id).filter((id) => !nextCache.has(id));
       const newNotes = await Promise.all(newNoteIds.map((id) => api.fetchNote(id)));
       for (const n of newNotes) {
@@ -417,6 +430,6 @@ export function useCanvasActions() {
     onPaneClick,
 
     // Viewport key for fitView check
-    viewportKey: VIEWPORT_KEY,
+    viewportKey: activeCanvasId ? getViewportKey(activeCanvasId) : "",
   };
 }

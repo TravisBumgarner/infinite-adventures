@@ -12,10 +12,11 @@ import * as api from "../../../api/client";
 import { getContrastText } from "../../../utils/getContrastText";
 
 interface SearchBarProps {
+  canvasId: string;
   onNavigate: (noteId: string) => void;
 }
 
-export default function SearchBar({ onNavigate }: SearchBarProps) {
+export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
   const theme = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -37,7 +38,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
     }
 
     debounceRef.current = setTimeout(async () => {
-      const res = await api.searchNotes(query);
+      const res = await api.searchNotes(query, canvasId);
       setResults(res);
       setShowDropdown(true);
       setSelectedIndex(0);
@@ -48,7 +49,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query]);
+  }, [query, canvasId]);
 
   // Close dropdown on outside click
   useEffect(() => {

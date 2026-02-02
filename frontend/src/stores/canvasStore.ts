@@ -70,7 +70,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   initActiveCanvas: (canvases) => {
     const saved = localStorage.getItem(ACTIVE_CANVAS_KEY);
     const match = canvases.find((c) => c.id === saved);
-    const activeId = match ? match.id : canvases[0]?.id ?? "";
+    const activeId = match ? match.id : (canvases[0]?.id ?? "");
     localStorage.setItem(ACTIVE_CANVAS_KEY, activeId);
     set({ canvases, activeCanvasId: activeId });
     return activeId;
