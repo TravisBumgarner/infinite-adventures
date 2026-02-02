@@ -65,7 +65,7 @@ tasks:
       - Cannot delete the last remaining canvas (returns 400)
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: testing
 
   - id: 3
     github_issue: 66

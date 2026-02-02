@@ -90,6 +90,8 @@ export const ERROR_CODES = [
   "INVALID_UUID",
   "INTERNAL_ERROR",
   "NOTE_NOT_FOUND",
+  "CANVAS_NOT_FOUND",
+  "LAST_CANVAS",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
