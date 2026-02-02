@@ -4,11 +4,13 @@ import { sendSuccess } from "../shared/responses.js";
 
 export interface SearchValidationContext {
   query: string;
+  canvasId: string;
 }
 
 export function validate(req: Request, _res: Response): SearchValidationContext | null {
   const query = (req.query.q as string) ?? "";
-  return { query };
+  const canvasId = req.params.canvasId ?? "";
+  return { query, canvasId };
 }
 
 export async function processRequest(
@@ -16,7 +18,7 @@ export async function processRequest(
   res: Response,
   context: SearchValidationContext,
 ): Promise<void> {
-  const results = await searchNotes(context.query);
+  const results = await searchNotes(context.query, context.canvasId);
   sendSuccess(res, { results });
 }
 

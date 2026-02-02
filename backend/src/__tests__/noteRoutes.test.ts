@@ -5,7 +5,7 @@ import { handler as getHandler, validate as getValidate } from "../routes/notes/
 import { handler as listHandler, validate as listValidate } from "../routes/notes/list.js";
 import { handler as searchHandler, validate as searchValidate } from "../routes/notes/search.js";
 import { handler as updateHandler, validate as updateValidate } from "../routes/notes/update.js";
-import { createNote } from "../services/noteService.js";
+import { createNote, DEFAULT_CANVAS_ID } from "../services/noteService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 function createMockRes() {
@@ -41,16 +41,16 @@ describe("note routes", () => {
   describe("list", () => {
     it("validate always returns a context object", () => {
       const res = createMockRes();
-      const req = createMockReq();
+      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
       const context = listValidate(req, res);
       expect(context).not.toBeNull();
     });
 
     it("handler returns all notes wrapped in success envelope", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "wizard" });
-      await createNote({ type: "pc", title: "Frodo", content: "hobbit" });
+      await createNote({ type: "npc", title: "Gandalf", content: "wizard" }, DEFAULT_CANVAS_ID);
+      await createNote({ type: "pc", title: "Frodo", content: "hobbit" }, DEFAULT_CANVAS_ID);
 
-      const req = createMockReq();
+      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
       const res = createMockRes();
       await listHandler(req, res);
 
@@ -78,7 +78,7 @@ describe("note routes", () => {
     });
 
     it("handler returns note in success envelope", async () => {
-      const note = await createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const req = createMockReq({ params: { id: note.id } });
       const res = createMockRes();
       await getHandler(req as import("express").Request<{ id: string }>, res);
@@ -105,7 +105,7 @@ describe("note routes", () => {
   describe("create", () => {
     it("validate returns null and sends 400 when body has no title", () => {
       const res = createMockRes();
-      const req = createMockReq({ body: { type: "npc" } });
+      const req = createMockReq({ body: { type: "npc" }, params: { canvasId: DEFAULT_CANVAS_ID } });
       const context = createValidate(req, res);
       expect(context).toBeNull();
       expect(res.status).toHaveBeenCalledWith(400);
@@ -113,24 +113,32 @@ describe("note routes", () => {
 
     it("validate returns null and sends 400 when body has no type", () => {
       const res = createMockRes();
-      const req = createMockReq({ body: { title: "Gandalf" } });
+      const req = createMockReq({
+        body: { title: "Gandalf" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const context = createValidate(req, res);
       expect(context).toBeNull();
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it("validate returns context with parsed input for valid body", () => {
+    it("validate returns context with parsed input and canvasId", () => {
       const res = createMockRes();
-      const req = createMockReq({ body: { type: "npc", title: "Gandalf", content: "wizard" } });
+      const req = createMockReq({
+        body: { type: "npc", title: "Gandalf", content: "wizard" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const context = createValidate(req, res);
       expect(context).not.toBeNull();
       expect(context?.input.title).toBe("Gandalf");
       expect(context?.input.type).toBe("npc");
+      expect(context?.canvasId).toBe(DEFAULT_CANVAS_ID);
     });
 
     it("handler creates note and returns 201 with success envelope", async () => {
       const req = createMockReq({
         body: { type: "npc", title: "Gandalf", content: "wizard", canvas_x: 10, canvas_y: 20 },
+        params: { canvasId: DEFAULT_CANVAS_ID },
       });
       const res = createMockRes();
       await createHandler(req, res);
@@ -143,7 +151,10 @@ describe("note routes", () => {
     });
 
     it("handler returns 400 for invalid type", async () => {
-      const req = createMockReq({ body: { type: "dragon", title: "Smaug" } });
+      const req = createMockReq({
+        body: { type: "dragon", title: "Smaug" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const res = createMockRes();
       await createHandler(req, res);
 
@@ -175,7 +186,7 @@ describe("note routes", () => {
     });
 
     it("handler updates note and returns success envelope", async () => {
-      const note = await createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const req = createMockReq({
         params: { id: note.id },
         body: { title: "Gandalf the Grey" },
@@ -220,7 +231,7 @@ describe("note routes", () => {
     });
 
     it("handler deletes note and returns success envelope", async () => {
-      const note = await createNote({ type: "npc", title: "Gandalf" });
+      const note = await createNote({ type: "npc", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const req = createMockReq({ params: { id: note.id } });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
@@ -242,24 +253,33 @@ describe("note routes", () => {
   });
 
   describe("search", () => {
-    it("validate returns context with query string", () => {
+    it("validate returns context with query string and canvasId", () => {
       const res = createMockRes();
-      const req = createMockReq({ query: { q: "gandalf" } });
+      const req = createMockReq({
+        query: { q: "gandalf" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const context = searchValidate(req, res);
-      expect(context).toEqual({ query: "gandalf" });
+      expect(context).toEqual({ query: "gandalf", canvasId: DEFAULT_CANVAS_ID });
     });
 
     it("validate returns context with empty string when q is missing", () => {
       const res = createMockRes();
-      const req = createMockReq({ query: {} });
+      const req = createMockReq({ query: {}, params: { canvasId: DEFAULT_CANVAS_ID } });
       const context = searchValidate(req, res);
-      expect(context).toEqual({ query: "" });
+      expect(context).toEqual({ query: "", canvasId: DEFAULT_CANVAS_ID });
     });
 
     it("handler returns search results in success envelope", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wise wizard" });
+      await createNote(
+        { type: "npc", title: "Gandalf", content: "A wise wizard" },
+        DEFAULT_CANVAS_ID,
+      );
 
-      const req = createMockReq({ query: { q: "wizard" } });
+      const req = createMockReq({
+        query: { q: "wizard" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const res = createMockRes();
       await searchHandler(req, res);
 
@@ -271,9 +291,12 @@ describe("note routes", () => {
     });
 
     it("handler returns empty results for no matches", async () => {
-      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" });
+      await createNote({ type: "npc", title: "Gandalf", content: "A wizard" }, DEFAULT_CANVAS_ID);
 
-      const req = createMockReq({ query: { q: "dragon" } });
+      const req = createMockReq({
+        query: { q: "dragon" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const res = createMockRes();
       await searchHandler(req, res);
 

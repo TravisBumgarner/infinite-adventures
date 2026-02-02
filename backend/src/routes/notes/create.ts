@@ -5,10 +5,12 @@ import { sendBadRequest, sendSuccess } from "../shared/responses.js";
 
 export interface CreateValidationContext {
   input: CreateNoteInput;
+  canvasId: string;
 }
 
 export function validate(req: Request, res: Response): CreateValidationContext | null {
   const { type, title, content, canvas_x, canvas_y } = req.body;
+  const canvasId = req.params.canvasId ?? "";
   if (!title) {
     sendBadRequest(res);
     return null;
@@ -17,7 +19,7 @@ export function validate(req: Request, res: Response): CreateValidationContext |
     sendBadRequest(res);
     return null;
   }
-  return { input: { type, title, content, canvas_x, canvas_y } };
+  return { input: { type, title, content, canvas_x, canvas_y }, canvasId };
 }
 
 export async function processRequest(
@@ -26,7 +28,7 @@ export async function processRequest(
   context: CreateValidationContext,
 ): Promise<void> {
   try {
-    const note = await createNote(context.input);
+    const note = await createNote(context.input, context.canvasId);
     sendSuccess(res, note, 201);
   } catch (err) {
     if (err instanceof ValidationError) {
