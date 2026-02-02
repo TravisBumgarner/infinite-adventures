@@ -88,7 +88,7 @@ export default function SearchBar({ onNavigate }: SearchBarProps) {
   };
 
   return (
-    <Box ref={containerRef} sx={{ position: "fixed", top: 16, left: 16, zIndex: 50, width: 320 }}>
+    <Box ref={containerRef} sx={{ position: "relative", width: 320 }}>
       <TextField
         variant="filled"
         size="small"

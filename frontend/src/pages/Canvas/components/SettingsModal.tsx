@@ -25,10 +25,6 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       onClick={onClick}
       title="Settings"
       sx={{
-        position: "fixed",
-        top: 16,
-        right: 16,
-        zIndex: 50,
         bgcolor: "var(--color-base)",
         border: "1px solid var(--color-surface1)",
         color: "var(--color-text)",
