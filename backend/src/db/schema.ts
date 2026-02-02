@@ -7,6 +7,13 @@ const tsvector = customType<{ data: string }>({
   },
 });
 
+export const canvases = pgTable("canvases", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  created_at: text("created_at").notNull().default(sql`now()::text`),
+  updated_at: text("updated_at").notNull().default(sql`now()::text`),
+});
+
 export const notes = pgTable(
   "notes",
   {
@@ -20,6 +27,9 @@ export const notes = pgTable(
     canvas_y: doublePrecision("canvas_y").notNull().default(0),
     created_at: text("created_at").notNull().default(sql`now()::text`),
     user_id: text("user_id").references(() => users.id),
+    canvas_id: text("canvas_id")
+      .notNull()
+      .references(() => canvases.id),
     updated_at: text("updated_at").notNull().default(sql`now()::text`),
     search_vector: tsvector("search_vector").generatedAlwaysAs(
       sql`setweight(to_tsvector('english', coalesce("title", '')), 'A') || setweight(to_tsvector('english', coalesce("content", '')), 'B')`,
@@ -50,6 +60,8 @@ export const noteLinks = pgTable(
   (table) => [primaryKey({ columns: [table.source_note_id, table.target_note_id] })],
 );
 
+export type Canvas = typeof canvases.$inferSelect;
+export type InsertCanvas = typeof canvases.$inferInsert;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = typeof notes.$inferInsert;
 export type NoteLink = typeof noteLinks.$inferSelect;

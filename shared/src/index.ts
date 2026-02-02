@@ -60,6 +60,26 @@ export const UserSchema = z.object({
   displayName: z.string(),
 });
 
+export const CanvasSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const CanvasSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const CreateCanvasInputSchema = z.object({
+  name: z.string(),
+});
+
+export const UpdateCanvasInputSchema = z.object({
+  name: z.string().optional(),
+});
+
 // --- Error codes ---
 
 export const ERROR_CODES = [
@@ -84,3 +104,7 @@ export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
 export type User = z.infer<typeof UserSchema>;
+export type CanvasSummary = z.infer<typeof CanvasSummarySchema>;
+export type Canvas = z.infer<typeof CanvasSchema>;
+export type CreateCanvasInput = z.infer<typeof CreateCanvasInputSchema>;
+export type UpdateCanvasInput = z.infer<typeof UpdateCanvasInputSchema>;

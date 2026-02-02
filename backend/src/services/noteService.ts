@@ -12,6 +12,8 @@ import { getDb } from "../db/connection.js";
 import { noteLinks, notes } from "../db/schema.js";
 import { resolveLinks } from "./linkService.js";
 
+export const DEFAULT_CANVAS_ID = "default";
+
 export type { NoteType, NoteSummary, CreateNoteInput, UpdateNoteInput };
 export type { NoteLinkInfo };
 
@@ -91,6 +93,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
     content: input.content ?? "",
     canvas_x: input.canvas_x ?? 0,
     canvas_y: input.canvas_y ?? 0,
+    canvas_id: DEFAULT_CANVAS_ID,
     created_at: now,
     updated_at: now,
   });
