@@ -52,9 +52,34 @@ export default function Canvas() {
 
   // Fetch canvases on mount and initialize the active canvas
   useEffect(() => {
-    api.fetchCanvases().then((list) => {
-      initActiveCanvas(list);
-    });
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const list = await api.fetchCanvases();
+        if (!cancelled) {
+          initActiveCanvas(list);
+        }
+      } catch {
+        // Auth token may not be ready yet — retry once after a short delay
+        if (!cancelled) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            const list = await api.fetchCanvases();
+            if (!cancelled) {
+              initActiveCanvas(list);
+            }
+          } catch {
+            // Still failing — session is likely invalid
+          }
+        }
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [initActiveCanvas]);
 
   const {
