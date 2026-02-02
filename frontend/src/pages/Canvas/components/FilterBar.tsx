@@ -25,10 +25,6 @@ export default function FilterBar() {
         onClick={() => setExpanded(true)}
         title="Filter"
         sx={{
-          position: "fixed",
-          top: 16,
-          left: 344,
-          zIndex: 50,
           bgcolor: "var(--color-base)",
           border: "1px solid var(--color-surface1)",
           borderRadius: 2,
@@ -59,10 +55,6 @@ export default function FilterBar() {
   return (
     <Box
       sx={{
-        position: "fixed",
-        top: 16,
-        left: 344,
-        zIndex: 50,
         bgcolor: "var(--color-base)",
         border: "1px solid var(--color-surface1)",
         borderRadius: 2,

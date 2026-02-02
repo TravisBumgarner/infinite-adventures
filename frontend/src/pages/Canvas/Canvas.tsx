@@ -8,6 +8,7 @@ import { SIDEBAR_WIDTH } from "../../constants";
 import Toast from "../../sharedComponents/Toast";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
+import CanvasPicker from "./components/CanvasPicker";
 import ConnectionsBrowser from "./components/ConnectionsBrowser";
 import ContextMenu from "./components/ContextMenu";
 import FilterBar from "./components/FilterBar";
@@ -18,6 +19,7 @@ import NoteNodeComponent from "./components/NoteNode";
 import SearchBar from "./components/SearchBar";
 import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
 import Toolbar from "./components/Toolbar";
+import TopBar from "./components/TopBar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
 
 const nodeTypes: NodeTypes = {
@@ -108,8 +110,25 @@ export default function Canvas() {
         />
       </ReactFlow>
 
-      <SearchBar onNavigate={navigateToNote} />
-      <FilterBar />
+      <TopBar
+        left={
+          <CanvasPicker
+            canvases={[]}
+            activeCanvasId=""
+            onSwitch={() => {}}
+            onCreate={() => {}}
+            onRename={() => {}}
+            onDelete={() => {}}
+          />
+        }
+        center={
+          <>
+            <SearchBar onNavigate={navigateToNote} />
+            <FilterBar />
+          </>
+        }
+        right={<SettingsButton onClick={() => setShowSettings(true)} />}
+      />
       <Toolbar onCreate={handleToolbarCreate} />
 
       {contextMenu && (
@@ -175,7 +194,6 @@ export default function Canvas() {
 
       <Toast open={!!toastMessage} message={toastMessage ?? ""} onClose={clearToast} />
 
-      <SettingsButton onClick={() => setShowSettings(true)} />
       {showSettings && <SettingsSidebar />}
     </div>
   );
