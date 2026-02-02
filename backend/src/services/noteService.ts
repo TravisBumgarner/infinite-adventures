@@ -12,7 +12,7 @@ import { getDb } from "../db/connection.js";
 import { noteLinks, notes } from "../db/schema.js";
 import { resolveLinks } from "./linkService.js";
 
-export const DEFAULT_CANVAS_ID = "default";
+export const DEFAULT_CANVAS_ID = "00000000-0000-4000-8000-000000000000";
 
 export type { NoteType, NoteSummary, CreateNoteInput, UpdateNoteInput };
 export type { NoteLinkInfo };
