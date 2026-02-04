@@ -162,7 +162,7 @@ tasks:
       - Integration tests
     depends_on: [4, 5, 6]
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 8
     github_issue: 99
