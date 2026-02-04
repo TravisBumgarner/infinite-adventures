@@ -9,8 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
 
 const databaseUrl =
-  process.env.DATABASE_URL ||
-  "postgresql://infinite:infinite@localhost:5434/infinite_adventures";
+  process.env.DATABASE_URL || "postgresql://infinite:infinite@localhost:5434/infinite_adventures";
 
 const pool = new Pool({
   connectionString: databaseUrl,
