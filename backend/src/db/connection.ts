@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import * as schema from "./schema.js";
 
@@ -18,14 +17,9 @@ export function getDb(): DrizzleDb {
 export async function initDb(
   connectionString: string = process.env.DATABASE_URL ||
     "postgresql://infinite:infinite@localhost:5434/infinite_adventures",
-  options?: { skipMigrations?: boolean },
 ): Promise<DrizzleDb> {
   pool = new pg.Pool({ connectionString });
   db = drizzle(pool, { schema });
-
-  if (!options?.skipMigrations) {
-    await migrate(db, { migrationsFolder: new URL("../../drizzle", import.meta.url).pathname });
-  }
 
   return db;
 }
