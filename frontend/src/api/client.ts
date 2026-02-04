@@ -1,12 +1,18 @@
 import type {
   Canvas,
+  CanvasItem,
+  CanvasItemSearchResult,
+  CanvasItemSummary,
   CanvasSummary,
   CreateCanvasInput,
+  CreateCanvasItemInput,
   CreateNoteInput,
   Note,
   NoteSummary,
+  Photo,
   SearchResult,
   UpdateCanvasInput,
+  UpdateCanvasItemInput,
   UpdateNoteInput,
 } from "shared";
 import { getToken } from "../auth/service.js";
@@ -97,4 +103,71 @@ export async function searchNotes(query: string, canvasId: string): Promise<Sear
     `/canvases/${canvasId}/notes/search?q=${encoded}`,
   );
   return data.results;
+}
+
+// --- Canvas Item functions (new) ---
+
+export function fetchItems(canvasId: string): Promise<CanvasItemSummary[]> {
+  return request<CanvasItemSummary[]>(`/canvases/${canvasId}/items`);
+}
+
+export function fetchItem(id: string): Promise<CanvasItem> {
+  return request<CanvasItem>(`/items/${id}`);
+}
+
+export function createItem(canvasId: string, input: CreateCanvasItemInput): Promise<CanvasItem> {
+  return request<CanvasItem>(`/canvases/${canvasId}/items`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateItem(id: string, input: UpdateCanvasItemInput): Promise<CanvasItem> {
+  return request<CanvasItem>(`/items/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteItem(id: string): Promise<void> {
+  return request<void>(`/items/${id}`, { method: "DELETE" });
+}
+
+export async function searchItems(
+  query: string,
+  canvasId: string,
+): Promise<CanvasItemSearchResult[]> {
+  const encoded = encodeURIComponent(query);
+  const data = await request<{ results: CanvasItemSearchResult[] }>(
+    `/canvases/${canvasId}/items/search?q=${encoded}`,
+  );
+  return data.results;
+}
+
+// --- Photo functions ---
+
+export async function uploadPhoto(itemId: string, file: File): Promise<Photo> {
+  const authHeaders = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("photo", file);
+
+  const res = await fetch(`${config.apiBaseUrl}/items/${itemId}/photos`, {
+    method: "POST",
+    headers: { ...authHeaders },
+    body: formData,
+  });
+
+  const body: ApiResponse<Photo> = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.errorCode || `HTTP ${res.status}`);
+  }
+  return body.data as Photo;
+}
+
+export function deletePhoto(id: string): Promise<void> {
+  return request<void>(`/photos/${id}`, { method: "DELETE" });
+}
+
+export function selectPhoto(id: string): Promise<Photo> {
+  return request<Photo>(`/photos/${id}/select`, { method: "PUT" });
 }
