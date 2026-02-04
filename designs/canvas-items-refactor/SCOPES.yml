@@ -85,7 +85,7 @@ tasks:
       - Shared package builds without errors
     depends_on: []
     effort: 1
-    status: scoped
+    status: completed
 
   - id: 4
     github_issue: 95

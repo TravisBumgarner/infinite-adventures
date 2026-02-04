@@ -1,6 +1,81 @@
 import { z } from "zod";
 
-// --- Schemas ---
+// --- Canvas Item Schemas (new) ---
+
+export const CanvasItemTypeSchema = z.enum(["person", "place", "thing", "session", "event"]);
+
+export const CanvasItemSummarySchema = z.object({
+  id: z.string(),
+  type: CanvasItemTypeSchema,
+  title: z.string(),
+  canvas_x: z.number(),
+  canvas_y: z.number(),
+  selected_photo_url: z.string().optional(),
+  created_at: z.string(),
+});
+
+export const ContentDataSchema = z.object({
+  id: z.string(),
+  notes: z.string(),
+});
+
+export const PhotoSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  original_name: z.string(),
+  is_selected: z.boolean(),
+});
+
+export const CanvasItemLinkSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  type: CanvasItemTypeSchema,
+});
+
+export const CanvasItemLinkWithSnippetSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  type: CanvasItemTypeSchema,
+  snippet: z.string().optional(),
+});
+
+export const CanvasItemSchema = z.object({
+  id: z.string(),
+  type: CanvasItemTypeSchema,
+  title: z.string(),
+  canvas_x: z.number(),
+  canvas_y: z.number(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  content: ContentDataSchema,
+  photos: z.array(PhotoSchema),
+  links_to: z.array(CanvasItemLinkSchema),
+  linked_from: z.array(CanvasItemLinkWithSnippetSchema),
+});
+
+export const CreateCanvasItemInputSchema = z.object({
+  type: CanvasItemTypeSchema,
+  title: z.string(),
+  canvas_x: z.number().optional(),
+  canvas_y: z.number().optional(),
+  notes: z.string().optional(),
+});
+
+export const UpdateCanvasItemInputSchema = z.object({
+  title: z.string().optional(),
+  canvas_x: z.number().optional(),
+  canvas_y: z.number().optional(),
+  notes: z.string().optional(),
+});
+
+export const CanvasItemSearchResultSchema = z.object({
+  id: z.string(),
+  type: CanvasItemTypeSchema,
+  title: z.string(),
+  snippet: z.string(),
+});
+
+// --- Note Schemas (legacy - will be removed after migration) ---
 
 export const NoteTypeSchema = z.enum(["pc", "npc", "item", "quest", "location", "goal", "session"]);
 
@@ -91,12 +166,27 @@ export const ERROR_CODES = [
   "INTERNAL_ERROR",
   "NOTE_NOT_FOUND",
   "CANVAS_NOT_FOUND",
+  "CANVAS_ITEM_NOT_FOUND",
+  "PHOTO_NOT_FOUND",
   "LAST_CANVAS",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-// --- Inferred types ---
+// --- Inferred types (Canvas Items - new) ---
+
+export type CanvasItemType = z.infer<typeof CanvasItemTypeSchema>;
+export type CanvasItemSummary = z.infer<typeof CanvasItemSummarySchema>;
+export type ContentData = z.infer<typeof ContentDataSchema>;
+export type Photo = z.infer<typeof PhotoSchema>;
+export type CanvasItemLink = z.infer<typeof CanvasItemLinkSchema>;
+export type CanvasItemLinkWithSnippet = z.infer<typeof CanvasItemLinkWithSnippetSchema>;
+export type CanvasItem = z.infer<typeof CanvasItemSchema>;
+export type CreateCanvasItemInput = z.infer<typeof CreateCanvasItemInputSchema>;
+export type UpdateCanvasItemInput = z.infer<typeof UpdateCanvasItemInputSchema>;
+export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
+
+// --- Inferred types (Notes - legacy) ---
 
 export type NoteType = z.infer<typeof NoteTypeSchema>;
 export type NoteSummary = z.infer<typeof NoteSummarySchema>;
@@ -105,6 +195,9 @@ export type Note = z.infer<typeof NoteSchema>;
 export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
+
+// --- Inferred types (Other) ---
+
 export type User = z.infer<typeof UserSchema>;
 export type CanvasSummary = z.infer<typeof CanvasSummarySchema>;
 export type Canvas = z.infer<typeof CanvasSchema>;
