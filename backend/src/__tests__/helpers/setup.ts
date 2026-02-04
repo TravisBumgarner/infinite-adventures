@@ -9,7 +9,7 @@ export const TEST_USER_ID = "test-user-0000-0000-000000000001";
 export const TEST_USER_AUTH_ID = "auth-test-0000-0000-000000000001";
 
 export async function setupTestDb() {
-  await initDb(TEST_DATABASE_URL, { skipMigrations: true });
+  await initDb(TEST_DATABASE_URL);
 }
 
 export async function teardownTestDb() {
