@@ -217,7 +217,7 @@ tasks:
       - Auto-save working
     depends_on: [9]
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 11
     github_issue: 102
