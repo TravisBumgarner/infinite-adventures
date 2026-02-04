@@ -198,7 +198,7 @@ tasks:
       - Click and drag still work
     depends_on: [8]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 10
     github_issue: 101

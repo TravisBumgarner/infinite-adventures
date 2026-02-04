@@ -117,8 +117,7 @@ function renderSegment(
 
 function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const theme = useTheme();
-  // TODO: Map canvas item types to theme colors - stub for now
-  const color = theme.palette.nodeTypes.npc.light;
+  const color = theme.palette.canvasItemTypes[data.type].light;
   const label = CANVAS_ITEM_TYPE_LABELS[data.type];
   const segments = data.content ? parsePreviewContent(data.content, data.mentionLabels) : [];
 
