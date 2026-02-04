@@ -103,7 +103,7 @@ tasks:
       - Proper error handling
     depends_on: [1, 3]
     effort: 3
-    status: scoped
+    status: testing
 
   - id: 5
     github_issue: 96
