@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { listItems } from "../../services/canvasItemService.js";
 import { sendSuccess } from "../shared/responses.js";
 
 export interface ListValidationContext {
@@ -13,6 +14,6 @@ export function validate(req: Request, res: Response): ListValidationContext | n
 export async function handler(req: Request, res: Response): Promise<void> {
   const context = validate(req, res);
   if (!context) return;
-  // Stub: return empty array
-  sendSuccess(res, []);
+  const items = await listItems(context.canvasId);
+  sendSuccess(res, items);
 }

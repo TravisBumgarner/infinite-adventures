@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import type { CreateCanvasItemInput } from "shared";
+import { createItem, ValidationError } from "../../services/canvasItemService.js";
 import { sendBadRequest, sendSuccess } from "../shared/responses.js";
 
 export interface CreateValidationContext {
@@ -24,6 +25,14 @@ export function validate(req: Request, res: Response): CreateValidationContext |
 export async function handler(req: Request, res: Response): Promise<void> {
   const context = validate(req, res);
   if (!context) return;
-  // Stub: return bad request
-  sendBadRequest(res);
+  try {
+    const item = await createItem(context.input, context.canvasId);
+    sendSuccess(res, item, 201);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      sendBadRequest(res);
+      return;
+    }
+    throw err;
+  }
 }

@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { sendBadRequest, sendNotFound } from "../shared/responses.js";
+import { deleteItem } from "../../services/canvasItemService.js";
+import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { isValidUUID } from "../shared/validation.js";
 
 export interface DeleteValidationContext {
@@ -21,6 +22,10 @@ export function validate(
 export async function handler(req: Request<{ id: string }>, res: Response): Promise<void> {
   const context = validate(req, res);
   if (!context) return;
-  // Stub: return not found
-  sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
+  const deleted = await deleteItem(context.id);
+  if (!deleted) {
+    sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
+    return;
+  }
+  sendSuccess(res, { deleted: true });
 }

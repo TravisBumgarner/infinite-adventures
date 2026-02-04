@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { searchItems } from "../../services/canvasItemService.js";
 import { sendSuccess } from "../shared/responses.js";
 
 export interface SearchValidationContext {
@@ -15,6 +16,6 @@ export function validate(req: Request, res: Response): SearchValidationContext |
 export async function handler(req: Request, res: Response): Promise<void> {
   const context = validate(req, res);
   if (!context) return;
-  // Stub: return empty results
-  sendSuccess(res, { results: [] });
+  const results = await searchItems(context.query, context.canvasId);
+  sendSuccess(res, { results });
 }
