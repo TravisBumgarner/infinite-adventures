@@ -180,7 +180,7 @@ tasks:
       - No TypeScript errors
     depends_on: [3, 7]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 9
     github_issue: 100

@@ -7,17 +7,13 @@ vi.mock("../auth/service.js", () => ({
 import {
   createCanvas,
   createItem,
-  createNote,
   deleteCanvas,
   deleteItem,
   deletePhoto,
   fetchCanvases,
   fetchItem,
   fetchItems,
-  fetchNote,
-  fetchNotes,
   searchItems,
-  searchNotes,
   selectPhoto,
   updateCanvas,
   updateItem,
@@ -56,29 +52,32 @@ function getCalledOptions(): RequestInit {
 describe("API client request handling", () => {
   describe("successful responses", () => {
     it("unwraps { success: true, data } envelope from list endpoint", async () => {
-      const notes = [{ id: "1", type: "npc", title: "Gandalf", canvas_x: 0, canvas_y: 0 }];
-      mockOkResponse(notes);
+      const items = [
+        { id: "1", type: "person", title: "Gandalf", canvas_x: 0, canvas_y: 0, created_at: "" },
+      ];
+      mockOkResponse(items);
 
-      const result = await fetchNotes("canvas-1");
-      expect(result).toEqual(notes);
+      const result = await fetchItems("canvas-1");
+      expect(result).toEqual(items);
     });
 
     it("unwraps { success: true, data } envelope from get endpoint", async () => {
-      const note = {
+      const item = {
         id: "1",
-        type: "npc",
+        type: "person",
         title: "Gandalf",
-        content: "",
         canvas_x: 0,
         canvas_y: 0,
         created_at: "",
         updated_at: "",
+        content: { id: "c1", notes: "" },
+        photos: [],
         links_to: [],
         linked_from: [],
       };
-      mockOkResponse(note);
+      mockOkResponse(item);
 
-      const result = await fetchNote("1");
+      const result = await fetchItem("1");
       expect(result.id).toBe("1");
       expect(result.title).toBe("Gandalf");
     });
@@ -89,10 +88,10 @@ describe("API client request handling", () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        json: () => Promise.resolve({ success: false, errorCode: "NOTE_NOT_FOUND" }),
+        json: () => Promise.resolve({ success: false, errorCode: "CANVAS_ITEM_NOT_FOUND" }),
       });
 
-      await expect(fetchNote("nonexistent")).rejects.toThrow("NOTE_NOT_FOUND");
+      await expect(fetchItem("nonexistent")).rejects.toThrow("CANVAS_ITEM_NOT_FOUND");
     });
 
     it("throws error with HTTP status when response body has no errorCode", async () => {
@@ -102,7 +101,7 @@ describe("API client request handling", () => {
         json: () => Promise.resolve({}),
       });
 
-      await expect(fetchNote("1")).rejects.toThrow("500");
+      await expect(fetchItem("1")).rejects.toThrow("500");
     });
   });
 
@@ -111,7 +110,7 @@ describe("API client request handling", () => {
       mockGetToken.mockResolvedValue({ success: true, data: "jwt-token-123" });
       mockOkResponse([]);
 
-      await fetchNotes("canvas-1");
+      await fetchItems("canvas-1");
 
       const headers = getCalledOptions()?.headers;
       expect(headers).toMatchObject({ Authorization: "Bearer jwt-token-123" });
@@ -121,7 +120,7 @@ describe("API client request handling", () => {
       mockGetToken.mockResolvedValue({ success: false, error: "no session" });
       mockOkResponse([]);
 
-      await fetchNotes("canvas-1");
+      await fetchItems("canvas-1");
 
       const headers = getCalledOptions()?.headers;
       expect(headers).not.toHaveProperty("Authorization");
@@ -173,52 +172,6 @@ describe("canvas API functions", () => {
 
       expect(getCalledUrl()).toContain("/canvases/c1");
       expect(getCalledOptions().method).toBe("DELETE");
-    });
-  });
-});
-
-describe("canvas-scoped note functions", () => {
-  describe("fetchNotes", () => {
-    it("calls GET /canvases/:canvasId/notes", async () => {
-      mockOkResponse([]);
-
-      await fetchNotes("canvas-123");
-
-      expect(getCalledUrl()).toContain("/canvases/canvas-123/notes");
-    });
-  });
-
-  describe("createNote", () => {
-    it("calls POST /canvases/:canvasId/notes with input in body", async () => {
-      mockOkResponse({ id: "n1", type: "npc", title: "Gandalf" });
-
-      await createNote("canvas-123", { type: "npc", title: "Gandalf" });
-
-      expect(getCalledUrl()).toContain("/canvases/canvas-123/notes");
-      expect(getCalledOptions().method).toBe("POST");
-      expect(JSON.parse(getCalledOptions().body as string)).toEqual({
-        type: "npc",
-        title: "Gandalf",
-      });
-    });
-  });
-
-  describe("searchNotes", () => {
-    it("calls GET /canvases/:canvasId/notes/search with query param", async () => {
-      mockOkResponse({ results: [] });
-
-      await searchNotes("wizard", "canvas-123");
-
-      expect(getCalledUrl()).toContain("/canvases/canvas-123/notes/search");
-      expect(getCalledUrl()).toContain("q=wizard");
-    });
-
-    it("encodes special characters in query", async () => {
-      mockOkResponse({ results: [] });
-
-      await searchNotes("hello world", "canvas-123");
-
-      expect(getCalledUrl()).toContain("q=hello%20world");
     });
   });
 });

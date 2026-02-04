@@ -6,14 +6,9 @@ import type {
   CanvasSummary,
   CreateCanvasInput,
   CreateCanvasItemInput,
-  CreateNoteInput,
-  Note,
-  NoteSummary,
   Photo,
-  SearchResult,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
-  UpdateNoteInput,
 } from "shared";
 import { getToken } from "../auth/service.js";
 import config from "../config.js";
@@ -69,43 +64,7 @@ export function deleteCanvas(id: string): Promise<void> {
   return request<void>(`/canvases/${id}`, { method: "DELETE" });
 }
 
-// --- Note functions ---
-
-export function fetchNotes(canvasId: string): Promise<NoteSummary[]> {
-  return request<NoteSummary[]>(`/canvases/${canvasId}/notes`);
-}
-
-export function fetchNote(id: string): Promise<Note> {
-  return request<Note>(`/notes/${id}`);
-}
-
-export function createNote(canvasId: string, input: CreateNoteInput): Promise<Note> {
-  return request<Note>(`/canvases/${canvasId}/notes`, {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
-export function updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
-  return request<Note>(`/notes/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(input),
-  });
-}
-
-export function deleteNote(id: string): Promise<void> {
-  return request<void>(`/notes/${id}`, { method: "DELETE" });
-}
-
-export async function searchNotes(query: string, canvasId: string): Promise<SearchResult[]> {
-  const encoded = encodeURIComponent(query);
-  const data = await request<{ results: SearchResult[] }>(
-    `/canvases/${canvasId}/notes/search?q=${encoded}`,
-  );
-  return data.results;
-}
-
-// --- Canvas Item functions (new) ---
+// --- Canvas Item functions ---
 
 export function fetchItems(canvasId: string): Promise<CanvasItemSummary[]> {
   return request<CanvasItemSummary[]>(`/canvases/${canvasId}/items`);
