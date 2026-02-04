@@ -66,7 +66,7 @@ tasks:
       - Script is idempotent
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: testing
 
   - id: 3
     github_issue: 94
