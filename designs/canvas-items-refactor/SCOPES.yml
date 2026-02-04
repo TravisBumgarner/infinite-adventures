@@ -1,0 +1,258 @@
+project: Canvas Items Refactor
+repo: travisbumgarner/infinite-adventures
+design_file: designs/canvas-items-refactor/DESIGN.md
+scoping_date: 2026-02-04
+
+milestones:
+  - number: 17
+    title: "1. Canvas Items Schema"
+    description: Create new database schema for canvas_items, content tables, photos, and canvas_item_links
+    branch:
+      working: 92-canvas-items-schema
+      base: main
+
+  - number: 18
+    title: "2. Backend Services & Routes"
+    description: Implement backend services and API routes for canvas items and photos
+    branch:
+      working: 94-canvas-items-backend
+      base: 92-canvas-items-schema
+
+  - number: 19
+    title: "3. Frontend Canvas Items"
+    description: Update frontend to use canvas items system with photos and snippets
+    branch:
+      working: 99-canvas-items-frontend
+      base: 94-canvas-items-backend
+
+tasks:
+  - id: 1
+    github_issue: 92
+    milestone: 17
+    title: Create canvas_items and content tables schema
+    description: |
+      Create the new database schema with Drizzle:
+      - canvas_items table (base table for all items)
+      - Content tables: people, places, things, sessions, events
+      - photos table for photo metadata
+      - canvas_item_links (renamed from note_links with snippet column)
+    acceptance_criteria:
+      - All tables defined in backend/src/db/schema.ts
+      - Drizzle migration generated via npm run db:generate
+      - Migration runs successfully
+      - Foreign key relationships with cascade deletes
+    depends_on: []
+    effort: 2
+    status: completed
+
+  - id: 2
+    github_issue: 93
+    milestone: 17
+    title: Create data migration from notes to canvas_items
+    description: |
+      Create a migration script to move existing notes data to the new structure.
+
+      Type mapping:
+      - pc, npc → person
+      - item → thing
+      - quest, goal → event
+      - location → place
+      - session → session
+    acceptance_criteria:
+      - Migration script at backend/src/db/migrations/migrate-notes-to-canvas-items.ts
+      - Runnable via npm script
+      - All notes migrated with IDs preserved
+      - note_links migrated to canvas_item_links
+      - Script is idempotent
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 94
+    milestone: 18
+    title: Update shared types for canvas items
+    description: |
+      Update the shared package with new types:
+      - CanvasItemType enum
+      - CanvasItemSummary, CanvasItem interfaces
+      - ContentData, Photo interfaces
+      - CanvasItemLinkWithSnippet for snippet display
+      - Input types for create/update
+    acceptance_criteria:
+      - All types defined with Zod schemas
+      - Old note types removed
+      - Shared package builds without errors
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 4
+    github_issue: 95
+    milestone: 18
+    title: Implement canvas items service
+    description: |
+      Create backend service for canvas items CRUD:
+      - listItems, getItem, createItem, updateItem, deleteItem
+      - searchItems for full-text search
+      - Handle transactions for canvas_item + content operations
+    acceptance_criteria:
+      - All service functions implemented
+      - Transactions for multi-table operations
+      - Unit tests for each function
+      - Proper error handling
+    depends_on: [1, 3]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    github_issue: 96
+    milestone: 18
+    title: Update link service with snippet extraction
+    description: |
+      Update linkService for canvas_item_links with snippet extraction:
+      - Extract ~10 words before/after @mentions
+      - Store snippets in canvas_item_links
+      - Auto-create items for title-based mentions (as 'person' type)
+    acceptance_criteria:
+      - Snippet extraction implemented
+      - Snippets stored in canvas_item_links
+      - Snippets returned in linked_from results
+      - Unit tests for edge cases
+    depends_on: [1, 4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 97
+    milestone: 18
+    title: Implement photo service and storage
+    description: |
+      Create photo service:
+      - Upload photos to backend/uploads/photos/{uuid}.{ext}
+      - Store metadata in photos table
+      - Selected photo logic (one per content item)
+      - Serve photos via Express
+    acceptance_criteria:
+      - Photo upload working
+      - Photos stored in filesystem with UUID names
+      - Selected photo logic works
+      - Photos served with correct MIME type
+      - Cleanup on delete
+      - .gitignore updated for uploads
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 7
+    github_issue: 98
+    milestone: 18
+    title: Create canvas items API routes
+    description: |
+      Create Express routes:
+      - GET/POST /api/canvases/:canvasId/items
+      - GET /api/canvases/:canvasId/items/search
+      - GET/PUT/DELETE /api/items/:id
+      - Photo routes: POST upload, GET serve, DELETE, PUT select
+    acceptance_criteria:
+      - All routes implemented
+      - Authentication middleware on all routes
+      - Input validation with Zod
+      - Photo upload with size limits
+      - Integration tests
+    depends_on: [4, 5, 6]
+    effort: 3
+    status: scoped
+
+  - id: 8
+    github_issue: 99
+    milestone: 19
+    title: Update frontend API client for canvas items
+    description: |
+      Update frontend API client:
+      - Replace note functions with canvas item functions
+      - Add photo upload/delete/select functions
+      - Use FormData for photo uploads
+    acceptance_criteria:
+      - All new API functions implemented
+      - Old note functions removed
+      - Photo upload handles File objects
+      - No TypeScript errors
+    depends_on: [3, 7]
+    effort: 2
+    status: scoped
+
+  - id: 9
+    github_issue: 100
+    milestone: 19
+    title: Update CanvasItemNode component
+    description: |
+      Refactor NoteNode to CanvasItemNode:
+      - Display selected photo as thumbnail/background
+      - Update type labels for new types
+      - Use CanvasItemSummary type
+    acceptance_criteria:
+      - Component renamed and updated
+      - Displays selected photo when available
+      - Type chips show correct labels
+      - Click and drag still work
+    depends_on: [8]
+    effort: 2
+    status: scoped
+
+  - id: 10
+    github_issue: 101
+    milestone: 19
+    title: Update item editor with photos and snippets
+    description: |
+      Update NoteEditor to CanvasItemEditor:
+      - Photo management UI (upload, select, delete)
+      - Display snippets in "mentioned in" section
+      - Update type selector with new types
+      - Tiptap rich text for notes field
+    acceptance_criteria:
+      - Photo upload/select/delete UI working
+      - Snippets displayed in linked_from section
+      - Type selector has new options
+      - Auto-save working
+    depends_on: [9]
+    effort: 3
+    status: scoped
+
+  - id: 11
+    github_issue: 102
+    milestone: 19
+    title: Update Canvas page for canvas items
+    description: |
+      Update Canvas page:
+      - Replace notes API calls with canvas items
+      - Update state management
+      - Use new components
+      - Update create item flow
+    acceptance_criteria:
+      - Canvas displays items correctly
+      - All CRUD operations working
+      - Search working
+      - No references to old notes API
+    depends_on: [9, 10]
+    effort: 2
+    status: scoped
+
+  - id: 12
+    github_issue: 103
+    milestone: 19
+    title: Remove old notes code and cleanup
+    description: |
+      Final cleanup:
+      - Remove noteService, old routes
+      - Drop notes and note_links tables
+      - Remove old constants
+      - Clean up tests
+    acceptance_criteria:
+      - No references to old notes code
+      - Old tables dropped
+      - All tests passing
+      - Application fully functional
+    depends_on: [2, 11]
+    effort: 1
+    status: scoped
