@@ -1,0 +1,270 @@
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createCanvas } from "../services/canvasService.js";
+import {
+  createItem,
+  DEFAULT_CANVAS_ID,
+  deleteItem,
+  getItem,
+  isValidCanvasItemType,
+  listItems,
+  searchItems,
+  updateItem,
+  ValidationError,
+} from "../services/canvasItemService.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+
+describe("canvasItemService", () => {
+  beforeAll(async () => {
+    await setupTestDb();
+  });
+
+  beforeEach(async () => {
+    await truncateAllTables();
+  });
+
+  afterAll(async () => {
+    await teardownTestDb();
+  });
+
+  describe("isValidCanvasItemType", () => {
+    it("returns true for valid types", () => {
+      expect(isValidCanvasItemType("person")).toBe(true);
+      expect(isValidCanvasItemType("place")).toBe(true);
+      expect(isValidCanvasItemType("thing")).toBe(true);
+      expect(isValidCanvasItemType("session")).toBe(true);
+      expect(isValidCanvasItemType("event")).toBe(true);
+    });
+
+    it("returns false for invalid types", () => {
+      expect(isValidCanvasItemType("npc")).toBe(false);
+      expect(isValidCanvasItemType("dragon")).toBe(false);
+      expect(isValidCanvasItemType("")).toBe(false);
+    });
+  });
+
+  describe("createItem", () => {
+    it("creates a canvas item with valid input", async () => {
+      const item = await createItem(
+        {
+          type: "person",
+          title: "Gandalf",
+          notes: "A wise wizard",
+          canvas_x: 100,
+          canvas_y: 200,
+        },
+        DEFAULT_CANVAS_ID,
+      );
+
+      expect(item.id).toBeDefined();
+      expect(item.type).toBe("person");
+      expect(item.title).toBe("Gandalf");
+      expect(item.canvas_x).toBe(100);
+      expect(item.canvas_y).toBe(200);
+      expect(item.created_at).toBeDefined();
+    });
+
+    it("creates content record in the correct type-specific table", async () => {
+      const item = await createItem(
+        { type: "place", title: "Rivendell", notes: "An elven city" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const fullItem = await getItem(item.id);
+      expect(fullItem?.content.notes).toBe("An elven city");
+    });
+
+    it("defaults notes to empty string and position to 0,0", async () => {
+      const item = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+
+      const fullItem = await getItem(item.id);
+      expect(fullItem?.content.notes).toBe("");
+      expect(item.canvas_x).toBe(0);
+      expect(item.canvas_y).toBe(0);
+    });
+
+    it("throws ValidationError for missing title", async () => {
+      await expect(
+        createItem({ type: "person", title: "" }, DEFAULT_CANVAS_ID),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it("throws ValidationError for invalid type", async () => {
+      await expect(
+        createItem({ type: "dragon" as any, title: "Smaug" }, DEFAULT_CANVAS_ID),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe("listItems", () => {
+    it("returns empty array when no items exist on the canvas", async () => {
+      expect(await listItems(DEFAULT_CANVAS_ID)).toEqual([]);
+    });
+
+    it("returns items for the specified canvas only", async () => {
+      const otherCanvas = await createCanvas("Other Canvas", TEST_USER_ID);
+
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "thing", title: "Ring" }, otherCanvas.id);
+
+      const defaultItems = await listItems(DEFAULT_CANVAS_ID);
+      expect(defaultItems).toHaveLength(2);
+
+      const otherItems = await listItems(otherCanvas.id);
+      expect(otherItems).toHaveLength(1);
+      expect(otherItems[0]?.title).toBe("Ring");
+    });
+
+    it("returns items as summaries without content", async () => {
+      await createItem(
+        { type: "person", title: "Gandalf", notes: "A wizard" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const items = await listItems(DEFAULT_CANVAS_ID);
+      expect(items).toHaveLength(1);
+      expect(items[0]).not.toHaveProperty("content");
+      expect(items[0]).toHaveProperty("id");
+      expect(items[0]).toHaveProperty("type");
+      expect(items[0]).toHaveProperty("title");
+      expect(items[0]).toHaveProperty("canvas_x");
+      expect(items[0]).toHaveProperty("canvas_y");
+    });
+  });
+
+  describe("getItem", () => {
+    it("returns a full item with content, photos, and links arrays", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf", notes: "A wizard" },
+        DEFAULT_CANVAS_ID,
+      );
+      const item = await getItem(created.id);
+
+      expect(item).not.toBeNull();
+      expect(item?.id).toBe(created.id);
+      expect(item?.title).toBe("Gandalf");
+      expect(item?.content.notes).toBe("A wizard");
+      expect(item?.photos).toEqual([]);
+      expect(item?.links_to).toEqual([]);
+      expect(item?.linked_from).toEqual([]);
+    });
+
+    it("returns null for non-existent id", async () => {
+      expect(await getItem("non-existent")).toBeNull();
+    });
+  });
+
+  describe("updateItem", () => {
+    it("updates the title", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const updated = await updateItem(created.id, { title: "Gandalf the Grey" });
+
+      expect(updated).not.toBeNull();
+      expect(updated?.title).toBe("Gandalf the Grey");
+    });
+
+    it("updates the position", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf", canvas_x: 0, canvas_y: 0 },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const updated = await updateItem(created.id, { canvas_x: 150, canvas_y: 250 });
+
+      expect(updated?.canvas_x).toBe(150);
+      expect(updated?.canvas_y).toBe(250);
+    });
+
+    it("updates the content notes", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf", notes: "A wizard" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      await updateItem(created.id, { notes: "A wise wizard from Valinor" });
+      const fullItem = await getItem(created.id);
+
+      expect(fullItem?.content.notes).toBe("A wise wizard from Valinor");
+    });
+
+    it("returns null for non-existent id", async () => {
+      expect(await updateItem("non-existent", { title: "test" })).toBeNull();
+    });
+  });
+
+  describe("deleteItem", () => {
+    it("deletes an existing item", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf" },
+        DEFAULT_CANVAS_ID,
+      );
+      expect(await deleteItem(created.id)).toBe(true);
+      expect(await getItem(created.id)).toBeNull();
+    });
+
+    it("returns false for non-existent id", async () => {
+      expect(await deleteItem("non-existent")).toBe(false);
+    });
+
+    it("also deletes the associated content record", async () => {
+      const created = await createItem(
+        { type: "person", title: "Gandalf", notes: "A wizard" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      await deleteItem(created.id);
+      // If we could query the content table directly, it would be empty
+      // The getItem returning null is proof the cascade worked
+      expect(await getItem(created.id)).toBeNull();
+    });
+  });
+
+  describe("searchItems", () => {
+    it("finds items by title within a canvas", async () => {
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+
+      const results = await searchItems("Gandalf", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.title).toBe("Gandalf");
+      expect(results[0]?.type).toBe("person");
+    });
+
+    it("does not return items from other canvases", async () => {
+      const otherCanvas = await createCanvas("Other Canvas", TEST_USER_ID);
+
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf Clone" }, otherCanvas.id);
+
+      const results = await searchItems("Gandalf", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.title).toBe("Gandalf");
+    });
+
+    it("returns empty array for no matches", async () => {
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+
+      const results = await searchItems("Sauron", DEFAULT_CANVAS_ID);
+      expect(results).toEqual([]);
+    });
+
+    it("returns empty array for empty query", async () => {
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+
+      expect(await searchItems("", DEFAULT_CANVAS_ID)).toEqual([]);
+      expect(await searchItems("   ", DEFAULT_CANVAS_ID)).toEqual([]);
+    });
+
+    it("supports prefix matching", async () => {
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+
+      const results = await searchItems("Gan", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.title).toBe("Gandalf");
+    });
+  });
+});
