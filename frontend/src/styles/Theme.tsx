@@ -1,7 +1,7 @@
 import { CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { NoteType } from "shared";
+import type { CanvasItemType, NoteType } from "shared";
 import { applyCssVars } from "./cssVars";
 import type { EffectiveMode, ThemePreference } from "./styleConsts";
 import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
@@ -10,9 +10,11 @@ import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
 declare module "@mui/material/styles" {
   interface Palette {
     nodeTypes: Record<NoteType, { light: string; dark: string }>;
+    canvasItemTypes: Record<CanvasItemType, { light: string; dark: string }>;
   }
   interface PaletteOptions {
     nodeTypes?: Record<NoteType, { light: string; dark: string }>;
+    canvasItemTypes?: Record<CanvasItemType, { light: string; dark: string }>;
   }
 }
 
@@ -26,6 +28,14 @@ const NODE_TYPES_PALETTE: Record<NoteType, { light: string; dark: string }> = {
   location: { light: "#22c55e", dark: "#167a3a" },
   goal: { light: "#ec4899", dark: "#9a2d62" },
   session: { light: "#6b7280", dark: "#434950" },
+};
+
+const CANVAS_ITEM_TYPES_PALETTE: Record<CanvasItemType, { light: string; dark: string }> = {
+  person: { light: "#4a90d9", dark: "#2a5a8a" }, // Blue - for people (PCs, NPCs)
+  place: { light: "#22c55e", dark: "#167a3a" }, // Green - for locations
+  thing: { light: "#d9a74a", dark: "#8a6a2a" }, // Gold - for items
+  session: { light: "#6b7280", dark: "#434950" }, // Gray - for sessions
+  event: { light: "#8b5cf6", dark: "#5a3a9e" }, // Purple - for events (quests, goals)
 };
 
 function buildTheme(mode: EffectiveMode) {
@@ -49,6 +59,7 @@ function buildTheme(mode: EffectiveMode) {
       success: { main: p.green },
       divider: p.surface1,
       nodeTypes: NODE_TYPES_PALETTE,
+      canvasItemTypes: CANVAS_ITEM_TYPES_PALETTE,
     },
     shape: {
       borderRadius: BORDER_RADIUS.none,

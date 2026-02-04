@@ -18,7 +18,13 @@ export async function teardownTestDb() {
 
 export async function truncateAllTables() {
   const db = getDb();
-  await db.execute(sql`TRUNCATE TABLE note_links, notes, canvas_users, canvases, users CASCADE`);
+  await db.execute(
+    sql`TRUNCATE TABLE
+      canvas_item_links, canvas_items, photos,
+      people, places, things, sessions, events,
+      note_links, notes, canvas_users, canvases, users
+      CASCADE`,
+  );
   await db.execute(
     sql`INSERT INTO users (id, auth_id, email, display_name) VALUES (${TEST_USER_ID}, ${TEST_USER_AUTH_ID}, 'test@example.com', 'Test User') ON CONFLICT (id) DO NOTHING`,
   );

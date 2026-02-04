@@ -1,13 +1,14 @@
 import type {
   Canvas,
+  CanvasItem,
+  CanvasItemSearchResult,
+  CanvasItemSummary,
   CanvasSummary,
   CreateCanvasInput,
-  CreateNoteInput,
-  Note,
-  NoteSummary,
-  SearchResult,
+  CreateCanvasItemInput,
+  Photo,
   UpdateCanvasInput,
-  UpdateNoteInput,
+  UpdateCanvasItemInput,
 } from "shared";
 import { getToken } from "../auth/service.js";
 import config from "../config.js";
@@ -63,38 +64,69 @@ export function deleteCanvas(id: string): Promise<void> {
   return request<void>(`/canvases/${id}`, { method: "DELETE" });
 }
 
-// --- Note functions ---
+// --- Canvas Item functions ---
 
-export function fetchNotes(canvasId: string): Promise<NoteSummary[]> {
-  return request<NoteSummary[]>(`/canvases/${canvasId}/notes`);
+export function fetchItems(canvasId: string): Promise<CanvasItemSummary[]> {
+  return request<CanvasItemSummary[]>(`/canvases/${canvasId}/items`);
 }
 
-export function fetchNote(id: string): Promise<Note> {
-  return request<Note>(`/notes/${id}`);
+export function fetchItem(id: string): Promise<CanvasItem> {
+  return request<CanvasItem>(`/items/${id}`);
 }
 
-export function createNote(canvasId: string, input: CreateNoteInput): Promise<Note> {
-  return request<Note>(`/canvases/${canvasId}/notes`, {
+export function createItem(canvasId: string, input: CreateCanvasItemInput): Promise<CanvasItem> {
+  return request<CanvasItem>(`/canvases/${canvasId}/items`, {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
-export function updateNote(id: string, input: UpdateNoteInput): Promise<Note> {
-  return request<Note>(`/notes/${id}`, {
+export function updateItem(id: string, input: UpdateCanvasItemInput): Promise<CanvasItem> {
+  return request<CanvasItem>(`/items/${id}`, {
     method: "PUT",
     body: JSON.stringify(input),
   });
 }
 
-export function deleteNote(id: string): Promise<void> {
-  return request<void>(`/notes/${id}`, { method: "DELETE" });
+export function deleteItem(id: string): Promise<void> {
+  return request<void>(`/items/${id}`, { method: "DELETE" });
 }
 
-export async function searchNotes(query: string, canvasId: string): Promise<SearchResult[]> {
+export async function searchItems(
+  query: string,
+  canvasId: string,
+): Promise<CanvasItemSearchResult[]> {
   const encoded = encodeURIComponent(query);
-  const data = await request<{ results: SearchResult[] }>(
-    `/canvases/${canvasId}/notes/search?q=${encoded}`,
+  const data = await request<{ results: CanvasItemSearchResult[] }>(
+    `/canvases/${canvasId}/items/search?q=${encoded}`,
   );
   return data.results;
+}
+
+// --- Photo functions ---
+
+export async function uploadPhoto(itemId: string, file: File): Promise<Photo> {
+  const authHeaders = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("photo", file);
+
+  const res = await fetch(`${config.apiBaseUrl}/items/${itemId}/photos`, {
+    method: "POST",
+    headers: { ...authHeaders },
+    body: formData,
+  });
+
+  const body: ApiResponse<Photo> = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.errorCode || `HTTP ${res.status}`);
+  }
+  return body.data as Photo;
+}
+
+export function deletePhoto(id: string): Promise<void> {
+  return request<void>(`/photos/${id}`, { method: "DELETE" });
+}
+
+export function selectPhoto(id: string): Promise<Photo> {
+  return request<Photo>(`/photos/${id}/select`, { method: "PUT" });
 }

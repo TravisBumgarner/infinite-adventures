@@ -1,7 +1,8 @@
-import type { NoteType } from "shared";
+import type { CanvasItemType, NoteType } from "shared";
 
 export const SIDEBAR_WIDTH = 360;
 
+// Legacy note type labels (to be removed after migration)
 export const TYPE_LABELS: Record<NoteType, string> = {
   pc: "PC",
   npc: "NPC",
@@ -11,6 +12,24 @@ export const TYPE_LABELS: Record<NoteType, string> = {
   goal: "Goal",
   session: "Session",
 };
+
+// Canvas item type labels (new)
+export const CANVAS_ITEM_TYPE_LABELS: Record<CanvasItemType, string> = {
+  person: "Person",
+  place: "Place",
+  thing: "Thing",
+  session: "Session",
+  event: "Event",
+};
+
+// Canvas item types for dropdowns
+export const CANVAS_ITEM_TYPES: { value: CanvasItemType; label: string }[] = [
+  { value: "person", label: "Person" },
+  { value: "place", label: "Place" },
+  { value: "thing", label: "Thing" },
+  { value: "session", label: "Session" },
+  { value: "event", label: "Event" },
+];
 
 export const NOTE_TEMPLATES: Record<NoteType, string> = {
   pc: "Race:\nClass:\nBackground:\n",
