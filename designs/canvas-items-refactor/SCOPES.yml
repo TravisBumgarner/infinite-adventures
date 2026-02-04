@@ -121,7 +121,7 @@ tasks:
       - Unit tests for edge cases
     depends_on: [1, 4]
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 6
     github_issue: 97
