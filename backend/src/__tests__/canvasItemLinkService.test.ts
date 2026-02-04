@@ -2,13 +2,13 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "../db/connection.js";
 import { canvasItemLinks, canvasItems } from "../db/schema.js";
-import { createItem, DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
 import {
   extractSnippet,
   parseMentions,
   parseMentionsWithPositions,
   resolveCanvasItemLinks,
 } from "../services/canvasItemLinkService.js";
+import { createItem, DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("canvasItemLinkService", () => {
@@ -82,7 +82,7 @@ describe("canvasItemLinkService", () => {
         type: "id",
         value: uuid,
         startIndex: 4,
-        endIndex: 42,
+        endIndex: 43, // @{ (2) + uuid (36) + } (1) = 39 chars, starting at 4
       });
     });
   });
