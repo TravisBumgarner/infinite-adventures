@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate-notes": "tsx src/db/migrations/migrate-notes-to-canvas-items.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
