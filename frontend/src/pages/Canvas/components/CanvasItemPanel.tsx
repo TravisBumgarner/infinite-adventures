@@ -4,14 +4,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SettingsIcon from "@mui/icons-material/Settings";
+import StarIcon from "@mui/icons-material/Star";
+import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
@@ -23,11 +20,12 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
+import type { CanvasItem, CanvasItemType, Note } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
 import { useAutoSave } from "../../../hooks/useAutoSave";
+import { MODAL_ID, useModalStore } from "../../../modals";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
@@ -83,9 +81,8 @@ export default function CanvasItemPanel({
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
 
-  // Settings modal state
-  const [showSettings, setShowSettings] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Modal store
+  const openModal = useModalStore((s) => s.openModal);
 
   const titleRef = useRef(title);
   titleRef.current = title;
@@ -164,8 +161,6 @@ export default function CanvasItemPanel({
 
   async function handleDeleteItem() {
     await api.deleteItem(itemId);
-    setShowDeleteConfirm(false);
-    setShowSettings(false);
     onDeleted(itemId);
   }
 
@@ -194,6 +189,29 @@ export default function CanvasItemPanel({
     setItem(updated);
     setPhotos(updated.photos);
     onSaved(updated);
+  }
+
+  function handleOpenLightbox(index: number) {
+    openModal({
+      id: MODAL_ID.LIGHTBOX,
+      photos,
+      initialIndex: index,
+    });
+  }
+
+  function handleOpenSettings() {
+    openModal({
+      id: MODAL_ID.ITEM_SETTINGS,
+      itemId,
+      onDeleteClick: () => {
+        openModal({
+          id: MODAL_ID.DELETE_ITEM,
+          itemId,
+          itemTitle: title,
+          onConfirm: handleDeleteItem,
+        });
+      },
+    });
   }
 
   function handleTitleKeyDown(e: React.KeyboardEvent) {
@@ -244,9 +262,16 @@ export default function CanvasItemPanel({
   }
 
   function getNotePreview(content: string): string {
-    const text = content.replace(/<[^>]*>/g, "").trim();
+    // Strip HTML tags
+    let text = content.replace(/<[^>]*>/g, "").trim();
+    // Replace @{uuid} mentions with @title
+    text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
+      const item = itemsCache.get(id);
+      return item ? `@${item.title}` : "@mention";
+    });
     if (!text) return "Empty note";
-    return text.length > 80 ? `${text.slice(0, 80)}...` : text;
+    // Show approximately 5 lines worth of text (~300 chars)
+    return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }
 
   // Connections data
@@ -365,7 +390,7 @@ export default function CanvasItemPanel({
         </IconButton>
         <IconButton
           size="small"
-          onClick={() => setShowSettings(true)}
+          onClick={handleOpenSettings}
           sx={{ color: "var(--color-subtext0)", p: 0.5 }}
         >
           <SettingsIcon sx={{ fontSize: 16 }} />
@@ -411,11 +436,11 @@ export default function CanvasItemPanel({
       {/* Tab Content */}
       {panelTab === "notes" && !editingNoteId && (
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
-          {/* Add Note Button */}
           <Button
             variant="outlined"
             size="small"
             startIcon={<AddIcon />}
+            fullWidth
             onClick={handleAddNote}
             sx={{ mb: 2, alignSelf: "flex-start" }}
           >
@@ -452,15 +477,14 @@ export default function CanvasItemPanel({
                       <Typography
                         variant="body2"
                         sx={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
                         }}
                       >
                         {getNotePreview(note.content)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                        {new Date(note.updated_at).toLocaleDateString()}
+                        Last edited on {new Date(note.updated_at).toLocaleDateString()}
                       </Typography>
                     </Box>
                     <IconButton
@@ -485,12 +509,16 @@ export default function CanvasItemPanel({
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
           {/* Back button */}
           <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
-            <IconButton size="small" onClick={handleBackToNoteList} sx={{ mr: 1 }}>
-              <ArrowBackIcon sx={{ fontSize: 20 }} />
-            </IconButton>
-            <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
-              Back to notes
-            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ArrowBackIcon />}
+              fullWidth
+              onClick={handleBackToNoteList}
+              sx={{ alignSelf: "flex-start" }}
+            >
+              Back to Notes
+            </Button>
           </Box>
           {/* Editor */}
           <MentionEditor
@@ -539,7 +567,7 @@ export default function CanvasItemPanel({
       {panelTab === "photos" && (
         <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {photos.map((photo) => (
+            {photos.map((photo, index) => (
               <Box
                 key={photo.id}
                 sx={{
@@ -558,8 +586,28 @@ export default function CanvasItemPanel({
                   src={photo.url}
                   alt={photo.original_name}
                   sx={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
-                  onClick={() => handlePhotoSelect(photo.id)}
+                  onClick={() => handleOpenLightbox(index)}
                 />
+                <IconButton
+                  size="small"
+                  onClick={() => handlePhotoSelect(photo.id)}
+                  sx={{
+                    position: "absolute",
+                    bottom: 2,
+                    left: 2,
+                    bgcolor: "rgba(0,0,0,0.5)",
+                    color: photo.is_selected ? "var(--color-yellow)" : "white",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                    width: 20,
+                    height: 20,
+                  }}
+                >
+                  {photo.is_selected ? (
+                    <StarIcon sx={{ fontSize: 14 }} />
+                  ) : (
+                    <StarOutlineIcon sx={{ fontSize: 14 }} />
+                  )}
+                </IconButton>
                 <IconButton
                   size="small"
                   onClick={() => handlePhotoDelete(photo.id)}
@@ -592,7 +640,7 @@ export default function CanvasItemPanel({
               variant="caption"
               sx={{ display: "block", mt: 1.5, color: "var(--color-subtext0)" }}
             >
-              Click a photo to set it as the preview image
+              Click a photo to view it. Click the star to set as preview.
             </Typography>
           )}
         </Box>
@@ -732,58 +780,6 @@ export default function CanvasItemPanel({
           </List>
         </Box>
       )}
-
-      {/* Settings Modal */}
-      <Dialog
-        open={showSettings}
-        onClose={() => setShowSettings(false)}
-        PaperProps={{
-          sx: {
-            bgcolor: "var(--color-base)",
-            minWidth: 280,
-          },
-        }}
-      >
-        <DialogTitle>Item Settings</DialogTitle>
-        <DialogContent>
-          <Button
-            variant="outlined"
-            color="error"
-            fullWidth
-            startIcon={<DeleteIcon />}
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Delete Item
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowSettings(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        PaperProps={{
-          sx: {
-            bgcolor: "var(--color-base)",
-          },
-        }}
-      >
-        <DialogTitle>Delete Item?</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: "var(--color-text)" }}>
-            Are you sure you want to delete this item? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-          <Button onClick={handleDeleteItem} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Drawer>
   );
 }

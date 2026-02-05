@@ -29,6 +29,9 @@ function toFlowNode(
   // Find selected photo URL
   const selectedPhoto = item.photos.find((p) => p.is_selected);
 
+  // Count connections (links_to + linked_from)
+  const connectionsCount = (item.links_to?.length ?? 0) + (item.linked_from?.length ?? 0);
+
   return {
     id: item.id,
     type: "canvasItem",
@@ -41,6 +44,9 @@ function toFlowNode(
       selectedPhotoUrl: selectedPhoto?.url,
       mentionLabels,
       onMentionClick,
+      notesCount: item.notes.length,
+      photosCount: item.photos.length,
+      connectionsCount,
     },
   };
 }
@@ -75,16 +81,24 @@ export function useCanvasActions() {
     filterSearch,
     setEditingItemId,
     setContextMenu,
+    setNodeContextMenu,
     setShowSettings,
   } = useCanvasStore();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+  const editingItemId = useCanvasStore((s) => s.editingItemId);
 
-  // Compute filtered nodes and edges for display
-  const filteredNodes = useMemo(
-    () => filterNodes(nodes, activeTypes, filterSearch),
-    [nodes, activeTypes, filterSearch],
-  );
+  // Compute filtered nodes and edges for display, with focused state
+  const filteredNodes = useMemo(() => {
+    const filtered = filterNodes(nodes, activeTypes, filterSearch);
+    return filtered.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        isFocused: node.id === editingItemId,
+      },
+    }));
+  }, [nodes, activeTypes, filterSearch, editingItemId]);
   const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
   const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 
@@ -211,6 +225,19 @@ export function useCanvasActions() {
       setEditingItemId(node.id);
     },
     [setEditingItemId],
+  );
+
+  // Right-click a node to open context menu
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setNodeContextMenu({
+        x: event.clientX,
+        y: event.clientY,
+        nodeId: node.id,
+      });
+    },
+    [setNodeContextMenu],
   );
 
   // View All: fit all nodes in viewport
@@ -347,8 +374,9 @@ export function useCanvasActions() {
   const onPaneClick = useCallback(() => {
     setEditingItemId(null);
     setContextMenu(null);
+    setNodeContextMenu(null);
     setShowSettings(false);
-  }, [setEditingItemId, setContextMenu, setShowSettings]);
+  }, [setEditingItemId, setContextMenu, setNodeContextMenu, setShowSettings]);
 
   return {
     // React Flow state
@@ -371,6 +399,7 @@ export function useCanvasActions() {
     onConnect,
     onPaneContextMenu,
     onNodeClick,
+    onNodeContextMenu,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,

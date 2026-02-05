@@ -15,6 +15,7 @@ import CanvasItemPanel from "./components/CanvasItemPanel";
 import CanvasPicker from "./components/CanvasPicker";
 import ContextMenu from "./components/ContextMenu";
 import FilterBar from "./components/FilterBar";
+import NodeContextMenu from "./components/NodeContextMenu";
 import SearchBar from "./components/SearchBar";
 import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
 import Toolbar from "./components/Toolbar";
@@ -36,9 +37,11 @@ export default function Canvas() {
   const editingItemId = useCanvasStore((s) => s.editingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
+  const nodeContextMenu = useCanvasStore((s) => s.nodeContextMenu);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
+  const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
 
   const toastMessage = useAppStore((s) => s.toastMessage);
@@ -91,6 +94,7 @@ export default function Canvas() {
     onConnect,
     onPaneContextMenu,
     onNodeClick,
+    onNodeContextMenu,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,
@@ -153,6 +157,7 @@ export default function Canvas() {
         onPaneClick={onPaneClick}
         onPaneContextMenu={onPaneContextMenu}
         onNodeClick={onNodeClick}
+        onNodeContextMenu={onNodeContextMenu}
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onMoveEnd={onMoveEnd}
@@ -207,6 +212,20 @@ export default function Canvas() {
           onViewAll={handleViewAll}
           onUnstack={handleUnstack}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {nodeContextMenu && (
+        <NodeContextMenu
+          x={nodeContextMenu.x}
+          y={nodeContextMenu.y}
+          nodeId={nodeContextMenu.nodeId}
+          nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
+          onDelete={async () => {
+            await api.deleteItem(nodeContextMenu.nodeId);
+            handleDeleted(nodeContextMenu.nodeId);
+          }}
+          onClose={() => setNodeContextMenu(null)}
         />
       )}
 
