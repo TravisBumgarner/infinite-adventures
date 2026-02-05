@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createCanvas } from "../services/canvasService.js";
 import {
   createItem,
   DEFAULT_CANVAS_ID,
@@ -11,6 +10,7 @@ import {
   updateItem,
   ValidationError,
 } from "../services/canvasItemService.js";
+import { createCanvas } from "../services/canvasService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("canvasItemService", () => {
@@ -83,9 +83,9 @@ describe("canvasItemService", () => {
     });
 
     it("throws ValidationError for missing title", async () => {
-      await expect(
-        createItem({ type: "person", title: "" }, DEFAULT_CANVAS_ID),
-      ).rejects.toThrow(ValidationError);
+      await expect(createItem({ type: "person", title: "" }, DEFAULT_CANVAS_ID)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it("throws ValidationError for invalid type", async () => {
@@ -116,10 +116,7 @@ describe("canvasItemService", () => {
     });
 
     it("returns items as summaries without content", async () => {
-      await createItem(
-        { type: "person", title: "Gandalf", notes: "A wizard" },
-        DEFAULT_CANVAS_ID,
-      );
+      await createItem({ type: "person", title: "Gandalf", notes: "A wizard" }, DEFAULT_CANVAS_ID);
 
       const items = await listItems(DEFAULT_CANVAS_ID);
       expect(items).toHaveLength(1);
@@ -156,10 +153,7 @@ describe("canvasItemService", () => {
 
   describe("updateItem", () => {
     it("updates the title", async () => {
-      const created = await createItem(
-        { type: "person", title: "Gandalf" },
-        DEFAULT_CANVAS_ID,
-      );
+      const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const updated = await updateItem(created.id, { title: "Gandalf the Grey" });
 
@@ -198,10 +192,7 @@ describe("canvasItemService", () => {
 
   describe("deleteItem", () => {
     it("deletes an existing item", async () => {
-      const created = await createItem(
-        { type: "person", title: "Gandalf" },
-        DEFAULT_CANVAS_ID,
-      );
+      const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       expect(await deleteItem(created.id)).toBe(true);
       expect(await getItem(created.id)).toBeNull();
     });

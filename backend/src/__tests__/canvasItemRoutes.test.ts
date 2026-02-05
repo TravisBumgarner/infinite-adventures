@@ -105,7 +105,10 @@ describe("canvas item routes", () => {
   describe("create", () => {
     it("validate returns null and sends 400 when body has no title", () => {
       const res = createMockRes();
-      const req = createMockReq({ body: { type: "person" }, params: { canvasId: DEFAULT_CANVAS_ID } });
+      const req = createMockReq({
+        body: { type: "person" },
+        params: { canvasId: DEFAULT_CANVAS_ID },
+      });
       const context = createValidate(req, res);
       expect(context).toBeNull();
       expect(res.status).toHaveBeenCalledWith(400);

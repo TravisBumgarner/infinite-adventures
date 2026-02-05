@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db/connection.js";
 import type { Canvas as CanvasRow } from "../db/schema.js";
-import { canvases, canvasUsers, notes } from "../db/schema.js";
+import { canvases, canvasItems, canvasUsers } from "../db/schema.js";
 
 export type CanvasSummary = Pick<CanvasRow, "id" | "name">;
 
@@ -104,8 +104,8 @@ export async function deleteCanvas(id: string, userId: string): Promise<boolean>
     throw new LastCanvasError();
   }
 
-  // Cascade-delete notes belonging to this canvas
-  await db.delete(notes).where(eq(notes.canvas_id, id));
+  // Cascade-delete canvas items belonging to this canvas
+  await db.delete(canvasItems).where(eq(canvasItems.canvas_id, id));
 
   // Delete the canvas (canvas_users rows cascade-delete via FK)
   await db.delete(canvases).where(eq(canvases.id, id));

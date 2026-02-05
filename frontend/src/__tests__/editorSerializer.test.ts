@@ -1,4 +1,4 @@
-import type { Note } from "shared";
+import type { CanvasItem } from "shared";
 import { describe, expect, it } from "vitest";
 import { contentToHtml, serializeToMentionText } from "../utils/editorSerializer";
 
@@ -102,18 +102,19 @@ describe("serializeToMentionText", () => {
   });
 });
 
-const makeCache = (...notes: { id: string; title: string }[]) => {
-  const cache = new Map<string, Note>();
-  for (const n of notes) {
-    cache.set(n.id, {
-      id: n.id,
-      title: n.title,
-      type: "npc",
-      content: "",
+const makeCache = (...items: { id: string; title: string }[]) => {
+  const cache = new Map<string, CanvasItem>();
+  for (const item of items) {
+    cache.set(item.id, {
+      id: item.id,
+      title: item.title,
+      type: "person",
       canvas_x: 0,
       canvas_y: 0,
       created_at: "",
       updated_at: "",
+      content: { id: item.id, notes: "" },
+      photos: [],
       links_to: [],
       linked_from: [],
     });

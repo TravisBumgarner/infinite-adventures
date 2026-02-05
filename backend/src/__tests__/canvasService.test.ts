@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getDb } from "../db/connection.js";
-import { notes } from "../db/schema.js";
+import { canvasItems, people } from "../db/schema.js";
 import {
   createCanvas,
   deleteCanvas,
@@ -153,34 +153,45 @@ describe("canvasService", () => {
       await expect(deleteCanvas(canvases[0]!.id, TEST_USER_ID)).rejects.toThrow(LastCanvasError);
     });
 
-    it("cascade-deletes notes belonging to the canvas", async () => {
+    it("cascade-deletes canvas items belonging to the canvas", async () => {
       const canvas = await createCanvas("Doomed Canvas", TEST_USER_ID);
 
-      // Insert a note directly on this canvas
+      // Insert a canvas item directly on this canvas
       const db = getDb();
-      const noteId = uuidv4();
+      const itemId = uuidv4();
+      const contentId = uuidv4();
       const now = new Date().toISOString();
-      await db.insert(notes).values({
-        id: noteId,
-        type: "npc",
-        title: "Doomed NPC",
-        content: "",
-        canvas_x: 0,
-        canvas_y: 0,
-        canvas_id: canvas.id,
+
+      // First insert the content record
+      await db.insert(people).values({
+        id: contentId,
+        notes: "",
         created_at: now,
         updated_at: now,
       });
 
-      // Verify note exists
-      const [before] = await db.select().from(notes).where(eq(notes.id, noteId));
+      // Then insert the canvas item
+      await db.insert(canvasItems).values({
+        id: itemId,
+        type: "person",
+        title: "Doomed Person",
+        canvas_x: 0,
+        canvas_y: 0,
+        canvas_id: canvas.id,
+        content_id: contentId,
+        created_at: now,
+        updated_at: now,
+      });
+
+      // Verify item exists
+      const [before] = await db.select().from(canvasItems).where(eq(canvasItems.id, itemId));
       expect(before).toBeDefined();
 
       // Delete the canvas
       expect(await deleteCanvas(canvas.id, TEST_USER_ID)).toBe(true);
 
-      // Verify note was cascade-deleted
-      const [after] = await db.select().from(notes).where(eq(notes.id, noteId));
+      // Verify item was cascade-deleted
+      const [after] = await db.select().from(canvasItems).where(eq(canvasItems.id, itemId));
       expect(after).toBeUndefined();
     });
   });

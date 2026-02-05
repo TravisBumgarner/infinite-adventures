@@ -255,4 +255,4 @@ tasks:
       - Application fully functional
     depends_on: [2, 11]
     effort: 1
-    status: scoped
+    status: completed

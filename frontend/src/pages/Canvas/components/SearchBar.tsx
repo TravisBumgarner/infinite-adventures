@@ -7,7 +7,6 @@ import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SearchResult } from "shared";
 import * as api from "../../../api/client";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -19,7 +18,7 @@ interface SearchBarProps {
 export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
   const theme = useTheme();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<CanvasItemSearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -63,7 +62,7 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
   }, []);
 
   const selectResult = useCallback(
-    (result: SearchResult) => {
+    (result: CanvasItemSearchResult) => {
       onNavigate(result.id);
       setShowDropdown(false);
       setQuery("");
