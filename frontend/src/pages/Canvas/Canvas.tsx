@@ -9,14 +9,12 @@ import { SIDEBAR_WIDTH } from "../../constants";
 import Toast from "../../sharedComponents/Toast";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
-import CanvasItemEditor from "./components/CanvasItemEditor";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
 import CanvasItemNodeComponent from "./components/CanvasItemNode";
+import CanvasItemPanel from "./components/CanvasItemPanel";
 import CanvasPicker from "./components/CanvasPicker";
-import ConnectionsBrowser from "./components/ConnectionsBrowser";
 import ContextMenu from "./components/ContextMenu";
 import FilterBar from "./components/FilterBar";
-import NodeContextMenu from "./components/NodeContextMenu";
 import SearchBar from "./components/SearchBar";
 import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
 import Toolbar from "./components/Toolbar";
@@ -36,15 +34,11 @@ export default function Canvas() {
   const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const editingItemId = useCanvasStore((s) => s.editingItemId);
-  const browsingItemId = useCanvasStore((s) => s.browsingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
-  const nodeContextMenu = useCanvasStore((s) => s.nodeContextMenu);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
-  const setBrowsingItemId = useCanvasStore((s) => s.setBrowsingItemId);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
-  const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
 
   const toastMessage = useAppStore((s) => s.toastMessage);
@@ -89,17 +83,14 @@ export default function Canvas() {
     onEdgesChange,
     handleSaved,
     handleDeleted,
-    handleDeleteSelected,
     navigateToItem,
     createItemAtPosition,
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,
-    handleExport,
     onConnect,
     onPaneContextMenu,
-    onNodeContextMenu: onNodeCtxMenu,
-    onSelectionContextMenu,
+    onNodeClick,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,
@@ -148,10 +139,7 @@ export default function Canvas() {
   return (
     <div
       style={{
-        width:
-          editingItemId || browsingItemId || showSettings
-            ? `calc(100vw - ${SIDEBAR_WIDTH}px)`
-            : "100vw",
+        width: editingItemId || showSettings ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
         height: "100vh",
         marginLeft: showSettings ? SIDEBAR_WIDTH : 0,
       }}
@@ -164,8 +152,7 @@ export default function Canvas() {
         nodeTypes={nodeTypes}
         onPaneClick={onPaneClick}
         onPaneContextMenu={onPaneContextMenu}
-        onNodeContextMenu={onNodeCtxMenu}
-        onSelectionContextMenu={onSelectionContextMenu}
+        onNodeClick={onNodeClick}
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onMoveEnd={onMoveEnd}
@@ -223,50 +210,14 @@ export default function Canvas() {
         />
       )}
 
-      {nodeContextMenu && (
-        <NodeContextMenu
-          x={nodeContextMenu.x}
-          y={nodeContextMenu.y}
-          itemId={nodeContextMenu.itemId}
-          selectedCount={nodeContextMenu.selectedIds.length}
-          onEdit={(itemId) => {
-            setBrowsingItemId(null);
-            setEditingItemId(itemId);
-          }}
-          onBrowseConnections={(itemId) => {
-            setEditingItemId(null);
-            setBrowsingItemId(itemId);
-          }}
-          onExport={handleExport}
-          onDelete={async (itemId) => {
-            await api.deleteItem(itemId);
-            handleDeleted(itemId);
-          }}
-          onDeleteSelected={async () => {
-            await handleDeleteSelected(nodeContextMenu.selectedIds);
-            setNodeContextMenu(null);
-          }}
-          onClose={() => setNodeContextMenu(null)}
-        />
-      )}
-
-      {editingItemId && !browsingItemId && (
-        <CanvasItemEditor
+      {editingItemId && (
+        <CanvasItemPanel
           itemId={editingItemId}
           onClose={() => setEditingItemId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
           onNavigate={navigateToItem}
           itemsCache={itemsCache}
-        />
-      )}
-
-      {browsingItemId && (
-        <ConnectionsBrowser
-          itemId={browsingItemId}
-          itemsCache={itemsCache}
-          onNavigate={navigateToItem}
-          onClose={() => setBrowsingItemId(null)}
         />
       )}
 

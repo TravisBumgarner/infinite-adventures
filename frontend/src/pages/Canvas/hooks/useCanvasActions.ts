@@ -3,13 +3,11 @@ import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemType } from "shared";
 import * as api from "../../../api/client";
-import { useAppStore } from "../../../stores/appStore";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
 import { appendMentionIfNew } from "../../../utils/edgeConnect";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
-import { batchDeleteItems, getSelectedNodePositions } from "../../../utils/multiSelect";
-import { formatItemExport } from "../../../utils/noteExport";
+import { getSelectedNodePositions } from "../../../utils/multiSelect";
 import type { CanvasItemNodeData } from "../components/CanvasItemNode";
 
 function toFlowNode(
@@ -75,15 +73,11 @@ export function useCanvasActions() {
     activeTypes,
     filterSearch,
     setEditingItemId,
-    setBrowsingItemId,
     setContextMenu,
-    setNodeContextMenu,
     setShowSettings,
   } = useCanvasStore();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-
-  const showToast = useAppStore((s) => s.showToast);
 
   // Compute filtered nodes and edges for display
   const filteredNodes = useMemo(
@@ -210,34 +204,12 @@ export function useCanvasActions() {
     [reactFlowInstance, setContextMenu],
   );
 
-  // Right-click a node to open node context menu
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      const selectedIds = nodes.filter((n) => n.selected).map((n) => n.id);
-      setNodeContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        itemId: node.id,
-        selectedIds,
-      });
+  // Left-click a node to open the item panel
+  const onNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      setEditingItemId(node.id);
     },
-    [nodes, setNodeContextMenu],
-  );
-
-  // Right-click a multi-selection area to open context menu
-  const onSelectionContextMenu = useCallback(
-    (event: React.MouseEvent, selectedNodes: Node[]) => {
-      event.preventDefault();
-      const selectedIds = selectedNodes.map((n) => n.id);
-      setNodeContextMenu({
-        x: event.clientX,
-        y: event.clientY,
-        itemId: selectedIds[0],
-        selectedIds,
-      });
-    },
-    [setNodeContextMenu],
+    [setEditingItemId],
   );
 
   // View All: fit all nodes in viewport
@@ -362,46 +334,12 @@ export function useCanvasActions() {
     [setNodes, setEdges, removeCachedItem, setEditingItemId],
   );
 
-  // Batch-delete nodes by explicit IDs
-  const handleDeleteSelected = useCallback(
-    async (idsToDelete: string[]) => {
-      if (idsToDelete.length === 0) return;
-      const deletedIds = await batchDeleteItems(idsToDelete, api.deleteItem);
-      const cache = useCanvasStore.getState().itemsCache;
-      const nextCache = new Map(cache);
-      for (const id of deletedIds) {
-        nextCache.delete(id);
-      }
-      setItemsCache(nextCache);
-      const deletedSet = new Set(deletedIds);
-      setNodes((nds) => nds.filter((n) => !deletedSet.has(n.id)));
-      setEdges((eds) => eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target)));
-      setEditingItemId(null);
-    },
-    [setNodes, setEdges, setItemsCache, setEditingItemId],
-  );
-
-  // Export item and connections as text to clipboard
-  const handleExport = useCallback(
-    async (itemId: string) => {
-      const cache = useCanvasStore.getState().itemsCache;
-      const item = cache.get(itemId);
-      if (!item) return;
-      const text = formatItemExport(item, cache);
-      await navigator.clipboard.writeText(text);
-      showToast("Copied to clipboard");
-    },
-    [showToast],
-  );
-
   // Pane click to close all panels
   const onPaneClick = useCallback(() => {
     setEditingItemId(null);
-    setBrowsingItemId(null);
     setContextMenu(null);
-    setNodeContextMenu(null);
     setShowSettings(false);
-  }, [setEditingItemId, setBrowsingItemId, setContextMenu, setNodeContextMenu, setShowSettings]);
+  }, [setEditingItemId, setContextMenu, setShowSettings]);
 
   return {
     // React Flow state
@@ -416,17 +354,14 @@ export function useCanvasActions() {
     loadAllItems,
     handleSaved,
     handleDeleted,
-    handleDeleteSelected,
     navigateToItem,
     createItemAtPosition,
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,
-    handleExport,
     onConnect,
     onPaneContextMenu,
-    onNodeContextMenu,
-    onSelectionContextMenu,
+    onNodeClick,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,

@@ -8,18 +8,13 @@ interface ContextMenuState {
   flowY: number;
 }
 
-interface NodeContextMenuState {
-  x: number;
-  y: number;
-  itemId: string;
-  selectedIds: string[];
-}
-
 const ACTIVE_CANVAS_KEY = "infinite-adventures-active-canvas";
 
 export function getViewportKey(canvasId: string): string {
   return `infinite-adventures-viewport-${canvasId}`;
 }
+
+type PanelTab = "notes" | "photos" | "connections";
 
 interface CanvasState {
   canvases: CanvasSummary[];
@@ -37,8 +32,8 @@ interface CanvasState {
   editingItemId: string | null;
   setEditingItemId: (id: string | null) => void;
 
-  browsingItemId: string | null;
-  setBrowsingItemId: (id: string | null) => void;
+  panelTab: PanelTab;
+  setPanelTab: (tab: PanelTab) => void;
 
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
@@ -47,9 +42,6 @@ interface CanvasState {
 
   contextMenu: ContextMenuState | null;
   setContextMenu: (menu: ContextMenuState | null) => void;
-
-  nodeContextMenu: NodeContextMenuState | null;
-  setNodeContextMenu: (menu: NodeContextMenuState | null) => void;
 
   activeTypes: Set<CanvasItemType>;
   toggleType: (type: CanvasItemType) => void;
@@ -94,8 +86,8 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   editingItemId: null,
   setEditingItemId: (id) => set({ editingItemId: id }),
 
-  browsingItemId: null,
-  setBrowsingItemId: (id) => set({ browsingItemId: id }),
+  panelTab: "notes",
+  setPanelTab: (tab) => set({ panelTab: tab }),
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
@@ -103,17 +95,12 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   closeAllPanels: () =>
     set({
       editingItemId: null,
-      browsingItemId: null,
       contextMenu: null,
-      nodeContextMenu: null,
       showSettings: false,
     }),
 
   contextMenu: null,
   setContextMenu: (menu) => set({ contextMenu: menu }),
-
-  nodeContextMenu: null,
-  setNodeContextMenu: (menu) => set({ nodeContextMenu: menu }),
 
   activeTypes: new Set(),
   toggleType: (type) =>
