@@ -7,7 +7,8 @@ export interface ListValidationContext {
 }
 
 export function validate(req: Request, _res: Response): ListValidationContext | null {
-  const canvasId = req.params.canvasId ?? "";
+  const canvasIdParam = req.params.canvasId;
+  const canvasId = typeof canvasIdParam === "string" ? canvasIdParam : "";
   return { canvasId };
 }
 

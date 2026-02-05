@@ -48,7 +48,6 @@ describe("canvasItemService", () => {
         {
           type: "person",
           title: "Gandalf",
-          notes: "A wise wizard",
           canvas_x: 100,
           canvas_y: 200,
         },
@@ -64,20 +63,17 @@ describe("canvasItemService", () => {
     });
 
     it("creates content record in the correct type-specific table", async () => {
-      const item = await createItem(
-        { type: "place", title: "Rivendell", notes: "An elven city" },
-        DEFAULT_CANVAS_ID,
-      );
+      const item = await createItem({ type: "place", title: "Rivendell" }, DEFAULT_CANVAS_ID);
 
       const fullItem = await getItem(item.id);
-      expect(fullItem?.content.notes).toBe("An elven city");
+      expect(fullItem?.notes).toEqual([]);
     });
 
-    it("defaults notes to empty string and position to 0,0", async () => {
+    it("defaults notes to empty array and position to 0,0", async () => {
       const item = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
 
       const fullItem = await getItem(item.id);
-      expect(fullItem?.content.notes).toBe("");
+      expect(fullItem?.notes).toEqual([]);
       expect(item.canvas_x).toBe(0);
       expect(item.canvas_y).toBe(0);
     });
@@ -115,12 +111,12 @@ describe("canvasItemService", () => {
       expect(otherItems[0]?.title).toBe("Ring");
     });
 
-    it("returns items as summaries without content", async () => {
-      await createItem({ type: "person", title: "Gandalf", notes: "A wizard" }, DEFAULT_CANVAS_ID);
+    it("returns items as summaries without notes", async () => {
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const items = await listItems(DEFAULT_CANVAS_ID);
       expect(items).toHaveLength(1);
-      expect(items[0]).not.toHaveProperty("content");
+      expect(items[0]).not.toHaveProperty("notes");
       expect(items[0]).toHaveProperty("id");
       expect(items[0]).toHaveProperty("type");
       expect(items[0]).toHaveProperty("title");
@@ -130,17 +126,14 @@ describe("canvasItemService", () => {
   });
 
   describe("getItem", () => {
-    it("returns a full item with content, photos, and links arrays", async () => {
-      const created = await createItem(
-        { type: "person", title: "Gandalf", notes: "A wizard" },
-        DEFAULT_CANVAS_ID,
-      );
+    it("returns a full item with notes, photos, and links arrays", async () => {
+      const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const item = await getItem(created.id);
 
       expect(item).not.toBeNull();
       expect(item?.id).toBe(created.id);
       expect(item?.title).toBe("Gandalf");
-      expect(item?.content.notes).toBe("A wizard");
+      expect(item?.notes).toEqual([]);
       expect(item?.photos).toEqual([]);
       expect(item?.links_to).toEqual([]);
       expect(item?.linked_from).toEqual([]);
@@ -173,18 +166,6 @@ describe("canvasItemService", () => {
       expect(updated?.canvas_y).toBe(250);
     });
 
-    it("updates the content notes", async () => {
-      const created = await createItem(
-        { type: "person", title: "Gandalf", notes: "A wizard" },
-        DEFAULT_CANVAS_ID,
-      );
-
-      await updateItem(created.id, { notes: "A wise wizard from Valinor" });
-      const fullItem = await getItem(created.id);
-
-      expect(fullItem?.content.notes).toBe("A wise wizard from Valinor");
-    });
-
     it("returns null for non-existent id", async () => {
       expect(await updateItem("non-existent", { title: "test" })).toBeNull();
     });
@@ -202,10 +183,7 @@ describe("canvasItemService", () => {
     });
 
     it("also deletes the associated content record", async () => {
-      const created = await createItem(
-        { type: "person", title: "Gandalf", notes: "A wizard" },
-        DEFAULT_CANVAS_ID,
-      );
+      const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       await deleteItem(created.id);
       // If we could query the content table directly, it would be empty

@@ -14,7 +14,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CanvasItem, CanvasItemType, Photo } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
@@ -64,7 +64,8 @@ export default function CanvasItemPanel({
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [currentNote, setCurrentNote] = useState<Note | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
@@ -74,17 +75,36 @@ export default function CanvasItemPanel({
 
   const titleRef = useRef(title);
   titleRef.current = title;
-  const notesRef = useRef(notes);
-  notesRef.current = notes;
+  const noteContentRef = useRef(noteContent);
+  noteContentRef.current = noteContent;
+  const currentNoteRef = useRef(currentNote);
+  currentNoteRef.current = currentNote;
   const itemIdRef = useRef(itemId);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   const saveFn = useCallback(async () => {
-    const updated = await api.updateItem(itemIdRef.current, {
+    // Save title
+    await api.updateItem(itemIdRef.current, {
       title: titleRef.current,
-      notes: notesRef.current,
     });
-    onSaved(updated);
+
+    // Save note content
+    if (currentNoteRef.current) {
+      // Update existing note
+      await api.updateNote(currentNoteRef.current.id, {
+        content: noteContentRef.current,
+      });
+    } else if (noteContentRef.current.trim()) {
+      // Create new note if there's content
+      const newNote = await api.createNote(itemIdRef.current, {
+        content: noteContentRef.current,
+      });
+      setCurrentNote(newNote);
+    }
+
+    // Refresh the item to get updated data
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    onSaved(refreshed);
   }, [onSaved]);
 
   const { status, markDirty, flush } = useAutoSave({ saveFn });
@@ -100,7 +120,10 @@ export default function CanvasItemPanel({
     api.fetchItem(itemId).then((i) => {
       setItem(i);
       setTitle(i.title);
-      setNotes(i.content.notes);
+      // Use first note's content or empty string
+      const firstNote = i.notes[0] ?? null;
+      setCurrentNote(firstNote);
+      setNoteContent(firstNote?.content ?? "");
       setPhotos(i.photos);
     });
     // Reset connections filters when item changes
@@ -315,9 +338,9 @@ export default function CanvasItemPanel({
       {panelTab === "notes" && (
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
           <MentionEditor
-            value={notes}
+            value={noteContent}
             onChange={(val: string) => {
-              setNotes(val);
+              setNoteContent(val);
               markDirty();
             }}
             itemsCache={itemsCache}

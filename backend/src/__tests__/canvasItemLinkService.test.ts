@@ -133,11 +133,8 @@ describe("canvasItemLinkService", () => {
     });
 
     it("creates links to existing items", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
-      await createItem({ type: "person", title: "Gandalf", notes: "" }, DEFAULT_CANVAS_ID);
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveCanvasItemLinks(source.id, "I met @Gandalf today");
 
@@ -155,11 +152,8 @@ describe("canvasItemLinkService", () => {
     });
 
     it("stores snippet in canvas_item_links", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
-      await createItem({ type: "person", title: "Gandalf", notes: "" }, DEFAULT_CANVAS_ID);
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       await resolveCanvasItemLinks(source.id, "The wise wizard @Gandalf helped me on my journey");
 
@@ -174,10 +168,7 @@ describe("canvasItemLinkService", () => {
     });
 
     it("auto-creates items on the same canvas as the source", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveCanvasItemLinks(source.id, "Going to @Rivendell");
 
@@ -197,12 +188,9 @@ describe("canvasItemLinkService", () => {
     });
 
     it("removes stale links when mentions are removed", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
-      await createItem({ type: "person", title: "Gandalf", notes: "" }, DEFAULT_CANVAS_ID);
-      await createItem({ type: "place", title: "Shire", notes: "" }, DEFAULT_CANVAS_ID);
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "place", title: "Shire" }, DEFAULT_CANVAS_ID);
 
       // First, link to both
       await resolveCanvasItemLinks(source.id, "@Gandalf in @Shire");
@@ -225,21 +213,15 @@ describe("canvasItemLinkService", () => {
     });
 
     it("is case-insensitive when matching titles", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
-      await createItem({ type: "person", title: "Gandalf", notes: "" }, DEFAULT_CANVAS_ID);
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveCanvasItemLinks(source.id, "Met @gandalf");
       expect(resolved[0]?.created).toBe(false);
     });
 
     it("does not link an item to itself", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
 
       await resolveCanvasItemLinks(source.id, "I am @Frodo");
 
@@ -252,14 +234,8 @@ describe("canvasItemLinkService", () => {
     });
 
     it("links to existing item by ID", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
-      const target = await createItem(
-        { type: "person", title: "Gandalf", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
+      const target = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const resolved = await resolveCanvasItemLinks(source.id, `See @{${target.id}} for help`);
 
@@ -269,10 +245,7 @@ describe("canvasItemLinkService", () => {
     });
 
     it("skips ID-based mentions that do not exist", async () => {
-      const source = await createItem(
-        { type: "person", title: "Frodo", notes: "" },
-        DEFAULT_CANVAS_ID,
-      );
+      const source = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
       const nonExistentId = "00000000-0000-0000-0000-000000000000";
 
       const resolved = await resolveCanvasItemLinks(source.id, `See @{${nonExistentId}} for help`);

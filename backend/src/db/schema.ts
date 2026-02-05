@@ -49,43 +49,56 @@ export const canvasUsers = pgTable(
 );
 
 // ============================================
-// Content Tables (type-specific)
+// Content Tables (type-specific, minimal)
 // ============================================
 
 export const people = pgTable("people", {
   id: text("id").primaryKey(),
-  notes: text("notes").notNull().default(""),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const places = pgTable("places", {
   id: text("id").primaryKey(),
-  notes: text("notes").notNull().default(""),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const things = pgTable("things", {
   id: text("id").primaryKey(),
-  notes: text("notes").notNull().default(""),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
-  notes: text("notes").notNull().default(""),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const events = pgTable("events", {
   id: text("id").primaryKey(),
-  notes: text("notes").notNull().default(""),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });
+
+// ============================================
+// Notes (attached to canvas items)
+// ============================================
+
+export const notes = pgTable(
+  "notes",
+  {
+    id: text("id").primaryKey(),
+    canvas_item_id: text("canvas_item_id")
+      .notNull()
+      .references(() => canvasItems.id, { onDelete: "cascade" }),
+    content: text("content").notNull().default(""),
+    created_at: text("created_at").notNull().default(sql`now()::text`),
+    updated_at: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("notes_canvas_item_id_idx").on(table.canvas_item_id)],
+);
 
 // ============================================
 // Canvas Items (base table)
@@ -183,3 +196,5 @@ export type Photo = typeof photos.$inferSelect;
 export type InsertPhoto = typeof photos.$inferInsert;
 export type CanvasItemLink = typeof canvasItemLinks.$inferSelect;
 export type InsertCanvasItemLink = typeof canvasItemLinks.$inferInsert;
+export type Note = typeof notes.$inferSelect;
+export type InsertNote = typeof notes.$inferInsert;

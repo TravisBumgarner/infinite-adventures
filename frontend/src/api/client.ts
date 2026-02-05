@@ -6,9 +6,12 @@ import type {
   CanvasSummary,
   CreateCanvasInput,
   CreateCanvasItemInput,
+  CreateNoteInput,
+  Note,
   Photo,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
+  UpdateNoteInput,
 } from "shared";
 import { getToken } from "../auth/service.js";
 import config from "../config.js";
@@ -129,4 +132,28 @@ export function deletePhoto(id: string): Promise<void> {
 
 export function selectPhoto(id: string): Promise<Photo> {
   return request<Photo>(`/photos/${id}/select`, { method: "PUT" });
+}
+
+// --- Note functions ---
+
+export function fetchNotes(itemId: string): Promise<Note[]> {
+  return request<Note[]>(`/items/${itemId}/notes`);
+}
+
+export function createNote(itemId: string, input: CreateNoteInput): Promise<Note> {
+  return request<Note>(`/items/${itemId}/notes`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateNote(noteId: string, input: UpdateNoteInput): Promise<Note> {
+  return request<Note>(`/notes/${noteId}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteNote(noteId: string): Promise<void> {
+  return request<void>(`/notes/${noteId}`, { method: "DELETE" });
 }
