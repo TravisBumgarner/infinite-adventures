@@ -17,12 +17,13 @@ function toFlowNode(
 ): Node<CanvasItemNodeData> {
   const mentionLabels: Record<string, string> = {};
   const mentionRegex = /@\{([^}]+)\}/g;
-  let match: RegExpExecArray | null = mentionRegex.exec(item.content.notes);
+  const noteContent = item.notes[0]?.content ?? "";
+  let match: RegExpExecArray | null = mentionRegex.exec(noteContent);
   while (match !== null) {
     const id = match[1];
     const cached = cache.get(id);
     mentionLabels[id] = cached ? cached.title : id;
-    match = mentionRegex.exec(item.content.notes);
+    match = mentionRegex.exec(noteContent);
   }
 
   // Find selected photo URL
@@ -36,7 +37,7 @@ function toFlowNode(
       itemId: item.id,
       type: item.type,
       title: item.title,
-      content: item.content.notes,
+      content: noteContent,
       selectedPhotoUrl: selectedPhoto?.url,
       mentionLabels,
       onMentionClick,
@@ -283,11 +284,19 @@ export function useCanvasActions() {
       const sourceItem = cache.get(connection.source);
       if (!sourceItem) return;
 
-      const newContent = appendMentionIfNew(sourceItem.content.notes, connection.target);
+      const currentNoteContent = sourceItem.notes[0]?.content ?? "";
+      const newContent = appendMentionIfNew(currentNoteContent, connection.target);
       if (newContent === null) return;
 
-      const updated = await api.updateItem(sourceItem.id, { notes: newContent });
-      const fullItem = await api.fetchItem(updated.id);
+      // Update or create the note with the new content
+      const firstNote = sourceItem.notes[0];
+      if (firstNote) {
+        await api.updateNote(firstNote.id, { content: newContent });
+      } else {
+        await api.createNote(sourceItem.id, { content: newContent });
+      }
+
+      const fullItem = await api.fetchItem(sourceItem.id);
       const nextCache = new Map(cache);
       nextCache.set(fullItem.id, fullItem);
       setItemsCache(nextCache);
