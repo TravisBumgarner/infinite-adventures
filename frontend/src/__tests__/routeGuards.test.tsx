@@ -24,17 +24,17 @@ describe("MemberRoute", () => {
     });
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/canvas"]}>
         <Routes>
           <Route
-            path="/"
+            path="/canvas"
             element={
               <MemberRoute>
                 <div>protected-content</div>
               </MemberRoute>
             }
           />
-          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/" element={<div>home-page</div>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -42,29 +42,29 @@ describe("MemberRoute", () => {
     expect(screen.getByText("protected-content")).toBeDefined();
   });
 
-  it("redirects to /login when user is not authenticated", () => {
+  it("redirects to / when user is not authenticated", () => {
     useAppStore.setState({
       user: null,
       authLoading: false,
     });
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/canvas"]}>
         <Routes>
           <Route
-            path="/"
+            path="/canvas"
             element={
               <MemberRoute>
                 <div>protected-content</div>
               </MemberRoute>
             }
           />
-          <Route path="/login" element={<div>login-page</div>} />
+          <Route path="/" element={<div>home-page</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("login-page")).toBeDefined();
+    expect(screen.getByText("home-page")).toBeDefined();
   });
 });
 
@@ -78,7 +78,7 @@ describe("AnonymousRoute", () => {
     render(
       <MemoryRouter initialEntries={["/login"]}>
         <Routes>
-          <Route path="/" element={<div>home-page</div>} />
+          <Route path="/canvas" element={<div>canvas-page</div>} />
           <Route
             path="/login"
             element={
@@ -94,7 +94,7 @@ describe("AnonymousRoute", () => {
     expect(screen.getByText("login-form")).toBeDefined();
   });
 
-  it("redirects to / when user is authenticated", () => {
+  it("redirects to /canvas when user is authenticated", () => {
     useAppStore.setState({
       user: { id: "u1", email: "gandalf@middle.earth" },
       authLoading: false,
@@ -103,7 +103,7 @@ describe("AnonymousRoute", () => {
     render(
       <MemoryRouter initialEntries={["/login"]}>
         <Routes>
-          <Route path="/" element={<div>home-page</div>} />
+          <Route path="/canvas" element={<div>canvas-page</div>} />
           <Route
             path="/login"
             element={
@@ -116,6 +116,6 @@ describe("AnonymousRoute", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("home-page")).toBeDefined();
+    expect(screen.getByText("canvas-page")).toBeDefined();
   });
 });
