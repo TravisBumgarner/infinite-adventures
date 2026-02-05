@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Canvas from "../pages/Canvas/Canvas";
 import Login from "../pages/Login/Login.js";
+import Marketing from "../pages/Marketing/Marketing";
 import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
 import Signup from "../pages/Signup/Signup.js";
 import { useAppStore } from "../stores/appStore";
@@ -12,7 +13,7 @@ export function MemberRoute({ children }: { children: ReactNode }) {
   const loading = useAppStore((s) => s.authLoading);
 
   if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   return <>{children}</>;
 }
@@ -22,16 +23,34 @@ export function AnonymousRoute({ children }: { children: ReactNode }) {
   const loading = useAppStore((s) => s.authLoading);
 
   if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/canvas" replace />;
 
   return <>{children}</>;
+}
+
+function HomePage() {
+  const user = useAppStore((s) => s.user);
+  const loading = useAppStore((s) => s.authLoading);
+
+  if (loading) return null;
+
+  if (user) {
+    return (
+      <ReactFlowProvider>
+        <Canvas />
+      </ReactFlowProvider>
+    );
+  }
+
+  return <Marketing />;
 }
 
 export default function Router() {
   return (
     <Routes>
+      <Route path="/" element={<HomePage />} />
       <Route
-        path="/"
+        path="/canvas"
         element={
           <MemberRoute>
             <ReactFlowProvider>

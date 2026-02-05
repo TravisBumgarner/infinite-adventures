@@ -1,4 +1,5 @@
 import CloseIcon from "@mui/icons-material/Close";
+import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -9,6 +10,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
+import { logout } from "../../../auth/service";
 import { SIDEBAR_WIDTH } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
@@ -180,6 +182,22 @@ export function SettingsSidebar() {
           rel="noopener noreferrer"
         >
           Join us on Discord
+        </Button>
+      </Box>
+
+      {/* Logout */}
+      <Box sx={{ mt: "auto" }}>
+        <Button
+          variant="outlined"
+          color="error"
+          fullWidth
+          startIcon={<LogoutIcon />}
+          onClick={async () => {
+            await logout();
+            window.location.href = "/";
+          }}
+        >
+          Log Out
         </Button>
       </Box>
     </Drawer>
