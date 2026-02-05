@@ -22,6 +22,7 @@ import {
   sessions,
   things,
 } from "../db/schema.js";
+import { resolveCanvasItemLinks } from "./canvasItemLinkService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 
 export const DEFAULT_CANVAS_ID = "00000000-0000-4000-8000-000000000000";
@@ -274,6 +275,9 @@ export async function updateItem(
         updated_at: now,
       })
       .where(eq(contentTable.id, existing.content_id));
+
+    // Process @mentions and update links
+    await resolveCanvasItemLinks(id, input.notes);
   }
 
   // Get updated item

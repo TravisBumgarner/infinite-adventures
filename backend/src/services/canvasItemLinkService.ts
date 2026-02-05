@@ -84,14 +84,17 @@ export function parseMentionsWithPositions(content: string): MentionWithPosition
 /**
  * Extract a snippet of text surrounding a mention.
  * Returns ~wordsAround words before and after the mention.
+ * If displayTitle is provided, it replaces the raw mention text with @Title format.
  */
 export function extractSnippet(
   content: string,
   startIndex: number,
   endIndex: number,
   wordsAround: number = 10,
+  displayTitle?: string,
 ): string {
-  const mentionText = content.slice(startIndex, endIndex);
+  // Use @Title format if displayTitle provided, otherwise use raw mention text
+  const mentionText = displayTitle ? `@${displayTitle}` : content.slice(startIndex, endIndex);
 
   // Get text before and after the mention
   const textBefore = content.slice(0, startIndex);
@@ -210,8 +213,14 @@ export async function resolveCanvasItemLinks(
 
     // Don't link an item to itself
     if (targetItem.id !== sourceItemId) {
-      // Extract snippet for this mention
-      const snippet = extractSnippet(content, mention.startIndex, mention.endIndex, 10);
+      // Extract snippet for this mention, using the resolved title for display
+      const snippet = extractSnippet(
+        content,
+        mention.startIndex,
+        mention.endIndex,
+        10,
+        targetItem.title,
+      );
 
       // Insert or update the link with snippet
       await db

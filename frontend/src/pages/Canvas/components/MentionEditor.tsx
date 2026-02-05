@@ -20,6 +20,7 @@ interface MentionEditorProps {
   itemsCache: Map<string, CanvasItem>;
   canvasId: string;
   style?: React.CSSProperties;
+  containerStyle?: React.CSSProperties;
 }
 
 interface SuggestionItem {
@@ -272,6 +273,7 @@ export default function MentionEditor({
   itemsCache,
   canvasId,
   style,
+  containerStyle,
 }: MentionEditorProps) {
   const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
@@ -362,9 +364,9 @@ export default function MentionEditor({
   }, [value, editor, itemsCache]);
 
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", ...containerStyle }}>
       <FormattingToolbar editor={editor} />
-      <div style={style} className="mention-editor-wrapper">
+      <div style={{ ...style, flex: 1 }} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
       </div>
       <SuggestionController
