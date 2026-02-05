@@ -3,6 +3,7 @@ import type { Photo } from "shared";
 // Modal IDs
 export const MODAL_ID = {
   DELETE_ITEM: "DELETE_ITEM",
+  BULK_DELETE: "BULK_DELETE",
   LIGHTBOX: "LIGHTBOX",
   ITEM_SETTINGS: "ITEM_SETTINGS",
 } as const;
@@ -14,6 +15,12 @@ export interface DeleteItemModalProps {
   id: typeof MODAL_ID.DELETE_ITEM;
   itemId: string;
   itemTitle: string;
+  onConfirm: () => void;
+}
+
+export interface BulkDeleteModalProps {
+  id: typeof MODAL_ID.BULK_DELETE;
+  itemCount: number;
   onConfirm: () => void;
 }
 
@@ -30,4 +37,8 @@ export interface ItemSettingsModalProps {
 }
 
 // Union type of all modals
-export type ActiveModal = DeleteItemModalProps | LightboxModalProps | ItemSettingsModalProps;
+export type ActiveModal =
+  | DeleteItemModalProps
+  | BulkDeleteModalProps
+  | LightboxModalProps
+  | ItemSettingsModalProps;

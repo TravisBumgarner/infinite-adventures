@@ -14,6 +14,12 @@ interface NodeContextMenuState {
   nodeId: string;
 }
 
+interface SelectionContextMenuState {
+  x: number;
+  y: number;
+  nodeIds: string[];
+}
+
 const ACTIVE_CANVAS_KEY = "infinite-adventures-active-canvas";
 
 export function getViewportKey(canvasId: string): string {
@@ -51,6 +57,9 @@ interface CanvasState {
 
   nodeContextMenu: NodeContextMenuState | null;
   setNodeContextMenu: (menu: NodeContextMenuState | null) => void;
+
+  selectionContextMenu: SelectionContextMenuState | null;
+  setSelectionContextMenu: (menu: SelectionContextMenuState | null) => void;
 
   activeTypes: Set<CanvasItemType>;
   toggleType: (type: CanvasItemType) => void;
@@ -106,6 +115,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
       editingItemId: null,
       contextMenu: null,
       nodeContextMenu: null,
+      selectionContextMenu: null,
       showSettings: false,
     }),
 
@@ -114,6 +124,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   nodeContextMenu: null,
   setNodeContextMenu: (menu) => set({ nodeContextMenu: menu }),
+
+  selectionContextMenu: null,
+  setSelectionContextMenu: (menu) => set({ selectionContextMenu: menu }),
 
   activeTypes: new Set(),
   toggleType: (type) =>

@@ -17,6 +17,7 @@ import ContextMenu from "./components/ContextMenu";
 import FilterBar from "./components/FilterBar";
 import NodeContextMenu from "./components/NodeContextMenu";
 import SearchBar from "./components/SearchBar";
+import SelectionContextMenu from "./components/SelectionContextMenu";
 import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
 import Toolbar from "./components/Toolbar";
 import TopBar from "./components/TopBar";
@@ -38,10 +39,12 @@ export default function Canvas() {
   const showSettings = useCanvasStore((s) => s.showSettings);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
   const nodeContextMenu = useCanvasStore((s) => s.nodeContextMenu);
+  const selectionContextMenu = useCanvasStore((s) => s.selectionContextMenu);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
   const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
+  const setSelectionContextMenu = useCanvasStore((s) => s.setSelectionContextMenu);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
 
   const toastMessage = useAppStore((s) => s.toastMessage);
@@ -95,9 +98,11 @@ export default function Canvas() {
     onPaneContextMenu,
     onNodeClick,
     onNodeContextMenu,
+    onSelectionContextMenu,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,
+    handleBulkDelete,
     viewportKey,
   } = useCanvasActions();
 
@@ -158,11 +163,14 @@ export default function Canvas() {
         onPaneContextMenu={onPaneContextMenu}
         onNodeClick={onNodeClick}
         onNodeContextMenu={onNodeContextMenu}
+        onSelectionContextMenu={onSelectionContextMenu}
         onNodeDragStop={onNodeDragStop}
         onConnect={onConnect}
         onMoveEnd={onMoveEnd}
         selectionOnDrag
-        multiSelectionKeyCode="Shift"
+        panOnDrag={[1, 2]}
+        selectionKeyCode={null}
+        multiSelectionKeyCode={null}
         minZoom={0.1}
         fitView={!localStorage.getItem(viewportKey)}
         proOptions={{ hideAttribution: true }}
@@ -226,6 +234,16 @@ export default function Canvas() {
             handleDeleted(nodeContextMenu.nodeId);
           }}
           onClose={() => setNodeContextMenu(null)}
+        />
+      )}
+
+      {selectionContextMenu && (
+        <SelectionContextMenu
+          x={selectionContextMenu.x}
+          y={selectionContextMenu.y}
+          nodeIds={selectionContextMenu.nodeIds}
+          onBulkDelete={() => handleBulkDelete(selectionContextMenu.nodeIds)}
+          onClose={() => setSelectionContextMenu(null)}
         />
       )}
 

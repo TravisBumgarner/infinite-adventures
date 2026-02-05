@@ -1,3 +1,4 @@
+import BulkDeleteModal from "./components/BulkDeleteModal";
 import DeleteItemModal from "./components/DeleteItemModal";
 import ItemSettingsModal from "./components/ItemSettingsModal";
 import LightboxModal from "./components/LightboxModal";
@@ -12,6 +13,8 @@ export default function ModalRenderer() {
   switch (activeModal.id) {
     case MODAL_ID.DELETE_ITEM:
       return <DeleteItemModal {...activeModal} />;
+    case MODAL_ID.BULK_DELETE:
+      return <BulkDeleteModal {...activeModal} />;
     case MODAL_ID.LIGHTBOX:
       return <LightboxModal {...activeModal} />;
     case MODAL_ID.ITEM_SETTINGS:

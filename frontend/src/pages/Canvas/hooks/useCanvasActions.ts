@@ -82,6 +82,7 @@ export function useCanvasActions() {
     setEditingItemId,
     setContextMenu,
     setNodeContextMenu,
+    setSelectionContextMenu,
     setShowSettings,
   } = useCanvasStore();
 
@@ -231,13 +232,63 @@ export function useCanvasActions() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
-      setNodeContextMenu({
+      // Check if multiple nodes are selected
+      const selectedNodes = nodes.filter((n) => n.selected);
+      if (selectedNodes.length > 1 && selectedNodes.some((n) => n.id === node.id)) {
+        // Show selection context menu for multiple selected nodes
+        setSelectionContextMenu({
+          x: event.clientX,
+          y: event.clientY,
+          nodeIds: selectedNodes.map((n) => n.id),
+        });
+      } else {
+        // Show single node context menu
+        setNodeContextMenu({
+          x: event.clientX,
+          y: event.clientY,
+          nodeId: node.id,
+        });
+      }
+    },
+    [nodes, setNodeContextMenu, setSelectionContextMenu],
+  );
+
+  // Right-click on selection to open selection context menu
+  const onSelectionContextMenu = useCallback(
+    (event: React.MouseEvent, selectedNodes: Node[]) => {
+      event.preventDefault();
+      setSelectionContextMenu({
         x: event.clientX,
         y: event.clientY,
-        nodeId: node.id,
+        nodeIds: selectedNodes.map((n) => n.id),
       });
     },
-    [setNodeContextMenu],
+    [setSelectionContextMenu],
+  );
+
+  // Bulk delete selected items
+  const handleBulkDelete = useCallback(
+    async (nodeIds: string[]) => {
+      const cache = useCanvasStore.getState().itemsCache;
+      const nextCache = new Map(cache);
+
+      // Delete all items
+      await Promise.all(nodeIds.map((id) => api.deleteItem(id)));
+
+      // Remove from cache
+      for (const id of nodeIds) {
+        nextCache.delete(id);
+      }
+      setItemsCache(nextCache);
+
+      // Remove from nodes and edges
+      setNodes((nds) => nds.filter((n) => !nodeIds.includes(n.id)));
+      setEdges((eds) =>
+        eds.filter((e) => !nodeIds.includes(e.source) && !nodeIds.includes(e.target)),
+      );
+      setEditingItemId(null);
+    },
+    [setNodes, setEdges, setItemsCache, setEditingItemId],
   );
 
   // View All: fit all nodes in viewport
@@ -375,8 +426,15 @@ export function useCanvasActions() {
     setEditingItemId(null);
     setContextMenu(null);
     setNodeContextMenu(null);
+    setSelectionContextMenu(null);
     setShowSettings(false);
-  }, [setEditingItemId, setContextMenu, setNodeContextMenu, setShowSettings]);
+  }, [
+    setEditingItemId,
+    setContextMenu,
+    setNodeContextMenu,
+    setSelectionContextMenu,
+    setShowSettings,
+  ]);
 
   return {
     // React Flow state
@@ -400,9 +458,11 @@ export function useCanvasActions() {
     onPaneContextMenu,
     onNodeClick,
     onNodeContextMenu,
+    onSelectionContextMenu,
     onNodeDragStop,
     onMoveEnd,
     onPaneClick,
+    handleBulkDelete,
 
     // Viewport key for fitView check
     viewportKey: activeCanvasId ? getViewportKey(activeCanvasId) : "",
