@@ -5,6 +5,7 @@ import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HubIcon from "@mui/icons-material/Hub";
 import ImageIcon from "@mui/icons-material/Image";
+import LightModeIcon from "@mui/icons-material/LightMode";
 import MapIcon from "@mui/icons-material/Map";
 import NotesIcon from "@mui/icons-material/Notes";
 import PersonIcon from "@mui/icons-material/Person";
@@ -18,10 +19,12 @@ import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import Container from "@mui/material/Container";
 import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
+import { useThemePreference } from "../../styles/Theme";
 
 const ITEM_TYPES = [
   { label: "Person", color: "#f5c2e7", icon: <PersonIcon fontSize="small" /> },
@@ -84,6 +87,11 @@ const FEATURES = [
 
 export default function Marketing() {
   const theme = useTheme();
+  const { effectiveMode, setPreference } = useThemePreference();
+
+  const toggleTheme = () => {
+    setPreference(effectiveMode === "dark" ? "light" : "dark");
+  };
 
   return (
     <Box
@@ -114,7 +122,14 @@ export default function Marketing() {
             <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-text)" }}>
               Infinite Adventures
             </Typography>
-            <Stack direction="row" spacing={2}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton
+                onClick={toggleTheme}
+                title={effectiveMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                sx={{ color: "var(--color-subtext0)" }}
+              >
+                {effectiveMode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
               <Button component={Link} to="/login" variant="text">
                 Log in
               </Button>
