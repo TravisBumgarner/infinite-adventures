@@ -14,6 +14,7 @@ interface ContextMenuProps {
   onSelect: (type: CanvasItemType) => void;
   onViewAll: () => void;
   onUnstack: () => void;
+  onExportPdf: () => void;
   onClose: () => void;
 }
 
@@ -23,6 +24,7 @@ export default function ContextMenu({
   onSelect,
   onViewAll,
   onUnstack,
+  onExportPdf,
   onClose,
 }: ContextMenuProps) {
   const theme = useTheme();
@@ -171,6 +173,14 @@ export default function ContextMenu({
           }}
         >
           Unstack Overlapping Items
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            onExportPdf();
+            onClose();
+          }}
+        >
+          Save view as PDF
         </MenuItem>
       </Menu>
     </>

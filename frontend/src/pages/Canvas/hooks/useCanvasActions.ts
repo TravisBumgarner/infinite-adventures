@@ -5,7 +5,6 @@ import type { CanvasItem, CanvasItemType } from "shared";
 import * as api from "../../../api/client";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
-import { appendMentionIfNew } from "../../../utils/edgeConnect";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
 import { getSelectedNodePositions } from "../../../utils/multiSelect";
 import type { CanvasItemNodeData } from "../components/CanvasItemNode";
@@ -51,17 +50,27 @@ function toFlowNode(
   };
 }
 
-function buildEdges(items: CanvasItem[]): Edge[] {
+function buildEdges(
+  items: CanvasItem[],
+  cache: Map<string, CanvasItem>,
+  onDelete: (sourceId: string, targetId: string) => void,
+): Edge[] {
   const edges: Edge[] = [];
   for (const item of items) {
     if (!item.links_to) continue;
     for (const link of item.links_to) {
+      const targetItem = cache.get(link.id);
       edges.push({
         id: `${item.id}->${link.id}`,
         source: item.id,
         target: link.id,
+        type: "deletable",
         style: { stroke: "var(--color-surface2)", strokeWidth: 1.5 },
-        animated: false,
+        data: {
+          onDelete,
+          sourceTitle: item.title,
+          targetTitle: targetItem?.title ?? "Unknown",
+        },
       });
     }
   }
@@ -103,6 +112,29 @@ export function useCanvasActions() {
   const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
   const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 
+  // Handle edge deletion
+  const handleDeleteEdge = useCallback(
+    async (sourceId: string, targetId: string) => {
+      await api.deleteLink(sourceId, targetId);
+
+      // Refetch both items to get updated links
+      const [sourceItem, targetItem] = await Promise.all([
+        api.fetchItem(sourceId),
+        api.fetchItem(targetId),
+      ]);
+
+      const cache = useCanvasStore.getState().itemsCache;
+      const nextCache = new Map(cache);
+      nextCache.set(sourceItem.id, sourceItem);
+      nextCache.set(targetItem.id, targetItem);
+      setItemsCache(nextCache);
+
+      // Remove the edge immediately from UI
+      setEdges((eds) => eds.filter((e) => !(e.source === sourceId && e.target === targetId)));
+    },
+    [setEdges, setItemsCache],
+  );
+
   // Fit viewport to show both source and target items
   const fitBothItems = useCallback(
     (sourceId: string, targetId: string) => {
@@ -123,9 +155,9 @@ export function useCanvasActions() {
       const cache = new Map(fullItems.map((i) => [i.id, i]));
       setItemsCache(cache);
       setNodes(fullItems.map((i) => toFlowNode(i, cache, fitBothItems)));
-      setEdges(buildEdges(fullItems));
+      setEdges(buildEdges(fullItems, cache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
   );
 
   // Load items when activeCanvasId changes
@@ -204,7 +236,7 @@ export function useCanvasActions() {
 
   // Right-click canvas to open context menu
   const onPaneContextMenu = useCallback(
-    (event: React.MouseEvent) => {
+    (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX,
@@ -220,9 +252,31 @@ export function useCanvasActions() {
     [reactFlowInstance, setContextMenu],
   );
 
+  // Handle drop from toolbar
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData("application/canvas-item-type") as CanvasItemType;
+      if (!type) return;
+
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      // Offset to center the item at the drop point (item is ~210px wide, ~80px tall)
+      createItemAtPosition(type, position.x - 105, position.y - 40);
+    },
+    [reactFlowInstance, createItemAtPosition],
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
   // Left-click a node to open the item panel
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: MouseEvent | React.MouseEvent, node: Node) => {
       setEditingItemId(node.id);
     },
     [setEditingItemId],
@@ -358,32 +412,26 @@ export function useCanvasActions() {
   // Handle edge creation by dragging between handles
   const onConnect = useCallback(
     async (connection: Connection) => {
+      const result = await api.createLink(connection.source, connection.target);
+      if (!result.created) return;
+
+      // Refetch both items to get updated links
+      const [sourceItem, targetItem] = await Promise.all([
+        api.fetchItem(connection.source),
+        api.fetchItem(connection.target),
+      ]);
+
       const cache = useCanvasStore.getState().itemsCache;
-      const sourceItem = cache.get(connection.source);
-      if (!sourceItem) return;
-
-      const currentNoteContent = sourceItem.notes[0]?.content ?? "";
-      const newContent = appendMentionIfNew(currentNoteContent, connection.target);
-      if (newContent === null) return;
-
-      // Update or create the note with the new content
-      const firstNote = sourceItem.notes[0];
-      if (firstNote) {
-        await api.updateNote(firstNote.id, { content: newContent });
-      } else {
-        await api.createNote(sourceItem.id, { content: newContent });
-      }
-
-      const fullItem = await api.fetchItem(sourceItem.id);
       const nextCache = new Map(cache);
-      nextCache.set(fullItem.id, fullItem);
+      nextCache.set(sourceItem.id, sourceItem);
+      nextCache.set(targetItem.id, targetItem);
       setItemsCache(nextCache);
 
       const allItems = Array.from(nextCache.values());
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
-      setEdges(buildEdges(allItems));
+      setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
   );
 
   // Editor callbacks
@@ -406,9 +454,9 @@ export function useCanvasActions() {
 
       const allItems = Array.from(nextCache.values());
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
-      setEdges(buildEdges(allItems));
+      setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
   );
 
   const handleDeleted = useCallback(
@@ -435,6 +483,25 @@ export function useCanvasActions() {
     setSelectionContextMenu,
     setShowSettings,
   ]);
+
+  // Edge hover handlers
+  const onEdgeMouseEnter = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      setEdges((eds) =>
+        eds.map((e) => (e.id === edge.id ? { ...e, data: { ...e.data, isHovered: true } } : e)),
+      );
+    },
+    [setEdges],
+  );
+
+  const onEdgeMouseLeave = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      setEdges((eds) =>
+        eds.map((e) => (e.id === edge.id ? { ...e, data: { ...e.data, isHovered: false } } : e)),
+      );
+    },
+    [setEdges],
+  );
 
   return {
     // React Flow state
@@ -463,6 +530,10 @@ export function useCanvasActions() {
     onMoveEnd,
     onPaneClick,
     handleBulkDelete,
+    onDrop,
+    onDragOver,
+    onEdgeMouseEnter,
+    onEdgeMouseLeave,
 
     // Viewport key for fitView check
     viewportKey: activeCanvasId ? getViewportKey(activeCanvasId) : "",

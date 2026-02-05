@@ -3,24 +3,29 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import SettingsIcon from "@mui/icons-material/Settings";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CanvasItem, CanvasItemType, Note } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
@@ -80,6 +85,9 @@ export default function CanvasItemPanel({
   // Connections tab state
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
+
+  // Menu state
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Modal store
   const openModal = useModalStore((s) => s.openModal);
@@ -199,19 +207,102 @@ export default function CanvasItemPanel({
     });
   }
 
-  function handleOpenSettings() {
+  function handleOpenDeleteModal() {
+    setMenuAnchor(null);
     openModal({
-      id: MODAL_ID.ITEM_SETTINGS,
+      id: MODAL_ID.DELETE_ITEM,
       itemId,
-      onDeleteClick: () => {
-        openModal({
-          id: MODAL_ID.DELETE_ITEM,
-          itemId,
-          itemTitle: title,
-          onConfirm: handleDeleteItem,
-        });
-      },
+      itemTitle: title,
+      onConfirm: handleDeleteItem,
     });
+  }
+
+  function handleDownloadPdf() {
+    setMenuAnchor(null);
+    if (!item) return;
+
+    // Build connections list
+    const connections = [
+      ...(item.links_to?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
+      ...(item.linked_from?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
+    ];
+
+    // Generate HTML content
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${item.title}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #333; }
+          h1 { margin-bottom: 8px; }
+          .type-badge { display: inline-block; background: #666; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 24px; }
+          h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 32px; }
+          .note { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; white-space: pre-wrap; }
+          .note-date { font-size: 12px; color: #888; margin-top: 8px; }
+          .photos { display: flex; flex-wrap: wrap; gap: 12px; }
+          .photo { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
+          .connection { padding: 8px 0; border-bottom: 1px solid #eee; }
+          .connection:last-child { border-bottom: none; }
+          .direction { color: #888; font-size: 14px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <h1>${item.title}</h1>
+        <span class="type-badge">${item.type}</span>
+
+        <h2>Notes (${notes.length})</h2>
+        ${
+          notes.length === 0
+            ? '<p style="color: #888;">No notes</p>'
+            : notes
+                .map(
+                  (note) => `
+          <div class="note">
+            ${note.content.replace(/<[^>]*>/g, "").replace(/@\{([^}]+)\}/g, (_, id) => {
+              const linked = itemsCache.get(id);
+              return linked ? `@${linked.title}` : "@mention";
+            })}
+            <div class="note-date">Last edited: ${new Date(note.updated_at).toLocaleDateString()}</div>
+          </div>
+        `,
+                )
+                .join("")
+        }
+
+        <h2>Photos (${photos.length})</h2>
+        ${photos.length === 0 ? '<p style="color: #888;">No photos</p>' : `<div class="photos">${photos.map((photo) => `<img class="photo" src="${photo.url}" alt="${photo.original_name}" />`).join("")}</div>`}
+
+        <h2>Connections (${connections.length})</h2>
+        ${
+          connections.length === 0
+            ? '<p style="color: #888;">No connections</p>'
+            : connections
+                .map(
+                  (c) => `
+          <div class="connection">
+            <span class="direction">${c.direction === "outgoing" ? "→" : "←"}</span>
+            <strong>${c.title}</strong>
+            <span style="color: #888; font-size: 12px; margin-left: 8px;">${c.type}</span>
+          </div>
+        `,
+                )
+                .join("")
+        }
+      </body>
+      </html>
+    `;
+
+    // Open in new window and trigger print
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   }
 
   function handleTitleKeyDown(e: React.KeyboardEvent) {
@@ -259,6 +350,27 @@ export default function CanvasItemPanel({
     flushNote();
     setEditingNoteId(null);
     setNoteContent("");
+  }
+
+  // Create a new canvas item from mention popup and return its id/title
+  async function handleCreateMentionItem(
+    title: string,
+  ): Promise<{ id: string; title: string } | null> {
+    if (!activeCanvasId || !item) return null;
+    try {
+      // Create new item near the current item
+      const newItem = await api.createItem(activeCanvasId, {
+        type: "person", // Default to person type
+        title,
+        canvas_x: item.canvas_x + 220, // Offset to the right
+        canvas_y: item.canvas_y,
+      });
+      // Notify parent so the new item appears on the canvas
+      onSaved(newItem);
+      return { id: newItem.id, title: newItem.title };
+    } catch {
+      return null;
+    }
   }
 
   function getNotePreview(content: string): string {
@@ -381,20 +493,6 @@ export default function CanvasItemPanel({
             {title}
           </Typography>
         )}
-        <IconButton
-          size="small"
-          onClick={() => setIsEditingTitle(true)}
-          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
-        >
-          <EditIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={handleOpenSettings}
-          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
-        >
-          <SettingsIcon sx={{ fontSize: 16 }} />
-        </IconButton>
         <Chip
           label={typeInfo?.label ?? item.type}
           size="small"
@@ -406,6 +504,52 @@ export default function CanvasItemPanel({
             height: 22,
           }}
         />
+        <IconButton
+          size="small"
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+        >
+          <MoreVertIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "var(--color-base)",
+                border: "1px solid var(--color-surface1)",
+                minWidth: 180,
+              },
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              setIsEditingTitle(true);
+            }}
+          >
+            <ListItemIcon>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Title
+          </MenuItem>
+          <MenuItem onClick={handleDownloadPdf}>
+            <ListItemIcon>
+              <PictureAsPdfIcon fontSize="small" />
+            </ListItemIcon>
+            Download PDF
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={handleOpenDeleteModal} sx={{ color: "var(--color-red)" }}>
+            <ListItemIcon sx={{ color: "inherit" }}>
+              <DeleteIcon fontSize="small" />
+            </ListItemIcon>
+            Delete Item
+          </MenuItem>
+        </Menu>
         <IconButton onClick={onClose} sx={{ color: "var(--color-text)", ml: "auto" }}>
           <CloseIcon />
         </IconButton>
@@ -462,7 +606,6 @@ export default function CanvasItemPanel({
                     key={note.id}
                     onClick={() => handleSelectNote(note)}
                     sx={{
-                      borderRadius: 1.5,
                       mb: 1,
                       py: 1.5,
                       px: 2,
@@ -529,11 +672,11 @@ export default function CanvasItemPanel({
             }}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
+            onCreate={handleCreateMentionItem}
             containerStyle={{ flex: 1, minHeight: 0 }}
             style={{
               background: "var(--color-surface0)",
               border: "1px solid var(--color-surface1)",
-              borderRadius: "6px",
               padding: "8px 10px",
               color: "var(--color-text)",
               fontSize: 14,

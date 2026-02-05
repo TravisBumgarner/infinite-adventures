@@ -9,8 +9,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import type { CanvasItem, CanvasItemSummary, CanvasItemType } from "shared";
-import * as api from "../../../api/client";
+import { createPortal } from "react-dom";
+import type { CanvasItem, CanvasItemType } from "shared";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -21,6 +21,7 @@ interface MentionEditorProps {
   canvasId: string;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
+  onCreate?: (title: string) => Promise<{ id: string; title: string } | null>;
 }
 
 interface SuggestionItem {
@@ -34,12 +35,14 @@ function SuggestionPopup({
   query,
   selectedIndex,
   onSelect,
+  onCreate,
   nodeTypes,
 }: {
   items: SuggestionItem[];
   query: string;
   selectedIndex: number;
   onSelect: (item: SuggestionItem) => void;
+  onCreate?: (title: string) => void;
   nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
 }) {
   const hasCreateOption =
@@ -86,12 +89,12 @@ function SuggestionPopup({
           </MenuItem>
         );
       })}
-      {hasCreateOption && (
+      {hasCreateOption && onCreate && (
         <MenuItem
           selected={selectedIndex === items.length}
           onMouseDown={(e) => {
             e.preventDefault();
-            onSelect({ id: "", title: query, type: "person" });
+            onCreate(query);
           }}
           sx={{
             fontStyle: "italic",
@@ -109,24 +112,62 @@ function SuggestionPopup({
 interface SuggestionComponentRef {
   onKeyDown: (event: KeyboardEvent) => boolean;
   updateProps: (props: SuggestionProps<SuggestionItem>) => void;
+  dismiss: () => void;
+}
+
+interface SuggestionPosition {
+  top: number;
+  left: number;
 }
 
 const SuggestionController = forwardRef<
   SuggestionComponentRef,
   {
-    onRender: (element: React.ReactNode | null) => void;
+    onRender: (element: React.ReactNode | null, position: SuggestionPosition | null) => void;
     nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
+    onCreate?: (title: string) => Promise<{ id: string; title: string } | null>;
   }
->(({ onRender, nodeTypes }, ref) => {
+>(({ onRender, nodeTypes, onCreate }, ref) => {
   const [items, setItems] = useState<SuggestionItem[]>([]);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [position, setPosition] = useState<SuggestionPosition | null>(null);
+  const [isActive, setIsActive] = useState(false);
   const commandRef = useRef<((props: { id: string; label: string }) => void) | null>(null);
+
+  const dismiss = useCallback(() => {
+    setIsActive(false);
+    onRender(null, null);
+  }, [onRender]);
+
+  const handleCreate = useCallback(
+    async (title: string) => {
+      if (!onCreate) return;
+      const result = await onCreate(title);
+      if (result) {
+        commandRef.current?.({ id: result.id, label: result.title });
+      }
+      dismiss();
+    },
+    [onCreate, dismiss],
+  );
+
+  const handleSelect = useCallback(
+    (item: SuggestionItem) => {
+      commandRef.current?.({ id: item.id, label: item.title });
+      dismiss();
+    },
+    [dismiss],
+  );
 
   useImperativeHandle(ref, () => ({
     onKeyDown(event: KeyboardEvent): boolean {
+      if (!isActive) return false;
+
       const hasCreateOption =
-        query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
+        onCreate &&
+        query.length > 0 &&
+        !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
       const totalItems = items.length + (hasCreateOption ? 1 : 0);
 
       if (event.key === "ArrowDown") {
@@ -140,14 +181,14 @@ const SuggestionController = forwardRef<
       if (event.key === "Enter" || event.key === "Tab") {
         if (selectedIndex < items.length) {
           const item = items[selectedIndex]!;
-          commandRef.current?.({ id: item.id, label: item.title });
+          handleSelect(item);
         } else if (hasCreateOption) {
-          commandRef.current?.({ id: "", label: query });
+          handleCreate(query);
         }
         return true;
       }
       if (event.key === "Escape") {
-        onRender(null);
+        dismiss();
         return true;
       }
       return false;
@@ -156,23 +197,45 @@ const SuggestionController = forwardRef<
       setItems(props.items);
       setQuery(props.query);
       setSelectedIndex(0);
+      setIsActive(true);
       commandRef.current = props.command as unknown as (p: { id: string; label: string }) => void;
+      // Get cursor position from clientRect
+      const rect = props.clientRect?.();
+      if (rect) {
+        setPosition({ top: rect.top, left: rect.left });
+      }
+    },
+    dismiss() {
+      dismiss();
     },
   }));
 
   useEffect(() => {
+    if (!isActive) return;
+
     onRender(
       <SuggestionPopup
         items={items}
         query={query}
         selectedIndex={selectedIndex}
-        onSelect={(item) => {
-          commandRef.current?.({ id: item.id, label: item.title });
-        }}
+        onSelect={handleSelect}
+        onCreate={onCreate ? handleCreate : undefined}
         nodeTypes={nodeTypes}
       />,
+      position,
     );
-  }, [items, query, selectedIndex, onRender, nodeTypes]);
+  }, [
+    items,
+    query,
+    selectedIndex,
+    onRender,
+    nodeTypes,
+    onCreate,
+    handleSelect,
+    handleCreate,
+    position,
+    isActive,
+  ]);
 
   return null;
 });
@@ -191,7 +254,6 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
         bgcolor: "var(--color-base)",
         border: "1px solid var(--color-surface1)",
         borderBottom: "none",
-        borderRadius: "6px 6px 0 0",
       }}
     >
       <IconButton
@@ -271,18 +333,24 @@ export default function MentionEditor({
   value,
   onChange,
   itemsCache,
-  canvasId,
+  canvasId: _canvasId,
   style,
   containerStyle,
+  onCreate,
 }: MentionEditorProps) {
   const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
+  const [suggestionPosition, setSuggestionPosition] = useState<SuggestionPosition | null>(null);
   const suggestionRef = useRef<SuggestionComponentRef>(null);
   const isInternalChange = useRef(false);
 
-  const handleRender = useCallback((element: React.ReactNode | null) => {
-    setSuggestionPopup(element);
-  }, []);
+  const handleRender = useCallback(
+    (element: React.ReactNode | null, position: SuggestionPosition | null) => {
+      setSuggestionPopup(element);
+      setSuggestionPosition(position);
+    },
+    [],
+  );
 
   const editor = useEditor({
     extensions: [
@@ -297,14 +365,14 @@ export default function MentionEditor({
           class: "mention",
         },
         suggestion: {
-          items: async ({ query }: { query: string }) => {
-            const summaries = await api.fetchItems(canvasId);
-            return summaries
-              .filter((n: CanvasItemSummary) => n.title.toLowerCase().includes(query.toLowerCase()))
-              .map((n: CanvasItemSummary) => ({
-                id: n.id,
-                title: n.title,
-                type: n.type,
+          items: ({ query }: { query: string }) => {
+            // Use the cached items instead of fetching from API
+            return Array.from(itemsCache.values())
+              .filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
+              .map((item) => ({
+                id: item.id,
+                title: item.title,
+                type: item.type,
               }));
           },
           render: () => {
@@ -319,7 +387,7 @@ export default function MentionEditor({
                 return suggestionRef.current?.onKeyDown(props.event) ?? false;
               },
               onExit: () => {
-                setSuggestionPopup(null);
+                suggestionRef.current?.dismiss();
               },
             };
           },
@@ -373,21 +441,25 @@ export default function MentionEditor({
         ref={suggestionRef}
         onRender={handleRender}
         nodeTypes={theme.palette.canvasItemTypes}
+        onCreate={onCreate}
       />
-      {suggestionPopup && (
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: "100%",
-            left: 0,
-            right: 0,
-            mb: 0.5,
-            zIndex: 200,
-          }}
-        >
-          {suggestionPopup}
-        </Box>
-      )}
+      {suggestionPopup &&
+        suggestionPosition &&
+        createPortal(
+          <Box
+            sx={{
+              position: "fixed",
+              top: suggestionPosition.top,
+              left: suggestionPosition.left,
+              transform: "translateY(-100%)",
+              zIndex: 1300,
+              mb: 0.5,
+            }}
+          >
+            {suggestionPopup}
+          </Box>,
+          document.body,
+        )}
     </Box>
   );
 }

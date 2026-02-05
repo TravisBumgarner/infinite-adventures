@@ -5,6 +5,7 @@ import multer from "multer";
 import { initDb } from "./db/connection.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
+import { linksRouter } from "./routes/links/index.js";
 import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
 
@@ -36,6 +37,9 @@ app.use("/api/items/:itemId/notes", itemNotesRouter);
 // Photo routes
 app.use("/api/photos", photosRouter);
 app.use("/api/items/:itemId/photos", upload.single("photo"), itemPhotosRouter);
+
+// Link routes
+app.use("/api/links", linksRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

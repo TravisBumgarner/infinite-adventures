@@ -1,20 +1,22 @@
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import CheckIcon from "@mui/icons-material/Check";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import TextField from "@mui/material/TextField";
 import { useState } from "react";
 import type { CanvasSummary } from "shared";
+import { MODAL_ID, useModalStore } from "../../../modals";
 
 export interface CanvasPickerProps {
   canvases: CanvasSummary[];
   activeCanvasId: string;
   onSwitch: (canvasId: string) => void;
-  onCreate: () => void;
+  onCreate: (name: string) => void;
   onRename: (canvasId: string, newName: string) => void;
   onDelete: (canvasId: string) => void;
 }
@@ -27,111 +29,102 @@ export default function CanvasPicker({
   onRename,
   onDelete,
 }: CanvasPickerProps) {
-  const [renaming, setRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const openModal = useModalStore((s) => s.openModal);
 
   const activeCanvas = canvases.find((c) => c.id === activeCanvasId);
 
-  const handleStartRename = () => {
-    setRenameValue(activeCanvas?.name ?? "");
-    setRenaming(true);
+  const handleOpenSettings = () => {
+    setAnchorEl(null);
+    if (!activeCanvas) return;
+    openModal({
+      id: MODAL_ID.CANVAS_SETTINGS,
+      canvasId: activeCanvasId,
+      canvasName: activeCanvas.name,
+      onRename: (newName) => onRename(activeCanvasId, newName),
+      onDelete: () => onDelete(activeCanvasId),
+      canDelete: canvases.length > 1,
+    });
   };
 
-  const handleRenameSubmit = () => {
-    const trimmed = renameValue.trim();
-    if (trimmed && trimmed !== activeCanvas?.name) {
-      onRename(activeCanvasId, trimmed);
+  const handleCanvasSelect = (canvasId: string) => {
+    setAnchorEl(null);
+    if (canvasId !== activeCanvasId) {
+      onSwitch(canvasId);
     }
-    setRenaming(false);
   };
 
-  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRenameSubmit();
-    } else if (e.key === "Escape") {
-      setRenaming(false);
-    }
-  };
-
-  const handleDeleteClick = () => {
-    setConfirmingDelete(true);
-  };
-
-  const handleConfirmDelete = () => {
-    onDelete(activeCanvasId);
-    setConfirmingDelete(false);
+  const handleCreate = () => {
+    setAnchorEl(null);
+    openModal({
+      id: MODAL_ID.CREATE_CANVAS,
+      onCreate,
+    });
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-      {renaming ? (
-        <TextField
-          size="small"
-          value={renameValue}
-          onChange={(e) => setRenameValue(e.target.value)}
-          onKeyDown={handleRenameKeyDown}
-          onBlur={handleRenameSubmit}
-          autoFocus
-          sx={{ width: 160 }}
-        />
-      ) : (
-        <Select
-          size="small"
-          value={activeCanvasId}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "__new__") {
-              onCreate();
-            } else {
-              onSwitch(value);
-            }
-          }}
-          sx={{
-            minWidth: 140,
-            bgcolor: "var(--color-base)",
-            color: "var(--color-text)",
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: "var(--color-surface1)",
+    <Box>
+      <Button
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        endIcon={<KeyboardArrowDownIcon />}
+        sx={{
+          color: "var(--color-text)",
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: 15,
+          px: 1.5,
+          "&:hover": {
+            bgcolor: "var(--color-surface0)",
+          },
+        }}
+      >
+        {activeCanvas?.name ?? "Select Canvas"}
+      </Button>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              minWidth: 200,
+              maxHeight: 400,
             },
-          }}
-        >
-          {canvases.map((canvas) => (
-            <MenuItem key={canvas.id} value={canvas.id}>
-              {canvas.name}
-            </MenuItem>
-          ))}
-          <MenuItem value="__new__">
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <AddIcon fontSize="small" />
-              New Canvas
-            </Box>
+          },
+        }}
+      >
+        {canvases.map((canvas) => (
+          <MenuItem
+            key={canvas.id}
+            onClick={() => handleCanvasSelect(canvas.id)}
+            selected={canvas.id === activeCanvasId}
+          >
+            <ListItemIcon sx={{ visibility: canvas.id === activeCanvasId ? "visible" : "hidden" }}>
+              <CheckIcon fontSize="small" />
+            </ListItemIcon>
+            {canvas.name}
           </MenuItem>
-        </Select>
-      )}
+        ))}
 
-      {!renaming && (
-        <>
-          <IconButton size="small" onClick={handleStartRename} title="Rename canvas">
-            <EditIcon fontSize="small" />
-          </IconButton>
+        <Divider />
 
-          {confirmingDelete ? (
-            <Button size="small" color="error" onClick={handleConfirmDelete}>
-              Confirm
-            </Button>
-          ) : (
-            <IconButton
-              size="small"
-              onClick={handleDeleteClick}
-              title="Delete canvas"
-              disabled={canvases.length <= 1}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          )}
-        </>
-      )}
+        <MenuItem onClick={handleCreate}>
+          <ListItemIcon>
+            <AddIcon fontSize="small" />
+          </ListItemIcon>
+          New Canvas
+        </MenuItem>
+
+        <MenuItem onClick={handleOpenSettings}>
+          <ListItemIcon>
+            <SettingsIcon fontSize="small" />
+          </ListItemIcon>
+          Canvas Settings
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

@@ -115,7 +115,7 @@ export async function deleteCanvas(id: string, userId: string): Promise<boolean>
 
 export class LastCanvasError extends Error {
   constructor() {
-    super("Cannot delete the last canvas");
+    super("Cannot delete the only canvas");
     this.name = "LastCanvasError";
   }
 }

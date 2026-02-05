@@ -157,3 +157,19 @@ export function updateNote(noteId: string, input: UpdateNoteInput): Promise<Note
 export function deleteNote(noteId: string): Promise<void> {
   return request<void>(`/notes/${noteId}`, { method: "DELETE" });
 }
+
+// --- Link functions ---
+
+export function createLink(
+  sourceItemId: string,
+  targetItemId: string,
+): Promise<{ created: boolean }> {
+  return request<{ created: boolean }>("/links", {
+    method: "POST",
+    body: JSON.stringify({ sourceItemId, targetItemId }),
+  });
+}
+
+export function deleteLink(sourceItemId: string, targetItemId: string): Promise<void> {
+  return request<void>(`/links/${sourceItemId}/${targetItemId}`, { method: "DELETE" });
+}

@@ -5,6 +5,19 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CanvasPicker from "../pages/Canvas/components/CanvasPicker";
 
+// Mock the modal store
+const mockOpenModal = vi.fn();
+vi.mock("../modals", () => ({
+  MODAL_ID: {
+    CANVAS_SETTINGS: "CANVAS_SETTINGS",
+    CREATE_CANVAS: "CREATE_CANVAS",
+  },
+  useModalStore: vi.fn((selector) => {
+    const state = { openModal: mockOpenModal };
+    return selector(state);
+  }),
+}));
+
 const theme = createTheme();
 
 const defaultCanvases = [
@@ -50,8 +63,8 @@ describe("CanvasPicker", () => {
     it("calls onSwitch when selecting a different canvas", () => {
       const props = renderPicker();
 
-      // Open the dropdown/select
-      fireEvent.mouseDown(screen.getByText("Default"));
+      // Open the dropdown
+      fireEvent.click(screen.getByText("Default"));
 
       // Select the other canvas
       fireEvent.click(screen.getByText("Battle Map"));
@@ -61,49 +74,47 @@ describe("CanvasPicker", () => {
   });
 
   describe("creating a canvas", () => {
-    it("calls onCreate when clicking New Canvas", () => {
+    it("opens create canvas modal when clicking New Canvas", () => {
       const props = renderPicker();
 
-      fireEvent.mouseDown(screen.getByText("Default"));
+      fireEvent.click(screen.getByText("Default"));
       fireEvent.click(screen.getByText("New Canvas"));
 
-      expect(props.onCreate).toHaveBeenCalled();
+      expect(mockOpenModal).toHaveBeenCalledWith({
+        id: "CREATE_CANVAS",
+        onCreate: props.onCreate,
+      });
     });
   });
 
-  describe("renaming", () => {
-    it("enters rename mode and submits the new name", () => {
-      const props = renderPicker();
+  describe("settings", () => {
+    it("opens settings modal when clicking Canvas Settings", () => {
+      renderPicker();
 
-      // Click the rename button
-      fireEvent.click(screen.getByTitle("Rename canvas"));
+      fireEvent.click(screen.getByText("Default"));
+      fireEvent.click(screen.getByText("Canvas Settings"));
 
-      // Type a new name and submit
-      const input = screen.getByDisplayValue("Default");
-      fireEvent.change(input, { target: { value: "World Map" } });
-      fireEvent.keyDown(input, { key: "Enter" });
-
-      expect(props.onRename).toHaveBeenCalledWith("c1", "World Map");
-    });
-  });
-
-  describe("deleting", () => {
-    it("calls onDelete after confirmation", () => {
-      const props = renderPicker();
-
-      fireEvent.click(screen.getByTitle("Delete canvas"));
-
-      // Confirm deletion
-      fireEvent.click(screen.getByText("Confirm"));
-
-      expect(props.onDelete).toHaveBeenCalledWith("c1");
+      expect(mockOpenModal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "CANVAS_SETTINGS",
+          canvasId: "c1",
+          canvasName: "Default",
+          canDelete: true,
+        }),
+      );
     });
 
-    it("disables delete button when only one canvas exists", () => {
+    it("passes canDelete=false when only one canvas exists", () => {
       renderPicker({ canvases: [{ id: "c1", name: "Default" }] });
 
-      const deleteButton = screen.getByTitle("Delete canvas");
-      expect(deleteButton).toHaveProperty("disabled", true);
+      fireEvent.click(screen.getByText("Default"));
+      fireEvent.click(screen.getByText("Canvas Settings"));
+
+      expect(mockOpenModal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          canDelete: false,
+        }),
+      );
     });
   });
 });
