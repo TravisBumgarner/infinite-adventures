@@ -1,4 +1,4 @@
-import type { CanvasSummary, Note, NoteType } from "shared";
+import type { CanvasItem, CanvasItemType, CanvasSummary } from "shared";
 import { create } from "zustand";
 
 interface ContextMenuState {
@@ -11,7 +11,7 @@ interface ContextMenuState {
 interface NodeContextMenuState {
   x: number;
   y: number;
-  noteId: string;
+  itemId: string;
   selectedIds: string[];
 }
 
@@ -29,16 +29,16 @@ interface CanvasState {
   setActiveCanvasId: (id: string) => void;
   initActiveCanvas: (canvases: CanvasSummary[]) => string;
 
-  notesCache: Map<string, Note>;
-  setNotesCache: (cache: Map<string, Note>) => void;
-  updateCachedNote: (note: Note) => void;
-  removeCachedNote: (noteId: string) => void;
+  itemsCache: Map<string, CanvasItem>;
+  setItemsCache: (cache: Map<string, CanvasItem>) => void;
+  updateCachedItem: (item: CanvasItem) => void;
+  removeCachedItem: (itemId: string) => void;
 
-  editingNoteId: string | null;
-  setEditingNoteId: (id: string | null) => void;
+  editingItemId: string | null;
+  setEditingItemId: (id: string | null) => void;
 
-  browsingNoteId: string | null;
-  setBrowsingNoteId: (id: string | null) => void;
+  browsingItemId: string | null;
+  setBrowsingItemId: (id: string | null) => void;
 
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
@@ -51,8 +51,8 @@ interface CanvasState {
   nodeContextMenu: NodeContextMenuState | null;
   setNodeContextMenu: (menu: NodeContextMenuState | null) => void;
 
-  activeTypes: Set<NoteType>;
-  toggleType: (type: NoteType) => void;
+  activeTypes: Set<CanvasItemType>;
+  toggleType: (type: CanvasItemType) => void;
 
   filterSearch: string;
   setFilterSearch: (search: string) => void;
@@ -76,34 +76,34 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     return activeId;
   },
 
-  notesCache: new Map(),
-  setNotesCache: (cache) => set({ notesCache: cache }),
-  updateCachedNote: (note) =>
+  itemsCache: new Map(),
+  setItemsCache: (cache) => set({ itemsCache: cache }),
+  updateCachedItem: (item) =>
     set((state) => {
-      const next = new Map(state.notesCache);
-      next.set(note.id, note);
-      return { notesCache: next };
+      const next = new Map(state.itemsCache);
+      next.set(item.id, item);
+      return { itemsCache: next };
     }),
-  removeCachedNote: (noteId) =>
+  removeCachedItem: (itemId) =>
     set((state) => {
-      const next = new Map(state.notesCache);
-      next.delete(noteId);
-      return { notesCache: next };
+      const next = new Map(state.itemsCache);
+      next.delete(itemId);
+      return { itemsCache: next };
     }),
 
-  editingNoteId: null,
-  setEditingNoteId: (id) => set({ editingNoteId: id }),
+  editingItemId: null,
+  setEditingItemId: (id) => set({ editingItemId: id }),
 
-  browsingNoteId: null,
-  setBrowsingNoteId: (id) => set({ browsingNoteId: id }),
+  browsingItemId: null,
+  setBrowsingItemId: (id) => set({ browsingItemId: id }),
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
 
   closeAllPanels: () =>
     set({
-      editingNoteId: null,
-      browsingNoteId: null,
+      editingItemId: null,
+      browsingItemId: null,
       contextMenu: null,
       nodeContextMenu: null,
       showSettings: false,

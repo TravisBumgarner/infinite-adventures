@@ -1,6 +1,6 @@
 import type { Node } from "@xyflow/react";
 import { describe, expect, it, vi } from "vitest";
-import { batchDeleteNotes, getSelectedNodePositions } from "../utils/multiSelect";
+import { batchDeleteItems, getSelectedNodePositions } from "../utils/multiSelect";
 
 function makeNode(id: string, x: number, y: number, selected: boolean): Node {
   return {
@@ -36,10 +36,10 @@ describe("getSelectedNodePositions", () => {
   });
 });
 
-describe("batchDeleteNotes", () => {
-  it("calls deleteFn for each note ID", async () => {
+describe("batchDeleteItems", () => {
+  it("calls deleteFn for each item ID", async () => {
     const deleteFn = vi.fn().mockResolvedValue(undefined);
-    await batchDeleteNotes(["a", "b", "c"], deleteFn);
+    await batchDeleteItems(["a", "b", "c"], deleteFn);
     expect(deleteFn).toHaveBeenCalledTimes(3);
     expect(deleteFn).toHaveBeenCalledWith("a");
     expect(deleteFn).toHaveBeenCalledWith("b");
@@ -48,7 +48,7 @@ describe("batchDeleteNotes", () => {
 
   it("returns all IDs when all deletions succeed", async () => {
     const deleteFn = vi.fn().mockResolvedValue(undefined);
-    const result = await batchDeleteNotes(["a", "b"], deleteFn);
+    const result = await batchDeleteItems(["a", "b"], deleteFn);
     expect(result).toEqual(["a", "b"]);
   });
 
@@ -58,13 +58,13 @@ describe("batchDeleteNotes", () => {
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("fail"))
       .mockResolvedValueOnce(undefined);
-    const result = await batchDeleteNotes(["a", "b", "c"], deleteFn);
+    const result = await batchDeleteItems(["a", "b", "c"], deleteFn);
     expect(result).toEqual(["a", "c"]);
   });
 
   it("returns empty array when given no IDs", async () => {
     const deleteFn = vi.fn();
-    const result = await batchDeleteNotes([], deleteFn);
+    const result = await batchDeleteItems([], deleteFn);
     expect(result).toEqual([]);
     expect(deleteFn).not.toHaveBeenCalled();
   });

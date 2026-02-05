@@ -13,7 +13,7 @@ import { getContrastText } from "../../../utils/getContrastText";
 
 interface SearchBarProps {
   canvasId: string;
-  onNavigate: (noteId: string) => void;
+  onNavigate: (itemId: string) => void;
 }
 
 export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
@@ -38,7 +38,7 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
     }
 
     debounceRef.current = setTimeout(async () => {
-      const res = await api.searchNotes(query, canvasId);
+      const res = await api.searchItems(query, canvasId);
       setResults(res);
       setShowDropdown(true);
       setSelectedIndex(0);
@@ -94,7 +94,7 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
         variant="filled"
         size="small"
         fullWidth
-        placeholder="Search notes..."
+        placeholder="Search items..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => {
@@ -123,7 +123,7 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
           }}
         >
           {results.map((result, i) => {
-            const bgColor = theme.palette.nodeTypes[result.type].light;
+            const bgColor = theme.palette.canvasItemTypes[result.type].light;
             return (
               <Box
                 key={result.id}

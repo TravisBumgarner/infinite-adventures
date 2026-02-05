@@ -6,7 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
-import { NOTE_TYPES } from "../../../constants";
+import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -81,9 +81,9 @@ export default function FilterBar() {
         </IconButton>
       </Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {NOTE_TYPES.map(({ value, label }) => {
+        {CANVAS_ITEM_TYPES.map(({ value, label }) => {
           const active = activeTypes.has(value);
-          const bgColor = theme.palette.nodeTypes[value].light;
+          const bgColor = theme.palette.canvasItemTypes[value].light;
           return (
             <Chip
               key={value}

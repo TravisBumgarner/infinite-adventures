@@ -5,12 +5,12 @@ import { useEffect } from "react";
 interface NodeContextMenuProps {
   x: number;
   y: number;
-  noteId: string;
+  itemId: string;
   selectedCount: number;
-  onEdit: (noteId: string) => void;
-  onBrowseConnections: (noteId: string) => void;
-  onExport: (noteId: string) => void;
-  onDelete: (noteId: string) => void;
+  onEdit: (itemId: string) => void;
+  onBrowseConnections: (itemId: string) => void;
+  onExport: (itemId: string) => void;
+  onDelete: (itemId: string) => void;
   onDeleteSelected: () => void;
   onClose: () => void;
 }
@@ -18,7 +18,7 @@ interface NodeContextMenuProps {
 export default function NodeContextMenu({
   x,
   y,
-  noteId,
+  itemId,
   selectedCount,
   onEdit,
   onBrowseConnections,
@@ -57,7 +57,7 @@ export default function NodeContextMenu({
       {!isMulti && (
         <MenuItem
           onClick={() => {
-            onEdit(noteId);
+            onEdit(itemId);
             onClose();
           }}
         >
@@ -67,7 +67,7 @@ export default function NodeContextMenu({
       {!isMulti && (
         <MenuItem
           onClick={() => {
-            onBrowseConnections(noteId);
+            onBrowseConnections(itemId);
             onClose();
           }}
         >
@@ -77,7 +77,7 @@ export default function NodeContextMenu({
       {!isMulti && (
         <MenuItem
           onClick={() => {
-            onExport(noteId);
+            onExport(itemId);
             onClose();
           }}
         >
@@ -87,12 +87,12 @@ export default function NodeContextMenu({
       <MenuItem
         onClick={() => {
           if (isMulti) {
-            if (confirm(`Delete ${selectedCount} selected notes? This cannot be undone.`)) {
+            if (confirm(`Delete ${selectedCount} selected items? This cannot be undone.`)) {
               onDeleteSelected();
             }
           } else {
-            if (confirm("Delete this note? This cannot be undone.")) {
-              onDelete(noteId);
+            if (confirm("Delete this item? This cannot be undone.")) {
+              onDelete(itemId);
             }
           }
           onClose();

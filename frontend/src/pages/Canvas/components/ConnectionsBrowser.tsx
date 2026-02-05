@@ -9,41 +9,41 @@ import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
-import type { Note, NoteType } from "shared";
-import { NOTE_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import type { CanvasItem, CanvasItemType } from "shared";
+import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
 
 interface ConnectionsBrowserProps {
-  noteId: string;
-  notesCache: Map<string, Note>;
-  onNavigate: (noteId: string) => void;
+  itemId: string;
+  itemsCache: Map<string, CanvasItem>;
+  onNavigate: (itemId: string) => void;
   onClose: () => void;
 }
 
 export default function ConnectionsBrowser({
-  noteId,
-  notesCache,
+  itemId,
+  itemsCache,
   onNavigate,
   onClose,
 }: ConnectionsBrowserProps) {
   const theme = useTheme();
   const [search, setSearch] = useState("");
-  const [activeTypes, setActiveTypes] = useState<Set<NoteType>>(new Set());
+  const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
 
-  const note = notesCache.get(noteId);
+  const item = itemsCache.get(itemId);
 
   const allEntries = useMemo(() => {
-    if (!note) return [];
-    return buildConnectionEntries(note.links_to, note.linked_from);
-  }, [note]);
+    if (!item) return [];
+    return buildConnectionEntries(item.links_to, item.linked_from);
+  }, [item]);
 
   const filtered = useMemo(
     () => filterConnections(allEntries, activeTypes, search),
     [allEntries, activeTypes, search],
   );
 
-  const handleToggleType = (type: NoteType) => {
+  const handleToggleType = (type: CanvasItemType) => {
     setActiveTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) {
@@ -55,7 +55,7 @@ export default function ConnectionsBrowser({
     });
   };
 
-  if (!note) {
+  if (!item) {
     return (
       <Drawer
         variant="persistent"
@@ -70,7 +70,7 @@ export default function ConnectionsBrowser({
           },
         }}
       >
-        <Typography>Note not found</Typography>
+        <Typography>Item not found</Typography>
       </Drawer>
     );
   }
@@ -114,7 +114,7 @@ export default function ConnectionsBrowser({
           borderBottom: "1px solid var(--color-surface0)",
         }}
       >
-        {note.title}
+        {item.title}
       </Typography>
 
       <TextField
@@ -126,9 +126,9 @@ export default function ConnectionsBrowser({
       />
 
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {NOTE_TYPES.map(({ value, label }) => {
+        {CANVAS_ITEM_TYPES.map(({ value, label }) => {
           const active = activeTypes.has(value);
-          const bgColor = theme.palette.nodeTypes[value].light;
+          const bgColor = theme.palette.canvasItemTypes[value].light;
           return (
             <Chip
               key={value}
@@ -165,7 +165,7 @@ export default function ConnectionsBrowser({
           </Typography>
         ) : (
           filtered.map((entry) => {
-            const typeBgColor = theme.palette.nodeTypes[entry.link.type].light;
+            const typeBgColor = theme.palette.canvasItemTypes[entry.link.type].light;
             return (
               <ListItemButton
                 key={`${entry.direction}-${entry.link.id}`}

@@ -1,17 +1,17 @@
-import type { NoteLink, NoteType } from "shared";
+import type { CanvasItemLink, CanvasItemLinkWithSnippet, CanvasItemType } from "shared";
 
 export interface ConnectionEntry {
-  link: NoteLink;
+  link: CanvasItemLink | CanvasItemLinkWithSnippet;
   direction: "outgoing" | "incoming";
 }
 
 /**
- * Build a combined list of connections from a note's links_to and linked_from.
+ * Build a combined list of connections from an item's links_to and linked_from.
  * Deduplicates entries that appear in both directions.
  */
 export function buildConnectionEntries(
-  linksTo: NoteLink[],
-  linkedFrom: NoteLink[],
+  linksTo: CanvasItemLink[],
+  linkedFrom: CanvasItemLinkWithSnippet[],
 ): ConnectionEntry[] {
   const seen = new Set<string>();
   const entries: ConnectionEntry[] = [];
@@ -37,7 +37,7 @@ export function buildConnectionEntries(
  */
 export function filterConnections(
   entries: ConnectionEntry[],
-  activeTypes: Set<NoteType>,
+  activeTypes: Set<CanvasItemType>,
   search: string,
 ): ConnectionEntry[] {
   const lowerSearch = search.toLowerCase();

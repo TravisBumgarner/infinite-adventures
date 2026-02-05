@@ -1,56 +1,59 @@
 import type { Connection, Edge, Node } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { Note, NoteType } from "shared";
+import type { CanvasItem, CanvasItemType } from "shared";
 import * as api from "../../../api/client";
-import { NOTE_TEMPLATES } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
 import { appendMentionIfNew } from "../../../utils/edgeConnect";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
-import { batchDeleteNotes, getSelectedNodePositions } from "../../../utils/multiSelect";
-import { formatNoteExport } from "../../../utils/noteExport";
-import type { NoteNodeData } from "../components/NoteNode";
+import { batchDeleteItems, getSelectedNodePositions } from "../../../utils/multiSelect";
+import { formatItemExport } from "../../../utils/noteExport";
+import type { CanvasItemNodeData } from "../components/CanvasItemNode";
 
 function toFlowNode(
-  note: Note,
-  cache: Map<string, Note>,
-  onMentionClick: (sourceNoteId: string, targetNoteId: string) => void,
-): Node<NoteNodeData> {
+  item: CanvasItem,
+  cache: Map<string, CanvasItem>,
+  onMentionClick: (sourceItemId: string, targetItemId: string) => void,
+): Node<CanvasItemNodeData> {
   const mentionLabels: Record<string, string> = {};
   const mentionRegex = /@\{([^}]+)\}/g;
-  let match: RegExpExecArray | null = mentionRegex.exec(note.content);
+  let match: RegExpExecArray | null = mentionRegex.exec(item.content.notes);
   while (match !== null) {
     const id = match[1];
     const cached = cache.get(id);
     mentionLabels[id] = cached ? cached.title : id;
-    match = mentionRegex.exec(note.content);
+    match = mentionRegex.exec(item.content.notes);
   }
 
+  // Find selected photo URL
+  const selectedPhoto = item.photos.find((p) => p.is_selected);
+
   return {
-    id: note.id,
-    type: "note",
-    position: { x: note.canvas_x, y: note.canvas_y },
+    id: item.id,
+    type: "canvasItem",
+    position: { x: item.canvas_x, y: item.canvas_y },
     data: {
-      noteId: note.id,
-      type: note.type,
-      title: note.title,
-      content: note.content,
+      itemId: item.id,
+      type: item.type,
+      title: item.title,
+      content: item.content.notes,
+      selectedPhotoUrl: selectedPhoto?.url,
       mentionLabels,
       onMentionClick,
     },
   };
 }
 
-function buildEdges(notes: Note[]): Edge[] {
+function buildEdges(items: CanvasItem[]): Edge[] {
   const edges: Edge[] = [];
-  for (const note of notes) {
-    if (!note.links_to) continue;
-    for (const link of note.links_to) {
+  for (const item of items) {
+    if (!item.links_to) continue;
+    for (const link of item.links_to) {
       edges.push({
-        id: `${note.id}->${link.id}`,
-        source: note.id,
+        id: `${item.id}->${link.id}`,
+        source: item.id,
         target: link.id,
         style: { stroke: "var(--color-surface2)", strokeWidth: 1.5 },
         animated: false,
@@ -61,18 +64,18 @@ function buildEdges(notes: Note[]): Edge[] {
 }
 
 export function useCanvasActions() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NoteNodeData>>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<CanvasItemNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
 
   const {
-    setNotesCache,
-    removeCachedNote,
+    setItemsCache,
+    removeCachedItem,
     activeTypes,
     filterSearch,
-    setEditingNoteId,
-    setBrowsingNoteId,
+    setEditingItemId,
+    setBrowsingItemId,
     setContextMenu,
     setNodeContextMenu,
     setShowSettings,
@@ -90,8 +93,8 @@ export function useCanvasActions() {
   const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
   const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 
-  // Fit viewport to show both source and target notes
-  const fitBothNotes = useCallback(
+  // Fit viewport to show both source and target items
+  const fitBothItems = useCallback(
     (sourceId: string, targetId: string) => {
       reactFlowInstance.fitView({
         nodes: [{ id: sourceId }, { id: targetId }],
@@ -102,25 +105,25 @@ export function useCanvasActions() {
     [reactFlowInstance],
   );
 
-  // Load all notes and edges for a canvas
-  const loadAllNotes = useCallback(
+  // Load all items and edges for a canvas
+  const loadAllItems = useCallback(
     async (canvasId: string) => {
-      const summaries = await api.fetchNotes(canvasId);
-      const fullNotes = await Promise.all(summaries.map((n) => api.fetchNote(n.id)));
-      const cache = new Map(fullNotes.map((n) => [n.id, n]));
-      setNotesCache(cache);
-      setNodes(fullNotes.map((n) => toFlowNode(n, cache, fitBothNotes)));
-      setEdges(buildEdges(fullNotes));
+      const summaries = await api.fetchItems(canvasId);
+      const fullItems = await Promise.all(summaries.map((s) => api.fetchItem(s.id)));
+      const cache = new Map(fullItems.map((i) => [i.id, i]));
+      setItemsCache(cache);
+      setNodes(fullItems.map((i) => toFlowNode(i, cache, fitBothItems)));
+      setEdges(buildEdges(fullItems));
     },
-    [setNodes, setEdges, fitBothNotes, setNotesCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache],
   );
 
-  // Load notes when activeCanvasId changes
+  // Load items when activeCanvasId changes
   useEffect(() => {
     if (activeCanvasId) {
-      loadAllNotes(activeCanvasId);
+      loadAllItems(activeCanvasId);
     }
-  }, [activeCanvasId, loadAllNotes]);
+  }, [activeCanvasId, loadAllItems]);
 
   // Restore viewport from localStorage when canvas changes
   useEffect(() => {
@@ -146,48 +149,47 @@ export function useCanvasActions() {
     localStorage.setItem(getViewportKey(canvasId), JSON.stringify(viewport));
   }, [reactFlowInstance]);
 
-  // Navigate to a note by ID
-  const navigateToNote = useCallback(
-    (noteId: string) => {
-      const note = useCanvasStore.getState().notesCache.get(noteId);
-      if (note) {
-        reactFlowInstance.setCenter(note.canvas_x, note.canvas_y, {
+  // Navigate to an item by ID
+  const navigateToItem = useCallback(
+    (itemId: string) => {
+      const item = useCanvasStore.getState().itemsCache.get(itemId);
+      if (item) {
+        reactFlowInstance.setCenter(item.canvas_x, item.canvas_y, {
           zoom: 1.2,
           duration: 500,
         });
-        setEditingNoteId(noteId);
+        setEditingItemId(itemId);
       }
     },
-    [reactFlowInstance, setEditingNoteId],
+    [reactFlowInstance, setEditingItemId],
   );
 
-  // Create a note at a specific flow position
-  const createNoteAtPosition = useCallback(
-    async (type: NoteType, flowX: number, flowY: number) => {
+  // Create an item at a specific flow position
+  const createItemAtPosition = useCallback(
+    async (type: CanvasItemType, flowX: number, flowY: number) => {
       const canvasId = useCanvasStore.getState().activeCanvasId;
       if (!canvasId) return;
       const existing = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
       const pos = findOpenPosition(flowX, flowY, existing);
-      const note = await api.createNote(canvasId, {
+      const item = await api.createItem(canvasId, {
         type,
-        title: "New Note",
-        content: NOTE_TEMPLATES[type],
+        title: "New Item",
         canvas_x: pos.x,
         canvas_y: pos.y,
       });
-      const fullNote = await api.fetchNote(note.id);
-      const cache = useCanvasStore.getState().notesCache;
+      const fullItem = await api.fetchItem(item.id);
+      const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
-      nextCache.set(fullNote.id, fullNote);
-      setNotesCache(nextCache);
-      setNodes((nds) => [...nds, toFlowNode(fullNote, nextCache, fitBothNotes)]);
-      setEditingNoteId(note.id);
+      nextCache.set(fullItem.id, fullItem);
+      setItemsCache(nextCache);
+      setNodes((nds) => [...nds, toFlowNode(fullItem, nextCache, fitBothItems)]);
+      setEditingItemId(item.id);
       setTimeout(() => {
         const zoom = reactFlowInstance.getZoom();
         reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
       }, 50);
     },
-    [nodes, setNodes, fitBothNotes, reactFlowInstance, setNotesCache, setEditingNoteId],
+    [nodes, setNodes, fitBothItems, reactFlowInstance, setItemsCache, setEditingItemId],
   );
 
   // Right-click canvas to open context menu
@@ -216,7 +218,7 @@ export function useCanvasActions() {
       setNodeContextMenu({
         x: event.clientX,
         y: event.clientY,
-        noteId: node.id,
+        itemId: node.id,
         selectedIds,
       });
     },
@@ -231,7 +233,7 @@ export function useCanvasActions() {
       setNodeContextMenu({
         x: event.clientX,
         y: event.clientY,
-        noteId: selectedIds[0],
+        itemId: selectedIds[0],
         selectedIds,
       });
     },
@@ -243,7 +245,7 @@ export function useCanvasActions() {
     reactFlowInstance.fitView({ duration: 500 });
   }, [reactFlowInstance]);
 
-  // Unstack overlapping notes
+  // Unstack overlapping items
   const handleUnstack = useCallback(async () => {
     const identified = nodes.map((n) => ({
       id: n.id,
@@ -253,16 +255,16 @@ export function useCanvasActions() {
     const moves = unstackNodes(identified);
     if (moves.size === 0) return;
 
-    const cache = useCanvasStore.getState().notesCache;
+    const cache = useCanvasStore.getState().itemsCache;
     const nextCache = new Map(cache);
     for (const [id, pos] of moves) {
-      api.updateNote(id, { canvas_x: pos.x, canvas_y: pos.y });
+      api.updateItem(id, { canvas_x: pos.x, canvas_y: pos.y });
       const cached = nextCache.get(id);
       if (cached) {
         nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
       }
     }
-    setNotesCache(nextCache);
+    setItemsCache(nextCache);
 
     setNodes((nds) =>
       nds.map((n) => {
@@ -270,122 +272,122 @@ export function useCanvasActions() {
         return newPos ? { ...n, position: newPos } : n;
       }),
     );
-  }, [nodes, setNodes, setNotesCache]);
+  }, [nodes, setNodes, setItemsCache]);
 
-  // Toolbar: create note at viewport center
+  // Toolbar: create item at viewport center
   const handleToolbarCreate = useCallback(
-    (type: NoteType) => {
+    (type: CanvasItemType) => {
       const center = reactFlowInstance.screenToFlowPosition({
         x: window.innerWidth / 2,
         y: window.innerHeight / 2,
       });
-      createNoteAtPosition(type, center.x, center.y);
+      createItemAtPosition(type, center.x, center.y);
     },
-    [reactFlowInstance, createNoteAtPosition],
+    [reactFlowInstance, createItemAtPosition],
   );
 
   // Drag end to save positions for all selected nodes
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, _node: Node, draggedNodes: Node[]) => {
       const positions = getSelectedNodePositions(draggedNodes);
-      const cache = useCanvasStore.getState().notesCache;
+      const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       for (const [id, pos] of positions) {
-        api.updateNote(id, { canvas_x: pos.x, canvas_y: pos.y });
+        api.updateItem(id, { canvas_x: pos.x, canvas_y: pos.y });
         const cached = nextCache.get(id);
         if (cached) {
           nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
         }
       }
-      setNotesCache(nextCache);
+      setItemsCache(nextCache);
     },
-    [setNotesCache],
+    [setItemsCache],
   );
 
   // Handle edge creation by dragging between handles
   const onConnect = useCallback(
     async (connection: Connection) => {
-      const cache = useCanvasStore.getState().notesCache;
-      const sourceNote = cache.get(connection.source);
-      if (!sourceNote) return;
+      const cache = useCanvasStore.getState().itemsCache;
+      const sourceItem = cache.get(connection.source);
+      if (!sourceItem) return;
 
-      const newContent = appendMentionIfNew(sourceNote.content, connection.target);
+      const newContent = appendMentionIfNew(sourceItem.content.notes, connection.target);
       if (newContent === null) return;
 
-      const updated = await api.updateNote(sourceNote.id, { content: newContent });
-      const fullNote = await api.fetchNote(updated.id);
+      const updated = await api.updateItem(sourceItem.id, { notes: newContent });
+      const fullItem = await api.fetchItem(updated.id);
       const nextCache = new Map(cache);
-      nextCache.set(fullNote.id, fullNote);
-      setNotesCache(nextCache);
+      nextCache.set(fullItem.id, fullItem);
+      setItemsCache(nextCache);
 
-      const allNotes = Array.from(nextCache.values());
-      setNodes(allNotes.map((n) => toFlowNode(n, nextCache, fitBothNotes)));
-      setEdges(buildEdges(allNotes));
+      const allItems = Array.from(nextCache.values());
+      setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
+      setEdges(buildEdges(allItems));
     },
-    [setNodes, setEdges, fitBothNotes, setNotesCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache],
   );
 
   // Editor callbacks
   const handleSaved = useCallback(
-    async (note: Note) => {
+    async (item: CanvasItem) => {
       const canvasId = useCanvasStore.getState().activeCanvasId;
       if (!canvasId) return;
-      const fullNote = await api.fetchNote(note.id);
-      const cache = useCanvasStore.getState().notesCache;
+      const fullItem = await api.fetchItem(item.id);
+      const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
-      nextCache.set(fullNote.id, fullNote);
+      nextCache.set(fullItem.id, fullItem);
 
-      const summaries = await api.fetchNotes(canvasId);
-      const newNoteIds = summaries.map((s) => s.id).filter((id) => !nextCache.has(id));
-      const newNotes = await Promise.all(newNoteIds.map((id) => api.fetchNote(id)));
-      for (const n of newNotes) {
-        nextCache.set(n.id, n);
+      const summaries = await api.fetchItems(canvasId);
+      const newItemIds = summaries.map((s) => s.id).filter((id) => !nextCache.has(id));
+      const newItems = await Promise.all(newItemIds.map((id) => api.fetchItem(id)));
+      for (const i of newItems) {
+        nextCache.set(i.id, i);
       }
-      setNotesCache(nextCache);
+      setItemsCache(nextCache);
 
-      const allNotes = Array.from(nextCache.values());
-      setNodes(allNotes.map((n) => toFlowNode(n, nextCache, fitBothNotes)));
-      setEdges(buildEdges(allNotes));
+      const allItems = Array.from(nextCache.values());
+      setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
+      setEdges(buildEdges(allItems));
     },
-    [setNodes, setEdges, fitBothNotes, setNotesCache],
+    [setNodes, setEdges, fitBothItems, setItemsCache],
   );
 
   const handleDeleted = useCallback(
-    (noteId: string) => {
-      removeCachedNote(noteId);
-      setNodes((nds) => nds.filter((n) => n.id !== noteId));
-      setEdges((eds) => eds.filter((e) => e.source !== noteId && e.target !== noteId));
-      setEditingNoteId(null);
+    (itemId: string) => {
+      removeCachedItem(itemId);
+      setNodes((nds) => nds.filter((n) => n.id !== itemId));
+      setEdges((eds) => eds.filter((e) => e.source !== itemId && e.target !== itemId));
+      setEditingItemId(null);
     },
-    [setNodes, setEdges, removeCachedNote, setEditingNoteId],
+    [setNodes, setEdges, removeCachedItem, setEditingItemId],
   );
 
   // Batch-delete nodes by explicit IDs
   const handleDeleteSelected = useCallback(
     async (idsToDelete: string[]) => {
       if (idsToDelete.length === 0) return;
-      const deletedIds = await batchDeleteNotes(idsToDelete, api.deleteNote);
-      const cache = useCanvasStore.getState().notesCache;
+      const deletedIds = await batchDeleteItems(idsToDelete, api.deleteItem);
+      const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       for (const id of deletedIds) {
         nextCache.delete(id);
       }
-      setNotesCache(nextCache);
+      setItemsCache(nextCache);
       const deletedSet = new Set(deletedIds);
       setNodes((nds) => nds.filter((n) => !deletedSet.has(n.id)));
       setEdges((eds) => eds.filter((e) => !deletedSet.has(e.source) && !deletedSet.has(e.target)));
-      setEditingNoteId(null);
+      setEditingItemId(null);
     },
-    [setNodes, setEdges, setNotesCache, setEditingNoteId],
+    [setNodes, setEdges, setItemsCache, setEditingItemId],
   );
 
-  // Export note and connections as text to clipboard
+  // Export item and connections as text to clipboard
   const handleExport = useCallback(
-    async (noteId: string) => {
-      const cache = useCanvasStore.getState().notesCache;
-      const note = cache.get(noteId);
-      if (!note) return;
-      const text = formatNoteExport(note, cache);
+    async (itemId: string) => {
+      const cache = useCanvasStore.getState().itemsCache;
+      const item = cache.get(itemId);
+      if (!item) return;
+      const text = formatItemExport(item, cache);
       await navigator.clipboard.writeText(text);
       showToast("Copied to clipboard");
     },
@@ -394,12 +396,12 @@ export function useCanvasActions() {
 
   // Pane click to close all panels
   const onPaneClick = useCallback(() => {
-    setEditingNoteId(null);
-    setBrowsingNoteId(null);
+    setEditingItemId(null);
+    setBrowsingItemId(null);
     setContextMenu(null);
     setNodeContextMenu(null);
     setShowSettings(false);
-  }, [setEditingNoteId, setBrowsingNoteId, setContextMenu, setNodeContextMenu, setShowSettings]);
+  }, [setEditingItemId, setBrowsingItemId, setContextMenu, setNodeContextMenu, setShowSettings]);
 
   return {
     // React Flow state
@@ -411,12 +413,12 @@ export function useCanvasActions() {
     onEdgesChange,
 
     // Actions
-    loadAllNotes,
+    loadAllItems,
     handleSaved,
     handleDeleted,
     handleDeleteSelected,
-    navigateToNote,
-    createNoteAtPosition,
+    navigateToItem,
+    createItemAtPosition,
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,

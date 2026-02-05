@@ -1,16 +1,21 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { NoteType } from "shared";
+import type { CanvasItemType } from "shared";
 import { describe, expect, it } from "vitest";
-import type { NoteNodeData } from "../components/NoteNode";
+import type { CanvasItemNodeData } from "../pages/Canvas/components/CanvasItemNode";
 import { filterEdges, filterNodes } from "../utils/canvasFilter";
 
-function makeNode(id: string, type: NoteType, title: string, content: string): Node<NoteNodeData> {
+function makeNode(
+  id: string,
+  type: CanvasItemType,
+  title: string,
+  content: string,
+): Node<CanvasItemNodeData> {
   return {
     id,
     position: { x: 0, y: 0 },
-    type: "note",
+    type: "canvasItem",
     data: {
-      noteId: id,
+      itemId: id,
       type,
       title,
       content,
@@ -21,10 +26,10 @@ function makeNode(id: string, type: NoteType, title: string, content: string): N
 }
 
 const nodes = [
-  makeNode("1", "pc", "Gandalf", "A wise wizard"),
-  makeNode("2", "npc", "Shopkeeper", "Sells potions"),
-  makeNode("3", "quest", "Find the Ring", "Search the shire"),
-  makeNode("4", "pc", "Frodo", "Ring bearer"),
+  makeNode("1", "person", "Gandalf", "A wise wizard"),
+  makeNode("2", "person", "Shopkeeper", "Sells potions"),
+  makeNode("3", "event", "Find the Ring", "Search the shire"),
+  makeNode("4", "person", "Frodo", "Ring bearer"),
 ];
 
 describe("filterNodes", () => {
@@ -34,14 +39,14 @@ describe("filterNodes", () => {
   });
 
   it("filters by type", () => {
-    const result = filterNodes(nodes, new Set<NoteType>(["pc"]), "");
-    expect(result).toHaveLength(2);
-    expect(result.map((n) => n.id)).toEqual(["1", "4"]);
+    const result = filterNodes(nodes, new Set<CanvasItemType>(["person"]), "");
+    expect(result).toHaveLength(3);
+    expect(result.map((n) => n.id)).toEqual(["1", "2", "4"]);
   });
 
   it("filters by multiple types", () => {
-    const result = filterNodes(nodes, new Set<NoteType>(["pc", "quest"]), "");
-    expect(result).toHaveLength(3);
+    const result = filterNodes(nodes, new Set<CanvasItemType>(["person", "event"]), "");
+    expect(result).toHaveLength(4);
   });
 
   it("filters by search text case-insensitively", () => {
@@ -57,13 +62,13 @@ describe("filterNodes", () => {
   });
 
   it("combines type and search filters", () => {
-    const result = filterNodes(nodes, new Set<NoteType>(["pc"]), "ring");
+    const result = filterNodes(nodes, new Set<CanvasItemType>(["person"]), "ring");
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("4");
   });
 
   it("returns empty array when no nodes match", () => {
-    const result = filterNodes(nodes, new Set<NoteType>(["item"]), "");
+    const result = filterNodes(nodes, new Set<CanvasItemType>(["thing"]), "");
     expect(result).toHaveLength(0);
   });
 });
