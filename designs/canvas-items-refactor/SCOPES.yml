@@ -236,7 +236,7 @@ tasks:
       - No references to old notes API
     depends_on: [9, 10]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 12
     github_issue: 103

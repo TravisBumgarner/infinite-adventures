@@ -1,11 +1,12 @@
-import type { Note } from "shared";
+import type { CanvasItem } from "shared";
 import { describe, expect, it } from "vitest";
-import { formatNoteExport } from "../utils/noteExport";
+import { formatItemExport } from "../utils/noteExport";
 
-function makeNote(overrides: Partial<Note> & { id: string; title: string }): Note {
+function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }): CanvasItem {
   return {
-    type: "npc",
-    content: "",
+    type: "person",
+    content: { id: overrides.id, notes: "" },
+    photos: [],
     canvas_x: 0,
     canvas_y: 0,
     created_at: "2024-01-01",
@@ -16,116 +17,140 @@ function makeNote(overrides: Partial<Note> & { id: string; title: string }): Not
   };
 }
 
-describe("formatNoteExport", () => {
-  it("includes the source note title and content", () => {
-    const note = makeNote({ id: "1", title: "Gandalf", content: "A wizard" });
-    const cache = new Map<string, Note>([["1", note]]);
-    const result = formatNoteExport(note, cache);
+describe("formatItemExport", () => {
+  it("includes the source item title and content", () => {
+    const item = makeItem({
+      id: "1",
+      title: "Gandalf",
+      content: { id: "1", notes: "A wizard" },
+    });
+    const cache = new Map<string, CanvasItem>([["1", item]]);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("Gandalf");
     expect(result).toContain("A wizard");
   });
 
-  it("includes the source note type", () => {
-    const note = makeNote({ id: "1", title: "Gandalf", type: "pc" });
-    const cache = new Map<string, Note>([["1", note]]);
-    const result = formatNoteExport(note, cache);
-    expect(result.toUpperCase()).toContain("PC");
+  it("includes the source item type", () => {
+    const item = makeItem({ id: "1", title: "Gandalf", type: "person" });
+    const cache = new Map<string, CanvasItem>([["1", item]]);
+    const result = formatItemExport(item, cache);
+    expect(result.toLowerCase()).toContain("person");
   });
 
   it("resolves @{id} mentions to titles in content", () => {
-    const frodo = makeNote({ id: "2", title: "Frodo" });
-    const note = makeNote({ id: "1", title: "Gandalf", content: "Met @{2} today" });
-    const cache = new Map<string, Note>([
-      ["1", note],
+    const frodo = makeItem({ id: "2", title: "Frodo" });
+    const item = makeItem({
+      id: "1",
+      title: "Gandalf",
+      content: { id: "1", notes: "Met @{2} today" },
+    });
+    const cache = new Map<string, CanvasItem>([
+      ["1", item],
       ["2", frodo],
     ]);
-    const result = formatNoteExport(note, cache);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("Frodo");
     expect(result).not.toContain("@{2}");
   });
 
   it("falls back to id when mention is not in cache", () => {
-    const note = makeNote({ id: "1", title: "Gandalf", content: "Met @{unknown-id}" });
-    const cache = new Map<string, Note>([["1", note]]);
-    const result = formatNoteExport(note, cache);
+    const item = makeItem({
+      id: "1",
+      title: "Gandalf",
+      content: { id: "1", notes: "Met @{unknown-id}" },
+    });
+    const cache = new Map<string, CanvasItem>([["1", item]]);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("@unknown-id");
   });
 
-  it("includes connected notes from links_to", () => {
-    const frodo = makeNote({ id: "2", title: "Frodo", content: "A hobbit" });
-    const note = makeNote({
+  it("includes connected items from links_to", () => {
+    const frodo = makeItem({
+      id: "2",
+      title: "Frodo",
+      content: { id: "2", notes: "A hobbit" },
+    });
+    const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "2", title: "Frodo", type: "pc" }],
+      links_to: [{ id: "2", title: "Frodo", type: "person" }],
     });
-    const cache = new Map<string, Note>([
-      ["1", note],
+    const cache = new Map<string, CanvasItem>([
+      ["1", item],
       ["2", frodo],
     ]);
-    const result = formatNoteExport(note, cache);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("Frodo");
     expect(result).toContain("A hobbit");
   });
 
-  it("includes connected notes from linked_from", () => {
-    const shire = makeNote({
+  it("includes connected items from linked_from", () => {
+    const shire = makeItem({
       id: "3",
       title: "The Shire",
-      type: "location",
-      content: "A peaceful place",
+      type: "place",
+      content: { id: "3", notes: "A peaceful place" },
     });
-    const note = makeNote({
+    const item = makeItem({
       id: "1",
       title: "Gandalf",
-      linked_from: [{ id: "3", title: "The Shire", type: "location" }],
+      linked_from: [{ id: "3", title: "The Shire", type: "place" }],
     });
-    const cache = new Map<string, Note>([
-      ["1", note],
+    const cache = new Map<string, CanvasItem>([
+      ["1", item],
       ["3", shire],
     ]);
-    const result = formatNoteExport(note, cache);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("The Shire");
     expect(result).toContain("A peaceful place");
   });
 
-  it("deduplicates notes that appear in both links_to and linked_from", () => {
-    const frodo = makeNote({ id: "2", title: "Frodo", content: "A hobbit" });
-    const note = makeNote({
+  it("deduplicates items that appear in both links_to and linked_from", () => {
+    const frodo = makeItem({
+      id: "2",
+      title: "Frodo",
+      content: { id: "2", notes: "A hobbit" },
+    });
+    const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "2", title: "Frodo", type: "pc" }],
-      linked_from: [{ id: "2", title: "Frodo", type: "pc" }],
+      links_to: [{ id: "2", title: "Frodo", type: "person" }],
+      linked_from: [{ id: "2", title: "Frodo", type: "person" }],
     });
-    const cache = new Map<string, Note>([
-      ["1", note],
+    const cache = new Map<string, CanvasItem>([
+      ["1", item],
       ["2", frodo],
     ]);
-    const result = formatNoteExport(note, cache);
-    // "Frodo" should appear as a connected note only once (plus possibly in the header)
+    const result = formatItemExport(item, cache);
+    // "Frodo" should appear as a connected item only once (plus possibly in the header)
     const sections = result.split("---");
     const connectedSections = sections.slice(1);
     const frodoSections = connectedSections.filter((s) => s.includes("Frodo"));
     expect(frodoSections).toHaveLength(1);
   });
 
-  it("returns just the source note when there are no connections", () => {
-    const note = makeNote({ id: "1", title: "Gandalf", content: "A wizard" });
-    const cache = new Map<string, Note>([["1", note]]);
-    const result = formatNoteExport(note, cache);
+  it("returns just the source item when there are no connections", () => {
+    const item = makeItem({
+      id: "1",
+      title: "Gandalf",
+      content: { id: "1", notes: "A wizard" },
+    });
+    const cache = new Map<string, CanvasItem>([["1", item]]);
+    const result = formatItemExport(item, cache);
     expect(result).toContain("Gandalf");
     expect(result).toContain("A wizard");
-    // No separator for connected notes
+    // No separator for connected items
     expect(result).not.toContain("---");
   });
 
-  it("skips connected notes not found in cache", () => {
-    const note = makeNote({
+  it("skips connected items not found in cache", () => {
+    const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "missing", title: "Ghost", type: "npc" }],
+      links_to: [{ id: "missing", title: "Ghost", type: "person" }],
     });
-    const cache = new Map<string, Note>([["1", note]]);
-    const result = formatNoteExport(note, cache);
+    const cache = new Map<string, CanvasItem>([["1", item]]);
+    const result = formatItemExport(item, cache);
     expect(result).not.toContain("Ghost");
   });
 });

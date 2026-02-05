@@ -9,14 +9,14 @@ import { SIDEBAR_WIDTH } from "../../constants";
 import Toast from "../../sharedComponents/Toast";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
+import CanvasItemEditor from "./components/CanvasItemEditor";
+import type { CanvasItemNodeData } from "./components/CanvasItemNode";
+import CanvasItemNodeComponent from "./components/CanvasItemNode";
 import CanvasPicker from "./components/CanvasPicker";
 import ConnectionsBrowser from "./components/ConnectionsBrowser";
 import ContextMenu from "./components/ContextMenu";
 import FilterBar from "./components/FilterBar";
 import NodeContextMenu from "./components/NodeContextMenu";
-import NoteEditor from "./components/NoteEditor";
-import type { NoteNodeData } from "./components/NoteNode";
-import NoteNodeComponent from "./components/NoteNode";
 import SearchBar from "./components/SearchBar";
 import { SettingsButton, SettingsSidebar } from "./components/SettingsModal";
 import Toolbar from "./components/Toolbar";
@@ -24,7 +24,7 @@ import TopBar from "./components/TopBar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
 
 const nodeTypes: NodeTypes = {
-  note: NoteNodeComponent,
+  canvasItem: CanvasItemNodeComponent,
 };
 
 export default function Canvas() {
@@ -35,14 +35,14 @@ export default function Canvas() {
   const setCanvases = useCanvasStore((s) => s.setCanvases);
   const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
-  const editingNoteId = useCanvasStore((s) => s.editingNoteId);
-  const browsingNoteId = useCanvasStore((s) => s.browsingNoteId);
+  const editingItemId = useCanvasStore((s) => s.editingItemId);
+  const browsingItemId = useCanvasStore((s) => s.browsingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const contextMenu = useCanvasStore((s) => s.contextMenu);
   const nodeContextMenu = useCanvasStore((s) => s.nodeContextMenu);
-  const notesCache = useCanvasStore((s) => s.notesCache);
-  const setEditingNoteId = useCanvasStore((s) => s.setEditingNoteId);
-  const setBrowsingNoteId = useCanvasStore((s) => s.setBrowsingNoteId);
+  const itemsCache = useCanvasStore((s) => s.itemsCache);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
+  const setBrowsingItemId = useCanvasStore((s) => s.setBrowsingItemId);
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
   const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
@@ -90,8 +90,8 @@ export default function Canvas() {
     handleSaved,
     handleDeleted,
     handleDeleteSelected,
-    navigateToNote,
-    createNoteAtPosition,
+    navigateToItem,
+    createItemAtPosition,
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,
@@ -149,7 +149,7 @@ export default function Canvas() {
     <div
       style={{
         width:
-          editingNoteId || browsingNoteId || showSettings
+          editingItemId || browsingItemId || showSettings
             ? `calc(100vw - ${SIDEBAR_WIDTH}px)`
             : "100vw",
         height: "100vh",
@@ -179,7 +179,8 @@ export default function Canvas() {
         <MiniMap
           style={{ background: "var(--color-mantle)" }}
           nodeColor={(node) =>
-            theme.palette.nodeTypes[(node.data as NoteNodeData).type]?.light || "#4a90d9"
+            theme.palette.canvasItemTypes[(node.data as CanvasItemNodeData).type]?.light ||
+            "#4a90d9"
           }
           maskColor="var(--color-backdrop)"
           pannable
@@ -200,7 +201,7 @@ export default function Canvas() {
         }
         center={
           <>
-            <SearchBar canvasId={activeCanvasId} onNavigate={navigateToNote} />
+            <SearchBar canvasId={activeCanvasId} onNavigate={navigateToItem} />
             <FilterBar />
           </>
         }
@@ -213,7 +214,7 @@ export default function Canvas() {
           x={contextMenu.x}
           y={contextMenu.y}
           onSelect={(type) => {
-            createNoteAtPosition(type, contextMenu.flowX, contextMenu.flowY);
+            createItemAtPosition(type, contextMenu.flowX, contextMenu.flowY);
             setContextMenu(null);
           }}
           onViewAll={handleViewAll}
@@ -226,20 +227,20 @@ export default function Canvas() {
         <NodeContextMenu
           x={nodeContextMenu.x}
           y={nodeContextMenu.y}
-          noteId={nodeContextMenu.noteId}
+          itemId={nodeContextMenu.itemId}
           selectedCount={nodeContextMenu.selectedIds.length}
-          onEdit={(noteId) => {
-            setBrowsingNoteId(null);
-            setEditingNoteId(noteId);
+          onEdit={(itemId) => {
+            setBrowsingItemId(null);
+            setEditingItemId(itemId);
           }}
-          onBrowseConnections={(noteId) => {
-            setEditingNoteId(null);
-            setBrowsingNoteId(noteId);
+          onBrowseConnections={(itemId) => {
+            setEditingItemId(null);
+            setBrowsingItemId(itemId);
           }}
           onExport={handleExport}
-          onDelete={async (noteId) => {
-            await api.deleteNote(noteId);
-            handleDeleted(noteId);
+          onDelete={async (itemId) => {
+            await api.deleteItem(itemId);
+            handleDeleted(itemId);
           }}
           onDeleteSelected={async () => {
             await handleDeleteSelected(nodeContextMenu.selectedIds);
@@ -249,23 +250,23 @@ export default function Canvas() {
         />
       )}
 
-      {editingNoteId && !browsingNoteId && (
-        <NoteEditor
-          noteId={editingNoteId}
-          onClose={() => setEditingNoteId(null)}
+      {editingItemId && !browsingItemId && (
+        <CanvasItemEditor
+          itemId={editingItemId}
+          onClose={() => setEditingItemId(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
-          onNavigate={navigateToNote}
-          notesCache={notesCache}
+          onNavigate={navigateToItem}
+          itemsCache={itemsCache}
         />
       )}
 
-      {browsingNoteId && (
+      {browsingItemId && (
         <ConnectionsBrowser
-          noteId={browsingNoteId}
-          notesCache={notesCache}
-          onNavigate={navigateToNote}
-          onClose={() => setBrowsingNoteId(null)}
+          itemId={browsingItemId}
+          itemsCache={itemsCache}
+          onNavigate={navigateToItem}
+          onClose={() => setBrowsingItemId(null)}
         />
       )}
 

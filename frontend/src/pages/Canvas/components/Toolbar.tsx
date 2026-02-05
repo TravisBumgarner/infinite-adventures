@@ -1,11 +1,11 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useTheme } from "@mui/material/styles";
-import type { NoteType } from "shared";
-import { NOTE_TYPES, TYPE_LABELS } from "../../../constants";
+import type { CanvasItemType } from "shared";
+import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES } from "../../../constants";
 
 interface ToolbarProps {
-  onCreate: (type: NoteType) => void;
+  onCreate: (type: CanvasItemType) => void;
 }
 
 export default function Toolbar({ onCreate }: ToolbarProps) {
@@ -27,12 +27,12 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
         zIndex: 50,
       }}
     >
-      {NOTE_TYPES.map((t) => (
+      {CANVAS_ITEM_TYPES.map((t) => (
         <Button
           key={t.value}
           size="small"
           onClick={() => onCreate(t.value)}
-          title={`New ${TYPE_LABELS[t.value]}`}
+          title={`New ${CANVAS_ITEM_TYPE_LABELS[t.value]}`}
           sx={{
             color: "var(--color-text)",
             fontSize: 13,
@@ -47,10 +47,10 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
               height: 12,
               borderRadius: "3px",
               flexShrink: 0,
-              bgcolor: theme.palette.nodeTypes[t.value].light,
+              bgcolor: theme.palette.canvasItemTypes[t.value].light,
             }}
           />
-          {TYPE_LABELS[t.value]}
+          {CANVAS_ITEM_TYPE_LABELS[t.value]}
         </Button>
       ))}
     </Box>

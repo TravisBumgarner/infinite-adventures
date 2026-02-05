@@ -15,14 +15,14 @@ export function getSelectedNodePositions(nodes: Node[]): Map<string, { x: number
 }
 
 /**
- * Delete multiple notes via the provided delete function.
+ * Delete multiple items via the provided delete function.
  * Returns the IDs that were successfully deleted.
  */
-export async function batchDeleteNotes(
-  noteIds: string[],
+export async function batchDeleteItems(
+  itemIds: string[],
   deleteFn: (id: string) => Promise<void>,
 ): Promise<string[]> {
-  const results = await Promise.allSettled(noteIds.map((id) => deleteFn(id).then(() => id)));
+  const results = await Promise.allSettled(itemIds.map((id) => deleteFn(id).then(() => id)));
   return results
     .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
     .map((r) => r.value);

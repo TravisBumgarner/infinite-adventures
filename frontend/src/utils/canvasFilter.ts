@@ -1,6 +1,6 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { NoteType } from "shared";
-import type { NoteNodeData } from "../components/NoteNode";
+import type { CanvasItemType } from "shared";
+import type { CanvasItemNodeData } from "../pages/Canvas/components/CanvasItemNode";
 
 /**
  * Filter nodes by active types and search text.
@@ -9,10 +9,10 @@ import type { NoteNodeData } from "../components/NoteNode";
  * - If search is empty, no text filtering is applied.
  */
 export function filterNodes(
-  nodes: Node<NoteNodeData>[],
-  activeTypes: Set<NoteType>,
+  nodes: Node<CanvasItemNodeData>[],
+  activeTypes: Set<CanvasItemType>,
   search: string,
-): Node<NoteNodeData>[] {
+): Node<CanvasItemNodeData>[] {
   const hasTypeFilter = activeTypes.size > 0;
   const searchLower = search.toLowerCase();
   const hasSearch = searchLower.length > 0;

@@ -1,4 +1,4 @@
-import type { NoteLink, NoteType } from "shared";
+import type { CanvasItemLink, CanvasItemLinkWithSnippet, CanvasItemType } from "shared";
 import { describe, expect, it } from "vitest";
 import {
   buildConnectionEntries,
@@ -6,13 +6,21 @@ import {
   filterConnections,
 } from "../utils/connectionFilter";
 
-function makeLink(id: string, title: string, type: NoteType): NoteLink {
+function makeLink(id: string, title: string, type: CanvasItemType): CanvasItemLink {
   return { id, title, type };
+}
+
+function makeLinkWithSnippet(
+  id: string,
+  title: string,
+  type: CanvasItemType,
+): CanvasItemLinkWithSnippet {
+  return { id, title, type, snippet: "" };
 }
 
 describe("buildConnectionEntries", () => {
   it("returns outgoing entries for links_to", () => {
-    const linksTo = [makeLink("a", "Alpha", "pc")];
+    const linksTo = [makeLink("a", "Alpha", "person")];
     const result = buildConnectionEntries(linksTo, []);
     expect(result).toHaveLength(1);
     expect(result[0].direction).toBe("outgoing");
@@ -20,7 +28,7 @@ describe("buildConnectionEntries", () => {
   });
 
   it("returns incoming entries for linked_from", () => {
-    const linkedFrom = [makeLink("b", "Beta", "npc")];
+    const linkedFrom = [makeLinkWithSnippet("b", "Beta", "person")];
     const result = buildConnectionEntries([], linkedFrom);
     expect(result).toHaveLength(1);
     expect(result[0].direction).toBe("incoming");
@@ -28,15 +36,15 @@ describe("buildConnectionEntries", () => {
   });
 
   it("combines both directions", () => {
-    const linksTo = [makeLink("a", "Alpha", "pc")];
-    const linkedFrom = [makeLink("b", "Beta", "npc")];
+    const linksTo = [makeLink("a", "Alpha", "person")];
+    const linkedFrom = [makeLinkWithSnippet("b", "Beta", "person")];
     const result = buildConnectionEntries(linksTo, linkedFrom);
     expect(result).toHaveLength(2);
   });
 
-  it("deduplicates notes that appear in both directions", () => {
-    const linksTo = [makeLink("a", "Alpha", "pc")];
-    const linkedFrom = [makeLink("a", "Alpha", "pc")];
+  it("deduplicates items that appear in both directions", () => {
+    const linksTo = [makeLink("a", "Alpha", "person")];
+    const linkedFrom = [makeLinkWithSnippet("a", "Alpha", "person")];
     const result = buildConnectionEntries(linksTo, linkedFrom);
     expect(result).toHaveLength(1);
     expect(result[0].direction).toBe("outgoing");
@@ -50,10 +58,10 @@ describe("buildConnectionEntries", () => {
 
 describe("filterConnections", () => {
   const entries: ConnectionEntry[] = [
-    { link: makeLink("a", "Gandalf", "pc"), direction: "outgoing" },
-    { link: makeLink("b", "Shopkeeper", "npc"), direction: "incoming" },
-    { link: makeLink("c", "Find Ring", "quest"), direction: "outgoing" },
-    { link: makeLink("d", "Frodo", "pc"), direction: "incoming" },
+    { link: makeLink("a", "Gandalf", "person"), direction: "outgoing" },
+    { link: makeLink("b", "Shopkeeper", "place"), direction: "incoming" },
+    { link: makeLink("c", "Find Ring", "event"), direction: "outgoing" },
+    { link: makeLink("d", "Frodo", "person"), direction: "incoming" },
   ];
 
   it("returns all entries when no filters are active", () => {
@@ -62,7 +70,7 @@ describe("filterConnections", () => {
   });
 
   it("filters by type", () => {
-    const result = filterConnections(entries, new Set<NoteType>(["pc"]), "");
+    const result = filterConnections(entries, new Set<CanvasItemType>(["person"]), "");
     expect(result).toHaveLength(2);
     expect(result.map((e) => e.link.id)).toEqual(["a", "d"]);
   });
@@ -74,13 +82,13 @@ describe("filterConnections", () => {
   });
 
   it("combines type and search filters", () => {
-    const result = filterConnections(entries, new Set<NoteType>(["pc"]), "frodo");
+    const result = filterConnections(entries, new Set<CanvasItemType>(["person"]), "frodo");
     expect(result).toHaveLength(1);
     expect(result[0].link.id).toBe("d");
   });
 
   it("returns empty array when no entries match", () => {
-    const result = filterConnections(entries, new Set<NoteType>(["item"]), "");
+    const result = filterConnections(entries, new Set<CanvasItemType>(["thing"]), "");
     expect(result).toHaveLength(0);
   });
 });

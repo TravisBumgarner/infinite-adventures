@@ -5,13 +5,13 @@ import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
-import type { NoteType } from "shared";
-import { NOTE_TYPES, TYPE_LABELS } from "../../../constants";
+import type { CanvasItemType } from "shared";
+import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES } from "../../../constants";
 
 interface ContextMenuProps {
   x: number;
   y: number;
-  onSelect: (type: NoteType) => void;
+  onSelect: (type: CanvasItemType) => void;
   onViewAll: () => void;
   onUnstack: () => void;
   onClose: () => void;
@@ -26,9 +26,9 @@ export default function ContextMenu({
   onClose,
 }: ContextMenuProps) {
   const theme = useTheme();
-  const [noteAnchor, setNoteAnchor] = useState<HTMLElement | null>(null);
+  const [itemAnchor, setItemAnchor] = useState<HTMLElement | null>(null);
   const [utilsAnchor, setUtilsAnchor] = useState<HTMLElement | null>(null);
-  const noteTimeout = useRef<ReturnType<typeof setTimeout>>(null);
+  const itemTimeout = useRef<ReturnType<typeof setTimeout>>(null);
   const utilsTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
@@ -59,15 +59,15 @@ export default function ContextMenu({
       >
         <MenuItem
           onMouseEnter={(e) => {
-            if (noteTimeout.current) clearTimeout(noteTimeout.current);
-            setNoteAnchor(e.currentTarget);
+            if (itemTimeout.current) clearTimeout(itemTimeout.current);
+            setItemAnchor(e.currentTarget);
           }}
           onMouseLeave={() => {
-            noteTimeout.current = setTimeout(() => setNoteAnchor(null), 150);
+            itemTimeout.current = setTimeout(() => setItemAnchor(null), 150);
           }}
           sx={{ justifyContent: "space-between" }}
         >
-          New Note
+          New Item
           <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: 1 }}>
             ▸
           </Typography>
@@ -98,13 +98,13 @@ export default function ContextMenu({
         </MenuItem>
       </Menu>
 
-      {/* New Note submenu */}
+      {/* New Item submenu */}
       <Menu
-        open={Boolean(noteAnchor)}
-        anchorEl={noteAnchor}
+        open={Boolean(itemAnchor)}
+        anchorEl={itemAnchor}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
-        onClose={() => setNoteAnchor(null)}
+        onClose={() => setItemAnchor(null)}
         sx={{ pointerEvents: "none" }}
         slotProps={{
           paper: {
@@ -116,25 +116,25 @@ export default function ContextMenu({
               minWidth: 150,
             },
             onMouseEnter: () => {
-              if (noteTimeout.current) clearTimeout(noteTimeout.current);
+              if (itemTimeout.current) clearTimeout(itemTimeout.current);
             },
-            onMouseLeave: () => setNoteAnchor(null),
+            onMouseLeave: () => setItemAnchor(null),
           },
         }}
         disableAutoFocus
       >
-        {NOTE_TYPES.map((t) => (
+        {CANVAS_ITEM_TYPES.map((t) => (
           <MenuItem key={t.value} onClick={() => onSelect(t.value)} sx={{ gap: 1 }}>
             <Box
               sx={{
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                bgcolor: theme.palette.nodeTypes[t.value].light,
+                bgcolor: theme.palette.canvasItemTypes[t.value].light,
                 flexShrink: 0,
               }}
             />
-            {TYPE_LABELS[t.value]}
+            {CANVAS_ITEM_TYPE_LABELS[t.value]}
           </MenuItem>
         ))}
       </Menu>
@@ -170,7 +170,7 @@ export default function ContextMenu({
             onClose();
           }}
         >
-          Unstack Overlapping Notes
+          Unstack Overlapping Items
         </MenuItem>
       </Menu>
     </>
