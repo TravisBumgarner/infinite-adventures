@@ -3,9 +3,15 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
@@ -76,6 +82,10 @@ export default function CanvasItemPanel({
   // Connections tab state
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
+
+  // Settings modal state
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const titleRef = useRef(title);
   titleRef.current = title;
@@ -152,9 +162,10 @@ export default function CanvasItemPanel({
     }
   }, [isEditingTitle]);
 
-  async function handleDelete() {
-    if (!confirm("Delete this item? This cannot be undone.")) return;
+  async function handleDeleteItem() {
     await api.deleteItem(itemId);
+    setShowDeleteConfirm(false);
+    setShowSettings(false);
     onDeleted(itemId);
   }
 
@@ -352,6 +363,13 @@ export default function CanvasItemPanel({
         >
           <EditIcon sx={{ fontSize: 16 }} />
         </IconButton>
+        <IconButton
+          size="small"
+          onClick={() => setShowSettings(true)}
+          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+        >
+          <SettingsIcon sx={{ fontSize: 16 }} />
+        </IconButton>
         <Chip
           label={typeInfo?.label ?? item.type}
           size="small"
@@ -393,6 +411,16 @@ export default function CanvasItemPanel({
       {/* Tab Content */}
       {panelTab === "notes" && !editingNoteId && (
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
+          {/* Add Note Button */}
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={handleAddNote}
+            sx={{ mb: 2, alignSelf: "flex-start" }}
+          >
+            Add Note
+          </Button>
           {/* Notes List */}
           <Box sx={{ flex: 1, overflowY: "auto" }}>
             {notes.length === 0 ? (
@@ -449,23 +477,6 @@ export default function CanvasItemPanel({
                 ))}
               </List>
             )}
-          </Box>
-          {/* Footer */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              mt: 1.5,
-              flexShrink: 0,
-            }}
-          >
-            <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={handleAddNote}>
-              Add Note
-            </Button>
-            <Button variant="outlined" color="error" size="small" onClick={handleDelete}>
-              Delete Item
-            </Button>
           </Box>
         </Box>
       )}
@@ -721,6 +732,58 @@ export default function CanvasItemPanel({
           </List>
         </Box>
       )}
+
+      {/* Settings Modal */}
+      <Dialog
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: "var(--color-base)",
+            minWidth: 280,
+          },
+        }}
+      >
+        <DialogTitle>Item Settings</DialogTitle>
+        <DialogContent>
+          <Button
+            variant="outlined"
+            color="error"
+            fullWidth
+            startIcon={<DeleteIcon />}
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Delete Item
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSettings(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: "var(--color-base)",
+          },
+        }}
+      >
+        <DialogTitle>Delete Item?</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: "var(--color-text)" }}>
+            Are you sure you want to delete this item? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+          <Button onClick={handleDeleteItem} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Drawer>
   );
 }
