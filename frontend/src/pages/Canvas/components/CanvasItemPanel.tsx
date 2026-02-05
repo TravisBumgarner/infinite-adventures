@@ -1,4 +1,7 @@
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -64,8 +67,9 @@ export default function CanvasItemPanel({
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
-  const [currentNote, setCurrentNote] = useState<Note | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
@@ -77,53 +81,61 @@ export default function CanvasItemPanel({
   titleRef.current = title;
   const noteContentRef = useRef(noteContent);
   noteContentRef.current = noteContent;
-  const currentNoteRef = useRef(currentNote);
-  currentNoteRef.current = currentNote;
+  const editingNoteIdRef = useRef(editingNoteId);
+  editingNoteIdRef.current = editingNoteId;
   const itemIdRef = useRef(itemId);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const saveFn = useCallback(async () => {
-    // Save title
+  // Save function for title (always saves)
+  const saveTitleFn = useCallback(async () => {
     await api.updateItem(itemIdRef.current, {
       title: titleRef.current,
     });
-
-    // Save note content
-    if (currentNoteRef.current) {
-      // Update existing note
-      await api.updateNote(currentNoteRef.current.id, {
-        content: noteContentRef.current,
-      });
-    } else if (noteContentRef.current.trim()) {
-      // Create new note if there's content
-      const newNote = await api.createNote(itemIdRef.current, {
-        content: noteContentRef.current,
-      });
-      setCurrentNote(newNote);
-    }
-
-    // Refresh the item to get updated data
     const refreshed = await api.fetchItem(itemIdRef.current);
     onSaved(refreshed);
   }, [onSaved]);
 
-  const { status, markDirty, flush } = useAutoSave({ saveFn });
+  // Save function for note content
+  const saveNoteFn = useCallback(async () => {
+    if (!editingNoteIdRef.current) return;
+    await api.updateNote(editingNoteIdRef.current, {
+      content: noteContentRef.current,
+    });
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+  }, [onSaved]);
+
+  const {
+    status: titleStatus,
+    markDirty: markTitleDirty,
+    flush: flushTitle,
+  } = useAutoSave({ saveFn: saveTitleFn });
+  const {
+    status: noteStatus,
+    markDirty: markNoteDirty,
+    flush: flushNote,
+  } = useAutoSave({ saveFn: saveNoteFn });
+
+  // titleStatus is used implicitly by saving on blur/Enter
+  void titleStatus;
 
   useEffect(() => {
     return () => {
-      flush();
+      flushTitle();
+      flushNote();
     };
-  }, [flush]);
+  }, [flushTitle, flushNote]);
 
   useEffect(() => {
     itemIdRef.current = itemId;
     api.fetchItem(itemId).then((i) => {
       setItem(i);
       setTitle(i.title);
-      // Use first note's content or empty string
-      const firstNote = i.notes[0] ?? null;
-      setCurrentNote(firstNote);
-      setNoteContent(firstNote?.content ?? "");
+      setNotes(i.notes);
+      setEditingNoteId(null);
+      setNoteContent("");
       setPhotos(i.photos);
     });
     // Reset connections filters when item changes
@@ -180,6 +192,50 @@ export default function CanvasItemPanel({
       setTitle(item?.title ?? "");
       setIsEditingTitle(false);
     }
+  }
+
+  async function handleAddNote() {
+    const newNote = await api.createNote(itemId, { content: "" });
+    const refreshed = await api.fetchItem(itemId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+    // Open the new note for editing
+    setEditingNoteId(newNote.id);
+    setNoteContent("");
+  }
+
+  function handleSelectNote(note: Note) {
+    // Flush any pending saves before switching
+    flushNote();
+    setEditingNoteId(note.id);
+    setNoteContent(note.content);
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    if (!confirm("Delete this note?")) return;
+    await api.deleteNote(noteId);
+    const refreshed = await api.fetchItem(itemId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+    // If we were editing this note, go back to list
+    if (editingNoteId === noteId) {
+      setEditingNoteId(null);
+      setNoteContent("");
+    }
+  }
+
+  function handleBackToNoteList() {
+    flushNote();
+    setEditingNoteId(null);
+    setNoteContent("");
+  }
+
+  function getNotePreview(content: string): string {
+    const text = content.replace(/<[^>]*>/g, "").trim();
+    if (!text) return "Empty note";
+    return text.length > 80 ? `${text.slice(0, 80)}...` : text;
   }
 
   // Connections data
@@ -261,7 +317,7 @@ export default function CanvasItemPanel({
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
-              markDirty();
+              markTitleDirty();
             }}
             onBlur={() => setIsEditingTitle(false)}
             onKeyDown={handleTitleKeyDown}
@@ -335,13 +391,102 @@ export default function CanvasItemPanel({
       </Tabs>
 
       {/* Tab Content */}
-      {panelTab === "notes" && (
+      {panelTab === "notes" && !editingNoteId && (
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
+          {/* Notes List */}
+          <Box sx={{ flex: 1, overflowY: "auto" }}>
+            {notes.length === 0 ? (
+              <Typography
+                variant="body2"
+                sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
+              >
+                No notes yet
+              </Typography>
+            ) : (
+              <List sx={{ p: 0 }}>
+                {notes.map((note) => (
+                  <ListItemButton
+                    key={note.id}
+                    onClick={() => handleSelectNote(note)}
+                    sx={{
+                      borderRadius: 1.5,
+                      mb: 1,
+                      py: 1.5,
+                      px: 2,
+                      bgcolor: "var(--color-surface0)",
+                      border: "1px solid var(--color-surface1)",
+                      "&:hover": {
+                        bgcolor: "var(--color-surface1)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {getNotePreview(note.content)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
+                        {new Date(note.updated_at).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      sx={{ color: "var(--color-subtext0)", ml: 1 }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+          </Box>
+          {/* Footer */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mt: 1.5,
+              flexShrink: 0,
+            }}
+          >
+            <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={handleAddNote}>
+              Add Note
+            </Button>
+            <Button variant="outlined" color="error" size="small" onClick={handleDelete}>
+              Delete Item
+            </Button>
+          </Box>
+        </Box>
+      )}
+
+      {panelTab === "notes" && editingNoteId && (
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
+          {/* Back button */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+            <IconButton size="small" onClick={handleBackToNoteList} sx={{ mr: 1 }}>
+              <ArrowBackIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+            <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+              Back to notes
+            </Typography>
+          </Box>
+          {/* Editor */}
           <MentionEditor
             value={noteContent}
             onChange={(val: string) => {
               setNoteContent(val);
-              markDirty();
+              markNoteDirty();
             }}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
@@ -349,7 +494,7 @@ export default function CanvasItemPanel({
             style={{
               background: "var(--color-surface0)",
               border: "1px solid var(--color-surface1)",
-              borderRadius: "0 0 6px 6px",
+              borderRadius: "6px",
               padding: "8px 10px",
               color: "var(--color-text)",
               fontSize: 14,
@@ -366,10 +511,15 @@ export default function CanvasItemPanel({
             }}
           >
             <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-              {statusLabel(status)}
+              {statusLabel(noteStatus)}
             </Typography>
-            <Button variant="outlined" color="error" size="small" onClick={handleDelete}>
-              Delete
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => handleDeleteNote(editingNoteId)}
+            >
+              Delete Note
             </Button>
           </Box>
         </Box>
