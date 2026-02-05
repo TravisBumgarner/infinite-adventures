@@ -1,24 +1,36 @@
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import StarIcon from "@mui/icons-material/Star";
+import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CanvasItem, CanvasItemType, Photo } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
 import { useAutoSave } from "../../../hooks/useAutoSave";
+import { MODAL_ID, useModalStore } from "../../../modals";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
@@ -64,7 +76,9 @@ export default function CanvasItemPanel({
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteContent, setNoteContent] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
@@ -72,35 +86,71 @@ export default function CanvasItemPanel({
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
 
+  // Menu state
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+
+  // Modal store
+  const openModal = useModalStore((s) => s.openModal);
+
   const titleRef = useRef(title);
   titleRef.current = title;
-  const notesRef = useRef(notes);
-  notesRef.current = notes;
+  const noteContentRef = useRef(noteContent);
+  noteContentRef.current = noteContent;
+  const editingNoteIdRef = useRef(editingNoteId);
+  editingNoteIdRef.current = editingNoteId;
   const itemIdRef = useRef(itemId);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const saveFn = useCallback(async () => {
-    const updated = await api.updateItem(itemIdRef.current, {
+  // Save function for title (always saves)
+  const saveTitleFn = useCallback(async () => {
+    await api.updateItem(itemIdRef.current, {
       title: titleRef.current,
-      notes: notesRef.current,
     });
-    onSaved(updated);
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    onSaved(refreshed);
   }, [onSaved]);
 
-  const { status, markDirty, flush } = useAutoSave({ saveFn });
+  // Save function for note content
+  const saveNoteFn = useCallback(async () => {
+    if (!editingNoteIdRef.current) return;
+    await api.updateNote(editingNoteIdRef.current, {
+      content: noteContentRef.current,
+    });
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+  }, [onSaved]);
+
+  const {
+    status: titleStatus,
+    markDirty: markTitleDirty,
+    flush: flushTitle,
+  } = useAutoSave({ saveFn: saveTitleFn });
+  const {
+    status: noteStatus,
+    markDirty: markNoteDirty,
+    flush: flushNote,
+  } = useAutoSave({ saveFn: saveNoteFn });
+
+  // titleStatus is used implicitly by saving on blur/Enter
+  void titleStatus;
 
   useEffect(() => {
     return () => {
-      flush();
+      flushTitle();
+      flushNote();
     };
-  }, [flush]);
+  }, [flushTitle, flushNote]);
 
   useEffect(() => {
     itemIdRef.current = itemId;
     api.fetchItem(itemId).then((i) => {
       setItem(i);
       setTitle(i.title);
-      setNotes(i.content.notes);
+      setNotes(i.notes);
+      setEditingNoteId(null);
+      setNoteContent("");
       setPhotos(i.photos);
     });
     // Reset connections filters when item changes
@@ -117,8 +167,7 @@ export default function CanvasItemPanel({
     }
   }, [isEditingTitle]);
 
-  async function handleDelete() {
-    if (!confirm("Delete this item? This cannot be undone.")) return;
+  async function handleDeleteItem() {
     await api.deleteItem(itemId);
     onDeleted(itemId);
   }
@@ -150,6 +199,112 @@ export default function CanvasItemPanel({
     onSaved(updated);
   }
 
+  function handleOpenLightbox(index: number) {
+    openModal({
+      id: MODAL_ID.LIGHTBOX,
+      photos,
+      initialIndex: index,
+    });
+  }
+
+  function handleOpenDeleteModal() {
+    setMenuAnchor(null);
+    openModal({
+      id: MODAL_ID.DELETE_ITEM,
+      itemId,
+      itemTitle: title,
+      onConfirm: handleDeleteItem,
+    });
+  }
+
+  function handleDownloadPdf() {
+    setMenuAnchor(null);
+    if (!item) return;
+
+    // Build connections list
+    const connections = [
+      ...(item.links_to?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
+      ...(item.linked_from?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
+    ];
+
+    // Generate HTML content
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${item.title}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #333; }
+          h1 { margin-bottom: 8px; }
+          .type-badge { display: inline-block; background: #666; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 24px; }
+          h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 32px; }
+          .note { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; white-space: pre-wrap; }
+          .note-date { font-size: 12px; color: #888; margin-top: 8px; }
+          .photos { display: flex; flex-wrap: wrap; gap: 12px; }
+          .photo { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
+          .connection { padding: 8px 0; border-bottom: 1px solid #eee; }
+          .connection:last-child { border-bottom: none; }
+          .direction { color: #888; font-size: 14px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <h1>${item.title}</h1>
+        <span class="type-badge">${item.type}</span>
+
+        <h2>Notes (${notes.length})</h2>
+        ${
+          notes.length === 0
+            ? '<p style="color: #888;">No notes</p>'
+            : notes
+                .map(
+                  (note) => `
+          <div class="note">
+            ${note.content.replace(/<[^>]*>/g, "").replace(/@\{([^}]+)\}/g, (_, id) => {
+              const linked = itemsCache.get(id);
+              return linked ? `@${linked.title}` : "@mention";
+            })}
+            <div class="note-date">Last edited: ${new Date(note.updated_at).toLocaleDateString()}</div>
+          </div>
+        `,
+                )
+                .join("")
+        }
+
+        <h2>Photos (${photos.length})</h2>
+        ${photos.length === 0 ? '<p style="color: #888;">No photos</p>' : `<div class="photos">${photos.map((photo) => `<img class="photo" src="${photo.url}" alt="${photo.original_name}" />`).join("")}</div>`}
+
+        <h2>Connections (${connections.length})</h2>
+        ${
+          connections.length === 0
+            ? '<p style="color: #888;">No connections</p>'
+            : connections
+                .map(
+                  (c) => `
+          <div class="connection">
+            <span class="direction">${c.direction === "outgoing" ? "→" : "←"}</span>
+            <strong>${c.title}</strong>
+            <span style="color: #888; font-size: 12px; margin-left: 8px;">${c.type}</span>
+          </div>
+        `,
+                )
+                .join("")
+        }
+      </body>
+      </html>
+    `;
+
+    // Open in new window and trigger print
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  }
+
   function handleTitleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
       setIsEditingTitle(false);
@@ -157,6 +312,78 @@ export default function CanvasItemPanel({
       setTitle(item?.title ?? "");
       setIsEditingTitle(false);
     }
+  }
+
+  async function handleAddNote() {
+    const newNote = await api.createNote(itemId, { content: "" });
+    const refreshed = await api.fetchItem(itemId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+    // Open the new note for editing
+    setEditingNoteId(newNote.id);
+    setNoteContent("");
+  }
+
+  function handleSelectNote(note: Note) {
+    // Flush any pending saves before switching
+    flushNote();
+    setEditingNoteId(note.id);
+    setNoteContent(note.content);
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    if (!confirm("Delete this note?")) return;
+    await api.deleteNote(noteId);
+    const refreshed = await api.fetchItem(itemId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+    // If we were editing this note, go back to list
+    if (editingNoteId === noteId) {
+      setEditingNoteId(null);
+      setNoteContent("");
+    }
+  }
+
+  function handleBackToNoteList() {
+    flushNote();
+    setEditingNoteId(null);
+    setNoteContent("");
+  }
+
+  // Create a new canvas item from mention popup and return its id/title
+  async function handleCreateMentionItem(
+    title: string,
+  ): Promise<{ id: string; title: string } | null> {
+    if (!activeCanvasId || !item) return null;
+    try {
+      // Create new item near the current item
+      const newItem = await api.createItem(activeCanvasId, {
+        type: "person", // Default to person type
+        title,
+        canvas_x: item.canvas_x + 220, // Offset to the right
+        canvas_y: item.canvas_y,
+      });
+      // Notify parent so the new item appears on the canvas
+      onSaved(newItem);
+      return { id: newItem.id, title: newItem.title };
+    } catch {
+      return null;
+    }
+  }
+
+  function getNotePreview(content: string): string {
+    // Strip HTML tags
+    let text = content.replace(/<[^>]*>/g, "").trim();
+    // Replace @{uuid} mentions with @title
+    text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
+      const item = itemsCache.get(id);
+      return item ? `@${item.title}` : "@mention";
+    });
+    if (!text) return "Empty note";
+    // Show approximately 5 lines worth of text (~300 chars)
+    return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }
 
   // Connections data
@@ -238,7 +465,7 @@ export default function CanvasItemPanel({
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
-              markDirty();
+              markTitleDirty();
             }}
             onBlur={() => setIsEditingTitle(false)}
             onKeyDown={handleTitleKeyDown}
@@ -266,13 +493,6 @@ export default function CanvasItemPanel({
             {title}
           </Typography>
         )}
-        <IconButton
-          size="small"
-          onClick={() => setIsEditingTitle(true)}
-          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
-        >
-          <EditIcon sx={{ fontSize: 16 }} />
-        </IconButton>
         <Chip
           label={typeInfo?.label ?? item.type}
           size="small"
@@ -284,6 +504,52 @@ export default function CanvasItemPanel({
             height: 22,
           }}
         />
+        <IconButton
+          size="small"
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+        >
+          <MoreVertIcon sx={{ fontSize: 18 }} />
+        </IconButton>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "var(--color-base)",
+                border: "1px solid var(--color-surface1)",
+                minWidth: 180,
+              },
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              setIsEditingTitle(true);
+            }}
+          >
+            <ListItemIcon>
+              <EditIcon fontSize="small" />
+            </ListItemIcon>
+            Edit Title
+          </MenuItem>
+          <MenuItem onClick={handleDownloadPdf}>
+            <ListItemIcon>
+              <PictureAsPdfIcon fontSize="small" />
+            </ListItemIcon>
+            Download PDF
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={handleOpenDeleteModal} sx={{ color: "var(--color-red)" }}>
+            <ListItemIcon sx={{ color: "inherit" }}>
+              <DeleteIcon fontSize="small" />
+            </ListItemIcon>
+            Delete Item
+          </MenuItem>
+        </Menu>
         <IconButton onClick={onClose} sx={{ color: "var(--color-text)", ml: "auto" }}>
           <CloseIcon />
         </IconButton>
@@ -312,21 +578,105 @@ export default function CanvasItemPanel({
       </Tabs>
 
       {/* Tab Content */}
-      {panelTab === "notes" && (
+      {panelTab === "notes" && !editingNoteId && (
         <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AddIcon />}
+            fullWidth
+            onClick={handleAddNote}
+            sx={{ mb: 2, alignSelf: "flex-start" }}
+          >
+            Add Note
+          </Button>
+          {/* Notes List */}
+          <Box sx={{ flex: 1, overflowY: "auto" }}>
+            {notes.length === 0 ? (
+              <Typography
+                variant="body2"
+                sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
+              >
+                No notes yet
+              </Typography>
+            ) : (
+              <List sx={{ p: 0 }}>
+                {notes.map((note) => (
+                  <ListItemButton
+                    key={note.id}
+                    onClick={() => handleSelectNote(note)}
+                    sx={{
+                      mb: 1,
+                      py: 1.5,
+                      px: 2,
+                      bgcolor: "var(--color-surface0)",
+                      border: "1px solid var(--color-surface1)",
+                      "&:hover": {
+                        bgcolor: "var(--color-surface1)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {getNotePreview(note.content)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
+                        Last edited on {new Date(note.updated_at).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      sx={{ color: "var(--color-subtext0)", ml: 1 }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {panelTab === "notes" && editingNoteId && (
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
+          {/* Back button */}
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ArrowBackIcon />}
+              fullWidth
+              onClick={handleBackToNoteList}
+              sx={{ alignSelf: "flex-start" }}
+            >
+              Back to Notes
+            </Button>
+          </Box>
+          {/* Editor */}
           <MentionEditor
-            value={notes}
+            value={noteContent}
             onChange={(val: string) => {
-              setNotes(val);
-              markDirty();
+              setNoteContent(val);
+              markNoteDirty();
             }}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
+            onCreate={handleCreateMentionItem}
             containerStyle={{ flex: 1, minHeight: 0 }}
             style={{
               background: "var(--color-surface0)",
               border: "1px solid var(--color-surface1)",
-              borderRadius: "0 0 6px 6px",
               padding: "8px 10px",
               color: "var(--color-text)",
               fontSize: 14,
@@ -343,10 +693,15 @@ export default function CanvasItemPanel({
             }}
           >
             <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-              {statusLabel(status)}
+              {statusLabel(noteStatus)}
             </Typography>
-            <Button variant="outlined" color="error" size="small" onClick={handleDelete}>
-              Delete
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => handleDeleteNote(editingNoteId)}
+            >
+              Delete Note
             </Button>
           </Box>
         </Box>
@@ -355,7 +710,7 @@ export default function CanvasItemPanel({
       {panelTab === "photos" && (
         <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {photos.map((photo) => (
+            {photos.map((photo, index) => (
               <Box
                 key={photo.id}
                 sx={{
@@ -374,8 +729,28 @@ export default function CanvasItemPanel({
                   src={photo.url}
                   alt={photo.original_name}
                   sx={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
-                  onClick={() => handlePhotoSelect(photo.id)}
+                  onClick={() => handleOpenLightbox(index)}
                 />
+                <IconButton
+                  size="small"
+                  onClick={() => handlePhotoSelect(photo.id)}
+                  sx={{
+                    position: "absolute",
+                    bottom: 2,
+                    left: 2,
+                    bgcolor: "rgba(0,0,0,0.5)",
+                    color: photo.is_selected ? "var(--color-yellow)" : "white",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                    width: 20,
+                    height: 20,
+                  }}
+                >
+                  {photo.is_selected ? (
+                    <StarIcon sx={{ fontSize: 14 }} />
+                  ) : (
+                    <StarOutlineIcon sx={{ fontSize: 14 }} />
+                  )}
+                </IconButton>
                 <IconButton
                   size="small"
                   onClick={() => handlePhotoDelete(photo.id)}
@@ -408,7 +783,7 @@ export default function CanvasItemPanel({
               variant="caption"
               sx={{ display: "block", mt: 1.5, color: "var(--color-subtext0)" }}
             >
-              Click a photo to set it as the preview image
+              Click a photo to view it. Click the star to set as preview.
             </Typography>
           )}
         </Box>

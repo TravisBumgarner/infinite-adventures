@@ -3,6 +3,62 @@ import { getDb } from "../db/connection.js";
 import { canvasItemLinks, canvasItems } from "../db/schema.js";
 import { createItem } from "./canvasItemService.js";
 
+/**
+ * Create a direct link between two canvas items.
+ * Returns true if the link was created, false if it already exists.
+ */
+export async function createLink(sourceItemId: string, targetItemId: string): Promise<boolean> {
+  if (sourceItemId === targetItemId) {
+    return false;
+  }
+
+  const db = getDb();
+
+  // Check if link already exists
+  const [existing] = await db
+    .select()
+    .from(canvasItemLinks)
+    .where(
+      and(
+        eq(canvasItemLinks.source_item_id, sourceItemId),
+        eq(canvasItemLinks.target_item_id, targetItemId),
+      ),
+    );
+
+  if (existing) {
+    return false;
+  }
+
+  await db.insert(canvasItemLinks).values({
+    source_item_id: sourceItemId,
+    target_item_id: targetItemId,
+    snippet: null,
+    created_at: new Date().toISOString(),
+  });
+
+  return true;
+}
+
+/**
+ * Delete a direct link between two canvas items.
+ * Returns true if the link was deleted, false if it didn't exist.
+ */
+export async function deleteLink(sourceItemId: string, targetItemId: string): Promise<boolean> {
+  const db = getDb();
+
+  const result = await db
+    .delete(canvasItemLinks)
+    .where(
+      and(
+        eq(canvasItemLinks.source_item_id, sourceItemId),
+        eq(canvasItemLinks.target_item_id, targetItemId),
+      ),
+    )
+    .returning();
+
+  return result.length > 0;
+}
+
 export interface ResolvedCanvasItemLink {
   targetItemId: string;
   title: string;

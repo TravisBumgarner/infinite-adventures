@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getItem } from "../../services/canvasItemService.js";
+import { getItem, getItemContentId } from "../../services/canvasItemService.js";
 import { uploadPhoto } from "../../services/photoService.js";
 import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { isValidUUID } from "../shared/validation.js";
@@ -38,9 +38,16 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
     return;
   }
 
+  // Get content_id for photo association
+  const contentId = await getItemContentId(context.itemId);
+  if (!contentId) {
+    sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
+    return;
+  }
+
   const photo = await uploadPhoto({
     content_type: item.type,
-    content_id: item.content.id,
+    content_id: contentId,
     original_name: file.originalname,
     mime_type: file.mimetype,
     buffer: file.buffer,

@@ -1,12 +1,12 @@
 import SearchIcon from "@mui/icons-material/Search";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import InputAdornment from "@mui/material/InputAdornment";
+import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CanvasItemSearchResult } from "shared";
 import * as api from "../../../api/client";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -88,37 +88,63 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
   };
 
   return (
-    <Box ref={containerRef} sx={{ position: "relative", width: 320 }}>
-      <TextField
-        variant="filled"
-        size="small"
-        fullWidth
-        placeholder="Search items..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => {
-          if (results.length > 0) setShowDropdown(true);
-        }}
-        onBlur={() => setShowDropdown(false)}
-        onKeyDown={handleKeyDown}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 20, color: "var(--color-overlay0)" }} />
-              </InputAdornment>
-            ),
+    <Box ref={containerRef} sx={{ position: "relative" }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          px: 1.5,
+          py: 0.75,
+          bgcolor: "var(--color-chrome-bg)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid var(--color-surface1)",
+          borderRadius: 3,
+          minWidth: 280,
+          transition: "border-color 0.2s, box-shadow 0.2s",
+          "&:focus-within": {
+            borderColor: "var(--color-blue)",
+            boxShadow: "0 0 0 2px rgba(var(--color-blue-rgb), 0.1)",
           },
         }}
-      />
+      >
+        <SearchIcon sx={{ fontSize: 18, color: "var(--color-overlay0)", flexShrink: 0 }} />
+        <InputBase
+          size="small"
+          placeholder="Search items..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            if (results.length > 0) setShowDropdown(true);
+          }}
+          onBlur={() => setShowDropdown(false)}
+          onKeyDown={handleKeyDown}
+          sx={{
+            flex: 1,
+            fontSize: 14,
+            color: "var(--color-text)",
+            "& input::placeholder": {
+              color: "var(--color-overlay0)",
+              opacity: 1,
+            },
+          }}
+        />
+      </Box>
+
       {showDropdown && results.length > 0 && (
         <Paper
+          elevation={8}
           sx={{
-            mt: 0.5,
-            maxHeight: 300,
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            right: 0,
+            maxHeight: 320,
             overflowY: "auto",
             bgcolor: "var(--color-base)",
             border: "1px solid var(--color-surface1)",
+            borderRadius: 2,
+            zIndex: 100,
           }}
         >
           {results.map((result, i) => {
@@ -127,10 +153,13 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
               <Box
                 key={result.id}
                 sx={{
-                  p: "8px 12px",
+                  p: 1.5,
                   cursor: "pointer",
-                  bgcolor: i === selectedIndex ? "var(--color-surface1)" : "transparent",
+                  bgcolor: i === selectedIndex ? "var(--color-surface0)" : "transparent",
                   borderBottom: "1px solid var(--color-surface0)",
+                  transition: "background-color 0.1s",
+                  "&:last-child": { borderBottom: "none" },
+                  "&:hover": { bgcolor: "var(--color-surface0)" },
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
@@ -138,43 +167,57 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
                 }}
                 onMouseEnter={() => setSelectedIndex(i)}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.25 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
+                    {result.title}
+                  </Typography>
                   <Chip
-                    label={result.type.toUpperCase()}
+                    label={result.type}
                     size="small"
                     sx={{
-                      height: 20,
+                      height: 18,
                       fontSize: 10,
                       fontWeight: 600,
                       bgcolor: bgColor,
                       color: getContrastText(bgColor),
+                      textTransform: "capitalize",
                     }}
                   />
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {result.title}
-                  </Typography>
                 </Box>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "var(--color-subtext0)", lineHeight: 1.4 }}
-                  dangerouslySetInnerHTML={{ __html: result.snippet }}
-                />
+                {result.snippet && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "var(--color-subtext0)",
+                      lineHeight: 1.4,
+                      display: "block",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: result.snippet }}
+                  />
+                )}
               </Box>
             );
           })}
         </Paper>
       )}
+
       {showDropdown && query.trim() && results.length === 0 && (
         <Paper
+          elevation={8}
           sx={{
-            mt: 0.5,
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            right: 0,
             bgcolor: "var(--color-base)",
             border: "1px solid var(--color-surface1)",
+            borderRadius: 2,
+            zIndex: 100,
           }}
         >
           <Typography
             variant="body2"
-            sx={{ p: 1.5, color: "var(--color-overlay0)", textAlign: "center" }}
+            sx={{ p: 2, color: "var(--color-overlay0)", textAlign: "center" }}
           >
             No results found
           </Typography>

@@ -5,6 +5,8 @@ import multer from "multer";
 import { initDb } from "./db/connection.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
+import { linksRouter } from "./routes/links/index.js";
+import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
 
 const PORT = parseInt(process.env.PORT || "3021", 10);
@@ -28,9 +30,16 @@ app.use("/api/canvases", canvasesRouter);
 app.use("/api/canvases/:canvasId/items", canvasItemsRouter);
 app.use("/api/items", itemsRouter);
 
+// Note routes
+app.use("/api/notes", notesRouter);
+app.use("/api/items/:itemId/notes", itemNotesRouter);
+
 // Photo routes
 app.use("/api/photos", photosRouter);
 app.use("/api/items/:itemId/photos", upload.single("photo"), itemPhotosRouter);
+
+// Link routes
+app.use("/api/links", linksRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

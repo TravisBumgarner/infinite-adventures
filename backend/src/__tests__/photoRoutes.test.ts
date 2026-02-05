@@ -5,7 +5,12 @@ import { handler as deleteHandler, validate as deleteValidate } from "../routes/
 import { handler as selectHandler, validate as selectValidate } from "../routes/photos/select.js";
 import { handler as serveHandler } from "../routes/photos/serve.js";
 import { handler as uploadHandler, validate as uploadValidate } from "../routes/photos/upload.js";
-import { createItem, DEFAULT_CANVAS_ID, getItem } from "../services/canvasItemService.js";
+import {
+  createItem,
+  DEFAULT_CANVAS_ID,
+  getItem,
+  getItemContentId,
+} from "../services/canvasItemService.js";
 import { uploadPhoto } from "../services/photoService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
@@ -129,9 +134,10 @@ describe("photo routes", () => {
     it("handler serves photo file with correct content type", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
+      const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
         content_type: fullItem!.type,
-        content_id: fullItem!.content.id,
+        content_id: contentId!,
         original_name: "test.jpg",
         mime_type: "image/jpeg",
         buffer: Buffer.from("test image data"),
@@ -175,9 +181,10 @@ describe("photo routes", () => {
     it("handler deletes photo and returns success envelope", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
+      const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
         content_type: fullItem!.type,
-        content_id: fullItem!.content.id,
+        content_id: contentId!,
         original_name: "test.jpg",
         mime_type: "image/jpeg",
         buffer: Buffer.from("test image data"),
@@ -222,9 +229,10 @@ describe("photo routes", () => {
     it("handler selects photo and returns success envelope with is_selected true", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
+      const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
         content_type: fullItem!.type,
-        content_id: fullItem!.content.id,
+        content_id: contentId!,
         original_name: "test.jpg",
         mime_type: "image/jpeg",
         buffer: Buffer.from("test image data"),

@@ -165,7 +165,6 @@ describe("canvasService", () => {
       // First insert the content record
       await db.insert(people).values({
         id: contentId,
-        notes: "",
         created_at: now,
         updated_at: now,
       });

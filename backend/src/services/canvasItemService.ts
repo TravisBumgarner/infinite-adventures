@@ -22,7 +22,7 @@ import {
   sessions,
   things,
 } from "../db/schema.js";
-import { resolveCanvasItemLinks } from "./canvasItemLinkService.js";
+import { listNotes } from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 
 export const DEFAULT_CANVAS_ID = "00000000-0000-4000-8000-000000000000";
@@ -110,7 +110,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
 }
 
 /**
- * Get a single canvas item with full content, photos, and links.
+ * Get a single canvas item with full notes, photos, and links.
  */
 export async function getItem(id: string): Promise<CanvasItem | null> {
   const db = getDb();
@@ -119,13 +119,9 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
   if (!item) return null;
 
   const type = item.type as CanvasItemType;
-  const contentTable = getContentTable(type);
 
-  // Get content
-  const [content] = await db
-    .select()
-    .from(contentTable)
-    .where(eq(contentTable.id, item.content_id));
+  // Get notes
+  const noteList = await listNotes(id);
 
   // Get photos
   const photoRecords = await listPhotos(type, item.content_id);
@@ -167,10 +163,7 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     canvas_y: item.canvas_y,
     created_at: item.created_at,
     updated_at: item.updated_at,
-    content: {
-      id: content?.id ?? item.content_id,
-      notes: content?.notes ?? "",
-    },
+    notes: noteList,
     photos: photoList,
     links_to: linksTo as CanvasItemLink[],
     linked_from: linkedFrom.map((l) => ({
@@ -209,7 +202,6 @@ export async function createItem(
   // Create content record first
   await db.insert(contentTable).values({
     id: contentId,
-    notes: input.notes ?? "",
     created_at: now,
     updated_at: now,
   });
@@ -238,7 +230,7 @@ export async function createItem(
 }
 
 /**
- * Update a canvas item's title, position, or content notes.
+ * Update a canvas item's title or position.
  */
 export async function updateItem(
   id: string,
@@ -265,21 +257,6 @@ export async function updateItem(
       .where(eq(canvasItems.id, id));
   }
 
-  // Update content notes if provided
-  if (input.notes !== undefined) {
-    const contentTable = getContentTable(type);
-    await db
-      .update(contentTable)
-      .set({
-        notes: input.notes,
-        updated_at: now,
-      })
-      .where(eq(contentTable.id, existing.content_id));
-
-    // Process @mentions and update links
-    await resolveCanvasItemLinks(id, input.notes);
-  }
-
   // Get updated item
   const [updated] = await db.select().from(canvasItems).where(eq(canvasItems.id, id));
 
@@ -294,7 +271,7 @@ export async function updateItem(
 }
 
 /**
- * Delete a canvas item and its associated content and photos.
+ * Delete a canvas item and its associated content, notes, and photos.
  */
 export async function deleteItem(id: string): Promise<boolean> {
   const db = getDb();
@@ -308,13 +285,27 @@ export async function deleteItem(id: string): Promise<boolean> {
   // Delete photos for this content
   await deletePhotosForContent(type, existing.content_id);
 
-  // Delete the canvas item (links will cascade)
+  // Notes will be deleted by cascade when canvas item is deleted
+
+  // Delete the canvas item (links and notes will cascade)
   await db.delete(canvasItems).where(eq(canvasItems.id, id));
 
   // Delete the content record
   await db.delete(contentTable).where(eq(contentTable.id, existing.content_id));
 
   return true;
+}
+
+/**
+ * Get the content_id for a canvas item (used for photo association).
+ */
+export async function getItemContentId(itemId: string): Promise<string | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ content_id: canvasItems.content_id })
+    .from(canvasItems)
+    .where(eq(canvasItems.id, itemId));
+  return row?.content_id ?? null;
 }
 
 /**

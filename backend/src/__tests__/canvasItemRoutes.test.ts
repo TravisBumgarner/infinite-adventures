@@ -47,8 +47,8 @@ describe("canvas item routes", () => {
     });
 
     it("handler returns all items wrapped in success envelope", async () => {
-      await createItem({ type: "person", title: "Gandalf", notes: "wizard" }, DEFAULT_CANVAS_ID);
-      await createItem({ type: "person", title: "Frodo", notes: "hobbit" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
 
       const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
       const res = createMockRes();
@@ -128,7 +128,7 @@ describe("canvas item routes", () => {
     it("validate returns context with parsed input and canvasId", () => {
       const res = createMockRes();
       const req = createMockReq({
-        body: { type: "person", title: "Gandalf", notes: "wizard" },
+        body: { type: "person", title: "Gandalf" },
         params: { canvasId: DEFAULT_CANVAS_ID },
       });
       const context = createValidate(req, res);
@@ -140,7 +140,7 @@ describe("canvas item routes", () => {
 
     it("handler creates item and returns 201 with success envelope", async () => {
       const req = createMockReq({
-        body: { type: "person", title: "Gandalf", notes: "wizard", canvas_x: 10, canvas_y: 20 },
+        body: { type: "person", title: "Gandalf", canvas_x: 10, canvas_y: 20 },
         params: { canvasId: DEFAULT_CANVAS_ID },
       });
       const res = createMockRes();
@@ -274,10 +274,7 @@ describe("canvas item routes", () => {
     });
 
     it("handler returns search results in success envelope", async () => {
-      await createItem(
-        { type: "person", title: "Gandalf", notes: "A wise wizard" },
-        DEFAULT_CANVAS_ID,
-      );
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const req = createMockReq({
         query: { q: "Gandalf" },
@@ -294,7 +291,7 @@ describe("canvas item routes", () => {
     });
 
     it("handler returns empty results for no matches", async () => {
-      await createItem({ type: "person", title: "Gandalf", notes: "A wizard" }, DEFAULT_CANVAS_ID);
+      await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const req = createMockReq({
         query: { q: "dragon" },

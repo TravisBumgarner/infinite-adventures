@@ -14,9 +14,11 @@ export const CanvasItemSummarySchema = z.object({
   created_at: z.string(),
 });
 
-export const ContentDataSchema = z.object({
+export const NoteSchema = z.object({
   id: z.string(),
-  notes: z.string(),
+  content: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export const PhotoSchema = z.object({
@@ -47,7 +49,7 @@ export const CanvasItemSchema = z.object({
   canvas_y: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
-  content: ContentDataSchema,
+  notes: z.array(NoteSchema),
   photos: z.array(PhotoSchema),
   links_to: z.array(CanvasItemLinkSchema),
   linked_from: z.array(CanvasItemLinkWithSnippetSchema),
@@ -58,14 +60,22 @@ export const CreateCanvasItemInputSchema = z.object({
   title: z.string(),
   canvas_x: z.number().optional(),
   canvas_y: z.number().optional(),
-  notes: z.string().optional(),
 });
 
 export const UpdateCanvasItemInputSchema = z.object({
   title: z.string().optional(),
   canvas_x: z.number().optional(),
   canvas_y: z.number().optional(),
-  notes: z.string().optional(),
+});
+
+// --- Note Input Schemas ---
+
+export const CreateNoteInputSchema = z.object({
+  content: z.string().optional(),
+});
+
+export const UpdateNoteInputSchema = z.object({
+  content: z.string(),
 });
 
 export const CanvasItemSearchResultSchema = z.object({
@@ -119,17 +129,19 @@ export const ERROR_CODES = [
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-// --- Inferred types (Canvas Items - new) ---
+// --- Inferred types (Canvas Items) ---
 
 export type CanvasItemType = z.infer<typeof CanvasItemTypeSchema>;
 export type CanvasItemSummary = z.infer<typeof CanvasItemSummarySchema>;
-export type ContentData = z.infer<typeof ContentDataSchema>;
+export type Note = z.infer<typeof NoteSchema>;
 export type Photo = z.infer<typeof PhotoSchema>;
 export type CanvasItemLink = z.infer<typeof CanvasItemLinkSchema>;
 export type CanvasItemLinkWithSnippet = z.infer<typeof CanvasItemLinkWithSnippetSchema>;
 export type CanvasItem = z.infer<typeof CanvasItemSchema>;
 export type CreateCanvasItemInput = z.infer<typeof CreateCanvasItemInputSchema>;
 export type UpdateCanvasItemInput = z.infer<typeof UpdateCanvasItemInputSchema>;
+export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
+export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
 
 // --- Inferred types (Other) ---
