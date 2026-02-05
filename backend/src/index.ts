@@ -5,7 +5,6 @@ import multer from "multer";
 import { initDb } from "./db/connection.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
-import { canvasNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
 
 const PORT = parseInt(process.env.PORT || "3021", 10);
@@ -25,11 +24,7 @@ await initDb();
 // Canvas routes
 app.use("/api/canvases", canvasesRouter);
 
-// Notes routes (legacy)
-app.use("/api/canvases/:canvasId/notes", canvasNotesRouter);
-app.use("/api/notes", notesRouter);
-
-// Canvas items routes (new)
+// Canvas items routes
 app.use("/api/canvases/:canvasId/items", canvasItemsRouter);
 app.use("/api/items", itemsRouter);
 

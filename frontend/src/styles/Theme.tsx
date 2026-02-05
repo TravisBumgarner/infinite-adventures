@@ -1,34 +1,22 @@
 import { CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import type { CanvasItemType, NoteType } from "shared";
+import type { CanvasItemType } from "shared";
 import { applyCssVars } from "./cssVars";
 import type { EffectiveMode, ThemePreference } from "./styleConsts";
 import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
 
-// Augment MUI theme types with nodeTypes palette
+// Augment MUI theme types with canvasItemTypes palette
 declare module "@mui/material/styles" {
   interface Palette {
-    nodeTypes: Record<NoteType, { light: string; dark: string }>;
     canvasItemTypes: Record<CanvasItemType, { light: string; dark: string }>;
   }
   interface PaletteOptions {
-    nodeTypes?: Record<NoteType, { light: string; dark: string }>;
     canvasItemTypes?: Record<CanvasItemType, { light: string; dark: string }>;
   }
 }
 
 const STORAGE_KEY = "infinite-adventures-theme";
-
-const NODE_TYPES_PALETTE: Record<NoteType, { light: string; dark: string }> = {
-  pc: { light: "#4a90d9", dark: "#2a5a8a" },
-  npc: { light: "#d94a4a", dark: "#8a2a2a" },
-  item: { light: "#d9a74a", dark: "#8a6a2a" },
-  quest: { light: "#8b5cf6", dark: "#5a3a9e" },
-  location: { light: "#22c55e", dark: "#167a3a" },
-  goal: { light: "#ec4899", dark: "#9a2d62" },
-  session: { light: "#6b7280", dark: "#434950" },
-};
 
 const CANVAS_ITEM_TYPES_PALETTE: Record<CanvasItemType, { light: string; dark: string }> = {
   person: { light: "#4a90d9", dark: "#2a5a8a" }, // Blue - for people (PCs, NPCs)
@@ -58,7 +46,6 @@ function buildTheme(mode: EffectiveMode) {
       info: { main: p.sapphire },
       success: { main: p.green },
       divider: p.surface1,
-      nodeTypes: NODE_TYPES_PALETTE,
       canvasItemTypes: CANVAS_ITEM_TYPES_PALETTE,
     },
     shape: {

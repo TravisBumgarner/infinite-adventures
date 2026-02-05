@@ -6,7 +6,7 @@ export interface ListValidationContext {
   canvasId: string;
 }
 
-export function validate(req: Request, res: Response): ListValidationContext | null {
+export function validate(req: Request, _res: Response): ListValidationContext | null {
   const canvasId = req.params.canvasId ?? "";
   return { canvasId };
 }

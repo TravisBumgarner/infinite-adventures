@@ -7,7 +7,7 @@ export interface SearchValidationContext {
   canvasId: string;
 }
 
-export function validate(req: Request, res: Response): SearchValidationContext | null {
+export function validate(req: Request, _res: Response): SearchValidationContext | null {
   const query = typeof req.query.q === "string" ? req.query.q : "";
   const canvasId = req.params.canvasId ?? "";
   return { query, canvasId };

@@ -15,6 +15,7 @@ import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
 import { useAutoSave } from "../../../hooks/useAutoSave";
+import { useCanvasStore } from "../../../stores/canvasStore";
 import MentionEditor from "./MentionEditor";
 
 export function statusLabel(status: SaveStatus): string {
@@ -49,6 +50,7 @@ export default function CanvasItemEditor({
   onNavigate,
   itemsCache,
 }: CanvasItemEditorProps) {
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -255,7 +257,8 @@ export default function CanvasItemEditor({
             setNotes(val);
             markDirty();
           }}
-          notesCache={itemsCache as unknown as Map<string, any>}
+          itemsCache={itemsCache}
+          canvasId={activeCanvasId ?? ""}
           style={{
             background: "var(--color-surface0)",
             border: "1px solid var(--color-surface1)",

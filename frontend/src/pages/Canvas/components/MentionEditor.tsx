@@ -9,7 +9,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import type { Note, NoteSummary, NoteType } from "shared";
+import type { CanvasItem, CanvasItemSummary, CanvasItemType } from "shared";
 import * as api from "../../../api/client";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
 import { getContrastText } from "../../../utils/getContrastText";
@@ -17,7 +17,8 @@ import { getContrastText } from "../../../utils/getContrastText";
 interface MentionEditorProps {
   value: string;
   onChange: (value: string) => void;
-  notesCache: Map<string, Note>;
+  itemsCache: Map<string, CanvasItem>;
+  canvasId: string;
   style?: React.CSSProperties;
 }
 
@@ -38,7 +39,7 @@ function SuggestionPopup({
   query: string;
   selectedIndex: number;
   onSelect: (item: SuggestionItem) => void;
-  nodeTypes: Record<NoteType, { light: string; dark: string }>;
+  nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
 }) {
   const hasCreateOption =
     query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
@@ -58,7 +59,7 @@ function SuggestionPopup({
       }}
     >
       {items.map((item, i) => {
-        const bgColor = nodeTypes[item.type as NoteType]?.light || "#585b70";
+        const bgColor = nodeTypes[item.type as CanvasItemType]?.light || "#585b70";
         return (
           <MenuItem
             key={item.id}
@@ -89,7 +90,7 @@ function SuggestionPopup({
           selected={selectedIndex === items.length}
           onMouseDown={(e) => {
             e.preventDefault();
-            onSelect({ id: "", title: query, type: "npc" });
+            onSelect({ id: "", title: query, type: "person" });
           }}
           sx={{
             fontStyle: "italic",
@@ -113,7 +114,7 @@ const SuggestionController = forwardRef<
   SuggestionComponentRef,
   {
     onRender: (element: React.ReactNode | null) => void;
-    nodeTypes: Record<NoteType, { light: string; dark: string }>;
+    nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
   }
 >(({ onRender, nodeTypes }, ref) => {
   const [items, setItems] = useState<SuggestionItem[]>([]);
@@ -265,7 +266,13 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
   );
 }
 
-export default function MentionEditor({ value, onChange, notesCache, style }: MentionEditorProps) {
+export default function MentionEditor({
+  value,
+  onChange,
+  itemsCache,
+  canvasId,
+  style,
+}: MentionEditorProps) {
   const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
   const suggestionRef = useRef<SuggestionComponentRef>(null);
@@ -289,10 +296,10 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
         },
         suggestion: {
           items: async ({ query }: { query: string }) => {
-            const summaries = await api.fetchNotes();
+            const summaries = await api.fetchItems(canvasId);
             return summaries
-              .filter((n: NoteSummary) => n.title.toLowerCase().includes(query.toLowerCase()))
-              .map((n: NoteSummary) => ({
+              .filter((n: CanvasItemSummary) => n.title.toLowerCase().includes(query.toLowerCase()))
+              .map((n: CanvasItemSummary) => ({
                 id: n.id,
                 title: n.title,
                 type: n.type,
@@ -330,7 +337,7 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
         },
       }),
     ],
-    content: contentToHtml(value, notesCache),
+    content: contentToHtml(value, itemsCache),
     onUpdate: ({ editor }) => {
       isInternalChange.current = true;
       const json = editor.getJSON();
@@ -349,10 +356,10 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
     }
     if (value !== prevValue.current) {
       prevValue.current = value;
-      const html = contentToHtml(value, notesCache);
+      const html = contentToHtml(value, itemsCache);
       editor.commands.setContent(html);
     }
-  }, [value, editor, notesCache]);
+  }, [value, editor, itemsCache]);
 
   return (
     <Box sx={{ position: "relative" }}>
@@ -363,7 +370,7 @@ export default function MentionEditor({ value, onChange, notesCache, style }: Me
       <SuggestionController
         ref={suggestionRef}
         onRender={handleRender}
-        nodeTypes={theme.palette.nodeTypes}
+        nodeTypes={theme.palette.canvasItemTypes}
       />
       {suggestionPopup && (
         <Box

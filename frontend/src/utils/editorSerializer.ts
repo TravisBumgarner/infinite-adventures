@@ -1,4 +1,4 @@
-import type { Note } from "shared";
+import type { CanvasItem } from "shared";
 
 interface TipTapNode {
   type: string;
@@ -100,13 +100,13 @@ function formatInlineMarkdown(line: string): string {
  * Convert plain text with @{id} mentions and markdown formatting
  * into TipTap-compatible HTML.
  */
-export function contentToHtml(content: string, notesCache: Map<string, Note>): string {
+export function contentToHtml(content: string, itemsCache: Map<string, CanvasItem>): string {
   if (!content) return "<p></p>";
 
   // Build a title->id lookup for legacy mentions
   const titleToId = new Map<string, string>();
-  for (const [id, note] of notesCache) {
-    titleToId.set(note.title.toLowerCase(), id);
+  for (const [id, item] of itemsCache) {
+    titleToId.set(item.title.toLowerCase(), id);
   }
 
   const lines = content.split("\n");
@@ -141,7 +141,7 @@ export function contentToHtml(content: string, notesCache: Map<string, Note>): s
     }
 
     // Regular paragraph — process mentions and inline formatting
-    htmlParts.push(renderParagraph(line, notesCache, titleToId));
+    htmlParts.push(renderParagraph(line, itemsCache, titleToId));
     i++;
   }
 
@@ -150,7 +150,7 @@ export function contentToHtml(content: string, notesCache: Map<string, Note>): s
 
 function renderParagraph(
   line: string,
-  notesCache: Map<string, Note>,
+  itemsCache: Map<string, CanvasItem>,
   titleToId: Map<string, string>,
 ): string {
   // Match @{id}, @[Title], or @Word
@@ -166,8 +166,8 @@ function renderParagraph(
     if (match[1]) {
       // @{id} format
       const id = match[1];
-      const note = notesCache.get(id);
-      const label = note ? note.title : id;
+      const item = itemsCache.get(id);
+      const label = item ? item.title : id;
       result += `<span data-type="mention" data-id="${escapeAttr(id)}" data-label="${escapeAttr(label)}">@${escapeHtml(label)}</span>`;
     } else {
       // Legacy @[Title] or @Title format
