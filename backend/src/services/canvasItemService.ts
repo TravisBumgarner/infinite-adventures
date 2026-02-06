@@ -200,11 +200,15 @@ export async function createItem(
   const contentTable = getContentTable(type);
 
   // Create content record first
-  await db.insert(contentTable).values({
+  const contentValues: Record<string, string> = {
     id: contentId,
     created_at: now,
     updated_at: now,
-  });
+  };
+  if (type === "session") {
+    contentValues.session_date = input.session_date ?? now.split("T")[0]!;
+  }
+  await db.insert(contentTable).values(contentValues);
 
   // Create canvas item
   await db.insert(canvasItems).values({

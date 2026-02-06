@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { getDb } from "../db/connection.js";
+import { sessions } from "../db/schema.js";
 import {
   createItem,
   DEFAULT_CANVAS_ID,
@@ -88,6 +90,38 @@ describe("canvasItemService", () => {
       await expect(
         createItem({ type: "dragon" as any, title: "Smaug" }, DEFAULT_CANVAS_ID),
       ).rejects.toThrow(ValidationError);
+    });
+
+    it("stores session_date when provided for session-type items", async () => {
+      await createItem(
+        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        DEFAULT_CANVAS_ID,
+      );
+
+      const db = getDb();
+      const allSessions = await db.select().from(sessions);
+      expect(allSessions).toHaveLength(1);
+      expect(allSessions[0]!.session_date).toBe("2025-06-15");
+    });
+
+    it("defaults session_date to current date for session-type items", async () => {
+      await createItem({ type: "session", title: "Session Two" }, DEFAULT_CANVAS_ID);
+
+      const db = getDb();
+      const allSessions = await db.select().from(sessions);
+      expect(allSessions).toHaveLength(1);
+      // Should be today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split("T")[0];
+      expect(allSessions[0]!.session_date).toBe(today);
+    });
+
+    it("ignores session_date for non-session types", async () => {
+      const item = await createItem(
+        { type: "person", title: "Gandalf", session_date: "2025-06-15" },
+        DEFAULT_CANVAS_ID,
+      );
+      // Should not throw — session_date is silently ignored for non-session types
+      expect(item.type).toBe("person");
     });
   });
 
