@@ -9,6 +9,7 @@ import type {
   CreateNoteInput,
   Note,
   Photo,
+  SessionSummary,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
   UpdateNoteInput,
@@ -104,6 +105,12 @@ export async function searchItems(
     `/canvases/${canvasId}/items/search?q=${encoded}`,
   );
   return data.results;
+}
+
+// --- Session functions ---
+
+export function fetchSessions(canvasId: string): Promise<SessionSummary[]> {
+  return request<SessionSummary[]>(`/canvases/${canvasId}/sessions`);
 }
 
 // --- Photo functions ---
