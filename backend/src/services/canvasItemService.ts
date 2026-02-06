@@ -9,6 +9,7 @@ import type {
   CreateCanvasItemInput,
   Photo,
   SessionSummary,
+  TaggedItem,
   UpdateCanvasItemInput,
 } from "shared";
 import { v4 as uuidv4 } from "uuid";
@@ -17,12 +18,14 @@ import {
   canvasItemLinks,
   canvasItems,
   events,
+  notes,
   people,
   photos,
   places,
   sessions,
   things,
 } from "../db/schema.js";
+import { parseMentionsWithPositions } from "./canvasItemLinkService.js";
 import { listNotes } from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 
@@ -397,4 +400,78 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
   }
 
   return summaries;
+}
+
+/**
+ * Get items @mentioned in a canvas item's notes, ordered by first appearance.
+ */
+export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
+  const db = getDb();
+
+  // Get all notes for this item, ordered by created_at
+  const noteRows = await db
+    .select({ content: notes.content })
+    .from(notes)
+    .where(eq(notes.canvas_item_id, itemId))
+    .orderBy(notes.created_at);
+
+  const seenIds = new Set<string>();
+  const taggedItems: TaggedItem[] = [];
+
+  for (const note of noteRows) {
+    const mentions = parseMentionsWithPositions(note.content);
+    for (const mention of mentions) {
+      let targetItem: { id: string; title: string; type: string; content_id: string } | undefined;
+
+      if (mention.type === "id") {
+        const [found] = await db
+          .select({
+            id: canvasItems.id,
+            title: canvasItems.title,
+            type: canvasItems.type,
+            content_id: canvasItems.content_id,
+          })
+          .from(canvasItems)
+          .where(eq(canvasItems.id, mention.value));
+        targetItem = found;
+      } else {
+        const [found] = await db
+          .select({
+            id: canvasItems.id,
+            title: canvasItems.title,
+            type: canvasItems.type,
+            content_id: canvasItems.content_id,
+          })
+          .from(canvasItems)
+          .where(sql`LOWER(${canvasItems.title}) = LOWER(${mention.value})`);
+        targetItem = found;
+      }
+
+      if (!targetItem || seenIds.has(targetItem.id)) continue;
+      seenIds.add(targetItem.id);
+
+      // Check for selected photo
+      const selectedPhotos = await db
+        .select({ filename: photos.filename })
+        .from(photos)
+        .where(
+          and(
+            eq(photos.content_type, targetItem.type),
+            eq(photos.content_id, targetItem.content_id),
+            eq(photos.is_selected, true),
+          ),
+        );
+
+      taggedItems.push({
+        id: targetItem.id,
+        title: targetItem.title,
+        type: targetItem.type as CanvasItemType,
+        selected_photo_url: selectedPhotos[0]
+          ? `/api/photos/${selectedPhotos[0].filename}`
+          : undefined,
+      });
+    }
+  }
+
+  return taggedItems;
 }
