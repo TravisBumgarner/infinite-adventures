@@ -68,7 +68,7 @@ describe("photoService", () => {
       expect(photo.content_id).toBe(TEST_CONTENT_ID);
       expect(photo.original_name).toBe("gandalf.png");
       expect(photo.mime_type).toBe("image/png");
-      expect(photo.is_selected).toBe(false);
+      expect(photo.is_selected).toBe(true);
       expect(photo.created_at).toBeDefined();
     });
 

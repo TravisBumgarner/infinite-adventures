@@ -62,6 +62,10 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const filePath = path.join(UPLOADS_DIR, filename);
   fs.writeFileSync(filePath, input.buffer);
 
+  // Auto-select if this is the first photo for the content item
+  const existing = await listPhotos(input.content_type, input.content_id);
+  const isSelected = existing.length === 0;
+
   // Insert metadata into database
   await db.insert(photos).values({
     id,
@@ -70,7 +74,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     filename,
     original_name: input.original_name,
     mime_type: input.mime_type,
-    is_selected: false,
+    is_selected: isSelected,
     created_at: now,
   });
 
@@ -81,7 +85,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     filename,
     original_name: input.original_name,
     mime_type: input.mime_type,
-    is_selected: false,
+    is_selected: isSelected,
     created_at: now,
   };
 }
