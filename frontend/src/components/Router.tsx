@@ -5,6 +5,7 @@ import Canvas from "../pages/Canvas/Canvas";
 import Login from "../pages/Login/Login.js";
 import Marketing from "../pages/Marketing/Marketing";
 import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
+import Sessions from "../pages/Sessions/Sessions";
 import Signup from "../pages/Signup/Signup.js";
 import { useAppStore } from "../stores/appStore";
 
@@ -73,6 +74,14 @@ export default function Router() {
           <AnonymousRoute>
             <Signup />
           </AnonymousRoute>
+        }
+      />
+      <Route
+        path="/sessions"
+        element={
+          <MemberRoute>
+            <Sessions />
+          </MemberRoute>
         }
       />
       <Route path="/password-reset" element={<PasswordReset />} />
