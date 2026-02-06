@@ -41,7 +41,7 @@ tasks:
       - Both bars respect sidebar open/close transitions
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 2
     github_issue: 122
