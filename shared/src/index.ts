@@ -49,6 +49,7 @@ export const CanvasItemSchema = z.object({
   canvas_y: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
+  session_date: z.string().optional(),
   notes: z.array(NoteSchema),
   photos: z.array(PhotoSchema),
   links_to: z.array(CanvasItemLinkSchema),

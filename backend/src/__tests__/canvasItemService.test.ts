@@ -176,6 +176,21 @@ describe("canvasItemService", () => {
     it("returns null for non-existent id", async () => {
       expect(await getItem("non-existent")).toBeNull();
     });
+
+    it("returns session_date for session-type items", async () => {
+      const created = await createItem(
+        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        DEFAULT_CANVAS_ID,
+      );
+      const item = await getItem(created.id);
+      expect(item?.session_date).toBe("2025-06-15");
+    });
+
+    it("returns undefined session_date for non-session items", async () => {
+      const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      const item = await getItem(created.id);
+      expect(item?.session_date).toBeUndefined();
+    });
   });
 
   describe("updateItem", () => {

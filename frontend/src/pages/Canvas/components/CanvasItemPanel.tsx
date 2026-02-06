@@ -27,7 +27,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import * as api from "../../../api/client";
-import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import type { SaveStatus } from "../../../hooks/useAutoSave";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
@@ -82,6 +82,9 @@ export default function CanvasItemPanel({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
+  // Details tab state
+  const [sessionDate, setSessionDate] = useState("");
+
   // Connections tab state
   const [search, setSearch] = useState("");
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
@@ -94,6 +97,8 @@ export default function CanvasItemPanel({
 
   const titleRef = useRef(title);
   titleRef.current = title;
+  const sessionDateRef = useRef(sessionDate);
+  sessionDateRef.current = sessionDate;
   const noteContentRef = useRef(noteContent);
   noteContentRef.current = noteContent;
   const editingNoteIdRef = useRef(editingNoteId);
@@ -105,6 +110,15 @@ export default function CanvasItemPanel({
   const saveTitleFn = useCallback(async () => {
     await api.updateItem(itemIdRef.current, {
       title: titleRef.current,
+    });
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    onSaved(refreshed);
+  }, [onSaved]);
+
+  // Save function for session date
+  const saveDateFn = useCallback(async () => {
+    await api.updateItem(itemIdRef.current, {
+      session_date: sessionDateRef.current,
     });
     const refreshed = await api.fetchItem(itemIdRef.current);
     onSaved(refreshed);
@@ -128,6 +142,11 @@ export default function CanvasItemPanel({
     flush: flushTitle,
   } = useAutoSave({ saveFn: saveTitleFn });
   const {
+    status: dateStatus,
+    markDirty: markDateDirty,
+    flush: flushDate,
+  } = useAutoSave({ saveFn: saveDateFn });
+  const {
     status: noteStatus,
     markDirty: markNoteDirty,
     flush: flushNote,
@@ -139,15 +158,17 @@ export default function CanvasItemPanel({
   useEffect(() => {
     return () => {
       flushTitle();
+      flushDate();
       flushNote();
     };
-  }, [flushTitle, flushNote]);
+  }, [flushTitle, flushDate, flushNote]);
 
   useEffect(() => {
     itemIdRef.current = itemId;
     api.fetchItem(itemId).then((i) => {
       setItem(i);
       setTitle(i.title);
+      setSessionDate(i.session_date ?? "");
       setNotes(i.notes);
       setEditingNoteId(null);
       setNoteContent("");
@@ -575,6 +596,7 @@ export default function CanvasItemPanel({
         <Tab label="Notes" value="notes" />
         <Tab label="Photos" value="photos" />
         <Tab label="Connections" value="connections" />
+        <Tab label={CANVAS_ITEM_TYPE_LABELS[item.type]} value="details" />
       </Tabs>
 
       {/* Tab Content */}
@@ -921,6 +943,37 @@ export default function CanvasItemPanel({
               })
             )}
           </List>
+        </Box>
+      )}
+
+      {panelTab === "details" && (
+        <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+          {item.type === "session" ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                label="Session Date"
+                type="date"
+                size="small"
+                fullWidth
+                value={sessionDate}
+                onChange={(e) => {
+                  setSessionDate(e.target.value);
+                  markDateDirty();
+                }}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
+                {statusLabel(dateStatus)}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
+            >
+              No type-specific metadata
+            </Typography>
+          )}
         </Box>
       )}
     </Drawer>
