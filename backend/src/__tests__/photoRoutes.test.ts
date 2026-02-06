@@ -14,8 +14,8 @@ import {
 import { uploadPhoto } from "../services/photoService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-// Path to test uploads
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/photos");
+// Path to test uploads (matches UPLOADS_DIR env var in vitest.config.ts)
+const UPLOADS_DIR = path.resolve(process.cwd(), process.env.UPLOADS_DIR || "uploads/photos-test");
 
 function createMockRes() {
   const res = {

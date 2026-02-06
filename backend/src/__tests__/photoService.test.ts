@@ -40,7 +40,10 @@ describe("photoService", () => {
 
   afterEach(async () => {
     // Clean up any uploaded files after each test
-    const uploadsDir = path.resolve(process.cwd(), "uploads/photos");
+    const uploadsDir = path.resolve(
+      process.cwd(),
+      process.env.UPLOADS_DIR || "uploads/photos-test",
+    );
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       for (const file of files) {
@@ -252,7 +255,7 @@ describe("photoService", () => {
   describe("getPhotoPath", () => {
     it("returns correct file path for filename", () => {
       const filePath = getPhotoPath("abc123.png");
-      expect(filePath).toContain("uploads/photos/abc123.png");
+      expect(filePath).toContain("abc123.png");
     });
   });
 

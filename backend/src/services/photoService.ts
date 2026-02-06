@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db/connection.js";
 import { type CanvasItemType, photos } from "../db/schema.js";
 
-// Base directory for photo uploads
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/photos");
+// Base directory for photo uploads — override via UPLOADS_DIR env var for tests
+const UPLOADS_DIR = path.resolve(process.cwd(), process.env.UPLOADS_DIR || "uploads/photos");
 
 export interface PhotoInfo {
   id: string;
