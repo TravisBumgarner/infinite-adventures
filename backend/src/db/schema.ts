@@ -72,6 +72,7 @@ export const things = pgTable("things", {
 
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
+  session_date: text("session_date").notNull(),
   created_at: text("created_at").notNull().default(sql`now()::text`),
   updated_at: text("updated_at").notNull().default(sql`now()::text`),
 });

@@ -60,6 +60,7 @@ export const CreateCanvasItemInputSchema = z.object({
   title: z.string(),
   canvas_x: z.number().optional(),
   canvas_y: z.number().optional(),
+  session_date: z.string().optional(),
 });
 
 export const UpdateCanvasItemInputSchema = z.object({
