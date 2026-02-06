@@ -265,6 +265,14 @@ export async function updateItem(
       .where(eq(canvasItems.id, id));
   }
 
+  // Update session_date if provided and item is a session
+  if (input.session_date !== undefined && type === "session") {
+    await db
+      .update(sessions)
+      .set({ session_date: input.session_date, updated_at: now })
+      .where(eq(sessions.id, existing.content_id));
+  }
+
   // Get updated item
   const [updated] = await db.select().from(canvasItems).where(eq(canvasItems.id, id));
 
