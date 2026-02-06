@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type {
   CanvasItem,
   CanvasItemLink,
@@ -8,6 +8,7 @@ import type {
   CanvasItemType,
   CreateCanvasItemInput,
   Photo,
+  SessionSummary,
   UpdateCanvasItemInput,
 } from "shared";
 import { v4 as uuidv4 } from "uuid";
@@ -350,4 +351,50 @@ export async function searchItems(
   );
 
   return result.rows;
+}
+
+/**
+ * List all session-type items for a canvas, sorted by session_date descending.
+ */
+export async function listSessions(canvasId: string): Promise<SessionSummary[]> {
+  const db = getDb();
+
+  const items = await db
+    .select({
+      id: canvasItems.id,
+      title: canvasItems.title,
+      session_date: sessions.session_date,
+      created_at: canvasItems.created_at,
+      content_id: canvasItems.content_id,
+    })
+    .from(canvasItems)
+    .innerJoin(sessions, eq(sessions.id, canvasItems.content_id))
+    .where(and(eq(canvasItems.canvas_id, canvasId), eq(canvasItems.type, "session")))
+    .orderBy(desc(sessions.session_date));
+
+  const summaries: SessionSummary[] = [];
+  for (const item of items) {
+    const selectedPhotos = await db
+      .select({ filename: photos.filename })
+      .from(photos)
+      .where(
+        and(
+          eq(photos.content_type, "session"),
+          eq(photos.content_id, item.content_id),
+          eq(photos.is_selected, true),
+        ),
+      );
+
+    summaries.push({
+      id: item.id,
+      title: item.title,
+      session_date: item.session_date,
+      created_at: item.created_at,
+      selected_photo_url: selectedPhotos[0]
+        ? `/api/photos/${selectedPhotos[0].filename}`
+        : undefined,
+    });
+  }
+
+  return summaries;
 }

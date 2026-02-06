@@ -86,6 +86,14 @@ export const CanvasItemSearchResultSchema = z.object({
   snippet: z.string(),
 });
 
+export const SessionSummarySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  session_date: z.string(),
+  selected_photo_url: z.string().optional(),
+  created_at: z.string(),
+});
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -144,6 +152,7 @@ export type UpdateCanvasItemInput = z.infer<typeof UpdateCanvasItemInputSchema>;
 export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
+export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 
 // --- Inferred types (Other) ---
 
