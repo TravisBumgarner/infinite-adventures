@@ -94,6 +94,13 @@ export const SessionSummarySchema = z.object({
   created_at: z.string(),
 });
 
+export const TaggedItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  type: CanvasItemTypeSchema,
+  selected_photo_url: z.string().optional(),
+});
+
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -153,6 +160,7 @@ export type CreateNoteInput = z.infer<typeof CreateNoteInputSchema>;
 export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
+export type TaggedItem = z.infer<typeof TaggedItemSchema>;
 
 // --- Inferred types (Other) ---
 

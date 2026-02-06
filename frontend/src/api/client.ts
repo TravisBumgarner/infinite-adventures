@@ -10,6 +10,7 @@ import type {
   Note,
   Photo,
   SessionSummary,
+  TaggedItem,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
   UpdateNoteInput,
@@ -111,6 +112,10 @@ export async function searchItems(
 
 export function fetchSessions(canvasId: string): Promise<SessionSummary[]> {
   return request<SessionSummary[]>(`/canvases/${canvasId}/sessions`);
+}
+
+export function fetchTaggedItems(itemId: string): Promise<TaggedItem[]> {
+  return request<TaggedItem[]>(`/items/${itemId}/tagged`);
 }
 
 // --- Photo functions ---
