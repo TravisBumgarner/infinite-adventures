@@ -20,32 +20,17 @@ import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo, TaggedItem } from "shared";
 import * as api from "../../api/client";
 import { CANVAS_ITEM_TYPES } from "../../constants";
-import type { SaveStatus } from "../../hooks/useAutoSave";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../modals";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
+import { statusLabel } from "../Canvas/components/CanvasItemPanel";
 import MentionEditor from "../Canvas/components/MentionEditor";
 
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
 
-function statusLabel(status: SaveStatus): string {
-  switch (status) {
-    case "saving":
-      return "Saving...";
-    case "saved":
-      return "Saved";
-    case "unsaved":
-      return "Unsaved changes";
-    case "error":
-      return "Save failed";
-    default:
-      return "";
-  }
-}
-
-type DetailTab = "notes" | "photos" | "connections";
+type DetailTab = "notes" | "photos";
 
 interface SessionDetailProps {
   sessionId: string;
