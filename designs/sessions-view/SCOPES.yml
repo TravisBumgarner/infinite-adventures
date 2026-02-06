@@ -112,7 +112,7 @@ tasks:
       - Empty state shown when no sessions exist
     depends_on: [3]
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 6
     github_issue: 126

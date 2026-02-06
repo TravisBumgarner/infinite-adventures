@@ -2,9 +2,11 @@ import type { EdgeTypes, NodeTypes } from "@xyflow/react";
 import { Background, BackgroundVariant, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Box, Stack, useTheme } from "@mui/material";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import { Box, IconButton, Stack, useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import * as api from "../../api/client";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { MODAL_ID, useModalStore } from "../../modals";
@@ -36,6 +38,7 @@ const edgeTypes: EdgeTypes = {
 
 export default function Canvas() {
   const theme = useTheme();
+  const navigate = useNavigate();
 
   const canvases = useCanvasStore((s) => s.canvases);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
@@ -294,14 +297,28 @@ export default function Canvas() {
 
       <TopBar
         left={
-          <CanvasPicker
-            canvases={canvases}
-            activeCanvasId={activeCanvasId}
-            onSwitch={handleSwitchCanvas}
-            onCreate={handleCreateCanvas}
-            onRename={handleRenameCanvas}
-            onDelete={handleDeleteCanvas}
-          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CanvasPicker
+              canvases={canvases}
+              activeCanvasId={activeCanvasId}
+              onSwitch={handleSwitchCanvas}
+              onCreate={handleCreateCanvas}
+              onRename={handleRenameCanvas}
+              onDelete={handleDeleteCanvas}
+            />
+            <IconButton
+              onClick={() => navigate("/sessions")}
+              title="Sessions"
+              sx={{
+                bgcolor: "var(--color-base)",
+                border: "1px solid var(--color-surface1)",
+                color: "var(--color-text)",
+                "&:hover": { bgcolor: "var(--color-surface0)" },
+              }}
+            >
+              <CalendarTodayIcon />
+            </IconButton>
+          </Box>
         }
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
