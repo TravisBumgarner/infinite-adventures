@@ -75,7 +75,7 @@ tasks:
       - Frontend api.fetchSessions(canvasId) function added
     depends_on: [2]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 4
     github_issue: 124
