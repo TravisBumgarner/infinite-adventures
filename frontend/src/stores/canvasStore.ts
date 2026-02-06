@@ -26,7 +26,7 @@ export function getViewportKey(canvasId: string): string {
   return `infinite-adventures-viewport-${canvasId}`;
 }
 
-type PanelTab = "notes" | "photos" | "connections";
+type PanelTab = "notes" | "photos" | "connections" | "details";
 
 interface CanvasState {
   canvases: CanvasSummary[];

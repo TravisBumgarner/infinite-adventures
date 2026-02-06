@@ -17,6 +17,7 @@ import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
 import { SettingsButton, SettingsSidebar } from "../Canvas/components/SettingsModal";
+import SessionDetail from "./SessionDetail";
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-");
@@ -27,6 +28,11 @@ function formatDate(dateStr: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+interface SelectedSession {
+  id: string;
+  session_date: string;
 }
 
 export default function Sessions() {
@@ -46,6 +52,7 @@ export default function Sessions() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState(() => new Date().toISOString().split("T")[0]!);
+  const [selectedSession, setSelectedSession] = useState<SelectedSession | null>(null);
 
   // Fetch canvases on mount
   useEffect(() => {
@@ -148,6 +155,17 @@ export default function Sessions() {
     }
   };
 
+  const handleBackFromDetail = useCallback(() => {
+    setSelectedSession(null);
+    // Refresh the session list to pick up any title/date changes
+    if (activeCanvasId) {
+      api
+        .fetchSessions(activeCanvasId)
+        .then(setSessions)
+        .catch(() => {});
+    }
+  }, [activeCanvasId]);
+
   if (!activeCanvasId) return null;
 
   return (
@@ -194,147 +212,170 @@ export default function Sessions() {
       </Box>
 
       {/* Main content */}
-      <Box
-        sx={{
-          maxWidth: 720,
-          mx: "auto",
-          pt: 10,
-          px: 3,
-          ml: showSettings ? `calc((100vw - 720px) / 2 + 180px)` : "auto",
-          transition: "margin-left 0.2s",
-        }}
-      >
-        {/* Header */}
+      {selectedSession ? (
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
+            pt: 10,
+            px: 3,
+            ml: showSettings ? "360px" : 0,
+            transition: "margin-left 0.2s",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CalendarTodayIcon sx={{ color: "var(--color-subtext0)" }} />
-            <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--color-text)" }}>
-              Sessions
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setShowCreate(true)}
-            sx={{ textTransform: "none" }}
-          >
-            New Session
-          </Button>
+          <SessionDetail
+            sessionId={selectedSession.id}
+            initialSessionDate={selectedSession.session_date}
+            onBack={handleBackFromDetail}
+          />
         </Box>
-
-        {/* Create form */}
-        {showCreate && (
+      ) : (
+        <Box
+          sx={{
+            maxWidth: 720,
+            mx: "auto",
+            pt: 10,
+            px: 3,
+            ml: showSettings ? `calc((100vw - 720px) / 2 + 180px)` : "auto",
+            transition: "margin-left 0.2s",
+          }}
+        >
+          {/* Header */}
           <Box
             sx={{
-              mb: 3,
-              p: 2,
-              bgcolor: "var(--color-surface0)",
-              border: "1px solid var(--color-surface1)",
-              borderRadius: 2,
               display: "flex",
-              flexDirection: "column",
-              gap: 2,
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
             }}
           >
-            <TextField
-              label="Session Title"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              size="small"
-              fullWidth
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newTitle.trim()) handleCreateSession();
-                if (e.key === "Escape") setShowCreate(false);
-              }}
-            />
-            <TextField
-              label="Date"
-              type="date"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-              size="small"
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-            <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-              <Button
-                variant="outlined"
-                onClick={() => setShowCreate(false)}
-                sx={{ textTransform: "none" }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleCreateSession}
-                disabled={!newTitle.trim()}
-                sx={{ textTransform: "none" }}
-              >
-                Create
-              </Button>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarTodayIcon sx={{ color: "var(--color-subtext0)" }} />
+              <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--color-text)" }}>
+                Sessions
+              </Typography>
             </Box>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setShowCreate(true)}
+              sx={{ textTransform: "none" }}
+            >
+              New Session
+            </Button>
           </Box>
-        )}
 
-        {/* Session list */}
-        {loading ? (
-          <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
-            Loading sessions...
-          </Typography>
-        ) : sessions.length === 0 ? (
-          <Box
-            sx={{
-              textAlign: "center",
-              py: 8,
-              color: "var(--color-subtext0)",
-            }}
-          >
-            <CalendarTodayIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              No sessions yet
-            </Typography>
-            <Typography variant="body2">
-              Create your first session to start tracking your adventures.
-            </Typography>
-          </Box>
-        ) : (
-          <List disablePadding>
-            {sessions.map((session) => (
-              <ListItemButton
-                key={session.id}
-                sx={{
-                  mb: 1,
-                  borderRadius: 2,
-                  border: "1px solid var(--color-surface1)",
-                  bgcolor: "var(--color-base)",
-                  "&:hover": { bgcolor: "var(--color-surface0)" },
+          {/* Create form */}
+          {showCreate && (
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                bgcolor: "var(--color-surface0)",
+                border: "1px solid var(--color-surface1)",
+                borderRadius: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <TextField
+                label="Session Title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                size="small"
+                fullWidth
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newTitle.trim()) handleCreateSession();
+                  if (e.key === "Escape") setShowCreate(false);
                 }}
-              >
-                <ListItemText
-                  primary={session.title}
-                  secondary={formatDate(session.session_date)}
-                  slotProps={{
-                    primary: {
-                      sx: { fontWeight: 600, color: "var(--color-text)" },
-                    },
-                    secondary: {
-                      sx: { color: "var(--color-subtext0)" },
-                    },
+              />
+              <TextField
+                label="Date"
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                size="small"
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowCreate(false)}
+                  sx={{ textTransform: "none" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleCreateSession}
+                  disabled={!newTitle.trim()}
+                  sx={{ textTransform: "none" }}
+                >
+                  Create
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* Session list */}
+          {loading ? (
+            <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
+              Loading sessions...
+            </Typography>
+          ) : sessions.length === 0 ? (
+            <Box
+              sx={{
+                textAlign: "center",
+                py: 8,
+                color: "var(--color-subtext0)",
+              }}
+            >
+              <CalendarTodayIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                No sessions yet
+              </Typography>
+              <Typography variant="body2">
+                Create your first session to start tracking your adventures.
+              </Typography>
+            </Box>
+          ) : (
+            <List disablePadding>
+              {sessions.map((session) => (
+                <ListItemButton
+                  key={session.id}
+                  onClick={() =>
+                    setSelectedSession({
+                      id: session.id,
+                      session_date: session.session_date,
+                    })
+                  }
+                  sx={{
+                    mb: 1,
+                    borderRadius: 2,
+                    border: "1px solid var(--color-surface1)",
+                    bgcolor: "var(--color-base)",
+                    "&:hover": { bgcolor: "var(--color-surface0)" },
                   }}
-                />
-              </ListItemButton>
-            ))}
-          </List>
-        )}
-      </Box>
+                >
+                  <ListItemText
+                    primary={session.title}
+                    secondary={formatDate(session.session_date)}
+                    slotProps={{
+                      primary: {
+                        sx: { fontWeight: 600, color: "var(--color-text)" },
+                      },
+                      secondary: {
+                        sx: { color: "var(--color-subtext0)" },
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          )}
+        </Box>
+      )}
 
       {showSettings && <SettingsSidebar />}
     </Box>

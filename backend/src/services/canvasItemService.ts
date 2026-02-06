@@ -124,6 +124,16 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
 
   const type = item.type as CanvasItemType;
 
+  // Get session_date if this is a session
+  let session_date: string | undefined;
+  if (type === "session") {
+    const [sessionRow] = await db
+      .select({ session_date: sessions.session_date })
+      .from(sessions)
+      .where(eq(sessions.id, item.content_id));
+    session_date = sessionRow?.session_date;
+  }
+
   // Get notes
   const noteList = await listNotes(id);
 
@@ -167,6 +177,7 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     canvas_y: item.canvas_y,
     created_at: item.created_at,
     updated_at: item.updated_at,
+    session_date,
     notes: noteList,
     photos: photoList,
     links_to: linksTo as CanvasItemLink[],
@@ -263,6 +274,14 @@ export async function updateItem(
         updated_at: now,
       })
       .where(eq(canvasItems.id, id));
+  }
+
+  // Update session_date if provided and item is a session
+  if (input.session_date !== undefined && type === "session") {
+    await db
+      .update(sessions)
+      .set({ session_date: input.session_date, updated_at: now })
+      .where(eq(sessions.id, existing.content_id));
   }
 
   // Get updated item
