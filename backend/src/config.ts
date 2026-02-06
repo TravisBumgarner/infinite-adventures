@@ -8,6 +8,7 @@ const envSchema = z.object({
     .default("postgresql://infinite:infinite@localhost:5434/infinite_adventures"),
   SUPABASE_URL: z.string().optional().default(""),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(""),
+  UPLOADS_DIR: z.string(),
 });
 
 const parsed = envSchema.safeParse({
@@ -16,6 +17,7 @@ const parsed = envSchema.safeParse({
   DATABASE_URL: process.env.DATABASE_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  UPLOADS_DIR: process.env.UPLOADS_DIR,
 });
 
 if (!parsed.success) {
@@ -30,6 +32,7 @@ const config = {
   databaseUrl: parsed.data.DATABASE_URL,
   supabaseUrl: parsed.data.SUPABASE_URL,
   supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
+  uploadsDir: parsed.data.UPLOADS_DIR,
   isProduction: parsed.data.NODE_ENV === "production",
   isDevelopment: parsed.data.NODE_ENV === "development",
 };

@@ -2,11 +2,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import config from "../config.js";
 import { getDb } from "../db/connection.js";
 import { type CanvasItemType, photos } from "../db/schema.js";
 
-// Base directory for photo uploads — override via UPLOADS_DIR env var for tests
-const UPLOADS_DIR = path.resolve(process.cwd(), process.env.UPLOADS_DIR || "uploads/photos");
+const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
 
 export interface PhotoInfo {
   id: string;

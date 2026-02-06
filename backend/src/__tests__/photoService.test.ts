@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import config from "../config.js";
 import {
   deletePhoto,
   deletePhotosForContent,
@@ -39,11 +40,7 @@ describe("photoService", () => {
   });
 
   afterEach(async () => {
-    // Clean up any uploaded files after each test
-    const uploadsDir = path.resolve(
-      process.cwd(),
-      process.env.UPLOADS_DIR || "uploads/photos-test",
-    );
+    const uploadsDir = path.resolve(process.cwd(), config.uploadsDir);
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       for (const file of files) {
