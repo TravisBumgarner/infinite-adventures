@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import config from "../config.js";
 import {
   deletePhoto,
   deletePhotosForContent,
@@ -39,8 +40,7 @@ describe("photoService", () => {
   });
 
   afterEach(async () => {
-    // Clean up any uploaded files after each test
-    const uploadsDir = path.resolve(process.cwd(), "uploads/photos");
+    const uploadsDir = path.resolve(process.cwd(), config.uploadsDir);
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       for (const file of files) {
@@ -252,7 +252,7 @@ describe("photoService", () => {
   describe("getPhotoPath", () => {
     it("returns correct file path for filename", () => {
       const filePath = getPhotoPath("abc123.png");
-      expect(filePath).toContain("uploads/photos/abc123.png");
+      expect(filePath).toContain("abc123.png");
     });
   });
 

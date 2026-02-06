@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import config from "../config.js";
 import { handler as deleteHandler, validate as deleteValidate } from "../routes/photos/delete.js";
 import { handler as selectHandler, validate as selectValidate } from "../routes/photos/select.js";
 import { handler as serveHandler } from "../routes/photos/serve.js";
@@ -14,8 +15,7 @@ import {
 import { uploadPhoto } from "../services/photoService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-// Path to test uploads
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/photos");
+const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
 
 function createMockRes() {
   const res = {
