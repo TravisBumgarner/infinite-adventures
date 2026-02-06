@@ -2,7 +2,7 @@ import type { EdgeTypes, NodeTypes } from "@xyflow/react";
 import { Background, BackgroundVariant, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Stack, useTheme } from "@mui/material";
+import { Box, Stack, useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
 import * as api from "../../api/client";
@@ -303,14 +303,27 @@ export default function Canvas() {
             onDelete={handleDeleteCanvas}
           />
         }
-        center={
-          <Stack direction="row" spacing={1} alignItems="center">
-            <SearchBar canvasId={activeCanvasId} onNavigate={navigateToItem} />
-            <FilterBar />
-          </Stack>
-        }
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
+      <Box
+        sx={{
+          position: "fixed",
+          top: 72,
+          left: showSettings ? SIDEBAR_WIDTH : 0,
+          right: editingItemId ? SIDEBAR_WIDTH : 0,
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none",
+          transition: "left 0.2s, right 0.2s",
+          zIndex: 50,
+          "& > *": { pointerEvents: "auto" },
+        }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SearchBar canvasId={activeCanvasId} onNavigate={navigateToItem} />
+          <FilterBar />
+        </Stack>
+      </Box>
       <Toolbar onCreate={handleToolbarCreate} />
 
       {contextMenu && (
