@@ -5,11 +5,10 @@ import { useCanvasStore } from "../../../stores/canvasStore";
 
 interface TopBarProps {
   left: ReactNode;
-  center: ReactNode;
   right: ReactNode;
 }
 
-export default function TopBar({ left, center, right }: TopBarProps) {
+export default function TopBar({ left, right }: TopBarProps) {
   const editingItemId = useCanvasStore((s) => s.editingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const rightSidebarOpen = Boolean(editingItemId);
@@ -25,14 +24,14 @@ export default function TopBar({ left, center, right }: TopBarProps) {
         zIndex: 50,
         display: "flex",
         alignItems: "flex-start",
+        justifyContent: "space-between",
         pointerEvents: "none",
         transition: "left 0.2s, right 0.2s",
         "& > *": { pointerEvents: "auto" },
       }}
     >
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>{left}</Box>
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>{center}</Box>
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>{right}</Box>
+      <Box>{left}</Box>
+      <Box>{right}</Box>
     </Box>
   );
 }

@@ -1,0 +1,137 @@
+project: Sessions View & Toolbar Restructure
+repo: TravisBumgarner/infinite-adventures
+design_file: (inline scope from user requirements)
+scoping_date: 2026-02-06
+
+milestones:
+  - number: 1
+    title: "1. Toolbar Restructure"
+    description: Move search/filters out of the top bar. Canvas title and settings become the global toolbar.
+    branch:
+      working: 121-toolbar-restructure
+      base: main
+
+  - number: 2
+    title: "2. Session Date Column & Backend API"
+    description: Add date column to sessions table, expose session-specific endpoints for listing sessions sorted by date and fetching tagged items.
+    branch:
+      working: 122-session-backend-api
+      base: main
+
+  - number: 3
+    title: "3. Sessions View Frontend"
+    description: New /sessions route with session list, create flow, and two-column session detail view with resizable panes and tagged items sidebar.
+    branch:
+      working: 125-sessions-view-frontend
+      base: 122-session-backend-api
+
+tasks:
+  - id: 1
+    github_issue: 121
+    milestone: 1
+    title: Move search and filter bar from top bar into canvas area
+    description: |
+      Move SearchBar and FilterBar out of the TopBar center slot. TopBar should only contain
+      CanvasPicker (left) and SettingsButton (right). Reposition search/filter as a floating
+      bar below the TopBar in the canvas area, similar to how Toolbar is positioned at the bottom.
+    acceptance_criteria:
+      - TopBar only contains CanvasPicker (left) and SettingsButton (right)
+      - SearchBar and FilterBar rendered below TopBar as floating element
+      - Search and filter functionality unchanged
+      - Both bars respect sidebar open/close transitions
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 2
+    github_issue: 122
+    milestone: 2
+    title: Add date column to sessions table
+    description: |
+      Add a `session_date` text column to the sessions content table. Generate a Drizzle
+      migration. Update `createItem` in canvasItemService to accept optional `session_date`
+      and write it for session-type items (defaults to current date). Update shared types.
+    acceptance_criteria:
+      - sessions table has session_date text column (not null, defaults to current date)
+      - Drizzle migration generated for the schema change
+      - createItem accepts optional session_date and writes it for session-type items
+      - Shared types updated (CreateCanvasItemInput allows optional session_date)
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 123
+    milestone: 2
+    title: Add API endpoint to list sessions sorted by date
+    description: |
+      Add `GET /api/canvases/:canvasId/sessions` returning session items sorted by
+      session_date desc. Response includes id, title, session_date, selected_photo_url,
+      created_at. Add shared SessionSummarySchema and frontend api.fetchSessions function.
+    acceptance_criteria:
+      - GET /api/canvases/:canvasId/sessions returns sessions sorted by session_date desc
+      - Response shape includes id, title, session_date, selected_photo_url, created_at
+      - Shared SessionSummarySchema type exported
+      - Frontend api.fetchSessions(canvasId) function added
+    depends_on: [2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    github_issue: 124
+    milestone: 2
+    title: Add API endpoint to fetch tagged items for a session
+    description: |
+      Add `GET /api/items/:itemId/tagged` returning items @mentioned in the item's notes,
+      ordered by first appearance. Parse mentions from all notes (ordered by created_at),
+      resolve to canvas items, deduplicate, return id/title/type/selected_photo_url.
+      Add shared TaggedItemSchema and frontend api.fetchTaggedItems function.
+    acceptance_criteria:
+      - GET /api/items/:itemId/tagged returns @mentioned items from notes
+      - Items ordered by first appearance (note order, then position within note)
+      - Response shape includes id, title, type, selected_photo_url
+      - Duplicate mentions resolved to single entry (first occurrence wins)
+    depends_on: [2]
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 125
+    milestone: 3
+    title: Add /sessions route with session list view
+    description: |
+      Create /sessions route and page showing all sessions for active canvas sorted by date.
+      Includes global toolbar (CanvasPicker + SettingsButton), session list with title/date,
+      create button for new sessions, navigation between canvas and sessions views.
+    acceptance_criteria:
+      - /sessions route exists and is protected (MemberRoute)
+      - Page displays sessions for active canvas sorted by date desc
+      - Each session shows title and formatted date
+      - User can create a new session (title + date fields)
+      - Navigation exists between canvas and sessions views
+      - Empty state shown when no sessions exist
+    depends_on: [3]
+    effort: 3
+    status: scoped
+
+  - id: 6
+    github_issue: 126
+    milestone: 3
+    title: Add session detail view with resizable two-column layout
+    description: |
+      Clicking a session opens a two-column detail view. Left column shows session content
+      (editable title, date picker, notes/photos/connections tabs). Right column shows
+      @mentioned items from fetchTaggedItems sorted by first appearance, each with title,
+      type badge, and photo thumbnail. Draggable divider between columns with min-width
+      constraints. Back button returns to sessions list.
+    acceptance_criteria:
+      - Left column shows session content with editable title, date, and tabbed panel
+      - Right column shows @mentioned items ordered by first appearance
+      - Divider between columns is draggable to resize
+      - Both columns have minimum width constraints
+      - Tagged items show title, type badge, and photo thumbnail
+      - Clicking a tagged item navigates to it on the canvas
+      - Back button returns to sessions list
+    depends_on: [4, 5]
+    effort: 3
+    status: scoped
