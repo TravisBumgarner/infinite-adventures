@@ -7,20 +7,26 @@ import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
+import { TagPill } from "../../../sharedComponents/TagPill";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { useTagStore } from "../../../stores/tagStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
 export default function FilterBar() {
   const theme = useTheme();
   const activeTypes = useCanvasStore((s) => s.activeTypes);
+  const activeTags = useCanvasStore((s) => s.activeTags);
   const filterSearch = useCanvasStore((s) => s.filterSearch);
   const toggleType = useCanvasStore((s) => s.toggleType);
+  const toggleTag = useCanvasStore((s) => s.toggleTag);
   const setFilterSearch = useCanvasStore((s) => s.setFilterSearch);
+  const tagsById = useTagStore((s) => s.tags);
+  const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
   const [expanded, setExpanded] = useState(false);
-  const hasFilters = activeTypes.size > 0 || filterSearch.length > 0;
-  const filterCount = activeTypes.size + (filterSearch.length > 0 ? 1 : 0);
+  const hasFilters = activeTypes.size > 0 || activeTags.size > 0 || filterSearch.length > 0;
+  const filterCount = activeTypes.size + activeTags.size + (filterSearch.length > 0 ? 1 : 0);
 
   return (
     <ClickAwayListener onClickAway={() => setExpanded(false)}>
@@ -150,14 +156,51 @@ export default function FilterBar() {
               })}
             </Box>
 
+            {allTags.length > 0 && (
+              <>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "var(--color-subtext0)",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    display: "block",
+                    mt: 2,
+                    mb: 1,
+                  }}
+                >
+                  Filter by tag
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                  {allTags.map((tag) => {
+                    const active = activeTags.has(tag.id);
+                    return (
+                      <Box
+                        key={tag.id}
+                        onClick={() => toggleTag(tag.id)}
+                        sx={{
+                          cursor: "pointer",
+                          opacity: active ? 1 : 0.5,
+                          transition: "opacity 0.15s",
+                          "&:hover": { opacity: active ? 0.85 : 0.75 },
+                        }}
+                      >
+                        <TagPill tag={tag} compact />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </>
+            )}
+
             {hasFilters && (
               <Box
                 component="button"
                 onClick={() => {
                   setFilterSearch("");
-                  activeTypes.forEach((type) => {
-                    toggleType(type);
-                  });
+                  for (const type of activeTypes) toggleType(type);
+                  for (const tagId of activeTags) toggleTag(tagId);
                 }}
                 sx={{
                   mt: 2,

@@ -89,6 +89,7 @@ export function useCanvasActions() {
     setItemsCache,
     removeCachedItem,
     activeTypes,
+    activeTags,
     filterSearch,
     setEditingItemId,
     setContextMenu,
@@ -102,7 +103,7 @@ export function useCanvasActions() {
 
   // Compute filtered nodes and edges for display, with focused state
   const filteredNodes = useMemo(() => {
-    const filtered = filterNodes(nodes, activeTypes, filterSearch, new Set());
+    const filtered = filterNodes(nodes, activeTypes, filterSearch, activeTags);
     return filtered.map((node) => ({
       ...node,
       data: {
@@ -110,7 +111,7 @@ export function useCanvasActions() {
         isFocused: node.id === editingItemId,
       },
     }));
-  }, [nodes, activeTypes, filterSearch, editingItemId]);
+  }, [nodes, activeTypes, filterSearch, activeTags, editingItemId]);
   const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
   const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 

@@ -64,6 +64,9 @@ interface CanvasState {
   activeTypes: Set<CanvasItemType>;
   toggleType: (type: CanvasItemType) => void;
 
+  activeTags: Set<string>;
+  toggleTag: (tagId: string) => void;
+
   filterSearch: string;
   setFilterSearch: (search: string) => void;
 }
@@ -138,6 +141,18 @@ export const useCanvasStore = create<CanvasState>((set) => ({
         next.add(type);
       }
       return { activeTypes: next };
+    }),
+
+  activeTags: new Set(),
+  toggleTag: (tagId) =>
+    set((state) => {
+      const next = new Set(state.activeTags);
+      if (next.has(tagId)) {
+        next.delete(tagId);
+      } else {
+        next.add(tagId);
+      }
+      return { activeTags: next };
     }),
 
   filterSearch: "",
