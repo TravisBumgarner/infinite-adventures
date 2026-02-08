@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { statusLabel } from "../pages/Canvas/components/CanvasItemPanel";
+import { statusLabel } from "../utils/statusLabel";
 
 describe("statusLabel", () => {
   it("returns 'Saving...' for saving status", () => {

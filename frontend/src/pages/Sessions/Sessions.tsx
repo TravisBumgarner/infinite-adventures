@@ -13,10 +13,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SessionSummary } from "shared";
 import * as api from "../../api/client";
+import { SettingsButton, SettingsSidebar } from "../../components/SettingsSidebar";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
-import { SettingsButton, SettingsSidebar } from "../Canvas/components/SettingsModal";
 import SessionDetail from "./SessionDetail";
 
 function formatDate(dateStr: string): string {

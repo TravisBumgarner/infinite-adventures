@@ -10,12 +10,12 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
-import { logout } from "../../../auth/service";
-import { SIDEBAR_WIDTH } from "../../../constants";
-import { useAppStore } from "../../../stores/appStore";
-import { useCanvasStore } from "../../../stores/canvasStore";
-import type { ThemePreference } from "../../../styles/styleConsts";
-import { useThemePreference } from "../../../styles/Theme";
+import { logout } from "../auth/service";
+import { SIDEBAR_WIDTH } from "../constants";
+import { useAppStore } from "../stores/appStore";
+import { useCanvasStore } from "../stores/canvasStore";
+import type { ThemePreference } from "../styles/styleConsts";
+import { useThemePreference } from "../styles/Theme";
 
 interface SettingsButtonProps {
   onClick: () => void;

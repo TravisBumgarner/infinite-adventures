@@ -1,34 +1,20 @@
-import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import StarIcon from "@mui/icons-material/Star";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
-import Collapse from "@mui/material/Collapse";
 import InputBase from "@mui/material/InputBase";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo, TaggedItem } from "shared";
+import type { CanvasItem, Note, Photo } from "shared";
 import * as api from "../../api/client";
-import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../modals";
+import NotesTab from "../../sharedComponents/NotesTab";
+import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
-import { getContrastText } from "../../utils/getContrastText";
-import { statusLabel } from "../Canvas/components/CanvasItemPanel";
-import MentionEditor from "../Canvas/components/MentionEditor";
+import TaggedItemsPanel from "./components/TaggedItemsPanel";
 
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
@@ -46,8 +32,6 @@ export default function SessionDetail({
   initialSessionDate,
   onBack,
 }: SessionDetailProps) {
-  const theme = useTheme();
-  const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
@@ -62,12 +46,6 @@ export default function SessionDetail({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("notes");
-
-  // Tagged items
-  const [taggedItems, setTaggedItems] = useState<TaggedItem[]>([]);
-  const [expandedTaggedId, setExpandedTaggedId] = useState<string | null>(null);
-  const [expandedItem, setExpandedItem] = useState<CanvasItem | null>(null);
-  const [loadingExpand, setLoadingExpand] = useState(false);
 
   // Resizable divider
   const [leftWidth, setLeftWidth] = useState<number | null>(null);
@@ -147,26 +125,6 @@ export default function SessionDetail({
     });
   }, [sessionId]);
 
-  // Fetch tagged items
-  useEffect(() => {
-    api
-      .fetchTaggedItems(sessionId)
-      .then(setTaggedItems)
-      .catch(() => setTaggedItems([]));
-  }, [sessionId]);
-
-  // Re-fetch tagged items when notes change (mentions may have changed)
-  const prevNotesRef = useRef(notes);
-  useEffect(() => {
-    if (prevNotesRef.current !== notes && prevNotesRef.current.length > 0) {
-      api
-        .fetchTaggedItems(sessionId)
-        .then(setTaggedItems)
-        .catch(() => setTaggedItems([]));
-    }
-    prevNotesRef.current = notes;
-  }, [notes, sessionId]);
-
   // Drag handling for resizable divider
   const handleMouseDown = useCallback(() => {
     isDragging.current = true;
@@ -181,7 +139,6 @@ export default function SessionDetail({
       const totalWidth = rect.width;
       let newLeftWidth = e.clientX - rect.left;
 
-      // Enforce min widths
       if (newLeftWidth < MIN_LEFT_WIDTH) newLeftWidth = MIN_LEFT_WIDTH;
       if (totalWidth - newLeftWidth - 8 < MIN_RIGHT_WIDTH) {
         newLeftWidth = totalWidth - MIN_RIGHT_WIDTH - 8;
@@ -318,30 +275,6 @@ export default function SessionDetail({
     return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }
 
-  // Toggle expand/collapse for a tagged item
-  async function handleTaggedItemToggle(itemId: string) {
-    if (expandedTaggedId === itemId) {
-      setExpandedTaggedId(null);
-      setExpandedItem(null);
-      return;
-    }
-    setExpandedTaggedId(itemId);
-    setExpandedItem(null);
-    setLoadingExpand(true);
-    try {
-      const full = await api.fetchItem(itemId);
-      setExpandedItem(full);
-    } finally {
-      setLoadingExpand(false);
-    }
-  }
-
-  // Navigate to tagged item on canvas
-  function handleViewOnCanvas(itemId: string) {
-    navigate("/canvas");
-    useCanvasStore.getState().setEditingItemId(itemId);
-  }
-
   if (!item) {
     return (
       <Box
@@ -464,211 +397,35 @@ export default function SessionDetail({
         </Tabs>
 
         {/* Tab content */}
-        {activeTab === "notes" && !editingNoteId && (
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<AddIcon />}
-              fullWidth
-              onClick={handleAddNote}
-              sx={{ mb: 2, alignSelf: "flex-start" }}
-            >
-              Add Note
-            </Button>
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
-              {notes.length === 0 ? (
-                <Typography
-                  variant="body2"
-                  sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
-                >
-                  No notes yet
-                </Typography>
-              ) : (
-                <List sx={{ p: 0 }}>
-                  {notes.map((note) => (
-                    <ListItemButton
-                      key={note.id}
-                      onClick={() => handleSelectNote(note)}
-                      sx={{
-                        mb: 1,
-                        py: 1.5,
-                        px: 2,
-                        bgcolor: "var(--color-surface0)",
-                        border: "1px solid var(--color-surface1)",
-                        "&:hover": { bgcolor: "var(--color-surface1)" },
-                      }}
-                    >
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-                        >
-                          {getNotePreview(note.content)}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                          Last edited on {new Date(note.updated_at).toLocaleDateString()}
-                        </Typography>
-                      </Box>
-                      <Button
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteNote(note.id);
-                        }}
-                        sx={{ color: "var(--color-subtext0)", ml: 1, minWidth: 0, p: 0.5 }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 18 }} />
-                      </Button>
-                    </ListItemButton>
-                  ))}
-                </List>
-              )}
-            </Box>
-          </Box>
-        )}
-
-        {activeTab === "notes" && editingNoteId && (
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<ArrowBackIcon />}
-                fullWidth
-                onClick={handleBackToNoteList}
-                sx={{ alignSelf: "flex-start" }}
-              >
-                Back to Notes
-              </Button>
-            </Box>
-            <MentionEditor
-              value={noteContent}
-              onChange={(val: string) => {
-                setNoteContent(val);
-                markNoteDirty();
-              }}
-              itemsCache={itemsCache}
-              canvasId={activeCanvasId ?? ""}
-              onCreate={handleCreateMentionItem}
-              containerStyle={{ flex: 1, minHeight: 0 }}
-              style={{
-                background: "var(--color-surface0)",
-                border: "1px solid var(--color-surface1)",
-                padding: "8px 10px",
-                color: "var(--color-text)",
-                fontSize: 14,
-                overflow: "auto",
-              }}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mt: 1.5,
-                flexShrink: 0,
-              }}
-            >
-              <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                {statusLabel(noteStatus)}
-              </Typography>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={() => handleDeleteNote(editingNoteId)}
-              >
-                Delete Note
-              </Button>
-            </Box>
-          </Box>
+        {activeTab === "notes" && (
+          <NotesTab
+            notes={notes}
+            editingNoteId={editingNoteId}
+            noteContent={noteContent}
+            noteStatus={noteStatus}
+            itemsCache={itemsCache}
+            canvasId={activeCanvasId ?? ""}
+            onAddNote={handleAddNote}
+            onSelectNote={handleSelectNote}
+            onDeleteNote={handleDeleteNote}
+            onBackToList={handleBackToNoteList}
+            onNoteContentChange={(val) => {
+              setNoteContent(val);
+              markNoteDirty();
+            }}
+            onCreateMentionItem={handleCreateMentionItem}
+            getNotePreview={getNotePreview}
+          />
         )}
 
         {activeTab === "photos" && (
-          <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {photos.map((photo, index) => (
-                <Box
-                  key={photo.id}
-                  sx={{
-                    position: "relative",
-                    width: 100,
-                    height: 100,
-                    border: photo.is_selected
-                      ? "2px solid var(--color-blue)"
-                      : "1px solid var(--color-surface1)",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={photo.url}
-                    alt={photo.original_name}
-                    sx={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
-                    onClick={() => handleOpenLightbox(index)}
-                  />
-                  <Button
-                    size="small"
-                    onClick={() => handlePhotoSelect(photo.id)}
-                    sx={{
-                      position: "absolute",
-                      bottom: 2,
-                      left: 2,
-                      bgcolor: "rgba(0,0,0,0.5)",
-                      color: photo.is_selected ? "var(--color-yellow)" : "white",
-                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                      width: 20,
-                      height: 20,
-                      minWidth: 0,
-                      p: 0,
-                    }}
-                  >
-                    {photo.is_selected ? (
-                      <StarIcon sx={{ fontSize: 14 }} />
-                    ) : (
-                      <StarOutlineIcon sx={{ fontSize: 14 }} />
-                    )}
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => handlePhotoDelete(photo.id)}
-                    sx={{
-                      position: "absolute",
-                      top: 2,
-                      right: 2,
-                      bgcolor: "rgba(0,0,0,0.5)",
-                      color: "white",
-                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                      width: 20,
-                      height: 20,
-                      minWidth: 0,
-                      p: 0,
-                    }}
-                  >
-                    <CloseIcon sx={{ fontSize: 14 }} />
-                  </Button>
-                </Box>
-              ))}
-              <Button
-                component="label"
-                variant="outlined"
-                sx={{ width: 100, height: 100, minWidth: 0 }}
-              >
-                +
-                <input type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
-              </Button>
-            </Box>
-            {photos.length > 0 && (
-              <Typography
-                variant="caption"
-                sx={{ display: "block", mt: 1.5, color: "var(--color-subtext0)" }}
-              >
-                Click a photo to view it. Click the star to set as preview.
-              </Typography>
-            )}
-          </Box>
+          <PhotosTab
+            photos={photos}
+            onUpload={handlePhotoUpload}
+            onDelete={handlePhotoDelete}
+            onSelect={handlePhotoSelect}
+            onOpenLightbox={handleOpenLightbox}
+          />
         )}
       </Box>
 
@@ -697,175 +454,7 @@ export default function SessionDetail({
       </Box>
 
       {/* Right column - Tagged items */}
-      <Box
-        sx={{
-          flex: 1,
-          minWidth: MIN_RIGHT_WIDTH,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          borderLeft: "1px solid var(--color-surface0)",
-        }}
-      >
-        <Box sx={{ p: 2, pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--color-text)" }}>
-            Tagged Items
-          </Typography>
-          <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
-            Items @mentioned in this session's notes
-          </Typography>
-        </Box>
-
-        <Box sx={{ flex: 1, overflowY: "auto", p: 2, pt: 1 }}>
-          {taggedItems.length === 0 ? (
-            <Typography
-              variant="body2"
-              sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
-            >
-              No tagged items yet. Use @mentions in your notes to tag items.
-            </Typography>
-          ) : (
-            <List sx={{ p: 0 }}>
-              {taggedItems.map((tagged) => {
-                const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === tagged.type);
-                const bgColor = theme.palette.canvasItemTypes[tagged.type]?.light ?? "#585b70";
-                const isExpanded = expandedTaggedId === tagged.id;
-                return (
-                  <Box key={tagged.id} sx={{ mb: 1 }}>
-                    <ListItemButton
-                      onClick={() => handleTaggedItemToggle(tagged.id)}
-                      sx={{
-                        borderRadius: isExpanded ? "6px 6px 0 0" : 1.5,
-                        border: "1px solid var(--color-surface1)",
-                        borderBottom: isExpanded ? "none" : undefined,
-                        bgcolor: "var(--color-base)",
-                        "&:hover": { bgcolor: "var(--color-surface0)" },
-                        gap: 1.5,
-                        py: 1.5,
-                      }}
-                    >
-                      {tagged.selected_photo_url && (
-                        <Box
-                          component="img"
-                          src={tagged.selected_photo_url}
-                          alt={tagged.title}
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 1,
-                            objectFit: "cover",
-                            flexShrink: 0,
-                          }}
-                        />
-                      )}
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {tagged.title}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        label={typeInfo?.label ?? tagged.type}
-                        size="small"
-                        sx={{
-                          bgcolor: bgColor,
-                          color: getContrastText(bgColor),
-                          fontSize: 10,
-                          fontWeight: 600,
-                          height: 20,
-                          flexShrink: 0,
-                        }}
-                      />
-                    </ListItemButton>
-                    <Collapse in={isExpanded}>
-                      <Box
-                        sx={{
-                          border: "1px solid var(--color-surface1)",
-                          borderTop: "none",
-                          borderRadius: "0 0 6px 6px",
-                          bgcolor: "var(--color-surface0)",
-                          p: 2,
-                        }}
-                      >
-                        {loadingExpand && !expandedItem ? (
-                          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                            <CircularProgress size={20} />
-                          </Box>
-                        ) : expandedItem ? (
-                          <>
-                            {/* Selected photo (larger) */}
-                            {expandedItem.photos.find((p) => p.is_selected) && (
-                              <Box
-                                component="img"
-                                src={expandedItem.photos.find((p) => p.is_selected)!.url}
-                                alt={expandedItem.title}
-                                sx={{
-                                  width: 120,
-                                  height: 120,
-                                  borderRadius: 1,
-                                  objectFit: "cover",
-                                  mb: 1.5,
-                                }}
-                              />
-                            )}
-                            {/* Note previews */}
-                            {expandedItem.notes.length > 0 ? (
-                              expandedItem.notes.map((note) => (
-                                <Box key={note.id} sx={{ mb: 1 }}>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: "var(--color-text)",
-                                      whiteSpace: "pre-wrap",
-                                      wordBreak: "break-word",
-                                    }}
-                                  >
-                                    {getNotePreview(note.content)}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    sx={{ color: "var(--color-subtext0)" }}
-                                  >
-                                    {new Date(note.updated_at).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
-                              ))
-                            ) : !expandedItem.photos.find((p) => p.is_selected) ? (
-                              <Typography variant="body2" sx={{ color: "var(--color-overlay0)" }}>
-                                No additional details
-                              </Typography>
-                            ) : null}
-                            {/* View on Canvas button */}
-                            <Button
-                              size="small"
-                              startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-                              onClick={() => handleViewOnCanvas(tagged.id)}
-                              sx={{
-                                mt: 1,
-                                textTransform: "none",
-                                color: "var(--color-subtext0)",
-                              }}
-                            >
-                              View on Canvas
-                            </Button>
-                          </>
-                        ) : null}
-                      </Box>
-                    </Collapse>
-                  </Box>
-                );
-              })}
-            </List>
-          )}
-        </Box>
-      </Box>
+      <TaggedItemsPanel sessionId={sessionId} notes={notes} itemsCache={itemsCache} />
     </Box>
   );
 }
