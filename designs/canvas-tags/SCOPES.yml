@@ -102,7 +102,7 @@ tasks:
       - Types imported from shared package
     depends_on: [4]
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 6
     github_issue: 144
