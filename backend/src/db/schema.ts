@@ -95,6 +95,7 @@ export const notes = pgTable(
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
+    is_pinned: boolean("is_pinned").notNull().default(false),
     created_at: text("created_at").notNull().default(sql`now()::text`),
     updated_at: text("updated_at").notNull().default(sql`now()::text`),
   },
@@ -113,6 +114,7 @@ export const canvasItems = pgTable(
       enum: canvasItemTypes,
     }).notNull(),
     title: text("title").notNull(),
+    summary: text("summary").notNull().default(""),
     canvas_x: doublePrecision("canvas_x").notNull().default(0),
     canvas_y: doublePrecision("canvas_y").notNull().default(0),
     canvas_id: text("canvas_id")

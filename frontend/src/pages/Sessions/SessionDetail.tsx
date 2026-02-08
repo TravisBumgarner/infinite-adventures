@@ -205,6 +205,13 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
+  async function handleTogglePin(noteId: string, isPinned: boolean) {
+    await api.updateNote(noteId, { is_pinned: isPinned });
+    const refreshed = await api.fetchItem(sessionId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+  }
+
   function handleBackToNoteList() {
     flushNote();
     setEditingNoteId(null);
@@ -410,6 +417,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
               setNoteContent(val);
               markNoteDirty();
             }}
+            onTogglePin={handleTogglePin}
             onCreateMentionItem={handleCreateMentionItem}
             getNotePreview={getNotePreview}
           />

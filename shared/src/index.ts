@@ -8,6 +8,7 @@ export const CanvasItemSummarySchema = z.object({
   id: z.string(),
   type: CanvasItemTypeSchema,
   title: z.string(),
+  summary: z.string(),
   canvas_x: z.number(),
   canvas_y: z.number(),
   selected_photo_url: z.string().optional(),
@@ -18,6 +19,7 @@ export const CanvasItemSummarySchema = z.object({
 export const NoteSchema = z.object({
   id: z.string(),
   content: z.string(),
+  is_pinned: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -65,6 +67,7 @@ export const CanvasItemSchema = z.object({
   id: z.string(),
   type: CanvasItemTypeSchema,
   title: z.string(),
+  summary: z.string(),
   canvas_x: z.number(),
   canvas_y: z.number(),
   created_at: z.string(),
@@ -87,6 +90,7 @@ export const CreateCanvasItemInputSchema = z.object({
 
 export const UpdateCanvasItemInputSchema = z.object({
   title: z.string().optional(),
+  summary: z.string().optional(),
   canvas_x: z.number().optional(),
   canvas_y: z.number().optional(),
   session_date: z.string().optional(),
@@ -99,7 +103,8 @@ export const CreateNoteInputSchema = z.object({
 });
 
 export const UpdateNoteInputSchema = z.object({
-  content: z.string(),
+  content: z.string().optional(),
+  is_pinned: z.boolean().optional(),
 });
 
 export const CanvasItemSearchResultSchema = z.object({

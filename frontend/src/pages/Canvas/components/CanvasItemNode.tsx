@@ -16,6 +16,7 @@ export type CanvasItemNodeData = {
   itemId: string;
   type: CanvasItemType;
   title: string;
+  summary: string;
   content: string;
   selectedPhotoUrl?: string;
   mentionLabels: Record<string, string>;
@@ -94,7 +95,25 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           />
         </Box>
 
-        {/* Row 2: Tags (if any) */}
+        {/* Row 2: Summary (if present) */}
+        {data.summary && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: "var(--color-subtext0)",
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              mt: 0.5,
+            }}
+          >
+            {data.summary}
+          </Typography>
+        )}
+
+        {/* Row 3: Tags (if any) */}
         {tags.length > 0 && (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
             {tags.map((tag) => (
@@ -103,7 +122,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           </Box>
         )}
 
-        {/* Row 3: Image (if present) */}
+        {/* Row 4: Image (if present) */}
         {data.selectedPhotoUrl && (
           <Box
             sx={{
@@ -128,7 +147,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           </Box>
         )}
 
-        {/* Row 4: Metadata */}
+        {/* Row 5: Metadata */}
         <Box
           sx={{
             bgcolor: "var(--color-surface0)",
