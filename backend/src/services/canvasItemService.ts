@@ -28,6 +28,7 @@ import {
 import { parseMentionsWithPositions } from "./canvasItemLinkService.js";
 import { listNotes } from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
+import { listTagIdsForItem, listTagsForItem } from "./tagService.js";
 
 export const DEFAULT_CANVAS_ID = "00000000-0000-4000-8000-000000000000";
 
@@ -97,6 +98,8 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
         ),
       );
 
+    const tagIds = await listTagIdsForItem(item.id);
+
     summaries.push({
       id: item.id,
       type: item.type as CanvasItemType,
@@ -107,6 +110,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       selected_photo_url: selectedPhotos[0]
         ? `/api/photos/${selectedPhotos[0].filename}`
         : undefined,
+      tag_ids: tagIds.length > 0 ? tagIds : undefined,
     });
   }
 
@@ -146,6 +150,9 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     is_selected: p.is_selected,
   }));
 
+  // Get tags
+  const tagList = await listTagsForItem(id);
+
   // Get links_to (items this item links to)
   const linksTo = await db
     .select({
@@ -180,6 +187,7 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     session_date,
     notes: noteList,
     photos: photoList,
+    tags: tagList,
     links_to: linksTo as CanvasItemLink[],
     linked_from: linkedFrom.map((l) => ({
       id: l.id,
