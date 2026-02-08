@@ -51,7 +51,7 @@ tasks:
       - TAG_NOT_FOUND in ERROR_CODES
     depends_on: []
     effort: 1
-    status: scoped
+    status: implementing
 
   - id: 3
     github_issue: 141

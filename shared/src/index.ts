@@ -11,6 +11,7 @@ export const CanvasItemSummarySchema = z.object({
   canvas_x: z.number(),
   canvas_y: z.number(),
   selected_photo_url: z.string().optional(),
+  tag_ids: z.array(z.string()).optional(),
   created_at: z.string(),
 });
 
@@ -26,6 +27,25 @@ export const PhotoSchema = z.object({
   url: z.string(),
   original_name: z.string(),
   is_selected: z.boolean(),
+});
+
+export const TagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string(),
+  color: z.string(),
+});
+
+export const CreateTagInputSchema = z.object({
+  name: z.string(),
+  icon: z.string(),
+  color: z.string(),
+});
+
+export const UpdateTagInputSchema = z.object({
+  name: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
 });
 
 export const CanvasItemLinkSchema = z.object({
@@ -52,6 +72,7 @@ export const CanvasItemSchema = z.object({
   session_date: z.string().optional(),
   notes: z.array(NoteSchema),
   photos: z.array(PhotoSchema),
+  tags: z.array(TagSchema),
   links_to: z.array(CanvasItemLinkSchema),
   linked_from: z.array(CanvasItemLinkWithSnippetSchema),
 });
@@ -142,6 +163,7 @@ export const ERROR_CODES = [
   "CANVAS_NOT_FOUND",
   "CANVAS_ITEM_NOT_FOUND",
   "PHOTO_NOT_FOUND",
+  "TAG_NOT_FOUND",
   "LAST_CANVAS",
 ] as const;
 
@@ -163,6 +185,9 @@ export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type TaggedItem = z.infer<typeof TaggedItemSchema>;
+export type Tag = z.infer<typeof TagSchema>;
+export type CreateTagInput = z.infer<typeof CreateTagInputSchema>;
+export type UpdateTagInput = z.infer<typeof UpdateTagInputSchema>;
 
 // --- Inferred types (Other) ---
 
