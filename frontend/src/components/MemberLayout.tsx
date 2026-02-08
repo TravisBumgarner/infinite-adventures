@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
+import DiceRoller from "../pages/Canvas/components/DiceRoller";
+import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
 import PageToggle from "../sharedComponents/PageToggle";
 import TopBar from "../sharedComponents/TopBar";
 import { useCanvasStore } from "../stores/canvasStore";
@@ -23,6 +25,8 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
       {children}
+      <ToolSidebar />
+      <DiceRoller />
       {showSettings && <SettingsSidebar />}
     </>
   );
