@@ -61,6 +61,9 @@ export default function CanvasItemPanel({
   const [noteContent, setNoteContent] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
 
+  // Summary state
+  const [summary, setSummary] = useState("");
+
   // Details tab state
   const [sessionDate, setSessionDate] = useState("");
 
@@ -69,6 +72,8 @@ export default function CanvasItemPanel({
 
   const titleRef = useRef(title);
   titleRef.current = title;
+  const summaryRef = useRef(summary);
+  summaryRef.current = summary;
   const sessionDateRef = useRef(sessionDate);
   sessionDateRef.current = sessionDate;
   const noteContentRef = useRef(noteContent);
@@ -81,6 +86,15 @@ export default function CanvasItemPanel({
   const saveTitleFn = useCallback(async () => {
     await api.updateItem(itemIdRef.current, {
       title: titleRef.current,
+    });
+    const refreshed = await api.fetchItem(itemIdRef.current);
+    onSaved(refreshed);
+  }, [onSaved]);
+
+  // Save function for summary
+  const saveSummaryFn = useCallback(async () => {
+    await api.updateItem(itemIdRef.current, {
+      summary: summaryRef.current,
     });
     const refreshed = await api.fetchItem(itemIdRef.current);
     onSaved(refreshed);
@@ -113,6 +127,11 @@ export default function CanvasItemPanel({
     flush: flushTitle,
   } = useAutoSave({ saveFn: saveTitleFn });
   const {
+    status: summaryStatus,
+    markDirty: markSummaryDirty,
+    flush: flushSummary,
+  } = useAutoSave({ saveFn: saveSummaryFn });
+  const {
     status: dateStatus,
     markDirty: markDateDirty,
     flush: flushDate,
@@ -123,22 +142,25 @@ export default function CanvasItemPanel({
     flush: flushNote,
   } = useAutoSave({ saveFn: saveNoteFn });
 
-  // titleStatus is used implicitly by saving on blur/Enter
+  // titleStatus and summaryStatus are used implicitly by saving on blur/Enter
   void titleStatus;
+  void summaryStatus;
 
   useEffect(() => {
     return () => {
       flushTitle();
+      flushSummary();
       flushDate();
       flushNote();
     };
-  }, [flushTitle, flushDate, flushNote]);
+  }, [flushTitle, flushSummary, flushDate, flushNote]);
 
   useEffect(() => {
     itemIdRef.current = itemId;
     api.fetchItem(itemId).then((i) => {
       setItem(i);
       setTitle(i.title);
+      setSummary(i.summary);
       setSessionDate(i.session_date ?? "");
       setNotes(i.notes);
       setEditingNoteId(null);
@@ -347,6 +369,14 @@ export default function CanvasItemPanel({
     return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }
 
+  async function handleTogglePin(noteId: string, isPinned: boolean) {
+    await api.updateNote(noteId, { is_pinned: isPinned });
+    const refreshed = await api.fetchItem(itemId);
+    setItem(refreshed);
+    setNotes(refreshed.notes);
+    onSaved(refreshed);
+  }
+
   function handleTitleChange(value: string) {
     setTitle(value);
     markTitleDirty();
@@ -515,6 +545,33 @@ export default function CanvasItemPanel({
         </Box>
       </Box>
 
+      {/* Summary */}
+      <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
+        <TextField
+          label="Summary"
+          size="small"
+          fullWidth
+          multiline
+          minRows={1}
+          maxRows={3}
+          value={summary}
+          onChange={(e) => {
+            setSummary(e.target.value);
+            markSummaryDirty();
+          }}
+          variant="standard"
+          InputProps={{ disableUnderline: true }}
+          InputLabelProps={{ shrink: true }}
+          placeholder="Brief description..."
+          sx={{
+            "& .MuiInputBase-root": {
+              fontSize: 13,
+              color: "var(--color-subtext0)",
+            },
+          }}
+        />
+      </Box>
+
       {/* Tabs */}
       <Tabs
         value={panelTab}
@@ -555,6 +612,7 @@ export default function CanvasItemPanel({
             setNoteContent(val);
             markNoteDirty();
           }}
+          onTogglePin={handleTogglePin}
           onCreateMentionItem={handleCreateMentionItem}
           getNotePreview={getNotePreview}
         />
@@ -598,6 +656,7 @@ export default function CanvasItemPanel({
                 startIcon={<OpenInNewIcon />}
                 onClick={() => {
                   flushTitle();
+                  flushSummary();
                   flushDate();
                   flushNote();
                   navigate(`/sessions/${itemId}`);

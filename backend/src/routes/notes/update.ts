@@ -18,12 +18,12 @@ export function validate(
     sendBadRequest(res, "INVALID_UUID");
     return null;
   }
-  const { content } = req.body;
-  if (content === undefined) {
+  const { content, is_pinned } = req.body;
+  if (content === undefined && is_pinned === undefined) {
     sendBadRequest(res, "INVALID_INPUT");
     return null;
   }
-  return { noteId, input: { content } };
+  return { noteId, input: { content, is_pinned } };
 }
 
 export async function handler(req: Request<{ noteId: string }>, res: Response): Promise<void> {

@@ -75,6 +75,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       id: canvasItems.id,
       type: canvasItems.type,
       title: canvasItems.title,
+      summary: canvasItems.summary,
       canvas_x: canvasItems.canvas_x,
       canvas_y: canvasItems.canvas_y,
       created_at: canvasItems.created_at,
@@ -104,6 +105,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       id: item.id,
       type: item.type as CanvasItemType,
       title: item.title,
+      summary: item.summary,
       canvas_x: item.canvas_x,
       canvas_y: item.canvas_y,
       created_at: item.created_at,
@@ -180,6 +182,7 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     id: item.id,
     type,
     title: item.title,
+    summary: item.summary,
     canvas_x: item.canvas_x,
     canvas_y: item.canvas_y,
     created_at: item.created_at,
@@ -250,6 +253,7 @@ export async function createItem(
     id: itemId,
     type,
     title: input.title,
+    summary: "",
     canvas_x: input.canvas_x ?? 0,
     canvas_y: input.canvas_y ?? 0,
     created_at: now,
@@ -272,11 +276,17 @@ export async function updateItem(
   const type = existing.type as CanvasItemType;
 
   // Update canvas item fields if provided
-  if (input.title !== undefined || input.canvas_x !== undefined || input.canvas_y !== undefined) {
+  if (
+    input.title !== undefined ||
+    input.summary !== undefined ||
+    input.canvas_x !== undefined ||
+    input.canvas_y !== undefined
+  ) {
     await db
       .update(canvasItems)
       .set({
         title: input.title ?? existing.title,
+        summary: input.summary ?? existing.summary,
         canvas_x: input.canvas_x ?? existing.canvas_x,
         canvas_y: input.canvas_y ?? existing.canvas_y,
         updated_at: now,
@@ -299,6 +309,7 @@ export async function updateItem(
     id: updated!.id,
     type,
     title: updated!.title,
+    summary: updated!.summary,
     canvas_x: updated!.canvas_x,
     canvas_y: updated!.canvas_y,
     created_at: updated!.created_at,

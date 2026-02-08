@@ -40,6 +40,7 @@ function toFlowNode(
       itemId: item.id,
       type: item.type,
       title: item.title,
+      summary: item.summary,
       content: noteContent,
       selectedPhotoUrl: selectedPhoto?.url,
       mentionLabels,

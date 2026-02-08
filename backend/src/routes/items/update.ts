@@ -18,8 +18,8 @@ export function validate(
     sendBadRequest(res, "INVALID_UUID");
     return null;
   }
-  const { title, canvas_x, canvas_y, session_date } = req.body;
-  return { id, input: { title, canvas_x, canvas_y, session_date } };
+  const { title, summary, canvas_x, canvas_y, session_date } = req.body;
+  return { id, input: { title, summary, canvas_x, canvas_y, session_date } };
 }
 
 export async function handler(req: Request<{ id: string }>, res: Response): Promise<void> {

@@ -1,6 +1,8 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -24,6 +26,7 @@ interface NotesTabProps {
   onDeleteNote: (noteId: string) => void;
   onBackToList: () => void;
   onNoteContentChange: (value: string) => void;
+  onTogglePin: (noteId: string, isPinned: boolean) => void;
   onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
 }
@@ -40,13 +43,14 @@ export default function NotesTab({
   onDeleteNote,
   onBackToList,
   onNoteContentChange,
+  onTogglePin,
   onCreateMentionItem,
   getNotePreview,
 }: NotesTabProps) {
   if (editingNoteId) {
     return (
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
           <Button
             variant="outlined"
             size="small"
@@ -58,6 +62,12 @@ export default function NotesTab({
             Back to Notes
           </Button>
         </Box>
+        <Typography
+          variant="caption"
+          sx={{ color: "var(--color-subtext0)", mb: 1, minHeight: "1.2em" }}
+        >
+          {statusLabel(noteStatus) || "\u00A0"}
+        </Typography>
         <MentionEditor
           value={noteContent}
           onChange={onNoteContentChange}
@@ -74,18 +84,7 @@ export default function NotesTab({
             overflow: "auto",
           }}
         />
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mt: 1.5,
-            flexShrink: 0,
-          }}
-        >
-          <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-            {statusLabel(noteStatus)}
-          </Typography>
+        <Box sx={{ mt: 1.5, flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
           <Button
             variant="outlined"
             color="error"
@@ -154,9 +153,23 @@ export default function NotesTab({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteNote(note.id);
+                    onTogglePin(note.id, !note.is_pinned);
                   }}
                   sx={{ color: "var(--color-subtext0)", ml: 1 }}
+                >
+                  {note.is_pinned ? (
+                    <PushPinIcon sx={{ fontSize: 18 }} />
+                  ) : (
+                    <PushPinOutlinedIcon sx={{ fontSize: 18 }} />
+                  )}
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteNote(note.id);
+                  }}
+                  sx={{ color: "var(--color-subtext0)" }}
                 >
                   <DeleteIcon sx={{ fontSize: 18 }} />
                 </IconButton>
