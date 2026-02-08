@@ -20,6 +20,7 @@ export async function truncateAllTables() {
   const db = getDb();
   await db.execute(
     sql`TRUNCATE TABLE
+      canvas_item_tags, tags,
       notes, canvas_item_links, canvas_items, photos,
       people, places, things, sessions, events,
       canvas_users, canvases, users
