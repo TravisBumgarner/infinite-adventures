@@ -56,11 +56,13 @@ export default function PhotosTab({
     [onFileDrop],
   );
 
-  const sortedPhotos = useMemo(
-    () =>
-      [...photos].sort((a, b) => (a.is_selected === b.is_selected ? 0 : a.is_selected ? -1 : 1)),
-    [photos],
-  );
+  // Starred photos first, then the rest. Both groups keep the API's
+  // original order, which is creation date (oldest first).
+  const sortedPhotos = useMemo(() => {
+    const selected = photos.filter((p) => p.is_selected);
+    const rest = photos.filter((p) => !p.is_selected);
+    return [...selected, ...rest];
+  }, [photos]);
 
   return (
     <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
