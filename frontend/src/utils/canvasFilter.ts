@@ -12,6 +12,7 @@ export function filterNodes(
   nodes: Node<CanvasItemNodeData>[],
   activeTypes: Set<CanvasItemType>,
   search: string,
+  _activeTags: Set<string>,
 ): Node<CanvasItemNodeData>[] {
   const hasTypeFilter = activeTypes.size > 0;
   const searchLower = search.toLowerCase();

@@ -102,7 +102,7 @@ export function useCanvasActions() {
 
   // Compute filtered nodes and edges for display, with focused state
   const filteredNodes = useMemo(() => {
-    const filtered = filterNodes(nodes, activeTypes, filterSearch);
+    const filtered = filterNodes(nodes, activeTypes, filterSearch, new Set());
     return filtered.map((node) => ({
       ...node,
       data: {

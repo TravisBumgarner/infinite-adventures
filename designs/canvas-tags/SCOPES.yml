@@ -173,4 +173,4 @@ tasks:
       - Existing canvasFilter tests updated
     depends_on: [8]
     effort: 2
-    status: scoped
+    status: testing
