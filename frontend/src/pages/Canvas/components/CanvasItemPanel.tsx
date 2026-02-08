@@ -143,15 +143,19 @@ export default function CanvasItemPanel({
     onDeleted(itemId);
   }
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFileUpload(file: File) {
     const photo = await api.uploadPhoto(itemId, file);
     setPhotos((prev) => [...prev, photo]);
     const updated = await api.fetchItem(itemId);
     setItem(updated);
     setPhotos(updated.photos);
     onSaved(updated);
+  }
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleFileUpload(file);
   }
 
   async function handlePhotoDelete(photoId: string) {
@@ -441,6 +445,7 @@ export default function CanvasItemPanel({
           onDelete={handlePhotoDelete}
           onSelect={handlePhotoSelect}
           onOpenLightbox={handleOpenLightbox}
+          onFileDrop={handleFileUpload}
         />
       )}
 

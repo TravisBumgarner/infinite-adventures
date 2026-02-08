@@ -43,6 +43,17 @@ function orderedList(...items: string[]) {
   };
 }
 
+function taskList(...items: { text: string; checked: boolean }[]) {
+  return {
+    type: "taskList",
+    content: items.map((item) => ({
+      type: "taskItem",
+      attrs: { checked: item.checked },
+      content: [paragraph(textNode(item.text))],
+    })),
+  };
+}
+
 function doc(...content: Record<string, unknown>[]) {
   return { type: "doc", content };
 }
@@ -99,6 +110,13 @@ describe("serializeToMentionText", () => {
   it("serializes empty paragraphs as blank lines", () => {
     const json = doc(paragraph(textNode("Before")), paragraph(), paragraph(textNode("After")));
     expect(serializeToMentionText(json)).toBe("Before\n\nAfter");
+  });
+
+  it("serializes task list items with checkbox syntax", () => {
+    const json = doc(
+      taskList({ text: "Unchecked task", checked: false }, { text: "Checked task", checked: true }),
+    );
+    expect(serializeToMentionText(json)).toBe("- [ ] Unchecked task\n- [x] Checked task");
   });
 });
 
@@ -177,5 +195,21 @@ describe("contentToHtml", () => {
     const result = contentToHtml("<script>alert('xss')</script>", new Map());
     expect(result).not.toContain("<script>");
     expect(result).toContain("&lt;script&gt;");
+  });
+
+  it("converts task list lines to taskList HTML", () => {
+    const result = contentToHtml("- [ ] Unchecked\n- [x] Checked", new Map());
+    expect(result).toContain('data-type="taskList"');
+    expect(result).toContain('data-type="taskItem"');
+    expect(result).toContain('data-checked="false"');
+    expect(result).toContain('data-checked="true"');
+    expect(result).toContain("<p>Unchecked</p>");
+    expect(result).toContain("<p>Checked</p>");
+  });
+
+  it("does not treat task list lines as bullet list items", () => {
+    const result = contentToHtml("- [ ] Task item", new Map());
+    expect(result).not.toContain("<ul><li>");
+    expect(result).toContain('data-type="taskList"');
   });
 });

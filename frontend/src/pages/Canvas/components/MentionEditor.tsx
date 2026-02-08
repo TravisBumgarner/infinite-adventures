@@ -5,6 +5,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import Mention from "@tiptap/extension-mention";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
@@ -325,6 +327,23 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
       >
         1.
       </IconButton>
+      <IconButton
+        size="small"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          editor.chain().focus().toggleTaskList().run();
+        }}
+        title="Task List"
+        sx={{
+          borderRadius: 1,
+          fontSize: 13,
+          fontWeight: 700,
+          color: editor.isActive("taskList") ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: editor.isActive("taskList") ? "var(--color-surface1)" : "transparent",
+        }}
+      >
+        ☑
+      </IconButton>
     </Box>
   );
 }
@@ -360,6 +379,8 @@ export default function MentionEditor({
         codeBlock: false,
         horizontalRule: false,
       }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
       Mention.configure({
         HTMLAttributes: {
           class: "mention",

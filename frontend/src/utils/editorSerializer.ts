@@ -67,6 +67,15 @@ export function serializeToMentionText(json: Record<string, unknown>): string {
           lines.push(`${i + 1}. ${text}`);
         });
       }
+    } else if (block.type === "taskList") {
+      if (block.content) {
+        for (const taskItem of block.content) {
+          const checked = taskItem.attrs?.checked === true;
+          const para = taskItem.content?.[0];
+          const text = para?.content ? serializeInline(para.content) : "";
+          lines.push(checked ? `- [x] ${text}` : `- [ ] ${text}`);
+        }
+      }
     }
   }
 
@@ -115,6 +124,29 @@ export function contentToHtml(content: string, itemsCache: Map<string, CanvasIte
 
   while (i < lines.length) {
     const line = lines[i]!;
+
+    // Check for task list items (must come before bullet list check)
+    if (/^- \[([ x])\] /.test(line)) {
+      const taskItems: { checked: boolean; text: string }[] = [];
+      while (i < lines.length && /^- \[([ x])\] /.test(lines[i]!)) {
+        const taskMatch = lines[i]!.match(/^- \[([ x])\] (.*)$/);
+        if (taskMatch) {
+          taskItems.push({
+            checked: taskMatch[1] === "x",
+            text: taskMatch[2]!,
+          });
+        }
+        i++;
+      }
+      const lis = taskItems
+        .map(
+          (t) =>
+            `<li data-type="taskItem" data-checked="${t.checked}"><p>${escapeHtml(t.text)}</p></li>`,
+        )
+        .join("");
+      htmlParts.push(`<ul data-type="taskList">${lis}</ul>`);
+      continue;
+    }
 
     // Check for bullet list items
     if (/^- /.test(line)) {

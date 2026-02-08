@@ -43,3 +43,19 @@ html, body, #root {
 .mention-editor-wrapper .ProseMirror li {
   margin: 0.1em 0;
 }
+
+.mention-editor-wrapper .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.5em;
+}
+
+.mention-editor-wrapper .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+
+.mention-editor-wrapper .ProseMirror ul[data-type="taskList"] li label input[type="checkbox"] {
+  margin-top: 0.25em;
+  cursor: pointer;
+}
