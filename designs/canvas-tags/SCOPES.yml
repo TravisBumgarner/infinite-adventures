@@ -121,7 +121,7 @@ tasks:
       - Tags fetched on canvas load and stored in tagStore
     depends_on: [5]
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 7
     github_issue: 145

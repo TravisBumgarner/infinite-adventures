@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemType } from "shared";
 import * as api from "../../../api/client";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
+import { useTagStore } from "../../../stores/tagStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
 import { getSelectedNodePositions } from "../../../utils/multiSelect";
@@ -150,7 +151,11 @@ export function useCanvasActions() {
   // Load all items and edges for a canvas
   const loadAllItems = useCallback(
     async (canvasId: string) => {
-      const summaries = await api.fetchItems(canvasId);
+      const [summaries, tags] = await Promise.all([
+        api.fetchItems(canvasId),
+        api.fetchTags(canvasId),
+      ]);
+      useTagStore.getState().setTags(tags);
       const fullItems = await Promise.all(summaries.map((s) => api.fetchItem(s.id)));
       const cache = new Map(fullItems.map((i) => [i.id, i]));
       setItemsCache(cache);
