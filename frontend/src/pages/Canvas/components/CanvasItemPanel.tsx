@@ -1,4 +1,6 @@
+import AddIcon from "@mui/icons-material/Add";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
@@ -7,16 +9,19 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo } from "shared";
+import type { CanvasItem, Note, Photo, Tag } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
+import { TagPill } from "../../../sharedComponents/TagPill";
+import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { useTagStore } from "../../../stores/tagStore";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
@@ -43,6 +48,8 @@ export default function CanvasItemPanel({
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const allTags = useTagStore((s) => s.tags);
+  const showToast = useAppStore((s) => s.showToast);
 
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -343,6 +350,37 @@ export default function CanvasItemPanel({
     markTitleDirty();
   }
 
+  // Tags
+  const assignedTagIds = useMemo(() => new Set(item?.tags.map((t) => t.id) ?? []), [item?.tags]);
+  const availableTags = useMemo(
+    () => allTags.filter((t) => !assignedTagIds.has(t.id)),
+    [allTags, assignedTagIds],
+  );
+
+  async function handleAddTag(tag: Tag) {
+    if (!item) return;
+    try {
+      await api.addTagToItem(item.id, tag.id);
+      const updated = { ...item, tags: [...item.tags, tag] };
+      setItem(updated);
+      onSaved(updated);
+    } catch {
+      showToast("Failed to add tag");
+    }
+  }
+
+  async function handleRemoveTag(tagId: string) {
+    if (!item) return;
+    try {
+      await api.removeTagFromItem(item.id, tagId);
+      const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
+      setItem(updated);
+      onSaved(updated);
+    } catch {
+      showToast("Failed to remove tag");
+    }
+  }
+
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
 
@@ -392,6 +430,59 @@ export default function CanvasItemPanel({
         onDownloadPdf={handleDownloadPdf}
         onDeleteItem={handleOpenDeleteModal}
       />
+
+      {/* Tags */}
+      <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
+          {item.tags.length === 0 && availableTags.length === 0 && (
+            <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+              No tags available
+            </Typography>
+          )}
+          {item.tags.length === 0 && availableTags.length > 0 && (
+            <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+              No tags assigned
+            </Typography>
+          )}
+          {item.tags.map((tag) => (
+            <TagPill key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
+          ))}
+          {availableTags.length > 0 && (
+            <Autocomplete
+              size="small"
+              options={availableTags}
+              getOptionLabel={(opt) => opt.name}
+              onChange={(_e, tag) => {
+                if (tag) handleAddTag(tag);
+              }}
+              value={null}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Add tag"
+                  variant="standard"
+                  InputProps={{
+                    ...params.InputProps,
+                    disableUnderline: true,
+                    startAdornment: (
+                      <AddIcon sx={{ fontSize: 16, color: "var(--color-overlay0)" }} />
+                    ),
+                  }}
+                />
+              )}
+              sx={{
+                minWidth: 120,
+                "& .MuiInputBase-root": {
+                  py: 0,
+                  fontSize: 13,
+                },
+              }}
+              blurOnSelect
+              clearOnBlur
+            />
+          )}
+        </Box>
+      </Box>
 
       {/* Tabs */}
       <Tabs

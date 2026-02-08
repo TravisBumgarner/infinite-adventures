@@ -138,7 +138,7 @@ tasks:
       - Empty state text when no tags
     depends_on: [6]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 8
     github_issue: 146
