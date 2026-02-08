@@ -1,4 +1,6 @@
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
 import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
@@ -6,6 +8,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
@@ -36,6 +39,7 @@ export default function CanvasItemPanel({
   itemsCache,
 }: CanvasItemPanelProps) {
   const theme = useTheme();
+  const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
@@ -461,6 +465,20 @@ export default function CanvasItemPanel({
               <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
                 {statusLabel(dateStatus)}
               </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<OpenInNewIcon />}
+                onClick={() => {
+                  flushTitle();
+                  flushDate();
+                  flushNote();
+                  navigate(`/sessions/${itemId}`);
+                }}
+                sx={{ textTransform: "none", alignSelf: "flex-start" }}
+              >
+                Open in Session Viewer
+              </Button>
             </Box>
           ) : (
             <Typography

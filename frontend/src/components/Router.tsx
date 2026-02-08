@@ -8,6 +8,7 @@ import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
 import Sessions from "../pages/Sessions";
 import Signup from "../pages/Signup/Signup.js";
 import { useAppStore } from "../stores/appStore";
+import MemberLayout from "./MemberLayout";
 
 export function MemberRoute({ children }: { children: ReactNode }) {
   const user = useAppStore((s) => s.user);
@@ -37,9 +38,11 @@ function HomePage() {
 
   if (user) {
     return (
-      <ReactFlowProvider>
-        <Canvas />
-      </ReactFlowProvider>
+      <MemberLayout>
+        <ReactFlowProvider>
+          <Canvas />
+        </ReactFlowProvider>
+      </MemberLayout>
     );
   }
 
@@ -54,9 +57,11 @@ export default function Router() {
         path="/canvas"
         element={
           <MemberRoute>
-            <ReactFlowProvider>
-              <Canvas />
-            </ReactFlowProvider>
+            <MemberLayout>
+              <ReactFlowProvider>
+                <Canvas />
+              </ReactFlowProvider>
+            </MemberLayout>
           </MemberRoute>
         }
       />
@@ -80,7 +85,19 @@ export default function Router() {
         path="/sessions"
         element={
           <MemberRoute>
-            <Sessions />
+            <MemberLayout>
+              <Sessions />
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/sessions/:sessionId"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <Sessions />
+            </MemberLayout>
           </MemberRoute>
         }
       />

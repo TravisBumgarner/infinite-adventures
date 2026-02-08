@@ -2,13 +2,11 @@ import type { EdgeTypes, NodeTypes } from "@xyflow/react";
 import { Background, BackgroundVariant, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { Box, IconButton, Stack, useTheme } from "@mui/material";
+import { Box, Stack, useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import * as api from "../../api/client";
-import { SettingsButton, SettingsSidebar } from "../../components/SettingsSidebar";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { MODAL_ID, useModalStore } from "../../modals";
 import Toast from "../../sharedComponents/Toast";
@@ -25,7 +23,6 @@ import NodeContextMenu from "./components/NodeContextMenu";
 import SearchBar from "./components/SearchBar";
 import SelectionContextMenu from "./components/SelectionContextMenu";
 import Toolbar from "./components/Toolbar";
-import TopBar from "./components/TopBar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
 
 const nodeTypes: NodeTypes = {
@@ -55,8 +52,6 @@ export default function Canvas() {
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
   const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setSelectionContextMenu = useCanvasStore((s) => s.setSelectionContextMenu);
-  const setShowSettings = useCanvasStore((s) => s.setShowSettings);
-
   const toastMessage = useAppStore((s) => s.toastMessage);
   const clearToast = useAppStore((s) => s.clearToast);
 
@@ -295,33 +290,6 @@ export default function Canvas() {
         />
       </ReactFlow>
 
-      <TopBar
-        left={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CanvasPicker
-              canvases={canvases}
-              activeCanvasId={activeCanvasId}
-              onSwitch={handleSwitchCanvas}
-              onCreate={handleCreateCanvas}
-              onRename={handleRenameCanvas}
-              onDelete={handleDeleteCanvas}
-            />
-            <IconButton
-              onClick={() => navigate("/sessions")}
-              title="Sessions"
-              sx={{
-                bgcolor: "var(--color-base)",
-                border: "1px solid var(--color-surface1)",
-                color: "var(--color-text)",
-                "&:hover": { bgcolor: "var(--color-surface0)" },
-              }}
-            >
-              <CalendarTodayIcon />
-            </IconButton>
-          </Box>
-        }
-        right={<SettingsButton onClick={() => setShowSettings(true)} />}
-      />
       <Box
         sx={{
           position: "fixed",
@@ -342,6 +310,35 @@ export default function Canvas() {
         </Stack>
       </Box>
       <Toolbar onCreate={handleToolbarCreate} />
+
+      <Box
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          left: showSettings ? SIDEBAR_WIDTH + 16 : 16,
+          zIndex: 50,
+          pointerEvents: "auto",
+          transition: "left 0.2s",
+        }}
+      >
+        <Box
+          sx={{
+            bgcolor: "var(--color-chrome-bg)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid var(--color-surface1)",
+            borderRadius: 2,
+          }}
+        >
+          <CanvasPicker
+            canvases={canvases}
+            activeCanvasId={activeCanvasId}
+            onSwitch={handleSwitchCanvas}
+            onCreate={handleCreateCanvas}
+            onRename={handleRenameCanvas}
+            onDelete={handleDeleteCanvas}
+          />
+        </Box>
+      </Box>
 
       {contextMenu && (
         <ContextMenu
@@ -364,10 +361,12 @@ export default function Canvas() {
           y={nodeContextMenu.y}
           nodeId={nodeContextMenu.nodeId}
           nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
+          nodeType={itemsCache.get(nodeContextMenu.nodeId)?.type}
           onDelete={async () => {
             await api.deleteItem(nodeContextMenu.nodeId);
             handleDeleted(nodeContextMenu.nodeId);
           }}
+          onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
           onClose={() => setNodeContextMenu(null)}
         />
       )}
@@ -394,8 +393,6 @@ export default function Canvas() {
       )}
 
       <Toast open={!!toastMessage} message={toastMessage ?? ""} onClose={clearToast} />
-
-      {showSettings && <SettingsSidebar />}
     </div>
   );
 }

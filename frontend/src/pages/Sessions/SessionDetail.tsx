@@ -7,6 +7,7 @@ import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
 import * as api from "../../api/client";
 import { useAutoSave } from "../../hooks/useAutoSave";
@@ -23,15 +24,10 @@ type DetailTab = "notes" | "photos";
 
 interface SessionDetailProps {
   sessionId: string;
-  initialSessionDate: string;
-  onBack: () => void;
 }
 
-export default function SessionDetail({
-  sessionId,
-  initialSessionDate,
-  onBack,
-}: SessionDetailProps) {
+export default function SessionDetail({ sessionId }: SessionDetailProps) {
+  const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
@@ -39,7 +35,7 @@ export default function SessionDetail({
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
-  const [sessionDate, setSessionDate] = useState(initialSessionDate);
+  const [sessionDate, setSessionDate] = useState("");
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
@@ -118,6 +114,7 @@ export default function SessionDetail({
     api.fetchItem(sessionId).then((i) => {
       setItem(i);
       setTitle(i.title);
+      setSessionDate(i.session_date ?? "");
       setNotes(i.notes);
       setPhotos(i.photos);
       setEditingNoteId(null);
@@ -318,7 +315,7 @@ export default function SessionDetail({
               flushTitle();
               flushDate();
               flushNote();
-              onBack();
+              navigate("/sessions");
             }}
             sx={{ textTransform: "none", mb: 1.5, color: "var(--color-subtext0)" }}
           >
