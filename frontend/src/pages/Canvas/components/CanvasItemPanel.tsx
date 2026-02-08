@@ -447,6 +447,11 @@ export default function CanvasItemPanel({
                 if (tag) handleAddTag(tag);
               }}
               value={null}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  <TagPill tag={option} />
+                </li>
+              )}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -461,6 +466,16 @@ export default function CanvasItemPanel({
                   }}
                 />
               )}
+              slotProps={{
+                paper: {
+                  sx: {
+                    "& .MuiAutocomplete-option": {
+                      px: 1,
+                      py: 0.5,
+                    },
+                  },
+                },
+              }}
               sx={{
                 minWidth: 120,
                 "& .MuiInputBase-root": {
@@ -468,6 +483,7 @@ export default function CanvasItemPanel({
                   fontSize: 13,
                 },
               }}
+              fullWidth
               blurOnSelect
               clearOnBlur
             />
