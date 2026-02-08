@@ -1,4 +1,5 @@
 import DeleteIcon from "@mui/icons-material/Delete";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -10,7 +11,9 @@ interface NodeContextMenuProps {
   y: number;
   nodeId: string;
   nodeTitle: string;
+  nodeType?: string;
   onDelete: () => void;
+  onOpenInSessionViewer?: () => void;
   onClose: () => void;
 }
 
@@ -19,7 +22,9 @@ export default function NodeContextMenu({
   y,
   nodeId,
   nodeTitle,
+  nodeType,
   onDelete,
+  onOpenInSessionViewer,
   onClose,
 }: NodeContextMenuProps) {
   const openModal = useModalStore((s) => s.openModal);
@@ -59,6 +64,19 @@ export default function NodeContextMenu({
         },
       }}
     >
+      {nodeType === "session" && onOpenInSessionViewer && (
+        <MenuItem
+          onClick={() => {
+            onOpenInSessionViewer();
+            onClose();
+          }}
+        >
+          <ListItemIcon>
+            <OpenInNewIcon fontSize="small" />
+          </ListItemIcon>
+          Open in Session Viewer
+        </MenuItem>
+      )}
       <MenuItem onClick={handleDeleteClick} sx={{ color: "var(--color-red)" }}>
         <ListItemIcon sx={{ color: "inherit" }}>
           <DeleteIcon fontSize="small" />
