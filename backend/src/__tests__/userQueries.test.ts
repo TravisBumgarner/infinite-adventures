@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { getOrCreateUserByAuth, getUserByAuthId, getUserById } from "../db/queries/users.js";
+import { getOrCreateUserByAuth, getUserByAuthId, getUserById } from "../services/userService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("user queries", () => {

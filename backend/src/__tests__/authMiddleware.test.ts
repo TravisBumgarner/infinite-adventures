@@ -7,7 +7,7 @@ vi.mock("../lib/supabase.js", () => ({
   supabase: null,
 }));
 
-vi.mock("../db/queries/users.js", () => ({
+vi.mock("../services/userService.js", () => ({
   getOrCreateUserByAuth: vi.fn(),
 }));
 
@@ -107,7 +107,7 @@ describe("requireAuth middleware", () => {
         error: null,
       });
 
-      const { getOrCreateUserByAuth } = await import("../db/queries/users.js");
+      const { getOrCreateUserByAuth } = await import("../services/userService.js");
       vi.mocked(getOrCreateUserByAuth).mockResolvedValue({
         id: "internal-user-id",
         auth_id: "supabase-auth-id",
