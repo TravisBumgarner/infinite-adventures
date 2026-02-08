@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CSS 3D Dice</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  h1 { margin-bottom: 24px; font-size: 24px; }
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  button {
+    background: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #74c7ec; }
+
+  .arena {
+    width: 700px;
+    height: 300px;
+    background: #313244;
+    border-radius: 16px;
+    border: 2px solid #45475a;
+    perspective: 800px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .die-wrapper {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    transform-style: preserve-3d;
+  }
+
+  .die-wrapper.rolling {
+    transition: none;
+  }
+
+  .die-wrapper.landing {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                left 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                top 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .die {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+
+  .face {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #f5f5f5;
+    border: 2px solid #bbb;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    gap: 4px;
+    backface-visibility: hidden;
+  }
+
+  .pip {
+    width: 10px;
+    height: 10px;
+    background: #1e1e2e;
+    border-radius: 50%;
+  }
+
+  /* Face positions for a cube */
+  .face-1 { transform: rotateY(0deg) translateZ(30px); }
+  .face-2 { transform: rotateY(180deg) translateZ(30px); }
+  .face-3 { transform: rotateY(-90deg) translateZ(30px); }
+  .face-4 { transform: rotateY(90deg) translateZ(30px); }
+  .face-5 { transform: rotateX(90deg) translateZ(30px); }
+  .face-6 { transform: rotateX(-90deg) translateZ(30px); }
+
+  /* Pip layouts */
+  .face-1 .pip { margin: auto; }
+
+  .face-2 { justify-content: space-between; padding: 12px; }
+  .face-2 .pip:first-child { align-self: flex-start; }
+  .face-2 .pip:last-child { align-self: flex-end; }
+
+  .face-3 { justify-content: space-between; padding: 10px 16px; }
+  .face-3 .pip:nth-child(1) { align-self: flex-start; }
+  .face-3 .pip:nth-child(2) { align-self: center; }
+  .face-3 .pip:nth-child(3) { align-self: flex-end; }
+
+  .face-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 10px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .face-5 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 8px;
+    align-items: center;
+    justify-items: center;
+  }
+  .face-5 .pip:nth-child(5) { grid-column: 1 / -1; }
+
+  .face-6 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 8px;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .result {
+    margin-top: 24px;
+    font-size: 20px;
+    font-weight: 600;
+    min-height: 30px;
+  }
+</style>
+</head>
+<body>
+<h1>CSS 3D Dice</h1>
+<div class="controls">
+  <button onclick="roll(1)">Roll 1</button>
+  <button onclick="roll(2)">Roll 2</button>
+  <button onclick="roll(3)">Roll 3</button>
+</div>
+<div class="arena" id="arena"></div>
+<div class="result" id="result"></div>
+
+<script>
+const arena = document.getElementById('arena');
+const resultEl = document.getElementById('result');
+
+// Rotation to show each face (1-6)
+const faceRotations = {
+  1: 'rotateX(0deg) rotateY(0deg)',
+  2: 'rotateX(0deg) rotateY(180deg)',
+  3: 'rotateX(0deg) rotateY(90deg)',
+  4: 'rotateX(0deg) rotateY(-90deg)',
+  5: 'rotateX(-90deg) rotateY(0deg)',
+  6: 'rotateX(90deg) rotateY(0deg)',
+};
+
+function createDieFaces() {
+  let html = '';
+  for (let f = 1; f <= 6; f++) {
+    let pips = '';
+    for (let p = 0; p < f; p++) pips += '<span class="pip"></span>';
+    html += `<div class="face face-${f}">${pips}</div>`;
+  }
+  return html;
+}
+
+function roll(count) {
+  arena.innerHTML = '';
+  resultEl.textContent = '';
+  const results = [];
+  const arenaW = arena.clientWidth;
+  const arenaH = arena.clientHeight;
+
+  for (let i = 0; i < count; i++) {
+    const value = Math.floor(Math.random() * 6) + 1;
+    results.push(value);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'die-wrapper rolling';
+    wrapper.innerHTML = `<div class="die">${createDieFaces()}</div>`;
+
+    // Start position: random spot at the top
+    const startX = Math.random() * (arenaW - 80) + 10;
+    const startY = -70;
+    wrapper.style.left = startX + 'px';
+    wrapper.style.top = startY + 'px';
+
+    // Random initial spin
+    const spinX = Math.random() * 720 + 360;
+    const spinY = Math.random() * 720 + 360;
+    const spinZ = Math.random() * 360;
+    wrapper.style.transform = `rotateX(${spinX}deg) rotateY(${spinY}deg) rotateZ(${spinZ}deg)`;
+
+    arena.appendChild(wrapper);
+
+    // Animate: tumble across the arena
+    const landX = (arenaW / (count + 1)) * (i + 1) - 30;
+    const landY = arenaH / 2 - 30 + (Math.random() * 40 - 20);
+    const dur = 600 + Math.random() * 400;
+
+    // Phase 1: tumble with keyframes
+    let startTime = null;
+    const midBounceY = landY - 40 - Math.random() * 30;
+
+    function animate(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const t = Math.min(elapsed / dur, 1);
+
+      // Ease: fast start, slow end
+      const ease = 1 - Math.pow(1 - t, 3);
+
+      const curX = startX + (landX - startX) * ease;
+      // Arc: quadratic bezier through midpoint
+      const curY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midBounceY + t * t * landY;
+
+      const curSpinX = spinX * (1 - ease);
+      const curSpinY = spinY * (1 - ease);
+      const curSpinZ = spinZ * (1 - ease);
+
+      wrapper.style.left = curX + 'px';
+      wrapper.style.top = curY + 'px';
+      wrapper.style.transform = `rotateX(${curSpinX}deg) rotateY(${curSpinY}deg) rotateZ(${curSpinZ}deg)`;
+
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Snap to final face
+        wrapper.className = 'die-wrapper landing';
+        wrapper.style.left = landX + 'px';
+        wrapper.style.top = landY + 'px';
+        wrapper.style.transform = faceRotations[value];
+      }
+    }
+
+    // Stagger start slightly
+    setTimeout(() => requestAnimationFrame(animate), i * 100);
+  }
+
+  // Show results after animation
+  setTimeout(() => {
+    const total = results.reduce((a, b) => a + b, 0);
+    resultEl.textContent = results.map(r => `[${r}]`).join(' + ') + ` = ${total}`;
+  }, 800 + count * 100);
+}
+</script>
+</body>
+</html>

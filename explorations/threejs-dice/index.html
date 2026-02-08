@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Three.js 3D Dice Roller</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px;
+    align-items: center;
+    justify-content: center;
+    max-width: 720px;
+  }
+  .controls label { font-size: 13px; font-weight: 600; margin-right: 4px; }
+  button {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  button:hover { filter: brightness(1.15); }
+  .die-btn { color: #1e1e2e; }
+  .die-btn.d4  { background: #f38ba8; }
+  .die-btn.d6  { background: #89b4fa; }
+  .die-btn.d8  { background: #a6e3a1; }
+  .die-btn.d10 { background: #f9e2af; }
+  .die-btn.d12 { background: #cba6f7; }
+  .die-btn.d20 { background: #fab387; }
+  .action-btn { background: #89b4fa; color: #1e1e2e; }
+  .clear-btn  { background: #585b70; color: #cdd6f4; }
+  .tray {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 34px;
+    padding: 6px 10px;
+    background: #313244;
+    border-radius: 6px;
+    align-items: center;
+    min-width: 120px;
+  }
+  .tray-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e1e2e;
+    cursor: pointer;
+  }
+  .tray-chip:hover { filter: brightness(0.85); }
+  .tray-chip .x { font-size: 11px; opacity: 0.6; }
+  .tray-empty { color: #6c7086; font-size: 13px; }
+  #canvas-container {
+    width: 700px;
+    height: 400px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid #45475a;
+  }
+  canvas { display: block; }
+  .result {
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    min-height: 56px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <label>Add:</label>
+  <button class="die-btn d4" data-die="d4">d4</button>
+  <button class="die-btn d6" data-die="d6">d6</button>
+  <button class="die-btn d8" data-die="d8">d8</button>
+  <button class="die-btn d10" data-die="d10">d10</button>
+  <button class="die-btn d12" data-die="d12">d12</button>
+  <button class="die-btn d20" data-die="d20">d20</button>
+  <div class="tray" id="tray"><span class="tray-empty">click dice to add</span></div>
+  <button class="action-btn" id="roll-btn">Roll</button>
+  <button class="clear-btn" id="clear-btn">Clear</button>
+</div>
+<div id="canvas-container"></div>
+<div class="result" id="result"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+    "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+
+// ── Scene Setup ─────────────────────────────────────────────
+const container = document.getElementById('canvas-container');
+const resultEl = document.getElementById('result');
+const W = 700, H = 400;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x313244);
+
+const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+camera.position.set(0, 12, 10);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 5);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// Floor
+const floorMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.MeshStandardMaterial({ color: 0x45475a })
+);
+floorMesh.rotation.x = -Math.PI / 2;
+floorMesh.receiveShadow = true;
+scene.add(floorMesh);
+
+// Walls (physics only, invisible)
+
+// ── Physics ─────────────────────────────────────────────────
+const world = new CANNON.World();
+world.gravity.set(0, -30, 0);
+world.broadphase = new CANNON.NaiveBroadphase();
+world.solver.iterations = 10;
+
+const floorPhysMat = new CANNON.Material('floor');
+const dicePhysMat = new CANNON.Material('dice');
+world.addContactMaterial(new CANNON.ContactMaterial(floorPhysMat, dicePhysMat, {
+  friction: 0.6, restitution: 0.25,
+}));
+world.addContactMaterial(new CANNON.ContactMaterial(dicePhysMat, dicePhysMat, {
+  friction: 0.4, restitution: 0.3,
+}));
+
+const floorBody = new CANNON.Body({ mass: 0, material: floorPhysMat });
+floorBody.addShape(new CANNON.Plane());
+floorBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+world.addBody(floorBody);
+
+function addWallBody(sx, sy, sz, x, y, z) {
+  const b = new CANNON.Body({ mass: 0, material: floorPhysMat });
+  b.addShape(new CANNON.Box(new CANNON.Vec3(sx / 2, sy / 2, sz / 2)));
+  b.position.set(x, y, z);
+  world.addBody(b);
+}
+addWallBody(20, 8, 0.4, 0, 4, -5);
+addWallBody(20, 8, 0.4, 0, 4, 5);
+addWallBody(0.4, 8, 10, -5, 4, 0);
+addWallBody(0.4, 8, 10, 5, 4, 0);
+
+// ── Texture Helpers ─────────────────────────────────────────
+function createNumberTexture(num, bgColor, textCanvasY) {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = bgColor;
+  ctx.lineWidth = 24;
+  ctx.strokeRect(12, 12, size - 24, size - 24);
+  const fontSize = num >= 10 ? 200 : 260;
+  ctx.font = `900 ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000';
+  ctx.fillText(String(num), size / 2, textCanvasY ?? size / 2);
+  return new THREE.CanvasTexture(c);
+}
+
+function createPentagonTexture(num, bgColor) {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  // Pentagon border matching UV layout
+  const cr = 0.45;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+    const px = (0.5 + cr * Math.cos(a)) * size;
+    const py = (1 - (0.5 + cr * Math.sin(a))) * size;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = bgColor;
+  ctx.lineWidth = 10;
+  ctx.stroke();
+  // Number at face center
+  const fontSize = num >= 10 ? 140 : 180;
+  ctx.font = `900 ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000';
+  ctx.fillText(String(num), size / 2, size / 2);
+  return new THREE.CanvasTexture(c);
+}
+
+function createKiteTexture(num, bgColor) {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  // Kite border matching UV layout
+  const kite = [[0.5, 0.95], [0.95, 0.45], [0.5, 0.05], [0.05, 0.45]];
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const px = kite[i][0] * size;
+    const py = (1 - kite[i][1]) * size;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = bgColor;
+  ctx.lineWidth = 10;
+  ctx.stroke();
+  // Number at kite centroid (UV v≈0.475)
+  const fontSize = num >= 10 ? 130 : 170;
+  ctx.font = `900 ${fontSize}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000';
+  ctx.fillText(String(num), size / 2, (1 - 0.475) * size);
+  return new THREE.CanvasTexture(c);
+}
+
+// ── Geometry Helpers ────────────────────────────────────────
+function computeOutwardNormals(posAttr, numFaces, vertsPerFace) {
+  const normals = [];
+  for (let f = 0; f < numFaces; f++) {
+    const i = f * vertsPerFace;
+    const v0 = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+    const v1 = new THREE.Vector3().fromBufferAttribute(posAttr, i + 1);
+    const v2 = new THREE.Vector3().fromBufferAttribute(posAttr, i + 2);
+    const normal = new THREE.Vector3().crossVectors(
+      new THREE.Vector3().subVectors(v1, v0),
+      new THREE.Vector3().subVectors(v2, v0)
+    ).normalize();
+    const center = v0.clone().add(v1).add(v2).divideScalar(3);
+    if (normal.dot(center) < 0) normal.negate();
+    normals.push(normal);
+  }
+  return normals;
+}
+
+// Triangle face UVs (d4, d8, d20)
+const TRI_UVS = [0.05, 0.05, 0.95, 0.05, 0.5, 0.92];
+
+// Kite face UVs (d10) – 2 triangles forming a diamond
+const KITE_UVS = [
+  0.5, 0.95,  0.5, 0.05,   0.05, 0.45,  // T1: top, bottom, left
+  0.5, 0.95,  0.95, 0.45,  0.5, 0.05,   // T2: top, right, bottom
+];
+
+// Pentagon face UVs (d12) – 3 triangles fanned from vertex 0
+function pentagonUVs() {
+  const cx = 0.5, cy = 0.5, r = 0.45;
+  const p = [];
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+    p.push(cx + r * Math.cos(a), cy + r * Math.sin(a));
+  }
+  // T1: p0,p1,p2  T2: p0,p2,p3  T3: p0,p3,p4
+  return [
+    p[0], p[1], p[2], p[3], p[4], p[5],
+    p[0], p[1], p[4], p[5], p[6], p[7],
+    p[0], p[1], p[6], p[7], p[8], p[9],
+  ];
+}
+const PENT_UVS = pentagonUVs();
+
+function assignFaceUVs(uvArr, startVert, trisPerFace) {
+  const base = startVert * 2;
+  const src = trisPerFace === 1 ? TRI_UVS : trisPerFace === 2 ? KITE_UVS : PENT_UVS;
+  for (let i = 0; i < src.length; i++) uvArr[base + i] = src[i];
+}
+
+// Build a ConvexPolyhedron from any Three.js geometry (indexed or non-indexed)
+function geomToConvex(threeGeom) {
+  const pos = threeGeom.getAttribute('position');
+  const uniqueVerts = [];
+  const keyToIdx = new Map();
+  const faces = [];
+
+  for (let i = 0; i < pos.count; i += 3) {
+    const face = [];
+    for (let j = 0; j < 3; j++) {
+      const x = pos.getX(i + j), y = pos.getY(i + j), z = pos.getZ(i + j);
+      const key = `${x.toFixed(6)},${y.toFixed(6)},${z.toFixed(6)}`;
+      if (!keyToIdx.has(key)) {
+        keyToIdx.set(key, uniqueVerts.length);
+        uniqueVerts.push(new CANNON.Vec3(x, y, z));
+      }
+      face.push(keyToIdx.get(key));
+    }
+    faces.push(face);
+  }
+  return new CANNON.ConvexPolyhedron({ vertices: uniqueVerts, faces });
+}
+
+// ── D10 Custom Geometry ─────────────────────────────────────
+function createD10Geometry(radius) {
+  const H = radius * 1.4, h = radius * 0.35, r = radius * 0.9;
+  const top = [0, H, 0], bot = [0, -H, 0];
+  const upper = [], lower = [];
+  for (let i = 0; i < 5; i++) {
+    const a1 = i * 72 * Math.PI / 180;
+    const a2 = (i * 72 + 36) * Math.PI / 180;
+    upper.push([r * Math.cos(a1), h, r * Math.sin(a1)]);
+    lower.push([r * Math.cos(a2), -h, r * Math.sin(a2)]);
+  }
+  const v = [];
+  // Upper kites — wound CCW outward
+  for (let i = 0; i < 5; i++) {
+    const ni = (i + 1) % 5;
+    v.push(...top, ...lower[i], ...upper[i]);
+    v.push(...top, ...upper[ni], ...lower[i]);
+  }
+  // Lower kites — wound CCW outward
+  for (let i = 0; i < 5; i++) {
+    const ni = (i + 1) % 5;
+    v.push(...bot, ...upper[ni], ...lower[ni]);
+    v.push(...bot, ...lower[i], ...upper[ni]);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  return geom;
+}
+
+// Build a ConvexPolyhedron for the d10 from its 12 unique vertices
+function createD10ConvexShape(radius) {
+  const H = radius * 1.4, h = radius * 0.35, r = radius * 0.9;
+  const verts = [
+    new CANNON.Vec3(0, H, 0),   // 0: top pole
+    new CANNON.Vec3(0, -H, 0),  // 1: bottom pole
+  ];
+  for (let i = 0; i < 5; i++) {
+    const a = i * 72 * Math.PI / 180;
+    verts.push(new CANNON.Vec3(r * Math.cos(a), h, r * Math.sin(a)));   // 2..6: upper ring
+  }
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 72 + 36) * Math.PI / 180;
+    verts.push(new CANNON.Vec3(r * Math.cos(a), -h, r * Math.sin(a)));  // 7..11: lower ring
+  }
+  // 20 triangular faces (each kite = 2 triangles), wound CCW outward
+  const faces = [];
+  for (let i = 0; i < 5; i++) {
+    const ni = (i + 1) % 5;
+    // Upper kite
+    faces.push([0, 7 + i, 2 + i]);
+    faces.push([0, 2 + ni, 7 + i]);
+    // Lower kite
+    faces.push([1, 7 + i, 2 + ni]);
+    faces.push([1, 2 + ni, 7 + ni]);
+  }
+  return new CANNON.ConvexPolyhedron({ vertices: verts, faces });
+}
+
+// ── D4 Builder (3 numbers per face, read top vertex) ────────
+function createD4FaceTexture(labels, bgColor) {
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  // Colored triangle border
+  ctx.strokeStyle = bgColor;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(13, 240); ctx.lineTo(243, 240); ctx.lineTo(128, 18); ctx.closePath();
+  ctx.stroke();
+  // 3 numbers at corners (canvas coords, accounting for flipY)
+  const positions = [[55, 205], [200, 205], [128, 55]];
+  ctx.font = '900 56px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillText(String(labels[i]), positions[i][0], positions[i][1]);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+function buildD4(color) {
+  const g = new THREE.TetrahedronGeometry(0.7, 0);
+  const geom = g.toNonIndexed ? g.toNonIndexed() : g;
+  geom.clearGroups();
+  const pos = geom.getAttribute('position');
+
+  // Find 4 unique vertices and assign values 1-4
+  const uniquePos = [];
+  const keyToIdx = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    const key = `${pos.getX(i).toFixed(4)},${pos.getY(i).toFixed(4)},${pos.getZ(i).toFixed(4)}`;
+    if (!keyToIdx.has(key)) {
+      keyToIdx.set(key, uniquePos.length);
+      uniquePos.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
+    }
+  }
+  const vertexValues = [1, 2, 3, 4];
+
+  // For each face, get the 3 vertex labels
+  const uvs = new Float32Array(pos.count * 2);
+  const materials = [];
+  for (let f = 0; f < 4; f++) {
+    const base = f * 3;
+    const labels = [];
+    for (let j = 0; j < 3; j++) {
+      const vi = base + j;
+      const key = `${pos.getX(vi).toFixed(4)},${pos.getY(vi).toFixed(4)},${pos.getZ(vi).toFixed(4)}`;
+      labels.push(vertexValues[keyToIdx.get(key)]);
+    }
+    // UVs: triangle corners
+    uvs[base * 2] = 0.05;       uvs[base * 2 + 1] = 0.05;
+    uvs[(base+1) * 2] = 0.95;   uvs[(base+1) * 2 + 1] = 0.05;
+    uvs[(base+2) * 2] = 0.5;    uvs[(base+2) * 2 + 1] = 0.92;
+    geom.addGroup(base, 3, f);
+    materials.push(new THREE.MeshStandardMaterial({
+      map: createD4FaceTexture(labels, color),
+      side: THREE.DoubleSide,
+    }));
+  }
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+
+  const mesh = new THREE.Mesh(geom, materials);
+  mesh.castShadow = true;
+
+  return {
+    mesh,
+    d4Vertices: uniquePos,
+    d4Values: vertexValues,
+    physShape: geomToConvex(g),
+  };
+}
+
+// ── Generic Die Builder ─────────────────────────────────────
+function buildPolyDie(baseGeom, sides, trisPerFace, color) {
+  const geom = baseGeom.index ? baseGeom.toNonIndexed() : baseGeom;
+  geom.clearGroups();
+  const pos = geom.getAttribute('position');
+  const vpf = trisPerFace * 3; // vertices per face
+  const uvs = new Float32Array(pos.count * 2);
+  for (let f = 0; f < sides; f++) {
+    const start = f * vpf;
+    assignFaceUVs(uvs, start, trisPerFace);
+    geom.addGroup(start, vpf, f);
+  }
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+
+  const values = Array.from({ length: sides }, (_, i) => i + 1);
+  // Shape-specific textures: pentagon for d12, kite for d10, square for triangles
+  const makeTexture = trisPerFace === 3
+    ? (n) => createPentagonTexture(n, color)
+    : trisPerFace === 2
+    ? (n) => createKiteTexture(n, color)
+    : (n) => createNumberTexture(n, color, 338);
+  const mats = values.map(v =>
+    new THREE.MeshStandardMaterial({ map: makeTexture(v), side: THREE.DoubleSide })
+  );
+  const mesh = new THREE.Mesh(geom, mats);
+  mesh.castShadow = true;
+  const faceNormals = computeOutwardNormals(pos, sides, vpf);
+  return { mesh, faceNormals, values };
+}
+
+function buildD6(color) {
+  const geom = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  // +x,-x,+y,-y,+z,-z  →  opposite faces sum to 7
+  const values = [2, 5, 1, 6, 3, 4];
+  const mats = values.map(v => new THREE.MeshStandardMaterial({ map: createNumberTexture(v, color) }));
+  const mesh = new THREE.Mesh(geom, mats);
+  mesh.castShadow = true;
+  const faceNormals = [
+    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
+  ];
+  return { mesh, faceNormals, values, physShape: new CANNON.Box(new CANNON.Vec3(0.4, 0.4, 0.4)) };
+}
+
+// ── Die Registry ────────────────────────────────────────────
+const COLORS = {
+  d4: '#f38ba8', d6: '#89b4fa', d8: '#a6e3a1',
+  d10: '#f9e2af', d12: '#cba6f7', d20: '#fab387',
+};
+
+function createDie(type) {
+  switch (type) {
+    case 'd4': return buildD4(COLORS.d4);
+    case 'd6': return buildD6(COLORS.d6);
+    case 'd8': {
+      const g = new THREE.OctahedronGeometry(0.6, 0);
+      return { ...buildPolyDie(g, 8, 1, COLORS.d8), physShape: geomToConvex(g) };
+    }
+    case 'd10': {
+      return { ...buildPolyDie(createD10Geometry(0.55), 10, 2, COLORS.d10), physShape: createD10ConvexShape(0.55) };
+    }
+    case 'd12': {
+      const g = new THREE.DodecahedronGeometry(0.6, 0);
+      return { ...buildPolyDie(g, 12, 3, COLORS.d12), physShape: geomToConvex(g) };
+    }
+    case 'd20': {
+      const g = new THREE.IcosahedronGeometry(0.55, 0);
+      return { ...buildPolyDie(g, 20, 1, COLORS.d20), physShape: geomToConvex(g) };
+    }
+  }
+}
+
+// ── Read Top Face ───────────────────────────────────────────
+function readDieValue(body, die) {
+  const q = new THREE.Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+  // D4: find which vertex is highest
+  if (die.d4Vertices) {
+    let bestY = -Infinity, bestIdx = 0;
+    for (let i = 0; i < die.d4Vertices.length; i++) {
+      const v = die.d4Vertices[i].clone().applyQuaternion(q);
+      if (v.y > bestY) { bestY = v.y; bestIdx = i; }
+    }
+    return die.d4Values[bestIdx];
+  }
+  // Other dice: find top face
+  const up = new THREE.Vector3(0, 1, 0);
+  let best = -Infinity, idx = 0;
+  for (let i = 0; i < die.faceNormals.length; i++) {
+    const d = die.faceNormals[i].clone().applyQuaternion(q).dot(up);
+    if (d > best) { best = d; idx = i; }
+  }
+  return die.values[idx];
+}
+
+// ── Tray State ──────────────────────────────────────────────
+let tray = [];
+const trayEl = document.getElementById('tray');
+
+function updateTray() {
+  if (tray.length === 0) {
+    trayEl.innerHTML = '<span class="tray-empty">click dice to add</span>';
+    return;
+  }
+  const counts = {};
+  for (const t of tray) counts[t] = (counts[t] || 0) + 1;
+  trayEl.innerHTML = Object.entries(counts)
+    .map(([type, n]) =>
+      `<span class="tray-chip" style="background:${COLORS[type]}" data-remove="${type}">${n}${type} <span class="x">&times;</span></span>`
+    ).join('');
+}
+
+// Add die
+for (const btn of document.querySelectorAll('.die-btn')) {
+  btn.addEventListener('click', () => { tray.push(btn.dataset.die); updateTray(); });
+}
+
+// Remove one die of a type by clicking chip
+trayEl.addEventListener('click', (e) => {
+  const chip = e.target.closest('[data-remove]');
+  if (!chip) return;
+  const type = chip.dataset.remove;
+  const idx = tray.lastIndexOf(type);
+  if (idx >= 0) { tray.splice(idx, 1); updateTray(); }
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => { tray = []; updateTray(); resultEl.textContent = ''; });
+
+// ── Roll Logic ──────────────────────────────────────────────
+let activeDice = [];
+let settleInterval = null;
+
+function clearPhysicsDice() {
+  if (settleInterval) { clearInterval(settleInterval); settleInterval = null; }
+  for (const { mesh, body } of activeDice) {
+    scene.remove(mesh);
+    world.removeBody(body);
+  }
+  activeDice = [];
+}
+
+function rollAll() {
+  clearPhysicsDice();
+  resultEl.textContent = '';
+  if (tray.length === 0) return;
+
+  const count = tray.length;
+  for (let i = 0; i < count; i++) {
+    const type = tray[i];
+    const die = createDie(type);
+    scene.add(die.mesh);
+
+    const body = new CANNON.Body({
+      mass: 1,
+      material: dicePhysMat,
+      linearDamping: 0.3,
+      angularDamping: 0.3,
+    });
+    body.addShape(die.physShape);
+
+    const spread = count > 1 ? (i - (count - 1) / 2) * 1.2 : 0;
+    body.position.set(
+      spread + (Math.random() - 0.5) * 0.5,
+      4 + Math.random(),
+      (Math.random() - 0.5) * 2
+    );
+    body.velocity.set(
+      (Math.random() - 0.5) * 5,
+      -4 - Math.random() * 3,
+      (Math.random() - 0.5) * 5
+    );
+    body.angularVelocity.set(
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20
+    );
+    world.addBody(body);
+    activeDice.push({ mesh: die.mesh, body, die, type });
+  }
+
+  let checks = 0;
+  settleInterval = setInterval(() => {
+    checks++;
+    const settled = activeDice.every(({ body }) => {
+      const v = body.velocity, av = body.angularVelocity;
+      return (v.x * v.x + v.y * v.y + v.z * v.z) < 0.01
+          && (av.x * av.x + av.y * av.y + av.z * av.z) < 0.01;
+    });
+    if (settled || checks > 120) {
+      clearInterval(settleInterval);
+      settleInterval = null;
+      const results = activeDice.map(({ body, die, type }) => ({
+        type,
+        value: readDieValue(body, die),
+      }));
+      const total = results.reduce((s, r) => s + r.value, 0);
+      const parts = results.map(r => `${r.type}:${r.value}`).join('  ');
+      resultEl.textContent = `${parts}   →  Total: ${total}`;
+    }
+  }, 50);
+}
+
+document.getElementById('roll-btn').addEventListener('click', rollAll);
+
+// ── Animation Loop ──────────────────────────────────────────
+const clock = new THREE.Clock();
+(function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 1 / 30);
+  world.step(1 / 60, dt, 3);
+  for (const { mesh, body } of activeDice) {
+    mesh.position.copy(body.position);
+    mesh.quaternion.copy(body.quaternion);
+  }
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
