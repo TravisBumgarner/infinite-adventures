@@ -68,7 +68,7 @@ tasks:
       - Tests cover CRUD and assignment/removal
     depends_on: [1, 2]
     effort: 2
-    status: testing
+    status: implementing
 
   - id: 4
     github_issue: 142
