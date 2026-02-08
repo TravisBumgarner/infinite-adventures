@@ -5,9 +5,11 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS } from "../../../constants";
+import { TagPill } from "../../../sharedComponents/TagPill";
+import { useTagStore } from "../../../stores/tagStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
 export type CanvasItemNodeData = {
@@ -22,6 +24,7 @@ export type CanvasItemNodeData = {
   photosCount: number;
   connectionsCount: number;
   isFocused?: boolean;
+  tagIds: string[];
 };
 
 type CanvasItemNodeType = Node<CanvasItemNodeData, "canvasItem">;
@@ -30,6 +33,12 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const theme = useTheme();
   const color = theme.palette.canvasItemTypes[data.type].light;
   const label = CANVAS_ITEM_TYPE_LABELS[data.type];
+  const tagsById = useTagStore((s) => s.tags);
+
+  const tags = useMemo(
+    () => data.tagIds.map((id) => tagsById[id]).filter(Boolean),
+    [data.tagIds, tagsById],
+  );
 
   // Build metadata string
   const metaText = [
@@ -85,7 +94,16 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           />
         </Box>
 
-        {/* Row 2: Image (if present) */}
+        {/* Row 2: Tags (if any) */}
+        {tags.length > 0 && (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
+            {tags.map((tag) => (
+              <TagPill key={tag.id} tag={tag} compact />
+            ))}
+          </Box>
+        )}
+
+        {/* Row 3: Image (if present) */}
         {data.selectedPhotoUrl && (
           <Box
             sx={{
@@ -110,7 +128,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           </Box>
         )}
 
-        {/* Row 3: Metadata */}
+        {/* Row 4: Metadata */}
         <Box
           sx={{
             bgcolor: "var(--color-surface0)",
