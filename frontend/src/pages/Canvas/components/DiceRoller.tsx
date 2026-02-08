@@ -14,8 +14,24 @@ import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
 import { useDiceStore } from "../../../stores/diceStore";
+import { PALETTE_MOCHA } from "../../../styles/styleConsts";
 
 const STANDARD_DICE = [2, 4, 6, 8, 10, 12, 20, 100];
+
+const DIE_COLORS: Record<number, string> = {
+  2: PALETTE_MOCHA.teal,
+  4: PALETTE_MOCHA.red,
+  6: PALETTE_MOCHA.blue,
+  8: PALETTE_MOCHA.green,
+  10: PALETTE_MOCHA.yellow,
+  12: PALETTE_MOCHA.mauve,
+  20: PALETTE_MOCHA.peach,
+  100: PALETTE_MOCHA.flamingo,
+};
+
+function getDieColor(sides: number): string {
+  return DIE_COLORS[sides] ?? PALETTE_MOCHA.surface2;
+}
 
 function formatDiceFormula(dice: { sides: number }[]): string {
   const counts = new Map<number, number>();
@@ -24,7 +40,7 @@ function formatDiceFormula(dice: { sides: number }[]): string {
   }
   return [...counts.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([sides, count]) => `${count}d${sides}`)
+    .map(([sides, count]) => `${count}D${sides}`)
     .join(" + ");
 }
 
@@ -72,12 +88,20 @@ function RollerTab() {
         {STANDARD_DICE.map((sides) => (
           <Button
             key={sides}
-            variant="outlined"
             size="small"
             onClick={() => addDie(sides)}
-            sx={{ minWidth: 0, px: 1, fontSize: 12 }}
+            sx={{
+              minWidth: 0,
+              px: 1,
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: "6px",
+              bgcolor: getDieColor(sides),
+              color: PALETTE_MOCHA.base,
+              "&:hover": { bgcolor: getDieColor(sides), filter: "brightness(1.15)" },
+            }}
           >
-            d{sides}
+            D{sides}
           </Button>
         ))}
       </Box>
@@ -112,10 +136,16 @@ function RollerTab() {
               .map(([sides, { ids }]) => (
                 <Chip
                   key={sides}
-                  label={`d${sides} × ${ids.length}`}
+                  label={`D${sides} × ${ids.length}`}
                   size="small"
                   onDelete={() => removeDie(ids[ids.length - 1])}
-                  sx={{ fontSize: 12 }}
+                  sx={{
+                    fontSize: 12,
+                    borderRadius: "4px",
+                    bgcolor: getDieColor(sides),
+                    color: PALETTE_MOCHA.base,
+                    "& .MuiChip-deleteIcon": { color: PALETTE_MOCHA.base },
+                  }}
                 />
               ))}
           </Box>
@@ -148,10 +178,13 @@ function RollerTab() {
               {lastRoll.map((r, i) => (
                 <Chip
                   key={`${i}-${r.sides}-${r.result}`}
-                  label={`d${r.sides}: ${r.result}`}
+                  label={`D${r.sides}: ${r.result}`}
                   size="small"
-                  variant="outlined"
-                  sx={{ fontSize: 12 }}
+                  sx={{
+                    fontSize: 12,
+                    bgcolor: getDieColor(r.sides),
+                    color: PALETTE_MOCHA.base,
+                  }}
                 />
               ))}
             </Box>
@@ -196,10 +229,14 @@ function HistoryTab() {
               {entry.dice.map((r, i) => (
                 <Chip
                   key={`${i}-${r.sides}-${r.result}`}
-                  label={`d${r.sides}: ${r.result}`}
+                  label={`D${r.sides}: ${r.result}`}
                   size="small"
-                  variant="outlined"
-                  sx={{ fontSize: 11, height: 20 }}
+                  sx={{
+                    fontSize: 11,
+                    height: 20,
+                    bgcolor: getDieColor(r.sides),
+                    color: PALETTE_MOCHA.base,
+                  }}
                 />
               ))}
             </Box>

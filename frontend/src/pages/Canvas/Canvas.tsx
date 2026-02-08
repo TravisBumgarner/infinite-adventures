@@ -18,13 +18,11 @@ import CanvasItemPanel from "./components/CanvasItemPanel";
 import CanvasPicker from "./components/CanvasPicker";
 import ContextMenu from "./components/ContextMenu";
 import DeletableEdge from "./components/DeletableEdge";
-import DiceRoller from "./components/DiceRoller";
 import FilterBar from "./components/FilterBar";
 import NodeContextMenu from "./components/NodeContextMenu";
 import SearchBar from "./components/SearchBar";
 import SelectionContextMenu from "./components/SelectionContextMenu";
 import Toolbar from "./components/Toolbar";
-import ToolSidebar from "./components/ToolSidebar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
 
 const nodeTypes: NodeTypes = {
@@ -394,8 +392,6 @@ export default function Canvas() {
         />
       )}
 
-      <ToolSidebar />
-      <DiceRoller />
       <Toast open={!!toastMessage} message={toastMessage ?? ""} onClose={clearToast} />
     </div>
   );
