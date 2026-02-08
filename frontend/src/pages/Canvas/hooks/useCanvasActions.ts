@@ -47,6 +47,7 @@ function toFlowNode(
       notesCount: item.notes.length,
       photosCount: item.photos.length,
       connectionsCount,
+      tagIds: item.tags.map((t) => t.id),
     },
   };
 }

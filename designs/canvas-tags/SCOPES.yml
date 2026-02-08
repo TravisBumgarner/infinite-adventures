@@ -154,7 +154,7 @@ tasks:
       - Compact pills (10-11px font, 18px height)
     depends_on: [7]
     effort: 2
-    status: scoped
+    status: implementing
 
   - id: 9
     github_issue: 147

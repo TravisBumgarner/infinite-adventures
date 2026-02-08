@@ -13,9 +13,9 @@ interface TagPillProps {
 export function TagPill({ tag, compact, onDelete }: TagPillProps) {
   const Icon = ICON_MAP[tag.icon] ?? LabelIcon;
   const textColor = getContrastText(tag.color);
-  const fontSize = compact ? 11 : 13;
-  const iconSize = compact ? 14 : 16;
-  const height = compact ? 20 : 26;
+  const fontSize = compact ? 10 : 13;
+  const iconSize = compact ? 12 : 16;
+  const height = compact ? 18 : 26;
 
   return (
     <Box
