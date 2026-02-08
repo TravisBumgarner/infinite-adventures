@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770229467838,
-      "tag": "0000_thin_cassandra_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770405057784,
-      "tag": "0001_add-session-date",
+      "when": 1770583647183,
+      "tag": "0000_initial",
       "breakpoints": true
     }
   ]

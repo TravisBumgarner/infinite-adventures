@@ -156,6 +156,39 @@ export const photos = pgTable(
 );
 
 // ============================================
+// Tags
+// ============================================
+
+export const tags = pgTable(
+  "tags",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    icon: text("icon").notNull(),
+    color: text("color").notNull(),
+    canvas_id: text("canvas_id")
+      .notNull()
+      .references(() => canvases.id, { onDelete: "cascade" }),
+    created_at: text("created_at").notNull().default(sql`now()::text`),
+    updated_at: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("tags_canvas_id_idx").on(table.canvas_id)],
+);
+
+export const canvasItemTags = pgTable(
+  "canvas_item_tags",
+  {
+    canvas_item_id: text("canvas_item_id")
+      .notNull()
+      .references(() => canvasItems.id, { onDelete: "cascade" }),
+    tag_id: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.canvas_item_id, table.tag_id] })],
+);
+
+// ============================================
 // Canvas Item Links (renamed from note_links)
 // ============================================
 
@@ -199,3 +232,7 @@ export type CanvasItemLink = typeof canvasItemLinks.$inferSelect;
 export type InsertCanvasItemLink = typeof canvasItemLinks.$inferInsert;
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = typeof notes.$inferInsert;
+export type Tag = typeof tags.$inferSelect;
+export type InsertTag = typeof tags.$inferInsert;
+export type CanvasItemTag = typeof canvasItemTags.$inferSelect;
+export type InsertCanvasItemTag = typeof canvasItemTags.$inferInsert;

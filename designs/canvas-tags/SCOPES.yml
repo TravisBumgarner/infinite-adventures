@@ -1,0 +1,176 @@
+project: Canvas Item Tags
+repo: TravisBumgarner/infinite-adventures
+design_file: null # Design was provided inline during scoping
+scoping_date: 2026-02-08
+
+milestones:
+  - number: 23
+    title: "1. Tags — Backend & Shared Types"
+    description: Database schema, shared types, backend service and API routes for the tags feature
+    branch:
+      working: 139-tags-backend
+      base: main
+
+  - number: 24
+    title: "2. Tags — Frontend Integration"
+    description: Frontend tag management, assignment, display, and filtering
+    branch:
+      working: 143-tags-frontend
+      base: 139-tags-backend
+
+tasks:
+  - id: 1
+    github_issue: 139
+    milestone: 23
+    title: Add tags and canvas_item_tags DB schema + migration
+    description: |
+      Add `tags` table (id, name, icon, color, canvas_id, timestamps) and
+      `canvas_item_tags` junction table (composite PK) to `backend/src/db/schema.ts`.
+      Generate migration with drizzle-kit. Export Drizzle types.
+    acceptance_criteria:
+      - tags table with all columns, canvas_id FK with cascade, and index
+      - canvas_item_tags junction table with composite PK and cascade deletes
+      - Migration SQL generated in backend/drizzle/
+      - Tag/InsertTag/CanvasItemTag/InsertCanvasItemTag types exported
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 2
+    github_issue: 140
+    milestone: 23
+    title: Add Tag shared types and schemas
+    description: |
+      Add TagSchema, CreateTagInputSchema, UpdateTagInputSchema to `shared/src/index.ts`.
+      Add `tags` array to CanvasItemSchema, `tag_ids` to CanvasItemSummarySchema.
+      Add TAG_NOT_FOUND error code.
+    acceptance_criteria:
+      - Tag, CreateTagInput, UpdateTagInput Zod schemas and inferred types exported
+      - CanvasItemSchema includes tags field
+      - CanvasItemSummarySchema includes tag_ids field
+      - TAG_NOT_FOUND in ERROR_CODES
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 3
+    github_issue: 141
+    milestone: 23
+    title: Add tagService with CRUD and item-tag association
+    description: |
+      Create `backend/src/services/tagService.ts` with: createTag, listTags,
+      getTag, updateTag, deleteTag, addTagToItem, removeTagFromItem,
+      listTagsForItem, listTagIdsForItem. Include tests.
+    acceptance_criteria:
+      - All 9 service functions implemented
+      - Tags scoped to canvas_id
+      - Junction operations handle duplicates gracefully
+      - Tests cover CRUD and assignment/removal
+    depends_on: [1, 2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    github_issue: 142
+    milestone: 23
+    title: Add tag API routes and wire into canvasItemService
+    description: |
+      Create tag routes (canvas-scoped CRUD + item assignment).
+      Wire into index.ts. Update getItem to return tags and listItems
+      to return tag_ids. Include route tests.
+    acceptance_criteria:
+      - 6 route handlers with validation (create, list, update, delete, assign, remove)
+      - Routes registered in index.ts with requireAuth
+      - getItem returns tags array
+      - listItems returns tag_ids per summary
+      - Route tests pass
+    depends_on: [3]
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 143
+    milestone: 24
+    title: Add tag API client functions and tag store
+    description: |
+      Add 6 API functions to frontend/src/api/client.ts (fetchTags, createTag,
+      updateTag, deleteTag, addTagToItem, removeTagFromItem). Create tagStore
+      (zustand) at frontend/src/stores/tagStore.ts.
+    acceptance_criteria:
+      - All 6 API client functions added
+      - Tag store created following existing zustand patterns
+      - Types imported from shared package
+    depends_on: [4]
+    effort: 1
+    status: scoped
+
+  - id: 6
+    github_issue: 144
+    milestone: 24
+    title: Add tag management section to SettingsSidebar
+    description: |
+      Add "Manage Tags" section to SettingsSidebar (between Theme and Feedback).
+      Create TagPill shared component, MUI icon map utility, and tag
+      create/edit/delete UI with color picker and icon picker.
+    acceptance_criteria:
+      - Manage Tags section in SettingsSidebar
+      - Create tag with name, icon (MUI grid), and color (palette swatches)
+      - Edit and delete tags with confirmation
+      - TagPill shared component created
+      - MUI icon map utility created
+      - Tags fetched on canvas load and stored in tagStore
+    depends_on: [5]
+    effort: 3
+    status: scoped
+
+  - id: 7
+    github_issue: 145
+    milestone: 24
+    title: Add tags section to CanvasItemPanel for assigning tags
+    description: |
+      Add tag assignment UI above the tabs in CanvasItemPanel. Show assigned
+      tags as pills with remove button, dropdown to add available tags.
+    acceptance_criteria:
+      - Tags section visible above tabs in panel
+      - Assigned tags shown as colored pills with remove button
+      - Dropdown to add available tags
+      - Add/remove persists via API and updates canvas
+      - Empty state text when no tags
+    depends_on: [6]
+    effort: 2
+    status: scoped
+
+  - id: 8
+    github_issue: 146
+    milestone: 24
+    title: Display tags on CanvasItemNode
+    description: |
+      Add tagIds to CanvasItemNodeData. Render compact TagPill components on
+      canvas nodes. Wire tag_ids from item summaries through useCanvasActions.
+    acceptance_criteria:
+      - Tag pills displayed on canvas nodes
+      - Correct color, icon, and name from tag definitions
+      - No empty tag row when item has no tags
+      - Compact pills (10-11px font, 18px height)
+    depends_on: [7]
+    effort: 2
+    status: scoped
+
+  - id: 9
+    github_issue: 147
+    milestone: 24
+    title: Add filter-by-tag to FilterBar and canvasFilter
+    description: |
+      Add "Filter by tag" section to FilterBar. Add activeTags + toggleTag
+      to canvasStore. Update filterNodes in canvasFilter.ts to accept
+      tag filtering (OR logic). Update useCanvasActions to pass activeTags.
+    acceptance_criteria:
+      - Filter by tag section in FilterBar below Filter by type
+      - Tag chips with toggle behavior
+      - Filter count badge includes active tag count
+      - Canvas nodes filtered by selected tags (OR logic)
+      - Clear all filters clears tags too
+      - Existing canvasFilter tests updated
+    depends_on: [8]
+    effort: 2
+    status: scoped
