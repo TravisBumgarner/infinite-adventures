@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import config from "../config.js";
-import { getOrCreateUserByAuth } from "../db/queries/users.js";
 import { supabase } from "../lib/supabase.js";
 import { sendInternalError, sendUnauthorized } from "../routes/shared/responses.js";
+import { getOrCreateUserByAuth } from "../services/userService.js";
 
 export interface AuthenticatedRequest extends Request {
   user?: {

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "../connection.js";
-import { users } from "../schema.js";
+import { getDb } from "../db/connection.js";
+import { users } from "../db/schema.js";
 
 export interface UserRow {
   id: string;
