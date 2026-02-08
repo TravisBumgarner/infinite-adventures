@@ -48,6 +48,7 @@ export default function CanvasItemPanel({
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const allTags = useTagStore((s) => s.tags);
   const showToast = useAppStore((s) => s.showToast);
 
@@ -434,16 +435,6 @@ export default function CanvasItemPanel({
       {/* Tags */}
       <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
         <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
-          {item.tags.length === 0 && availableTags.length === 0 && (
-            <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
-              No tags available
-            </Typography>
-          )}
-          {item.tags.length === 0 && availableTags.length > 0 && (
-            <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
-              No tags assigned
-            </Typography>
-          )}
           {item.tags.map((tag) => (
             <TagPill key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
           ))}
@@ -481,6 +472,29 @@ export default function CanvasItemPanel({
               clearOnBlur
             />
           )}
+          <Box
+            onClick={() => setShowSettings(true)}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+              height: 26,
+              px: 1,
+              borderRadius: "4px",
+              border: "1px dashed var(--color-overlay0)",
+              color: "var(--color-overlay0)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              "&:hover": {
+                borderColor: "var(--color-text)",
+                color: "var(--color-text)",
+              },
+            }}
+          >
+            <AddIcon sx={{ fontSize: 16 }} />
+            New
+          </Box>
         </Box>
       </Box>
 

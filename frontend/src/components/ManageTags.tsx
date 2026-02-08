@@ -116,60 +116,51 @@ export function ManageTags() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
-        Manage Tags
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+          Manage Tags
+        </Typography>
+        <IconButton size="small" onClick={openCreate} sx={{ color: "var(--color-text)" }}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+      {tags.length === 0 && (
+        <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+          No tags yet
+        </Typography>
+      )}
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
         {tags.map((tag) => (
           <Box
             key={tag.id}
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: 0.25,
+              justifyContent: "space-between",
+              gap: 1,
             }}
           >
             <TagPill tag={tag} />
-            <IconButton
-              size="small"
-              onClick={() => openEdit(tag)}
-              sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-            >
-              <EditIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => setDeleteConfirmId(tag.id)}
-              sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-            >
-              <DeleteIcon sx={{ fontSize: 14 }} />
-            </IconButton>
+            <Box sx={{ display: "flex", gap: 0.25 }}>
+              <IconButton
+                size="small"
+                onClick={() => openEdit(tag)}
+                sx={{ color: "var(--color-overlay0)", p: 0.5 }}
+              >
+                <EditIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => setDeleteConfirmId(tag.id)}
+                sx={{ color: "var(--color-overlay0)", p: 0.5 }}
+              >
+                <DeleteIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
           </Box>
         ))}
-        <Box
-          onClick={openCreate}
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.5,
-            height: 26,
-            px: 1,
-            borderRadius: "4px",
-            border: "1px dashed var(--color-overlay0)",
-            color: "var(--color-overlay0)",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            "&:hover": {
-              borderColor: "var(--color-text)",
-              color: "var(--color-text)",
-            },
-          }}
-        >
-          <AddIcon sx={{ fontSize: 16 }} />
-          New
-        </Box>
       </Box>
 
       {/* Create / Edit dialog */}
