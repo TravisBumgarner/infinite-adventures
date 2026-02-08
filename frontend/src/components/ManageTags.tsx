@@ -46,18 +46,21 @@ interface TagFormState {
 const INITIAL_FORM: TagFormState = { name: "", icon: "Star", color: TAG_COLORS[0]! };
 
 export function ManageTags() {
-  const tags = useTagStore((s) => s.tags);
+  const tagsById = useTagStore((s) => s.tags);
   const addTag = useTagStore((s) => s.addTag);
   const updateTagInStore = useTagStore((s) => s.updateTag);
   const removeTag = useTagStore((s) => s.removeTag);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const showToast = useAppStore((s) => s.showToast);
 
+  const tags = useMemo(() => Object.values(tagsById), [tagsById]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [form, setForm] = useState<TagFormState>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [iconSearch, setIconSearch] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const filteredIcons = useMemo(() => searchIcons(iconSearch), [iconSearch]);
 
@@ -81,8 +84,9 @@ export function ManageTags() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!activeCanvasId || !form.name.trim()) return;
+    if (!activeCanvasId || !form.name.trim() || submitting) return;
 
+    setSubmitting(true);
     try {
       if (editingTag) {
         const updated = await api.updateTag(activeCanvasId, editingTag.id, {
@@ -102,8 +106,19 @@ export function ManageTags() {
       handleClose();
     } catch {
       showToast(editingTag ? "Failed to update tag" : "Failed to create tag");
+    } finally {
+      setSubmitting(false);
     }
-  }, [activeCanvasId, form, editingTag, addTag, updateTagInStore, handleClose, showToast]);
+  }, [
+    activeCanvasId,
+    form,
+    editingTag,
+    submitting,
+    addTag,
+    updateTagInStore,
+    handleClose,
+    showToast,
+  ]);
 
   const handleDelete = useCallback(
     async (tagId: string) => {
@@ -308,8 +323,12 @@ export function ManageTags() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={!form.name.trim()}>
-            {editingTag ? "Save" : "Create"}
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={!form.name.trim() || submitting}
+          >
+            {submitting ? "Saving..." : editingTag ? "Save" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

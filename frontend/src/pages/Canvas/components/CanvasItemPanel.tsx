@@ -49,7 +49,8 @@ export default function CanvasItemPanel({
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
-  const allTags = useTagStore((s) => s.tags);
+  const tagsById = useTagStore((s) => s.tags);
+  const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
   const showToast = useAppStore((s) => s.showToast);
 
   // Item state
