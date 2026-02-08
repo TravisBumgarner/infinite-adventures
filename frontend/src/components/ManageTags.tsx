@@ -10,7 +10,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Tag } from "shared";
 import * as api from "../api/client";
 import { TagPill } from "../sharedComponents/TagPill";
@@ -18,7 +18,7 @@ import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import { useTagStore } from "../stores/tagStore";
 import { getContrastText } from "../utils/getContrastText";
-import { ICON_MAP, ICON_NAMES } from "../utils/iconMap";
+import { ICON_MAP, searchIcons } from "../utils/iconMap";
 
 const TAG_COLORS = [
   "#f38ba8",
@@ -46,27 +46,35 @@ interface TagFormState {
 const INITIAL_FORM: TagFormState = { name: "", icon: "Star", color: TAG_COLORS[0]! };
 
 export function ManageTags() {
-  const tags = useTagStore((s) => s.tags);
+  const tagsById = useTagStore((s) => s.tags);
   const addTag = useTagStore((s) => s.addTag);
   const updateTagInStore = useTagStore((s) => s.updateTag);
   const removeTag = useTagStore((s) => s.removeTag);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const showToast = useAppStore((s) => s.showToast);
 
+  const tags = useMemo(() => Object.values(tagsById), [tagsById]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [form, setForm] = useState<TagFormState>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [iconSearch, setIconSearch] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const filteredIcons = useMemo(() => searchIcons(iconSearch), [iconSearch]);
 
   const openCreate = useCallback(() => {
     setEditingTag(null);
     setForm(INITIAL_FORM);
+    setIconSearch("");
     setDialogOpen(true);
   }, []);
 
   const openEdit = useCallback((tag: Tag) => {
     setEditingTag(tag);
     setForm({ name: tag.name, icon: tag.icon, color: tag.color });
+    setIconSearch("");
     setDialogOpen(true);
   }, []);
 
@@ -76,8 +84,9 @@ export function ManageTags() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!activeCanvasId || !form.name.trim()) return;
+    if (!activeCanvasId || !form.name.trim() || submitting) return;
 
+    setSubmitting(true);
     try {
       if (editingTag) {
         const updated = await api.updateTag(activeCanvasId, editingTag.id, {
@@ -97,8 +106,19 @@ export function ManageTags() {
       handleClose();
     } catch {
       showToast(editingTag ? "Failed to update tag" : "Failed to create tag");
+    } finally {
+      setSubmitting(false);
     }
-  }, [activeCanvasId, form, editingTag, addTag, updateTagInStore, handleClose, showToast]);
+  }, [
+    activeCanvasId,
+    form,
+    editingTag,
+    submitting,
+    addTag,
+    updateTagInStore,
+    handleClose,
+    showToast,
+  ]);
 
   const handleDelete = useCallback(
     async (tagId: string) => {
@@ -164,7 +184,7 @@ export function ManageTags() {
       </Box>
 
       {/* Create / Edit dialog */}
-      <Dialog open={dialogOpen} onClose={handleClose} maxWidth="xs" fullWidth>
+      <Dialog open={dialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>{editingTag ? "Edit Tag" : "Create Tag"}</DialogTitle>
         <DialogContent
           sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}
@@ -183,26 +203,67 @@ export function ManageTags() {
             <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mb: 0.5 }}>
               Icon
             </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {ICON_NAMES.map((name) => {
+            <TextField
+              placeholder="Search icons (e.g. sword, magic, tavern)"
+              value={iconSearch}
+              onChange={(e) => setIconSearch(e.target.value)}
+              size="small"
+              fullWidth
+              sx={{ mb: 1 }}
+            />
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(14, 1fr)",
+                gap: 0.5,
+                height: 180,
+                overflowY: "auto",
+                alignContent: "start",
+              }}
+            >
+              {filteredIcons.map((name) => {
                 const Icon = ICON_MAP[name]!;
                 const selected = form.icon === name;
                 return (
-                  <IconButton
+                  <Box
                     key={name}
-                    size="small"
                     onClick={() => setForm((f) => ({ ...f, icon: name }))}
+                    title={name}
                     sx={{
+                      aspectRatio: "1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       border: selected ? "2px solid var(--color-blue)" : "2px solid transparent",
-                      borderRadius: "6px",
+                      borderRadius: "4px",
                       color: "var(--color-text)",
-                      p: 0.5,
+                      cursor: "pointer",
+                      "&:hover": { opacity: 0.8 },
                     }}
                   >
-                    <Icon sx={{ fontSize: 20 }} />
-                  </IconButton>
+                    <Icon sx={{ fontSize: 18 }} />
+                  </Box>
                 );
               })}
+              {filteredIcons.length === 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                    gridColumn: "1 / -1",
+                    py: 2,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+                    No icons match "{iconSearch}"
+                  </Typography>
+                  <Button size="small" onClick={() => setIconSearch("")}>
+                    Clear search
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Box>
 
@@ -211,14 +272,13 @@ export function ManageTags() {
             <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mb: 0.5 }}>
               Color
             </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(14, 1fr)", gap: 0.5 }}>
               {TAG_COLORS.map((color) => (
                 <Box
                   key={color}
                   onClick={() => setForm((f) => ({ ...f, color }))}
                   sx={{
-                    width: 28,
-                    height: 28,
+                    aspectRatio: "1",
                     bgcolor: color,
                     borderRadius: "4px",
                     cursor: "pointer",
@@ -245,28 +305,30 @@ export function ManageTags() {
           </Box>
 
           {/* Preview */}
-          {form.name.trim() && (
+          <Box>
+            <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mb: 0.5 }}>
+              Preview
+            </Typography>
             <Box>
-              <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mb: 0.5 }}>
-                Preview
-              </Typography>
-              <Box>
-                <TagPill
-                  tag={{
-                    id: "preview",
-                    name: form.name.trim(),
-                    icon: form.icon,
-                    color: form.color,
-                  }}
-                />
-              </Box>
+              <TagPill
+                tag={{
+                  id: "preview",
+                  name: form.name.trim() || "Tag Name",
+                  icon: form.icon,
+                  color: form.color,
+                }}
+              />
             </Box>
-          )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained" disabled={!form.name.trim()}>
-            {editingTag ? "Save" : "Create"}
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            disabled={!form.name.trim() || submitting}
+          >
+            {submitting ? "Saving..." : editingTag ? "Save" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,6 @@
+import AddIcon from "@mui/icons-material/Add";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
@@ -7,16 +9,19 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo } from "shared";
+import type { CanvasItem, Note, Photo, Tag } from "shared";
 import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
+import { TagPill } from "../../../sharedComponents/TagPill";
+import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { useTagStore } from "../../../stores/tagStore";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
@@ -43,6 +48,10 @@ export default function CanvasItemPanel({
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const tagsById = useTagStore((s) => s.tags);
+  const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
+  const showToast = useAppStore((s) => s.showToast);
 
   // Item state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -343,6 +352,37 @@ export default function CanvasItemPanel({
     markTitleDirty();
   }
 
+  // Tags
+  const assignedTagIds = useMemo(() => new Set(item?.tags.map((t) => t.id) ?? []), [item?.tags]);
+  const availableTags = useMemo(
+    () => allTags.filter((t) => !assignedTagIds.has(t.id)),
+    [allTags, assignedTagIds],
+  );
+
+  async function handleAddTag(tag: Tag) {
+    if (!item) return;
+    try {
+      await api.addTagToItem(item.id, tag.id);
+      const updated = { ...item, tags: [...item.tags, tag] };
+      setItem(updated);
+      onSaved(updated);
+    } catch {
+      showToast("Failed to add tag");
+    }
+  }
+
+  async function handleRemoveTag(tagId: string) {
+    if (!item) return;
+    try {
+      await api.removeTagFromItem(item.id, tagId);
+      const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
+      setItem(updated);
+      onSaved(updated);
+    } catch {
+      showToast("Failed to remove tag");
+    }
+  }
+
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
 
@@ -392,6 +432,88 @@ export default function CanvasItemPanel({
         onDownloadPdf={handleDownloadPdf}
         onDeleteItem={handleOpenDeleteModal}
       />
+
+      {/* Tags */}
+      <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
+          {item.tags.map((tag) => (
+            <TagPill key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
+          ))}
+          {availableTags.length > 0 && (
+            <Autocomplete
+              size="small"
+              options={availableTags}
+              getOptionLabel={(opt) => opt.name}
+              onChange={(_e, tag) => {
+                if (tag) handleAddTag(tag);
+              }}
+              value={null}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  <TagPill tag={option} />
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Add tag"
+                  variant="standard"
+                  InputProps={{
+                    ...params.InputProps,
+                    disableUnderline: true,
+                    startAdornment: (
+                      <AddIcon sx={{ fontSize: 16, color: "var(--color-overlay0)" }} />
+                    ),
+                  }}
+                />
+              )}
+              slotProps={{
+                paper: {
+                  sx: {
+                    "& .MuiAutocomplete-option": {
+                      px: 1,
+                      py: 0.5,
+                    },
+                  },
+                },
+              }}
+              sx={{
+                minWidth: 120,
+                "& .MuiInputBase-root": {
+                  py: 0,
+                  fontSize: 13,
+                },
+              }}
+              fullWidth
+              blurOnSelect
+              clearOnBlur
+            />
+          )}
+          <Box
+            onClick={() => setShowSettings(true)}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.5,
+              height: 26,
+              px: 1,
+              borderRadius: "4px",
+              border: "1px dashed var(--color-overlay0)",
+              color: "var(--color-overlay0)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              "&:hover": {
+                borderColor: "var(--color-text)",
+                color: "var(--color-text)",
+              },
+            }}
+          >
+            <AddIcon sx={{ fontSize: 16 }} />
+            New
+          </Box>
+        </Box>
+      </Box>
 
       {/* Tabs */}
       <Tabs
