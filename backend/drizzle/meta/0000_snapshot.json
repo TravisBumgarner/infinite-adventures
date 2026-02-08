@@ -1,5 +1,5 @@
 {
-  "id": "c07137fa-8edb-4500-b91c-2c7c1f1037b5",
+  "id": "74fb8e4e-c31b-4524-913a-6e0fc5c1b414",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -69,6 +69,66 @@
           "columns": [
             "source_item_id",
             "target_item_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.canvas_item_tags": {
+      "name": "canvas_item_tags",
+      "schema": "",
+      "columns": {
+        "canvas_item_id": {
+          "name": "canvas_item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "canvas_item_tags_canvas_item_id_canvas_items_id_fk": {
+          "name": "canvas_item_tags_canvas_item_id_canvas_items_id_fk",
+          "tableFrom": "canvas_item_tags",
+          "tableTo": "canvas_items",
+          "columnsFrom": [
+            "canvas_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "canvas_item_tags_tag_id_tags_id_fk": {
+          "name": "canvas_item_tags_tag_id_tags_id_fk",
+          "tableFrom": "canvas_item_tags",
+          "tableTo": "tags",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "canvas_item_tags_canvas_item_id_tag_id_pk": {
+          "name": "canvas_item_tags_canvas_item_id_tag_id_pk",
+          "columns": [
+            "canvas_item_id",
+            "tag_id"
           ]
         }
       },
@@ -361,13 +421,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -391,66 +444,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.note_links": {
-      "name": "note_links",
-      "schema": "",
-      "columns": {
-        "source_note_id": {
-          "name": "source_note_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_note_id": {
-          "name": "target_note_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "note_links_source_note_id_notes_id_fk": {
-          "name": "note_links_source_note_id_notes_id_fk",
-          "tableFrom": "note_links",
-          "tableTo": "notes",
-          "columnsFrom": [
-            "source_note_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "note_links_target_note_id_notes_id_fk": {
-          "name": "note_links_target_note_id_notes_id_fk",
-          "tableFrom": "note_links",
-          "tableTo": "notes",
-          "columnsFrom": [
-            "target_note_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "note_links_source_note_id_target_note_id_pk": {
-          "name": "note_links_source_note_id_target_note_id_pk",
-          "columns": [
-            "source_note_id",
-            "target_note_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.notes": {
       "name": "notes",
       "schema": "",
@@ -461,14 +454,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
+        "canvas_item_id": {
+          "name": "canvas_item_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -480,20 +467,6 @@
           "notNull": true,
           "default": "''"
         },
-        "canvas_x": {
-          "name": "canvas_x",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "canvas_y": {
-          "name": "canvas_y",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -501,42 +474,20 @@
           "notNull": true,
           "default": "now()::text"
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "canvas_id": {
-          "name": "canvas_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "now()::text"
-        },
-        "search_vector": {
-          "name": "search_vector",
-          "type": "tsvector",
-          "primaryKey": false,
-          "notNull": false,
-          "generated": {
-            "as": "setweight(to_tsvector('english', coalesce(\"title\", '')), 'A') || setweight(to_tsvector('english', coalesce(\"content\", '')), 'B')",
-            "type": "stored"
-          }
         }
       },
       "indexes": {
-        "notes_search_vector_idx": {
-          "name": "notes_search_vector_idx",
+        "notes_canvas_item_id_idx": {
+          "name": "notes_canvas_item_id_idx",
           "columns": [
             {
-              "expression": "search_vector",
+              "expression": "canvas_item_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -544,35 +495,22 @@
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "gin",
+          "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "notes_user_id_users_id_fk": {
-          "name": "notes_user_id_users_id_fk",
+        "notes_canvas_item_id_canvas_items_id_fk": {
+          "name": "notes_canvas_item_id_canvas_items_id_fk",
           "tableFrom": "notes",
-          "tableTo": "users",
+          "tableTo": "canvas_items",
           "columnsFrom": [
-            "user_id"
+            "canvas_item_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "notes_canvas_id_canvases_id_fk": {
-          "name": "notes_canvas_id_canvases_id_fk",
-          "tableFrom": "notes",
-          "tableTo": "canvases",
-          "columnsFrom": [
-            "canvas_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -591,13 +529,6 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
         },
         "created_at": {
           "name": "created_at",
@@ -717,13 +648,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -757,12 +681,11 @@
           "primaryKey": true,
           "notNull": true
         },
-        "notes": {
-          "name": "notes",
+        "session_date": {
+          "name": "session_date",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "''"
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -787,6 +710,93 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.tags": {
+      "name": "tags",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canvas_id": {
+          "name": "canvas_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()::text"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()::text"
+        }
+      },
+      "indexes": {
+        "tags_canvas_id_idx": {
+          "name": "tags_canvas_id_idx",
+          "columns": [
+            {
+              "expression": "canvas_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tags_canvas_id_canvases_id_fk": {
+          "name": "tags_canvas_id_canvases_id_fk",
+          "tableFrom": "tags",
+          "tableTo": "canvases",
+          "columnsFrom": [
+            "canvas_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.things": {
       "name": "things",
       "schema": "",
@@ -796,13 +806,6 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
         },
         "created_at": {
           "name": "created_at",
