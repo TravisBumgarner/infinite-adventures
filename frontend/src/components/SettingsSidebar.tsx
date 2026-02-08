@@ -16,6 +16,7 @@ import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import type { ThemePreference } from "../styles/styleConsts";
 import { useThemePreference } from "../styles/Theme";
+import { ManageTags } from "./ManageTags";
 
 interface SettingsButtonProps {
   onClick: () => void;
@@ -142,6 +143,9 @@ export function SettingsSidebar() {
           ))}
         </ToggleButtonGroup>
       </Box>
+
+      {/* Manage Tags */}
+      <ManageTags />
 
       {/* Feedback */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
