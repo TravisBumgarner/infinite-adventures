@@ -158,7 +158,7 @@ tasks:
       - App still works with no regressions
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 8
     github_issue: 165
