@@ -1,0 +1,259 @@
+project: Backend Hardening & React Query Migration
+repo: TravisBumgarner/infinite-adventures
+design_file: null # Design was provided inline during scoping
+scoping_date: 2026-02-08
+
+milestones:
+  - number: 25
+    title: "1. Zod Route Validation"
+    description: Replace isValidUUID and manual validation with Zod schema parsing on all backend routes
+    branch:
+      working: 158-zod-route-validation
+      base: main
+
+  - number: 26
+    title: "2. Resource Ownership Authorization"
+    description: Add ownership checks to all API routes so users can only access/modify resources they own
+    branch:
+      working: 161-resource-ownership
+      base: 158-zod-route-validation
+
+  - number: 27
+    title: "3. React Query Migration"
+    description: Replace direct API calls with React Query for caching, deduplication, loading/error states, and double-submit prevention
+    branch:
+      working: 164-react-query
+      base: main
+
+tasks:
+  # ── Milestone 1: Zod Route Validation ──
+
+  - id: 1
+    github_issue: 158
+    milestone: 25
+    title: Add Zod param/body schemas and parseRoute helper
+    description: |
+      Create reusable Zod schemas for route param validation (IdParams, NoteIdParams,
+      ItemIdParams, CanvasIdParams, TagIdParams, LinkParams, and compound variants).
+      Create a `parseRoute` helper that replaces manual `validate()` functions by
+      parsing req.params and req.body against Zod schemas, returning typed results
+      or sending 400. Delete the `isValidUUID` regex function.
+    acceptance_criteria:
+      - All param schemas defined and exported from validation.ts
+      - parseRoute helper validates params + body via Zod and returns typed result or sends 400
+      - isValidUUID function deleted
+      - Tests for parseRoute cover valid input, invalid UUID, and invalid body
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    github_issue: 159
+    milestone: 25
+    title: Migrate canvas and item routes to Zod validation
+    description: |
+      Replace manual `validate()` functions in all canvas route handlers
+      (get, update, delete, create) and item route handlers (get, update, delete,
+      create, list, search, tagged) with `parseRoute()` calls using Zod schemas.
+      Remove all `isValidUUID` imports from these files.
+    acceptance_criteria:
+      - All canvas route handlers use parseRoute with Zod schemas
+      - All item route handlers use parseRoute with Zod schemas
+      - No imports of isValidUUID remain in these files
+      - All existing route tests pass
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 160
+    milestone: 25
+    title: Migrate note, tag, photo, link, and session routes to Zod validation
+    description: |
+      Replace manual `validate()` functions in all remaining route handlers
+      (notes: 5 routes, tags: 6 routes, photos: 3 routes, links: 2 routes,
+      sessions: 1 route) with `parseRoute()` calls. After this task, no route
+      handler should import `isValidUUID` and `validation.ts` should not export it.
+    acceptance_criteria:
+      - All remaining route handlers use parseRoute with Zod schemas
+      - No imports of isValidUUID remain anywhere in the codebase
+      - validation.ts no longer exports isValidUUID
+      - All existing route tests pass
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  # ── Milestone 2: Resource Ownership Authorization ──
+
+  - id: 4
+    github_issue: 161
+    milestone: 26
+    title: Add userOwnsCanvas ownership check service
+    description: |
+      Create `backend/src/services/authorizationService.ts` with:
+      - `userOwnsCanvas(userId, canvasId)` — queries canvas_users table
+      - Resolution helpers: `getCanvasIdForItem`, `getCanvasIdForNote`,
+        `getCanvasIdForPhoto`, `getCanvasIdForTag`
+      - `userOwnsResource(userId, resourceType, resourceId)` — combines
+        resolution + ownership check, returns canvasId or null
+    acceptance_criteria:
+      - userOwnsCanvas queries canvas_users and returns boolean
+      - Resolution functions for item, note, photo, tag each return the owning canvasId
+      - userOwnsResource dispatches to the right resolver and checks ownership
+      - Tests cover each resource type including not-found and unauthorized cases
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 5
+    github_issue: 162
+    milestone: 26
+    title: Add ownership checks to canvas-scoped routes (items, tags, sessions)
+    description: |
+      Add authorization to routes that receive canvasId in URL params:
+      items/list, items/create, items/search, tags/list, tags/create,
+      sessions/list. Each handler calls requireUserId then userOwnsCanvas,
+      returning 403 FORBIDDEN if unauthorized.
+    acceptance_criteria:
+      - All 6 canvas-scoped route handlers check canvas ownership
+      - Returns 403 FORBIDDEN when user doesn't own the canvas
+      - Tests verify unauthorized access is blocked
+      - Existing tests updated to pass userId where needed
+    depends_on: [4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    github_issue: 163
+    milestone: 26
+    title: Add ownership checks to item-scoped routes (get/update/delete, notes, photos, tags, links)
+    description: |
+      Add authorization to all routes that operate on item/note/photo/tag/link
+      resources (18 route handlers total). Use userOwnsResource to resolve each
+      resource to its canvas and verify membership. Return 403 if unauthorized.
+    acceptance_criteria:
+      - All 18 item/note/photo/tag/link route handlers check resource ownership
+      - Returns 403 FORBIDDEN when user doesn't own the resource's canvas
+      - Tests verify unauthorized access is blocked for each resource type
+      - Existing tests updated to provide userId context
+    depends_on: [4]
+    effort: 3
+    status: scoped
+
+  # ── Milestone 3: React Query Migration ──
+
+  - id: 7
+    github_issue: 164
+    milestone: 27
+    title: Install React Query and set up QueryClient provider
+    description: |
+      Install @tanstack/react-query and @tanstack/react-query-devtools.
+      Create frontend/src/lib/queryClient.ts with sensible defaults
+      (staleTime: 30s, retry: 1, refetchOnWindowFocus: false).
+      Wrap the app in QueryClientProvider. Add devtools in dev mode.
+    acceptance_criteria:
+      - @tanstack/react-query installed in frontend
+      - QueryClient created with default options
+      - QueryClientProvider wrapping the app
+      - App still works with no regressions
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 8
+    github_issue: 165
+    milestone: 27
+    title: Create React Query hooks for canvas and item queries
+    description: |
+      Create query hooks in frontend/src/hooks/queries/: useCanvases,
+      useItems(canvasId), useItem(itemId), useSearchItems(query, canvasId),
+      useSessions(canvasId), useTags(canvasId). Define a queryKeys factory
+      for consistent cache key management. No components migrated yet.
+    acceptance_criteria:
+      - All query hooks created with proper query keys
+      - Hooks use enabled to skip queries when IDs are missing
+      - Query key factory exported for use in cache invalidation
+      - Search hook includes debounce via placeholderData keepPreviousData
+    depends_on: [7]
+    effort: 2
+    status: scoped
+
+  - id: 9
+    github_issue: 166
+    milestone: 27
+    title: Create React Query mutation hooks for all write operations
+    description: |
+      Create mutation hooks in frontend/src/hooks/mutations/: canvas CRUD,
+      item CRUD, note CRUD, tag CRUD + assignment, photo upload/delete/select,
+      link create/delete. Each hook wraps the API client function, exposes
+      isPending for double-submit prevention, and invalidates relevant queries
+      on success. No components migrated yet.
+    acceptance_criteria:
+      - All mutation hooks created with proper cache invalidation
+      - Each hook exposes isPending for double-submit prevention
+      - Invalidation targets are correct (e.g. deleting a note invalidates parent item)
+      - No components migrated yet
+    depends_on: [8]
+    effort: 2
+    status: scoped
+
+  - id: 10
+    github_issue: 167
+    milestone: 27
+    title: Migrate Canvas page and useCanvasActions to React Query
+    description: |
+      Replace direct API calls in Canvas.tsx and useCanvasActions.ts with
+      React Query hooks. Canvas.tsx uses useCanvases() instead of manual
+      useEffect. useCanvasActions replaces loadAllItems, handleSaved,
+      createItemAtPosition, edge/link operations, and bulk delete with
+      query/mutation hooks. Keep React Flow node/edge state management.
+    acceptance_criteria:
+      - Canvas page loads canvases via useCanvases() hook
+      - Canvas items and tags loaded via query hooks
+      - Create, delete, and link operations use mutation hooks
+      - No direct api.fetch*/create*/delete* calls remain in these files
+      - Canvas still works end-to-end
+    depends_on: [9]
+    effort: 3
+    status: scoped
+
+  - id: 11
+    github_issue: 168
+    milestone: 27
+    title: Migrate CanvasItemPanel and SessionDetail to React Query
+    description: |
+      Replace direct API calls in CanvasItemPanel.tsx and SessionDetail.tsx
+      with React Query hooks. Use useItem(itemId) for fetching, mutation
+      hooks for note/photo/tag operations, and query invalidation instead
+      of manual refetch-and-setState. Keep useAutoSave pattern using
+      mutation's mutateAsync as saveFn.
+    acceptance_criteria:
+      - Both components fetch item data via useItem() query
+      - All note, photo, and tag operations use mutation hooks
+      - No direct api.* calls remain in these files
+      - Auto-save still works for title, summary, session date, and note content
+      - isPending used on delete/create buttons
+    depends_on: [10]
+    effort: 3
+    status: scoped
+
+  - id: 12
+    github_issue: 169
+    milestone: 27
+    title: Migrate Sessions page, SearchBar, ManageTags, and TaggedItemsPanel to React Query
+    description: |
+      Replace direct API calls in the remaining components. Sessions.tsx
+      uses useSessions query + useCreateItem mutation. SearchBar uses
+      useSearchItems query with built-in debounce. ManageTags uses tag
+      mutation hooks with isPending. TaggedItemsPanel uses a query hook.
+      After this task, no component should import directly from api/client.
+    acceptance_criteria:
+      - Sessions page uses query/mutation hooks
+      - SearchBar uses query hook with built-in debounce
+      - ManageTags uses mutation hooks with isPending for submit guards
+      - TaggedItemsPanel uses query hook
+      - No direct api.* calls remain in any frontend component
+      - All submitting useState replaced with mutation isPending
+    depends_on: [10]
+    effort: 2
+    status: scoped
