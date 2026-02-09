@@ -6,8 +6,14 @@ import { Box, Stack, useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import * as api from "../../api/client";
 import { SIDEBAR_WIDTH } from "../../constants";
+import {
+  useCreateCanvas,
+  useDeleteCanvas,
+  useDeleteItem,
+  useUpdateCanvas,
+} from "../../hooks/mutations";
+import { useCanvases } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import Toast from "../../sharedComponents/Toast";
 import { useAppStore } from "../../stores/appStore";
@@ -37,9 +43,7 @@ export default function Canvas() {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  const canvases = useCanvasStore((s) => s.canvases);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const setCanvases = useCanvasStore((s) => s.setCanvases);
   const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const editingItemId = useCanvasStore((s) => s.editingItemId);
@@ -55,37 +59,13 @@ export default function Canvas() {
   const toastMessage = useAppStore((s) => s.toastMessage);
   const clearToast = useAppStore((s) => s.clearToast);
 
-  // Fetch canvases on mount and initialize the active canvas
+  // Fetch canvases via React Query and initialize the active canvas
+  const { data: canvases = [] } = useCanvases();
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const list = await api.fetchCanvases();
-        if (!cancelled) {
-          initActiveCanvas(list);
-        }
-      } catch {
-        // Auth token may not be ready yet — retry once after a short delay
-        if (!cancelled) {
-          await new Promise((r) => setTimeout(r, 500));
-          try {
-            const list = await api.fetchCanvases();
-            if (!cancelled) {
-              initActiveCanvas(list);
-            }
-          } catch {
-            // Still failing — session is likely invalid
-          }
-        }
-      }
+    if (canvases.length > 0) {
+      initActiveCanvas(canvases);
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [initActiveCanvas]);
+  }, [canvases, initActiveCanvas]);
 
   const {
     filteredNodes,
@@ -115,6 +95,12 @@ export default function Canvas() {
     onEdgeMouseLeave,
   } = useCanvasActions();
 
+  // Canvas mutations
+  const createCanvasMutation = useCreateCanvas();
+  const updateCanvasMutation = useUpdateCanvas();
+  const deleteCanvasMutation = useDeleteCanvas();
+  const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
+
   // Canvas picker handlers
   const handleSwitchCanvas = useCallback(
     (canvasId: string) => {
@@ -125,33 +111,30 @@ export default function Canvas() {
 
   const handleCreateCanvas = useCallback(
     async (name: string) => {
-      const canvas = await api.createCanvas({ name });
-      setCanvases([...useCanvasStore.getState().canvases, canvas]);
+      const canvas = await createCanvasMutation.mutateAsync({ name });
       setActiveCanvasId(canvas.id);
     },
-    [setCanvases, setActiveCanvasId],
+    [createCanvasMutation, setActiveCanvasId],
   );
 
   const handleRenameCanvas = useCallback(
     async (canvasId: string, newName: string) => {
-      const updated = await api.updateCanvas(canvasId, { name: newName });
-      setCanvases(
-        useCanvasStore.getState().canvases.map((c) => (c.id === updated.id ? updated : c)),
-      );
+      await updateCanvasMutation.mutateAsync({ id: canvasId, input: { name: newName } });
     },
-    [setCanvases],
+    [updateCanvasMutation],
   );
 
   const handleDeleteCanvas = useCallback(
     async (canvasId: string) => {
-      await api.deleteCanvas(canvasId);
-      const remaining = useCanvasStore.getState().canvases.filter((c) => c.id !== canvasId);
-      setCanvases(remaining);
-      if (activeCanvasId === canvasId && remaining.length > 0) {
-        setActiveCanvasId(remaining[0].id);
+      await deleteCanvasMutation.mutateAsync(canvasId);
+      if (activeCanvasId === canvasId) {
+        const remaining = canvases.filter((c) => c.id !== canvasId);
+        if (remaining.length > 0) {
+          setActiveCanvasId(remaining[0].id);
+        }
       }
     },
-    [setCanvases, setActiveCanvasId, activeCanvasId],
+    [deleteCanvasMutation, activeCanvasId, canvases, setActiveCanvasId],
   );
 
   const handleExportPdf = useCallback(async () => {
@@ -363,7 +346,7 @@ export default function Canvas() {
           nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
           nodeType={itemsCache.get(nodeContextMenu.nodeId)?.type}
           onDelete={async () => {
-            await api.deleteItem(nodeContextMenu.nodeId);
+            await deleteItemMutation.mutateAsync(nodeContextMenu.nodeId);
             handleDeleted(nodeContextMenu.nodeId);
           }}
           onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
