@@ -2,12 +2,15 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { SIDEBAR_WIDTH } from "../../../constants";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { useDice3dStore } from "../../../stores/dice3dStore";
 import { useDiceStore } from "../../../stores/diceStore";
+import Dice3dIcon from "./Dice3dIcon";
 import DiceIcon from "./DiceIcon";
 
 export default function ToolSidebar() {
   const showSettings = useCanvasStore((s) => s.showSettings);
   const toggle = useDiceStore((s) => s.toggle);
+  const toggle3d = useDice3dStore((s) => s.toggle);
 
   return (
     <div
@@ -34,6 +37,11 @@ export default function ToolSidebar() {
       <Tooltip title="Dice Roller" placement="right">
         <IconButton onClick={toggle} size="small">
           <DiceIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="3D Dice" placement="right">
+        <IconButton onClick={toggle3d} size="small">
+          <Dice3dIcon fontSize="small" />
         </IconButton>
       </Tooltip>
     </div>
