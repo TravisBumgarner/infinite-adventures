@@ -225,12 +225,18 @@ export function useCanvasActions() {
     ],
   );
 
+  // Ref to break render loop: mutation hooks return new objects each render,
+  // cascading through handleDeleteEdge → loadAllItems identity changes.
+  // Using a ref ensures the effect only fires when activeCanvasId changes.
+  const loadAllItemsRef = useRef(loadAllItems);
+  loadAllItemsRef.current = loadAllItems;
+
   // Load items when activeCanvasId changes
   useEffect(() => {
     if (activeCanvasId) {
-      loadAllItems(activeCanvasId);
+      loadAllItemsRef.current(activeCanvasId);
     }
-  }, [activeCanvasId, loadAllItems]);
+  }, [activeCanvasId]);
 
   // Restore viewport from localStorage when canvas changes
   useEffect(() => {
