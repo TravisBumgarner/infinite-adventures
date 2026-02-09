@@ -123,7 +123,13 @@ const W = 700, H = 400;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x313244);
 
-const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+const frustumSize = 16;
+const aspect = W / H;
+const camera = new THREE.OrthographicCamera(
+  -frustumSize * aspect / 2, frustumSize * aspect / 2,
+  frustumSize / 2, -frustumSize / 2,
+  0.1, 100
+);
 camera.position.set(0, 12, 10);
 camera.lookAt(0, 0, 0);
 
@@ -141,7 +147,7 @@ scene.add(dirLight);
 
 // Floor
 const floorMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
+  new THREE.PlaneGeometry(40, 40),
   new THREE.MeshStandardMaterial({ color: 0x45475a })
 );
 floorMesh.rotation.x = -Math.PI / 2;
@@ -154,15 +160,15 @@ scene.add(floorMesh);
 const world = new CANNON.World();
 world.gravity.set(0, -30, 0);
 world.broadphase = new CANNON.NaiveBroadphase();
-world.solver.iterations = 10;
+world.solver.iterations = 20;
 
 const floorPhysMat = new CANNON.Material('floor');
 const dicePhysMat = new CANNON.Material('dice');
 world.addContactMaterial(new CANNON.ContactMaterial(floorPhysMat, dicePhysMat, {
-  friction: 0.6, restitution: 0.25,
+  friction: 0.4, restitution: 0.35,
 }));
 world.addContactMaterial(new CANNON.ContactMaterial(dicePhysMat, dicePhysMat, {
-  friction: 0.4, restitution: 0.3,
+  friction: 0.3, restitution: 0.4,
 }));
 
 const floorBody = new CANNON.Body({ mass: 0, material: floorPhysMat });
@@ -176,37 +182,51 @@ function addWallBody(sx, sy, sz, x, y, z) {
   b.position.set(x, y, z);
   world.addBody(b);
 }
-addWallBody(20, 8, 0.4, 0, 4, -5);
-addWallBody(20, 8, 0.4, 0, 4, 5);
-addWallBody(0.4, 8, 10, -5, 4, 0);
-addWallBody(0.4, 8, 10, 5, 4, 0);
+// Walls: positioned at visible floor edges for ortho camera
+// Visible floor: x ≈ ±14, z ≈ ±10.4. Inset ~2 units so dice stay fully visible.
+addWallBody(30, 20, 4,  0, 10, -10.5); // back (inner face z=-8.5)
+addWallBody(30, 20, 4,  0, 10,  10.5); // front (inner face z=8.5)
+addWallBody(4, 20, 24, -14, 10, 0);    // left (inner face x=-12)
+addWallBody(4, 20, 24,  14, 10, 0);    // right (inner face x=12)
+// Ceiling
+addWallBody(32, 4, 24,  0, 18, 0);
+
+// ── Dice Color Palette ──────────────────────────────────────
+const DIE_COLORS = {
+  d4:  { bg: '#fcd4dc', text: '#9b1b30' },
+  d6:  { bg: '#d4e4fc', text: '#1a4d8f' },
+  d8:  { bg: '#d4f5d4', text: '#1a6b1a' },
+  d10: { bg: '#fcefd4', text: '#b37400' },
+  d12: { bg: '#e4d4f5', text: '#5b1a99' },
+  d20: { bg: '#fcdcc8', text: '#b34700' },
+};
 
 // ── Texture Helpers ─────────────────────────────────────────
-function createNumberTexture(num, bgColor, textCanvasY) {
+function createNumberTexture(num, { bg, text }, textCanvasY) {
   const size = 512;
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
-  ctx.strokeStyle = bgColor;
+  ctx.strokeStyle = text;
   ctx.lineWidth = 24;
   ctx.strokeRect(12, 12, size - 24, size - 24);
   const fontSize = num >= 10 ? 200 : 260;
   ctx.font = `900 ${fontSize}px system-ui`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = text;
   ctx.fillText(String(num), size / 2, textCanvasY ?? size / 2);
   return new THREE.CanvasTexture(c);
 }
 
-function createPentagonTexture(num, bgColor) {
+function createPentagonTexture(num, { bg, text }) {
   const size = 512;
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
   // Pentagon border matching UV layout
   const cr = 0.45;
@@ -218,7 +238,7 @@ function createPentagonTexture(num, bgColor) {
     if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  ctx.strokeStyle = bgColor;
+  ctx.strokeStyle = text;
   ctx.lineWidth = 10;
   ctx.stroke();
   // Number at face center
@@ -226,37 +246,8 @@ function createPentagonTexture(num, bgColor) {
   ctx.font = `900 ${fontSize}px system-ui`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = text;
   ctx.fillText(String(num), size / 2, size / 2);
-  return new THREE.CanvasTexture(c);
-}
-
-function createKiteTexture(num, bgColor) {
-  const size = 512;
-  const c = document.createElement('canvas');
-  c.width = size; c.height = size;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, size, size);
-  // Kite border matching UV layout
-  const kite = [[0.5, 0.95], [0.95, 0.45], [0.5, 0.05], [0.05, 0.45]];
-  ctx.beginPath();
-  for (let i = 0; i < 4; i++) {
-    const px = kite[i][0] * size;
-    const py = (1 - kite[i][1]) * size;
-    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.strokeStyle = bgColor;
-  ctx.lineWidth = 10;
-  ctx.stroke();
-  // Number at kite centroid (UV v≈0.475)
-  const fontSize = num >= 10 ? 130 : 170;
-  ctx.font = `900 ${fontSize}px system-ui`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000';
-  ctx.fillText(String(num), size / 2, (1 - 0.475) * size);
   return new THREE.CanvasTexture(c);
 }
 
@@ -336,7 +327,8 @@ function geomToConvex(threeGeom) {
 
 // ── D10 Custom Geometry ─────────────────────────────────────
 function createD10Geometry(radius) {
-  const H = radius * 1.4, h = radius * 0.35, r = radius * 0.9;
+  const cos36 = Math.cos(36 * Math.PI / 180);
+  const H = radius * 0.9, h = H * (1 - cos36) / (1 + cos36), r = radius * 1.05;
   const top = [0, H, 0], bot = [0, -H, 0];
   const upper = [], lower = [];
   for (let i = 0; i < 5; i++) {
@@ -365,7 +357,8 @@ function createD10Geometry(radius) {
 
 // Build a ConvexPolyhedron for the d10 from its 12 unique vertices
 function createD10ConvexShape(radius) {
-  const H = radius * 1.4, h = radius * 0.35, r = radius * 0.9;
+  const cos36 = Math.cos(36 * Math.PI / 180);
+  const H = radius * 0.9, h = H * (1 - cos36) / (1 + cos36), r = radius * 1.05;
   const verts = [
     new CANNON.Vec3(0, H, 0),   // 0: top pole
     new CANNON.Vec3(0, -H, 0),  // 1: bottom pole
@@ -393,25 +386,25 @@ function createD10ConvexShape(radius) {
 }
 
 // ── D4 Builder (3 numbers per face, read top vertex) ────────
-function createD4FaceTexture(labels, bgColor) {
+function createD4FaceTexture(labels, { bg, text }) {
   const size = 256;
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
   // Colored triangle border
-  ctx.strokeStyle = bgColor;
+  ctx.strokeStyle = text;
   ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.moveTo(13, 240); ctx.lineTo(243, 240); ctx.lineTo(128, 18); ctx.closePath();
   ctx.stroke();
-  // 3 numbers at corners (canvas coords, accounting for flipY)
-  const positions = [[55, 205], [200, 205], [128, 55]];
-  ctx.font = '900 56px system-ui';
+  // 3 numbers near corners but pulled toward face centroid (~128, 166)
+  const positions = [[95, 175], [162, 175], [128, 105]];
+  ctx.font = '900 72px system-ui';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = text;
   for (let i = 0; i < 3; i++) {
     ctx.fillText(String(labels[i]), positions[i][0], positions[i][1]);
   }
@@ -419,7 +412,7 @@ function createD4FaceTexture(labels, bgColor) {
 }
 
 function buildD4(color) {
-  const g = new THREE.TetrahedronGeometry(0.7, 0);
+  const g = new THREE.TetrahedronGeometry(1.4, 0);
   const geom = g.toNonIndexed ? g.toNonIndexed() : g;
   geom.clearGroups();
   const pos = geom.getAttribute('position');
@@ -487,12 +480,7 @@ function buildPolyDie(baseGeom, sides, trisPerFace, color) {
   geom.computeVertexNormals();
 
   const values = Array.from({ length: sides }, (_, i) => i + 1);
-  // Shape-specific textures: pentagon for d12, kite for d10, square for triangles
-  const makeTexture = trisPerFace === 3
-    ? (n) => createPentagonTexture(n, color)
-    : trisPerFace === 2
-    ? (n) => createKiteTexture(n, color)
-    : (n) => createNumberTexture(n, color, 338);
+  const makeTexture = (n) => createNumberTexture(n, color, 338);
   const mats = values.map(v =>
     new THREE.MeshStandardMaterial({ map: makeTexture(v), side: THREE.DoubleSide })
   );
@@ -502,11 +490,170 @@ function buildPolyDie(baseGeom, sides, trisPerFace, color) {
   return { mesh, faceNormals, values };
 }
 
+function buildD10(color) {
+  const radius = 1.1;
+  const geomRaw = createD10Geometry(radius);
+  const geom = geomRaw.index ? geomRaw.toNonIndexed() : geomRaw;
+  geom.clearGroups();
+  const pos = geom.getAttribute('position');
+  const vpf = 6; // 2 triangles × 3 vertices per kite face
+  const sides = 10;
+  const uvs = new Float32Array(pos.count * 2);
+
+  for (let f = 0; f < sides; f++) {
+    const start = f * vpf;
+
+    // Collect 6 vertex positions
+    const verts = [];
+    for (let i = 0; i < vpf; i++) {
+      verts.push(new THREE.Vector3(
+        pos.getX(start + i), pos.getY(start + i), pos.getZ(start + i)
+      ));
+    }
+
+    // Face center and normal
+    const center = new THREE.Vector3();
+    for (const v of verts) center.add(v);
+    center.divideScalar(vpf);
+
+    const e1 = new THREE.Vector3().subVectors(verts[1], verts[0]);
+    const e2 = new THREE.Vector3().subVectors(verts[2], verts[0]);
+    const normal = new THREE.Vector3().crossVectors(e1, e2).normalize();
+    if (normal.dot(center) < 0) normal.negate();
+
+    // Build tangent space — use "up" projected onto face as tangent
+    // so numbers read upright when facing the camera
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const upOnFace = worldUp.clone().sub(normal.clone().multiplyScalar(worldUp.dot(normal))).normalize();
+    const rightOnFace = new THREE.Vector3().crossVectors(upOnFace, normal).normalize();
+
+    // Project vertices to 2D
+    const pts2d = verts.map(v => {
+      const d = new THREE.Vector3().subVectors(v, center);
+      return [d.dot(rightOnFace), d.dot(upOnFace)];
+    });
+
+    // Find bounding circle for normalization
+    let maxR = 0;
+    for (const [x, y] of pts2d) {
+      const r = Math.sqrt(x * x + y * y);
+      if (r > maxR) maxR = r;
+    }
+
+    // Map to UV space: center at (0.5, 0.5), radius 0.45
+    for (let i = 0; i < vpf; i++) {
+      uvs[(start + i) * 2] = 0.5 + (pts2d[i][0] / maxR) * 0.45;
+      uvs[(start + i) * 2 + 1] = 0.5 + (pts2d[i][1] / maxR) * 0.45;
+    }
+
+    geom.addGroup(start, vpf, f);
+  }
+
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+
+  const values = Array.from({ length: sides }, (_, i) => i + 1);
+  const mats = values.map(v =>
+    new THREE.MeshStandardMaterial({ map: createNumberTexture(v, color, null), side: THREE.DoubleSide })
+  );
+  const mesh = new THREE.Mesh(geom, mats);
+  mesh.castShadow = true;
+  const faceNormals = computeOutwardNormals(pos, sides, vpf);
+  return { mesh, faceNormals, values, physShape: createD10ConvexShape(radius) };
+}
+
+function buildD12(color) {
+  const g = new THREE.DodecahedronGeometry(1.2, 0);
+  const geom = g.toNonIndexed();
+  geom.clearGroups();
+  const pos = geom.getAttribute('position');
+  const vpf = 9; // 3 triangles × 3 vertices per pentagonal face
+  const sides = 12;
+  const uvs = new Float32Array(pos.count * 2);
+
+  // Pentagon UV vertices (regular pentagon)
+  const pentUV = [];
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+    pentUV.push([0.5 + 0.45 * Math.cos(a), 0.5 + 0.45 * Math.sin(a)]);
+  }
+
+  for (let f = 0; f < sides; f++) {
+    const start = f * vpf;
+
+    // Collect 9 vertex positions
+    const verts = [];
+    for (let i = 0; i < vpf; i++) {
+      verts.push(new THREE.Vector3(
+        pos.getX(start + i), pos.getY(start + i), pos.getZ(start + i)
+      ));
+    }
+
+    // Find 5 unique vertices and map each of 9 to its unique index
+    const unique = [];
+    const vertIdxMap = [];
+    for (let i = 0; i < vpf; i++) {
+      let found = -1;
+      for (let j = 0; j < unique.length; j++) {
+        if (verts[i].distanceTo(unique[j]) < 0.001) { found = j; break; }
+      }
+      if (found === -1) { found = unique.length; unique.push(verts[i].clone()); }
+      vertIdxMap.push(found);
+    }
+
+    // Face center and normal
+    const center = new THREE.Vector3();
+    for (const v of unique) center.add(v);
+    center.divideScalar(unique.length);
+
+    const e1 = new THREE.Vector3().subVectors(verts[1], verts[0]);
+    const e2 = new THREE.Vector3().subVectors(verts[2], verts[0]);
+    const normal = new THREE.Vector3().crossVectors(e1, e2).normalize();
+    if (normal.dot(center) < 0) normal.negate();
+
+    // Build tangent space on face plane
+    const tangent = new THREE.Vector3().subVectors(unique[0], center).normalize();
+    const bitangent = new THREE.Vector3().crossVectors(normal, tangent).normalize();
+
+    // Sort unique vertices by angle around center
+    const angles = unique.map(v => {
+      const d = new THREE.Vector3().subVectors(v, center);
+      return Math.atan2(d.dot(bitangent), d.dot(tangent));
+    });
+    const order = unique.map((_, i) => i).sort((a, b) => angles[a] - angles[b]);
+
+    // Map sorted vertex i → pentagon UV vertex i
+    const uniqueToUV = new Array(unique.length);
+    for (let i = 0; i < order.length; i++) uniqueToUV[order[i]] = pentUV[i];
+
+    // Assign UVs to all 9 vertices
+    for (let i = 0; i < vpf; i++) {
+      const uv = uniqueToUV[vertIdxMap[i]];
+      uvs[(start + i) * 2] = uv[0];
+      uvs[(start + i) * 2 + 1] = uv[1];
+    }
+
+    geom.addGroup(start, vpf, f);
+  }
+
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+
+  const values = Array.from({ length: sides }, (_, i) => i + 1);
+  const mats = values.map(v =>
+    new THREE.MeshStandardMaterial({ map: createPentagonTexture(v, color), side: THREE.DoubleSide })
+  );
+  const mesh = new THREE.Mesh(geom, mats);
+  mesh.castShadow = true;
+  const faceNormals = computeOutwardNormals(pos, sides, vpf);
+  return { mesh, faceNormals, values, physShape: geomToConvex(g) };
+}
+
 function buildD6(color) {
-  const geom = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+  const geom = new THREE.BoxGeometry(1.6, 1.6, 1.6);
   // +x,-x,+y,-y,+z,-z  →  opposite faces sum to 7
   const values = [2, 5, 1, 6, 3, 4];
-  const mats = values.map(v => new THREE.MeshStandardMaterial({ map: createNumberTexture(v, color) }));
+  const mats = values.map(v => new THREE.MeshStandardMaterial({ map: createNumberTexture(v, color, null) }));
   const mesh = new THREE.Mesh(geom, mats);
   mesh.castShadow = true;
   const faceNormals = [
@@ -514,7 +661,7 @@ function buildD6(color) {
     new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
     new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
   ];
-  return { mesh, faceNormals, values, physShape: new CANNON.Box(new CANNON.Vec3(0.4, 0.4, 0.4)) };
+  return { mesh, faceNormals, values, physShape: new CANNON.Box(new CANNON.Vec3(0.8, 0.8, 0.8)) };
 }
 
 // ── Die Registry ────────────────────────────────────────────
@@ -524,23 +671,19 @@ const COLORS = {
 };
 
 function createDie(type) {
+  const dc = DIE_COLORS[type];
   switch (type) {
-    case 'd4': return buildD4(COLORS.d4);
-    case 'd6': return buildD6(COLORS.d6);
+    case 'd4': return buildD4(dc);
+    case 'd6': return buildD6(dc);
     case 'd8': {
-      const g = new THREE.OctahedronGeometry(0.6, 0);
-      return { ...buildPolyDie(g, 8, 1, COLORS.d8), physShape: geomToConvex(g) };
+      const g = new THREE.OctahedronGeometry(1.2, 0);
+      return { ...buildPolyDie(g, 8, 1, dc), physShape: geomToConvex(g) };
     }
-    case 'd10': {
-      return { ...buildPolyDie(createD10Geometry(0.55), 10, 2, COLORS.d10), physShape: createD10ConvexShape(0.55) };
-    }
-    case 'd12': {
-      const g = new THREE.DodecahedronGeometry(0.6, 0);
-      return { ...buildPolyDie(g, 12, 3, COLORS.d12), physShape: geomToConvex(g) };
-    }
+    case 'd10': return buildD10(dc);
+    case 'd12': return buildD12(dc);
     case 'd20': {
-      const g = new THREE.IcosahedronGeometry(0.55, 0);
-      return { ...buildPolyDie(g, 20, 1, COLORS.d20), physShape: geomToConvex(g) };
+      const g = new THREE.IcosahedronGeometry(1.1, 0);
+      return { ...buildPolyDie(g, 20, 1, dc), physShape: geomToConvex(g) };
     }
   }
 }
@@ -632,16 +775,19 @@ function rollAll() {
     });
     body.addShape(die.physShape);
 
-    const spread = count > 1 ? (i - (count - 1) / 2) * 1.2 : 0;
+    // Drop from a tight cluster above center, fling outward to scatter across table
     body.position.set(
-      spread + (Math.random() - 0.5) * 0.5,
-      4 + Math.random(),
-      (Math.random() - 0.5) * 2
+      (Math.random() - 0.5) * 2,
+      4 + Math.random() * 2 + i * 0.3,
+      (Math.random() - 0.5) * 1.5
     );
+    // Random direction outward from center
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 8 + Math.random() * 10;
     body.velocity.set(
-      (Math.random() - 0.5) * 5,
-      -4 - Math.random() * 3,
-      (Math.random() - 0.5) * 5
+      Math.cos(angle) * speed,
+      -3 - Math.random() * 2,
+      Math.sin(angle) * speed
     );
     body.angularVelocity.set(
       (Math.random() - 0.5) * 20,
