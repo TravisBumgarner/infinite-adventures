@@ -13,7 +13,7 @@ import {
   getItemContentId,
 } from "../services/canvasItemService.js";
 import { uploadPhoto } from "../services/photoService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
 
@@ -73,7 +73,7 @@ describe("photo routes", () => {
       expect(context).toEqual({ itemId: "550e8400-e29b-41d4-a716-446655440000" });
     });
 
-    it("handler returns 404 for non-existent item", async () => {
+    it("handler returns 403 for non-existent item", async () => {
       const req = createMockReq({
         params: { itemId: "550e8400-e29b-41d4-a716-446655440000" },
         file: {
@@ -81,13 +81,12 @@ describe("photo routes", () => {
           mimetype: "image/jpeg",
           buffer: Buffer.from("test"),
         },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("CANVAS_ITEM_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it("handler returns 400 when no file is uploaded", async () => {
@@ -95,6 +94,7 @@ describe("photo routes", () => {
       const req = createMockReq({
         params: { itemId: item.id },
         file: undefined,
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
@@ -111,6 +111,7 @@ describe("photo routes", () => {
           mimetype: "image/jpeg",
           buffer: Buffer.from("fake image data"),
         },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
@@ -168,14 +169,15 @@ describe("photo routes", () => {
       expect(context).toEqual({ id: "550e8400-e29b-41d4-a716-446655440000" });
     });
 
-    it("handler returns 404 for non-existent photo", async () => {
-      const req = createMockReq({ params: { id: "550e8400-e29b-41d4-a716-446655440000" } });
+    it("handler returns 403 for non-existent photo", async () => {
+      const req = createMockReq({
+        params: { id: "550e8400-e29b-41d4-a716-446655440000" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("PHOTO_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it("handler deletes photo and returns success envelope", async () => {
@@ -190,7 +192,10 @@ describe("photo routes", () => {
         buffer: Buffer.from("test image data"),
       });
 
-      const req = createMockReq({ params: { id: photo.id } });
+      const req = createMockReq({
+        params: { id: photo.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
 
@@ -216,14 +221,15 @@ describe("photo routes", () => {
       expect(context).toEqual({ id: "550e8400-e29b-41d4-a716-446655440000" });
     });
 
-    it("handler returns 404 for non-existent photo", async () => {
-      const req = createMockReq({ params: { id: "550e8400-e29b-41d4-a716-446655440000" } });
+    it("handler returns 403 for non-existent photo", async () => {
+      const req = createMockReq({
+        params: { id: "550e8400-e29b-41d4-a716-446655440000" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await selectHandler(req as import("express").Request<{ id: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("PHOTO_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it("handler selects photo and returns success envelope with is_selected true", async () => {
@@ -238,7 +244,10 @@ describe("photo routes", () => {
         buffer: Buffer.from("test image data"),
       });
 
-      const req = createMockReq({ params: { id: photo.id } });
+      const req = createMockReq({
+        params: { id: photo.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await selectHandler(req as import("express").Request<{ id: string }>, res);
 
