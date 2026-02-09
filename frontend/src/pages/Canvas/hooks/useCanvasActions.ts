@@ -1,8 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { Connection, Edge, Node } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { CanvasItem, CanvasItemType } from "shared";
-import * as api from "../../../api/client";
+import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
+import { fetchItem, fetchItems, fetchTags } from "../../../api/client";
+import {
+  useCreateItem,
+  useCreateLink,
+  useDeleteItem,
+  useDeleteLink,
+  useUpdateItem,
+} from "../../../hooks/mutations";
+import { queryKeys } from "../../../hooks/queries";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
@@ -85,6 +94,7 @@ export function useCanvasActions() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
+  const queryClient = useQueryClient();
 
   const {
     setItemsCache,
@@ -101,6 +111,41 @@ export function useCanvasActions() {
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const editingItemId = useCanvasStore((s) => s.editingItemId);
+
+  // Mutation hooks
+  const createItemMutation = useCreateItem(activeCanvasId ?? "");
+  const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
+  const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
+  const createLinkMutation = useCreateLink(activeCanvasId ?? "");
+  const deleteLinkMutation = useDeleteLink(activeCanvasId ?? "");
+
+  // Imperative query helpers that go through React Query's cache
+  const fetchItemViaQuery = useCallback(
+    (itemId: string) =>
+      queryClient.fetchQuery({
+        queryKey: queryKeys.items.detail(itemId),
+        queryFn: () => fetchItem(itemId),
+      }),
+    [queryClient],
+  );
+
+  const fetchItemsViaQuery = useCallback(
+    (canvasId: string) =>
+      queryClient.fetchQuery<CanvasItemSummary[]>({
+        queryKey: queryKeys.items.list(canvasId),
+        queryFn: () => fetchItems(canvasId),
+      }),
+    [queryClient],
+  );
+
+  const fetchTagsViaQuery = useCallback(
+    (canvasId: string) =>
+      queryClient.fetchQuery<Tag[]>({
+        queryKey: queryKeys.tags.list(canvasId),
+        queryFn: () => fetchTags(canvasId),
+      }),
+    [queryClient],
+  );
 
   // Compute filtered nodes and edges for display, with focused state
   const filteredNodes = useMemo(() => {
@@ -119,12 +164,15 @@ export function useCanvasActions() {
   // Handle edge deletion
   const handleDeleteEdge = useCallback(
     async (sourceId: string, targetId: string) => {
-      await api.deleteLink(sourceId, targetId);
+      await deleteLinkMutation.mutateAsync({
+        sourceItemId: sourceId,
+        targetItemId: targetId,
+      });
 
       // Refetch both items to get updated links
       const [sourceItem, targetItem] = await Promise.all([
-        api.fetchItem(sourceId),
-        api.fetchItem(targetId),
+        fetchItemViaQuery(sourceId),
+        fetchItemViaQuery(targetId),
       ]);
 
       const cache = useCanvasStore.getState().itemsCache;
@@ -136,7 +184,7 @@ export function useCanvasActions() {
       // Remove the edge immediately from UI
       setEdges((eds) => eds.filter((e) => !(e.source === sourceId && e.target === targetId)));
     },
-    [setEdges, setItemsCache],
+    [setEdges, setItemsCache, deleteLinkMutation, fetchItemViaQuery],
   );
 
   // Fit viewport to show both source and target items
@@ -155,17 +203,26 @@ export function useCanvasActions() {
   const loadAllItems = useCallback(
     async (canvasId: string) => {
       const [summaries, tags] = await Promise.all([
-        api.fetchItems(canvasId),
-        api.fetchTags(canvasId),
+        fetchItemsViaQuery(canvasId),
+        fetchTagsViaQuery(canvasId),
       ]);
       useTagStore.getState().setTags(tags);
-      const fullItems = await Promise.all(summaries.map((s) => api.fetchItem(s.id)));
+      const fullItems = await Promise.all(summaries.map((s) => fetchItemViaQuery(s.id)));
       const cache = new Map(fullItems.map((i) => [i.id, i]));
       setItemsCache(cache);
       setNodes(fullItems.map((i) => toFlowNode(i, cache, fitBothItems)));
       setEdges(buildEdges(fullItems, cache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
+    [
+      setNodes,
+      setEdges,
+      fitBothItems,
+      setItemsCache,
+      handleDeleteEdge,
+      fetchItemsViaQuery,
+      fetchTagsViaQuery,
+      fetchItemViaQuery,
+    ],
   );
 
   // Load items when activeCanvasId changes
@@ -221,13 +278,13 @@ export function useCanvasActions() {
       if (!canvasId) return;
       const existing = nodes.map((n) => ({ x: n.position.x, y: n.position.y }));
       const pos = findOpenPosition(flowX, flowY, existing);
-      const item = await api.createItem(canvasId, {
+      const item = await createItemMutation.mutateAsync({
         type,
         title: "New Item",
         canvas_x: pos.x,
         canvas_y: pos.y,
       });
-      const fullItem = await api.fetchItem(item.id);
+      const fullItem = await fetchItemViaQuery(item.id);
       const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       nextCache.set(fullItem.id, fullItem);
@@ -239,7 +296,16 @@ export function useCanvasActions() {
         reactFlowInstance.setCenter(pos.x, pos.y, { zoom, duration: 300 });
       }, 50);
     },
-    [nodes, setNodes, fitBothItems, reactFlowInstance, setItemsCache, setEditingItemId],
+    [
+      nodes,
+      setNodes,
+      fitBothItems,
+      reactFlowInstance,
+      setItemsCache,
+      setEditingItemId,
+      createItemMutation,
+      fetchItemViaQuery,
+    ],
   );
 
   // Right-click canvas to open context menu
@@ -334,8 +400,8 @@ export function useCanvasActions() {
       const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
 
-      // Delete all items
-      await Promise.all(nodeIds.map((id) => api.deleteItem(id)));
+      // Delete all items via mutation
+      await Promise.all(nodeIds.map((id) => deleteItemMutation.mutateAsync(id)));
 
       // Remove from cache
       for (const id of nodeIds) {
@@ -350,7 +416,7 @@ export function useCanvasActions() {
       );
       setEditingItemId(null);
     },
-    [setNodes, setEdges, setItemsCache, setEditingItemId],
+    [setNodes, setEdges, setItemsCache, setEditingItemId, deleteItemMutation],
   );
 
   // View All: fit all nodes in viewport
@@ -371,7 +437,7 @@ export function useCanvasActions() {
     const cache = useCanvasStore.getState().itemsCache;
     const nextCache = new Map(cache);
     for (const [id, pos] of moves) {
-      api.updateItem(id, { canvas_x: pos.x, canvas_y: pos.y });
+      updateItemMutation.mutate({ id, input: { canvas_x: pos.x, canvas_y: pos.y } });
       const cached = nextCache.get(id);
       if (cached) {
         nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
@@ -385,7 +451,7 @@ export function useCanvasActions() {
         return newPos ? { ...n, position: newPos } : n;
       }),
     );
-  }, [nodes, setNodes, setItemsCache]);
+  }, [nodes, setNodes, setItemsCache, updateItemMutation]);
 
   // Toolbar: create item at viewport center
   const handleToolbarCreate = useCallback(
@@ -406,7 +472,7 @@ export function useCanvasActions() {
       const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       for (const [id, pos] of positions) {
-        api.updateItem(id, { canvas_x: pos.x, canvas_y: pos.y });
+        updateItemMutation.mutate({ id, input: { canvas_x: pos.x, canvas_y: pos.y } });
         const cached = nextCache.get(id);
         if (cached) {
           nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
@@ -414,19 +480,22 @@ export function useCanvasActions() {
       }
       setItemsCache(nextCache);
     },
-    [setItemsCache],
+    [setItemsCache, updateItemMutation],
   );
 
   // Handle edge creation by dragging between handles
   const onConnect = useCallback(
     async (connection: Connection) => {
-      const result = await api.createLink(connection.source, connection.target);
+      const result = await createLinkMutation.mutateAsync({
+        sourceItemId: connection.source,
+        targetItemId: connection.target,
+      });
       if (!result.created) return;
 
       // Refetch both items to get updated links
       const [sourceItem, targetItem] = await Promise.all([
-        api.fetchItem(connection.source),
-        api.fetchItem(connection.target),
+        fetchItemViaQuery(connection.source),
+        fetchItemViaQuery(connection.target),
       ]);
 
       const cache = useCanvasStore.getState().itemsCache;
@@ -439,7 +508,15 @@ export function useCanvasActions() {
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
       setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
+    [
+      setNodes,
+      setEdges,
+      fitBothItems,
+      setItemsCache,
+      handleDeleteEdge,
+      createLinkMutation,
+      fetchItemViaQuery,
+    ],
   );
 
   // Editor callbacks
@@ -447,14 +524,14 @@ export function useCanvasActions() {
     async (item: CanvasItem) => {
       const canvasId = useCanvasStore.getState().activeCanvasId;
       if (!canvasId) return;
-      const fullItem = await api.fetchItem(item.id);
+      const fullItem = await fetchItemViaQuery(item.id);
       const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       nextCache.set(fullItem.id, fullItem);
 
-      const summaries = await api.fetchItems(canvasId);
+      const summaries = await fetchItemsViaQuery(canvasId);
       const newItemIds = summaries.map((s) => s.id).filter((id) => !nextCache.has(id));
-      const newItems = await Promise.all(newItemIds.map((id) => api.fetchItem(id)));
+      const newItems = await Promise.all(newItemIds.map((id) => fetchItemViaQuery(id)));
       for (const i of newItems) {
         nextCache.set(i.id, i);
       }
@@ -464,7 +541,15 @@ export function useCanvasActions() {
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
       setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
     },
-    [setNodes, setEdges, fitBothItems, setItemsCache, handleDeleteEdge],
+    [
+      setNodes,
+      setEdges,
+      fitBothItems,
+      setItemsCache,
+      handleDeleteEdge,
+      fetchItemViaQuery,
+      fetchItemsViaQuery,
+    ],
   );
 
   const handleDeleted = useCallback(
