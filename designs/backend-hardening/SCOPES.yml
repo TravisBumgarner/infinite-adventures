@@ -195,7 +195,7 @@ tasks:
       - No components migrated yet
     depends_on: [8]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 10
     github_issue: 167
