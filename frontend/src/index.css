@@ -59,3 +59,9 @@ html, body, #root {
   margin-top: 0.25em;
   cursor: pointer;
 }
+
+.mention-editor-wrapper .ProseMirror a {
+  color: var(--color-blue);
+  text-decoration: underline;
+  cursor: pointer;
+}

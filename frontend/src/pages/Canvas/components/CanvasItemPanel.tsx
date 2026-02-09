@@ -191,6 +191,7 @@ export default function CanvasItemPanel({
   }, [flushTitle, flushSummary, flushDate, flushNote]);
 
   // Sync local state from React Query data
+  const prevItemIdRef = useRef<string | null>(null);
   useEffect(() => {
     itemIdRef.current = itemId;
     if (queryItem) {
@@ -199,9 +200,14 @@ export default function CanvasItemPanel({
       setSummary(queryItem.summary);
       setSessionDate(queryItem.session_date ?? "");
       setNotes(queryItem.notes);
-      setEditingNoteId(null);
-      setNoteContent("");
       setPhotos(queryItem.photos);
+      // Only reset editing state when switching to a different item,
+      // not on refetches (which happen after auto-save)
+      if (prevItemIdRef.current !== itemId) {
+        prevItemIdRef.current = itemId;
+        setEditingNoteId(null);
+        setNoteContent("");
+      }
     }
   }, [itemId, queryItem]);
 
@@ -410,6 +416,10 @@ export default function CanvasItemPanel({
       const cached = itemsCache.get(id);
       return cached ? `@${cached.title}` : "@mention";
     });
+    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
+    text = text.replace(/\*([^*]+)\*/g, "$1");
+    text = text.replace(/^- \[([ x])\] /gm, "");
     if (!text) return "Empty note";
     return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }

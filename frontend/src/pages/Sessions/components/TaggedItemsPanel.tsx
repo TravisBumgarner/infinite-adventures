@@ -79,6 +79,10 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
       const cached = itemsCache.get(id);
       return cached ? `@${cached.title}` : "@mention";
     });
+    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
+    text = text.replace(/\*([^*]+)\*/g, "$1");
+    text = text.replace(/^- \[([ x])\] /gm, "");
     if (!text) return "Empty note";
     return text.length > 300 ? `${text.slice(0, 300)}...` : text;
   }
