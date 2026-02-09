@@ -142,9 +142,8 @@ export default function NotesTab({
                       whiteSpace: "pre-wrap",
                       wordBreak: "break-word",
                     }}
-                  >
-                    {getNotePreview(note.content)}
-                  </Typography>
+                    dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
+                  />
                   <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
                     Last edited on {new Date(note.updated_at).toLocaleDateString()}
                   </Typography>

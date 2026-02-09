@@ -487,8 +487,9 @@ export default function MentionEditor({
       TaskItem.configure({ nested: true }),
       Link.configure({
         autolink: true,
-        openOnClick: false,
+        openOnClick: true,
         linkOnPaste: true,
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
       }),
       Mention.configure({
         HTMLAttributes: {

@@ -412,16 +412,24 @@ export default function CanvasItemPanel({
 
   function getNotePreview(content: string): string {
     let text = content.replace(/<[^>]*>/g, "").trim();
+    if (!text) return "Empty note";
+    if (text.length > 300) text = `${text.slice(0, 300)}...`;
+    // Escape HTML entities
+    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Render mentions
     text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
       const cached = itemsCache.get(id);
-      return cached ? `@${cached.title}` : "@mention";
+      const name = cached ? cached.title : "mention";
+      return `<strong>@${name}</strong>`;
     });
-    text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
-    text = text.replace(/\*\*([^*]+)\*\*/g, "$1");
-    text = text.replace(/\*([^*]+)\*/g, "$1");
-    text = text.replace(/^- \[([ x])\] /gm, "");
-    if (!text) return "Empty note";
-    return text.length > 300 ? `${text.slice(0, 300)}...` : text;
+    // Render links, bold, italic
+    text = text.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
+    );
+    text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    return text;
   }
 
   async function handleTogglePin(noteId: string, isPinned: boolean) {
