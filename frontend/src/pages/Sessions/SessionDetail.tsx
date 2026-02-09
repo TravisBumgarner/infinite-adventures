@@ -139,6 +139,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }, [flushTitle, flushDate, flushNote]);
 
   // Sync local state from React Query data
+  const prevSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
     sessionIdRef.current = sessionId;
     if (queryItem) {
@@ -147,8 +148,13 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       setSessionDate(queryItem.session_date ?? "");
       setNotes(queryItem.notes);
       setPhotos(queryItem.photos);
-      setEditingNoteId(null);
-      setNoteContent("");
+      // Only reset editing state when switching to a different session,
+      // not on refetches (which happen after auto-save)
+      if (prevSessionIdRef.current !== sessionId) {
+        prevSessionIdRef.current = sessionId;
+        setEditingNoteId(null);
+        setNoteContent("");
+      }
     }
   }, [sessionId, queryItem]);
 
@@ -315,12 +321,21 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
 
   function getNotePreview(content: string): string {
     let text = content.replace(/<[^>]*>/g, "").trim();
+    if (!text) return "Empty note";
+    if (text.length > 300) text = `${text.slice(0, 300)}...`;
+    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
       const cached = itemsCache.get(id);
-      return cached ? `@${cached.title}` : "@mention";
+      const name = cached ? cached.title : "mention";
+      return `<strong>@${name}</strong>`;
     });
-    if (!text) return "Empty note";
-    return text.length > 300 ? `${text.slice(0, 300)}...` : text;
+    text = text.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
+    );
+    text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    return text;
   }
 
   if (!item) {

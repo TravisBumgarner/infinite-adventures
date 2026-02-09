@@ -5,7 +5,7 @@ interface TipTapNode {
   content?: TipTapNode[];
   text?: string;
   attrs?: Record<string, unknown>;
-  marks?: Array<{ type: string }>;
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
 }
 
 /**
@@ -22,13 +22,15 @@ function serializeInline(nodes: TipTapNode[]): string {
       const text = node.text ?? "";
       const hasBold = node.marks?.some((m) => m.type === "bold");
       const hasItalic = node.marks?.some((m) => m.type === "italic");
-      if (hasBold) {
-        result += `**${text}**`;
-      } else if (hasItalic) {
-        result += `*${text}*`;
-      } else {
-        result += text;
+      const linkMark = node.marks?.find((m) => m.type === "link");
+      let formatted = text;
+      if (hasBold) formatted = `**${formatted}**`;
+      if (hasItalic) formatted = `*${formatted}*`;
+      if (linkMark) {
+        const href = (linkMark.attrs?.href as string) ?? "";
+        formatted = `[${formatted}](${href})`;
       }
+      result += formatted;
     }
   }
   return result;
@@ -99,8 +101,12 @@ function escapeAttr(text: string): string {
  * Handles mentions first, then applies formatting to non-mention segments.
  */
 function formatInlineMarkdown(line: string): string {
-  // Process bold (**text**) and italic (*text*) but not inside mentions
+  // Process links [text](url), bold (**text**), and italic (*text*)
   return line
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+    )
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
