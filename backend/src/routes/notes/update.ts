@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
 import type { UpdateNoteInput } from "shared";
+import { UpdateNoteInputSchema } from "shared";
 import { updateNote } from "../../services/noteService.js";
 import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { NoteIdParams, parseRoute } from "../shared/validation.js";
 
 export interface UpdateValidationContext {
   noteId: string;
@@ -13,17 +14,13 @@ export function validate(
   req: Request<{ noteId: string }>,
   res: Response,
 ): UpdateValidationContext | null {
-  const { noteId } = req.params;
-  if (!isValidUUID(noteId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  const { content, is_pinned } = req.body;
-  if (content === undefined && is_pinned === undefined) {
+  const parsed = parseRoute(req, res, { params: NoteIdParams, body: UpdateNoteInputSchema });
+  if (!parsed) return null;
+  if (parsed.body.content === undefined && parsed.body.is_pinned === undefined) {
     sendBadRequest(res, "INVALID_INPUT");
     return null;
   }
-  return { noteId, input: { content, is_pinned } };
+  return { noteId: parsed.params.noteId, input: parsed.body };
 }
 
 export async function handler(req: Request<{ noteId: string }>, res: Response): Promise<void> {

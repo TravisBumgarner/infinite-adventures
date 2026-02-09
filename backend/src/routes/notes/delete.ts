@@ -1,15 +1,12 @@
 import type { Request, Response } from "express";
 import { deleteNote } from "../../services/noteService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { sendNotFound, sendSuccess } from "../shared/responses.js";
+import { NoteIdParams, parseRoute } from "../shared/validation.js";
 
 export function validate(req: Request<{ noteId: string }>, res: Response): string | null {
-  const { noteId } = req.params;
-  if (!isValidUUID(noteId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  return noteId;
+  const parsed = parseRoute(req, res, { params: NoteIdParams });
+  if (!parsed) return null;
+  return parsed.params.noteId;
 }
 
 export async function handler(req: Request<{ noteId: string }>, res: Response): Promise<void> {

@@ -1,7 +1,9 @@
 import type { Request, Response } from "express";
 import type { CreateTagInput } from "shared";
+import { CreateTagInputSchema } from "shared";
 import { createTag } from "../../services/tagService.js";
-import { sendBadRequest, sendSuccess } from "../shared/responses.js";
+import { sendSuccess } from "../shared/responses.js";
+import { CanvasIdParams, parseRoute } from "../shared/validation.js";
 
 export interface CreateTagValidationContext {
   input: CreateTagInput;
@@ -9,14 +11,9 @@ export interface CreateTagValidationContext {
 }
 
 export function validate(req: Request, res: Response): CreateTagValidationContext | null {
-  const { name, icon, color } = req.body;
-  const canvasIdParam = req.params.canvasId;
-  const canvasId = typeof canvasIdParam === "string" ? canvasIdParam : "";
-  if (!name || !icon || !color) {
-    sendBadRequest(res);
-    return null;
-  }
-  return { input: { name, icon, color }, canvasId };
+  const parsed = parseRoute(req, res, { params: CanvasIdParams, body: CreateTagInputSchema });
+  if (!parsed) return null;
+  return { input: parsed.body, canvasId: parsed.params.canvasId };
 }
 
 export async function handler(req: Request, res: Response): Promise<void> {

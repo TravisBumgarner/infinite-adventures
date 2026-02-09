@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import type { CreateNoteInput } from "shared";
+import { CreateNoteInputSchema } from "shared";
 import { getItem } from "../../services/canvasItemService.js";
 import { createNote } from "../../services/noteService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { sendNotFound, sendSuccess } from "../shared/responses.js";
+import { ItemIdParams, parseRoute } from "../shared/validation.js";
 
 export interface CreateValidationContext {
   itemId: string;
@@ -14,13 +15,9 @@ export function validate(
   req: Request<{ itemId: string }>,
   res: Response,
 ): CreateValidationContext | null {
-  const { itemId } = req.params;
-  if (!isValidUUID(itemId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  const { content } = req.body;
-  return { itemId, input: { content } };
+  const parsed = parseRoute(req, res, { params: ItemIdParams, body: CreateNoteInputSchema });
+  if (!parsed) return null;
+  return { itemId: parsed.params.itemId, input: parsed.body };
 }
 
 export async function handler(req: Request<{ itemId: string }>, res: Response): Promise<void> {
