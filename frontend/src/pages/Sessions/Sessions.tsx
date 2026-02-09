@@ -9,9 +9,14 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { SessionSummary } from "shared";
-import * as api from "../../api/client";
 import { SIDEBAR_WIDTH } from "../../constants";
+import {
+  useCreateCanvas,
+  useCreateItem,
+  useDeleteCanvas,
+  useUpdateCanvas,
+} from "../../hooks/mutations";
+import { useCanvases, useSessions } from "../../hooks/queries";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
@@ -32,65 +37,34 @@ export default function Sessions() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const canvases = useCanvasStore((s) => s.canvases);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const setCanvases = useCanvasStore((s) => s.setCanvases);
   const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const showToast = useAppStore((s) => s.showToast);
 
-  const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState(() => new Date().toISOString().split("T")[0]!);
 
-  // Fetch canvases on mount
+  // Fetch canvases via React Query and initialize the active canvas
+  const { data: canvases = [] } = useCanvases();
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const list = await api.fetchCanvases();
-        if (!cancelled) initActiveCanvas(list);
-      } catch {
-        if (!cancelled) {
-          await new Promise((r) => setTimeout(r, 500));
-          try {
-            const list = await api.fetchCanvases();
-            if (!cancelled) initActiveCanvas(list);
-          } catch {
-            // session likely invalid
-          }
-        }
-      }
+    if (canvases.length > 0) {
+      initActiveCanvas(canvases);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [initActiveCanvas]);
+  }, [canvases, initActiveCanvas]);
 
-  // Fetch sessions when canvas changes
-  useEffect(() => {
-    if (!activeCanvasId) return;
-    let cancelled = false;
-    setLoading(true);
-    api
-      .fetchSessions(activeCanvasId)
-      .then((data) => {
-        if (!cancelled) setSessions(data);
-      })
-      .catch(() => {
-        if (!cancelled) setSessions([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeCanvasId]);
+  // Fetch sessions via React Query
+  const { data: sessions = [], isLoading: loading } = useSessions(activeCanvasId ?? undefined);
+
+  // Canvas mutations
+  const createCanvasMutation = useCreateCanvas();
+  const updateCanvasMutation = useUpdateCanvas();
+  const deleteCanvasMutation = useDeleteCanvas();
+
+  // Session creation mutation
+  const createItemMutation = useCreateItem(activeCanvasId ?? "");
 
   // Canvas picker handlers
   const handleSwitchCanvas = useCallback(
@@ -100,45 +74,40 @@ export default function Sessions() {
 
   const handleCreateCanvas = useCallback(
     async (name: string) => {
-      const canvas = await api.createCanvas({ name });
-      setCanvases([...useCanvasStore.getState().canvases, canvas]);
+      const canvas = await createCanvasMutation.mutateAsync({ name });
       setActiveCanvasId(canvas.id);
     },
-    [setCanvases, setActiveCanvasId],
+    [createCanvasMutation, setActiveCanvasId],
   );
 
   const handleRenameCanvas = useCallback(
     async (canvasId: string, newName: string) => {
-      const updated = await api.updateCanvas(canvasId, { name: newName });
-      setCanvases(
-        useCanvasStore.getState().canvases.map((c) => (c.id === updated.id ? updated : c)),
-      );
+      await updateCanvasMutation.mutateAsync({ id: canvasId, input: { name: newName } });
     },
-    [setCanvases],
+    [updateCanvasMutation],
   );
 
   const handleDeleteCanvas = useCallback(
     async (canvasId: string) => {
-      await api.deleteCanvas(canvasId);
-      const remaining = useCanvasStore.getState().canvases.filter((c) => c.id !== canvasId);
-      setCanvases(remaining);
-      if (activeCanvasId === canvasId && remaining.length > 0) {
-        setActiveCanvasId(remaining[0].id);
+      await deleteCanvasMutation.mutateAsync(canvasId);
+      if (activeCanvasId === canvasId) {
+        const remaining = canvases.filter((c) => c.id !== canvasId);
+        if (remaining.length > 0) {
+          setActiveCanvasId(remaining[0].id);
+        }
       }
     },
-    [setCanvases, setActiveCanvasId, activeCanvasId],
+    [deleteCanvasMutation, activeCanvasId, canvases, setActiveCanvasId],
   );
 
   const handleCreateSession = async () => {
     if (!activeCanvasId || !newTitle.trim()) return;
     try {
-      await api.createItem(activeCanvasId, {
+      await createItemMutation.mutateAsync({
         type: "session",
         title: newTitle.trim(),
         session_date: newDate,
       });
-      const updated = await api.fetchSessions(activeCanvasId);
-      setSessions(updated);
       setNewTitle("");
       setNewDate(new Date().toISOString().split("T")[0]!);
       setShowCreate(false);

@@ -7,7 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CanvasItemSearchResult } from "shared";
-import * as api from "../../../api/client";
+import { useSearchItems } from "../../../hooks/queries";
 import { getContrastText } from "../../../utils/getContrastText";
 
 interface SearchBarProps {
@@ -18,29 +18,26 @@ interface SearchBarProps {
 export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
   const theme = useTheme();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<CanvasItemSearchResult[]>([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Debounced search
+  // Debounce the query
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
     if (!query.trim()) {
-      setResults([]);
+      setDebouncedQuery("");
       setShowDropdown(false);
       return;
     }
 
-    debounceRef.current = setTimeout(async () => {
-      const res = await api.searchItems(query, canvasId);
-      setResults(res);
-      setShowDropdown(true);
-      setSelectedIndex(0);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedQuery(query);
     }, 300);
 
     return () => {
@@ -48,7 +45,18 @@ export default function SearchBar({ canvasId, onNavigate }: SearchBarProps) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query, canvasId]);
+  }, [query]);
+
+  // Use React Query for search
+  const { data: results = [] } = useSearchItems(debouncedQuery, canvasId);
+
+  // Show dropdown when results arrive
+  useEffect(() => {
+    if (debouncedQuery.trim() && results.length > 0) {
+      setShowDropdown(true);
+      setSelectedIndex(0);
+    }
+  }, [results, debouncedQuery]);
 
   // Close dropdown on outside click
   useEffect(() => {
