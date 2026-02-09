@@ -12,8 +12,21 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo, Tag } from "shared";
-import * as api from "../../../api/client";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import {
+  useAddTagToItem,
+  useCreateItem,
+  useCreateNote,
+  useDeleteItem,
+  useDeleteNote,
+  useDeletePhoto,
+  useRemoveTagFromItem,
+  useSelectPhoto,
+  useUpdateItem,
+  useUpdateNote,
+  useUploadPhoto,
+} from "../../../hooks/mutations";
+import { useItem } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import NotesTab from "../../../sharedComponents/NotesTab";
@@ -53,7 +66,10 @@ export default function CanvasItemPanel({
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
   const showToast = useAppStore((s) => s.showToast);
 
-  // Item state
+  // Fetch item via React Query
+  const { data: queryItem, refetch: refetchItem } = useItem(itemId);
+
+  // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState<Note[]>([]);
@@ -70,6 +86,19 @@ export default function CanvasItemPanel({
   // Modal store
   const openModal = useModalStore((s) => s.openModal);
 
+  // Mutation hooks
+  const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
+  const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
+  const createNoteMutation = useCreateNote(itemId);
+  const updateNoteMutation = useUpdateNote(itemId);
+  const deleteNoteMutation = useDeleteNote(itemId);
+  const uploadPhotoMutation = useUploadPhoto(itemId, activeCanvasId ?? "");
+  const deletePhotoMutation = useDeletePhoto(itemId, activeCanvasId ?? "");
+  const selectPhotoMutation = useSelectPhoto(itemId, activeCanvasId ?? "");
+  const createItemMutation = useCreateItem(activeCanvasId ?? "");
+  const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
+  const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
+
   const titleRef = useRef(title);
   titleRef.current = title;
   const summaryRef = useRef(summary);
@@ -84,42 +113,48 @@ export default function CanvasItemPanel({
 
   // Save function for title
   const saveTitleFn = useCallback(async () => {
-    await api.updateItem(itemIdRef.current, {
-      title: titleRef.current,
+    await updateItemMutation.mutateAsync({
+      id: itemIdRef.current,
+      input: { title: titleRef.current },
     });
-    const refreshed = await api.fetchItem(itemIdRef.current);
-    onSaved(refreshed);
-  }, [onSaved]);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) onSaved(refreshed);
+  }, [onSaved, updateItemMutation, refetchItem]);
 
   // Save function for summary
   const saveSummaryFn = useCallback(async () => {
-    await api.updateItem(itemIdRef.current, {
-      summary: summaryRef.current,
+    await updateItemMutation.mutateAsync({
+      id: itemIdRef.current,
+      input: { summary: summaryRef.current },
     });
-    const refreshed = await api.fetchItem(itemIdRef.current);
-    onSaved(refreshed);
-  }, [onSaved]);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) onSaved(refreshed);
+  }, [onSaved, updateItemMutation, refetchItem]);
 
   // Save function for session date
   const saveDateFn = useCallback(async () => {
-    await api.updateItem(itemIdRef.current, {
-      session_date: sessionDateRef.current,
+    await updateItemMutation.mutateAsync({
+      id: itemIdRef.current,
+      input: { session_date: sessionDateRef.current },
     });
-    const refreshed = await api.fetchItem(itemIdRef.current);
-    onSaved(refreshed);
-  }, [onSaved]);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) onSaved(refreshed);
+  }, [onSaved, updateItemMutation, refetchItem]);
 
   // Save function for note content
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
-    await api.updateNote(editingNoteIdRef.current, {
-      content: noteContentRef.current,
+    await updateNoteMutation.mutateAsync({
+      noteId: editingNoteIdRef.current,
+      input: { content: noteContentRef.current },
     });
-    const refreshed = await api.fetchItem(itemIdRef.current);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
-    onSaved(refreshed);
-  }, [onSaved]);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      onSaved(refreshed);
+    }
+  }, [onSaved, updateNoteMutation, refetchItem]);
 
   const {
     status: titleStatus,
@@ -155,32 +190,34 @@ export default function CanvasItemPanel({
     };
   }, [flushTitle, flushSummary, flushDate, flushNote]);
 
+  // Sync local state from React Query data
   useEffect(() => {
     itemIdRef.current = itemId;
-    api.fetchItem(itemId).then((i) => {
-      setItem(i);
-      setTitle(i.title);
-      setSummary(i.summary);
-      setSessionDate(i.session_date ?? "");
-      setNotes(i.notes);
+    if (queryItem) {
+      setItem(queryItem);
+      setTitle(queryItem.title);
+      setSummary(queryItem.summary);
+      setSessionDate(queryItem.session_date ?? "");
+      setNotes(queryItem.notes);
       setEditingNoteId(null);
       setNoteContent("");
-      setPhotos(i.photos);
-    });
-  }, [itemId]);
+      setPhotos(queryItem.photos);
+    }
+  }, [itemId, queryItem]);
 
   async function handleDeleteItem() {
-    await api.deleteItem(itemId);
+    await deleteItemMutation.mutateAsync(itemId);
     onDeleted(itemId);
   }
 
   async function handleFileUpload(file: File) {
-    const photo = await api.uploadPhoto(itemId, file);
-    setPhotos((prev) => [...prev, photo]);
-    const updated = await api.fetchItem(itemId);
-    setItem(updated);
-    setPhotos(updated.photos);
-    onSaved(updated);
+    await uploadPhotoMutation.mutateAsync(file);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+      onSaved(updated);
+    }
   }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -190,19 +227,23 @@ export default function CanvasItemPanel({
   }
 
   async function handlePhotoDelete(photoId: string) {
-    await api.deletePhoto(photoId);
+    await deletePhotoMutation.mutateAsync(photoId);
     setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-    const updated = await api.fetchItem(itemId);
-    setItem(updated);
-    onSaved(updated);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      onSaved(updated);
+    }
   }
 
   async function handlePhotoSelect(photoId: string) {
-    await api.selectPhoto(photoId);
-    const updated = await api.fetchItem(itemId);
-    setItem(updated);
-    setPhotos(updated.photos);
-    onSaved(updated);
+    await selectPhotoMutation.mutateAsync(photoId);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+      onSaved(updated);
+    }
   }
 
   function handleOpenLightbox(index: number) {
@@ -307,11 +348,13 @@ export default function CanvasItemPanel({
   }
 
   async function handleAddNote() {
-    const newNote = await api.createNote(itemId, { content: "" });
-    const refreshed = await api.fetchItem(itemId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
-    onSaved(refreshed);
+    const newNote = await createNoteMutation.mutateAsync({ content: "" });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      onSaved(refreshed);
+    }
     setEditingNoteId(newNote.id);
     setNoteContent("");
   }
@@ -324,11 +367,13 @@ export default function CanvasItemPanel({
 
   async function handleDeleteNote(noteId: string) {
     if (!confirm("Delete this note?")) return;
-    await api.deleteNote(noteId);
-    const refreshed = await api.fetchItem(itemId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
-    onSaved(refreshed);
+    await deleteNoteMutation.mutateAsync(noteId);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      onSaved(refreshed);
+    }
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
       setNoteContent("");
@@ -346,7 +391,7 @@ export default function CanvasItemPanel({
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
-      const newItem = await api.createItem(activeCanvasId, {
+      const newItem = await createItemMutation.mutateAsync({
         type: "person",
         title: mentionTitle,
         canvas_x: item.canvas_x + 220,
@@ -370,11 +415,16 @@ export default function CanvasItemPanel({
   }
 
   async function handleTogglePin(noteId: string, isPinned: boolean) {
-    await api.updateNote(noteId, { is_pinned: isPinned });
-    const refreshed = await api.fetchItem(itemId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
-    onSaved(refreshed);
+    await updateNoteMutation.mutateAsync({
+      noteId,
+      input: { is_pinned: isPinned },
+    });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      onSaved(refreshed);
+    }
   }
 
   function handleTitleChange(value: string) {
@@ -392,7 +442,7 @@ export default function CanvasItemPanel({
   async function handleAddTag(tag: Tag) {
     if (!item) return;
     try {
-      await api.addTagToItem(item.id, tag.id);
+      await addTagMutation.mutateAsync(tag.id);
       const updated = { ...item, tags: [...item.tags, tag] };
       setItem(updated);
       onSaved(updated);
@@ -404,7 +454,7 @@ export default function CanvasItemPanel({
   async function handleRemoveTag(tagId: string) {
     if (!item) return;
     try {
-      await api.removeTagFromItem(item.id, tagId);
+      await removeTagMutation.mutateAsync(tagId);
       const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
       setItem(updated);
       onSaved(updated);

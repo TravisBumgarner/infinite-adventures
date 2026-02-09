@@ -9,7 +9,17 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
-import * as api from "../../api/client";
+import {
+  useCreateItem,
+  useCreateNote,
+  useDeleteNote,
+  useDeletePhoto,
+  useSelectPhoto,
+  useUpdateItem,
+  useUpdateNote,
+  useUploadPhoto,
+} from "../../hooks/mutations";
+import { useItem } from "../../hooks/queries";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
@@ -32,7 +42,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
 
-  // Item state
+  // Fetch item via React Query
+  const { data: queryItem, refetch: refetchItem } = useItem(sessionId);
+
+  // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
   const [sessionDate, setSessionDate] = useState("");
@@ -48,6 +61,16 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
+  // Mutation hooks
+  const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
+  const createNoteMutation = useCreateNote(sessionId);
+  const updateNoteMutation = useUpdateNote(sessionId);
+  const deleteNoteMutation = useDeleteNote(sessionId);
+  const uploadPhotoMutation = useUploadPhoto(sessionId, activeCanvasId ?? "");
+  const deletePhotoMutation = useDeletePhoto(sessionId, activeCanvasId ?? "");
+  const selectPhotoMutation = useSelectPhoto(sessionId, activeCanvasId ?? "");
+  const createItemMutation = useCreateItem(activeCanvasId ?? "");
+
   // Refs for auto-save
   const titleRef = useRef(title);
   titleRef.current = title;
@@ -62,26 +85,33 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
 
   // Save function for title
   const saveTitleFn = useCallback(async () => {
-    await api.updateItem(sessionIdRef.current, { title: titleRef.current });
-  }, []);
+    await updateItemMutation.mutateAsync({
+      id: sessionIdRef.current,
+      input: { title: titleRef.current },
+    });
+  }, [updateItemMutation]);
 
   // Save function for date
   const saveDateFn = useCallback(async () => {
-    await api.updateItem(sessionIdRef.current, {
-      session_date: sessionDateRef.current,
+    await updateItemMutation.mutateAsync({
+      id: sessionIdRef.current,
+      input: { session_date: sessionDateRef.current },
     });
-  }, []);
+  }, [updateItemMutation]);
 
   // Save function for note content
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
-    await api.updateNote(editingNoteIdRef.current, {
-      content: noteContentRef.current,
+    await updateNoteMutation.mutateAsync({
+      noteId: editingNoteIdRef.current,
+      input: { content: noteContentRef.current },
     });
-    const refreshed = await api.fetchItem(sessionIdRef.current);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
-  }, []);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+    }
+  }, [updateNoteMutation, refetchItem]);
 
   const {
     status: titleStatus,
@@ -108,19 +138,19 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     };
   }, [flushTitle, flushDate, flushNote]);
 
-  // Fetch item on mount
+  // Sync local state from React Query data
   useEffect(() => {
     sessionIdRef.current = sessionId;
-    api.fetchItem(sessionId).then((i) => {
-      setItem(i);
-      setTitle(i.title);
-      setSessionDate(i.session_date ?? "");
-      setNotes(i.notes);
-      setPhotos(i.photos);
+    if (queryItem) {
+      setItem(queryItem);
+      setTitle(queryItem.title);
+      setSessionDate(queryItem.session_date ?? "");
+      setNotes(queryItem.notes);
+      setPhotos(queryItem.photos);
       setEditingNoteId(null);
       setNoteContent("");
-    });
-  }, [sessionId]);
+    }
+  }, [sessionId, queryItem]);
 
   // Drag handling for resizable divider
   const handleMouseDown = useCallback(() => {
@@ -179,10 +209,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
 
   // Note handlers
   async function handleAddNote() {
-    const newNote = await api.createNote(sessionId, { content: "" });
-    const refreshed = await api.fetchItem(sessionId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
+    const newNote = await createNoteMutation.mutateAsync({ content: "" });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+    }
     setEditingNoteId(newNote.id);
     setNoteContent("");
   }
@@ -195,10 +227,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
 
   async function handleDeleteNote(noteId: string) {
     if (!confirm("Delete this note?")) return;
-    await api.deleteNote(noteId);
-    const refreshed = await api.fetchItem(sessionId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
+    await deleteNoteMutation.mutateAsync(noteId);
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+    }
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
       setNoteContent("");
@@ -206,10 +240,15 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   async function handleTogglePin(noteId: string, isPinned: boolean) {
-    await api.updateNote(noteId, { is_pinned: isPinned });
-    const refreshed = await api.fetchItem(sessionId);
-    setItem(refreshed);
-    setNotes(refreshed.notes);
+    await updateNoteMutation.mutateAsync({
+      noteId,
+      input: { is_pinned: isPinned },
+    });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+    }
   }
 
   function handleBackToNoteList() {
@@ -222,25 +261,30 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const photo = await api.uploadPhoto(sessionId, file);
-    setPhotos((prev) => [...prev, photo]);
-    const updated = await api.fetchItem(sessionId);
-    setItem(updated);
-    setPhotos(updated.photos);
+    await uploadPhotoMutation.mutateAsync(file);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+    }
   }
 
   async function handlePhotoDelete(photoId: string) {
-    await api.deletePhoto(photoId);
+    await deletePhotoMutation.mutateAsync(photoId);
     setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-    const updated = await api.fetchItem(sessionId);
-    setItem(updated);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+    }
   }
 
   async function handlePhotoSelect(photoId: string) {
-    await api.selectPhoto(photoId);
-    const updated = await api.fetchItem(sessionId);
-    setItem(updated);
-    setPhotos(updated.photos);
+    await selectPhotoMutation.mutateAsync(photoId);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+    }
   }
 
   function handleOpenLightbox(index: number) {
@@ -257,7 +301,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
-      const newItem = await api.createItem(activeCanvasId, {
+      const newItem = await createItemMutation.mutateAsync({
         type: "person",
         title: mentionTitle,
         canvas_x: item.canvas_x + 220,
