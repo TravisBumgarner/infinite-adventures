@@ -235,7 +235,7 @@ tasks:
       - isPending used on delete/create buttons
     depends_on: [10]
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 12
     github_issue: 169
