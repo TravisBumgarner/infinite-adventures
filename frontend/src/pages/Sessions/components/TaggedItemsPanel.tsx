@@ -8,11 +8,13 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, TaggedItem } from "shared";
-import * as api from "../../../api/client";
+import type { CanvasItem, Note } from "shared";
+import { fetchItem } from "../../../api/client";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
+import { queryKeys, useTaggedItems } from "../../../hooks/queries";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -25,48 +27,46 @@ interface TaggedItemsPanelProps {
 export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: TaggedItemsPanelProps) {
   const theme = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [taggedItems, setTaggedItems] = useState<TaggedItem[]>([]);
   const [expandedTaggedId, setExpandedTaggedId] = useState<string | null>(null);
   const [expandedItem, setExpandedItem] = useState<CanvasItem | null>(null);
   const [loadingExpand, setLoadingExpand] = useState(false);
 
-  // Fetch tagged items
-  useEffect(() => {
-    api
-      .fetchTaggedItems(sessionId)
-      .then(setTaggedItems)
-      .catch(() => setTaggedItems([]));
-  }, [sessionId]);
+  // Fetch tagged items via React Query
+  const { data: taggedItems = [] } = useTaggedItems(sessionId);
 
   // Re-fetch tagged items when notes change (mentions may have changed)
   const prevNotesRef = useRef(notes);
   useEffect(() => {
     if (prevNotesRef.current !== notes && prevNotesRef.current.length > 0) {
-      api
-        .fetchTaggedItems(sessionId)
-        .then(setTaggedItems)
-        .catch(() => setTaggedItems([]));
+      queryClient.invalidateQueries({ queryKey: queryKeys.taggedItems.list(sessionId) });
     }
     prevNotesRef.current = notes;
-  }, [notes, sessionId]);
+  }, [notes, sessionId, queryClient]);
 
-  async function handleTaggedItemToggle(itemId: string) {
-    if (expandedTaggedId === itemId) {
-      setExpandedTaggedId(null);
+  const handleTaggedItemToggle = useCallback(
+    async (itemId: string) => {
+      if (expandedTaggedId === itemId) {
+        setExpandedTaggedId(null);
+        setExpandedItem(null);
+        return;
+      }
+      setExpandedTaggedId(itemId);
       setExpandedItem(null);
-      return;
-    }
-    setExpandedTaggedId(itemId);
-    setExpandedItem(null);
-    setLoadingExpand(true);
-    try {
-      const full = await api.fetchItem(itemId);
-      setExpandedItem(full);
-    } finally {
-      setLoadingExpand(false);
-    }
-  }
+      setLoadingExpand(true);
+      try {
+        const full = await queryClient.fetchQuery({
+          queryKey: queryKeys.items.detail(itemId),
+          queryFn: () => fetchItem(itemId),
+        });
+        setExpandedItem(full);
+      } finally {
+        setLoadingExpand(false);
+      }
+    },
+    [expandedTaggedId, queryClient],
+  );
 
   function handleViewOnCanvas(itemId: string) {
     navigate("/canvas");

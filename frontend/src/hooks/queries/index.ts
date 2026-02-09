@@ -4,6 +4,7 @@ import {
   fetchItem,
   fetchItems,
   fetchSessions,
+  fetchTaggedItems,
   fetchTags,
   searchItems,
 } from "../../api/client.js";
@@ -56,5 +57,13 @@ export function useTags(canvasId: string | undefined) {
     queryKey: queryKeys.tags.list(canvasId!),
     queryFn: () => fetchTags(canvasId!),
     enabled: !!canvasId,
+  });
+}
+
+export function useTaggedItems(itemId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.taggedItems.list(itemId!),
+    queryFn: () => fetchTaggedItems(itemId!),
+    enabled: !!itemId,
   });
 }

@@ -14,4 +14,7 @@ export const queryKeys = {
   tags: {
     list: (canvasId: string) => ["canvases", canvasId, "tags"] as const,
   },
+  taggedItems: {
+    list: (itemId: string) => ["items", itemId, "taggedItems"] as const,
+  },
 };

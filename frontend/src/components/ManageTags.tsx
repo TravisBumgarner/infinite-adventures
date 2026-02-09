@@ -12,7 +12,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Tag } from "shared";
-import * as api from "../api/client";
+import { useCreateTag, useDeleteTag, useUpdateTag } from "../hooks/mutations";
 import { TagPill } from "../sharedComponents/TagPill";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
@@ -60,7 +60,11 @@ export function ManageTags() {
   const [form, setForm] = useState<TagFormState>(INITIAL_FORM);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [iconSearch, setIconSearch] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+
+  // Mutation hooks
+  const createTagMutation = useCreateTag(activeCanvasId ?? "");
+  const updateTagMutation = useUpdateTag(activeCanvasId ?? "");
+  const deleteTagMutation = useDeleteTag(activeCanvasId ?? "");
 
   const filteredIcons = useMemo(() => searchIcons(iconSearch), [iconSearch]);
 
@@ -83,20 +87,24 @@ export function ManageTags() {
     setEditingTag(null);
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (!activeCanvasId || !form.name.trim() || submitting) return;
+  const isSaving = createTagMutation.isPending || updateTagMutation.isPending;
 
-    setSubmitting(true);
+  const handleSave = useCallback(async () => {
+    if (!activeCanvasId || !form.name.trim() || isSaving) return;
+
     try {
       if (editingTag) {
-        const updated = await api.updateTag(activeCanvasId, editingTag.id, {
-          name: form.name.trim(),
-          icon: form.icon,
-          color: form.color,
+        const updated = await updateTagMutation.mutateAsync({
+          tagId: editingTag.id,
+          input: {
+            name: form.name.trim(),
+            icon: form.icon,
+            color: form.color,
+          },
         });
         updateTagInStore(updated);
       } else {
-        const created = await api.createTag(activeCanvasId, {
+        const created = await createTagMutation.mutateAsync({
           name: form.name.trim(),
           icon: form.icon,
           color: form.color,
@@ -106,32 +114,32 @@ export function ManageTags() {
       handleClose();
     } catch {
       showToast(editingTag ? "Failed to update tag" : "Failed to create tag");
-    } finally {
-      setSubmitting(false);
     }
   }, [
     activeCanvasId,
     form,
     editingTag,
-    submitting,
+    isSaving,
     addTag,
     updateTagInStore,
     handleClose,
     showToast,
+    createTagMutation,
+    updateTagMutation,
   ]);
 
   const handleDelete = useCallback(
     async (tagId: string) => {
       if (!activeCanvasId) return;
       try {
-        await api.deleteTag(activeCanvasId, tagId);
+        await deleteTagMutation.mutateAsync(tagId);
         removeTag(tagId);
         setDeleteConfirmId(null);
       } catch {
         showToast("Failed to delete tag");
       }
     },
-    [activeCanvasId, removeTag, showToast],
+    [activeCanvasId, removeTag, showToast, deleteTagMutation],
   );
 
   return (
@@ -323,12 +331,8 @@ export function ManageTags() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={!form.name.trim() || submitting}
-          >
-            {submitting ? "Saving..." : editingTag ? "Save" : "Create"}
+          <Button onClick={handleSave} variant="contained" disabled={!form.name.trim() || isSaving}>
+            {isSaving ? "Saving..." : editingTag ? "Save" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
