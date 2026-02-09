@@ -1,7 +1,10 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { userOwnsResource } from "../../services/authorizationService.js";
 import { getItem, getItemContentId } from "../../services/canvasItemService.js";
 import { uploadPhoto } from "../../services/photoService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
+import { requireUserId } from "../shared/auth.js";
+import { sendBadRequest, sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { ItemIdParams, parseRoute } from "../shared/validation.js";
 
 export interface UploadValidationContext {
@@ -18,8 +21,14 @@ export function validate(
 }
 
 export async function handler(req: Request<{ itemId: string }>, res: Response): Promise<void> {
+  const auth = requireUserId(req as AuthenticatedRequest, res);
+  if (!auth) return;
   const context = validate(req, res);
   if (!context) return;
+  if (!(await userOwnsResource(auth.userId, "item", context.itemId))) {
+    sendForbidden(res);
+    return;
+  }
 
   // Get the item to find its content_id and type
   const item = await getItem(context.itemId);
