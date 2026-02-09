@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { addTagToItem } from "../../services/tagService.js";
-import { sendBadRequest, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { sendSuccess } from "../shared/responses.js";
+import { ItemTagParams, parseRoute } from "../shared/validation.js";
 
 export interface AssignTagValidationContext {
   itemId: string;
@@ -12,12 +12,9 @@ export function validate(
   req: Request<{ itemId: string; tagId: string }>,
   res: Response,
 ): AssignTagValidationContext | null {
-  const { itemId, tagId } = req.params;
-  if (!isValidUUID(itemId) || !isValidUUID(tagId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  return { itemId, tagId };
+  const parsed = parseRoute(req, res, { params: ItemTagParams });
+  if (!parsed) return null;
+  return { itemId: parsed.params.itemId, tagId: parsed.params.tagId };
 }
 
 export async function handler(

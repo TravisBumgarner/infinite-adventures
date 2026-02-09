@@ -1,16 +1,13 @@
 import type { Request, Response } from "express";
 import { getItem } from "../../services/canvasItemService.js";
 import { listNotes } from "../../services/noteService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { sendNotFound, sendSuccess } from "../shared/responses.js";
+import { ItemIdParams, parseRoute } from "../shared/validation.js";
 
 export function validate(req: Request<{ itemId: string }>, res: Response): string | null {
-  const { itemId } = req.params;
-  if (!isValidUUID(itemId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  return itemId;
+  const parsed = parseRoute(req, res, { params: ItemIdParams });
+  if (!parsed) return null;
+  return parsed.params.itemId;
 }
 
 export async function handler(req: Request<{ itemId: string }>, res: Response): Promise<void> {

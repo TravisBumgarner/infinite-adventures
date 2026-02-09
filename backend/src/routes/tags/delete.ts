@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { deleteTag } from "../../services/tagService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { sendNotFound, sendSuccess } from "../shared/responses.js";
+import { parseRoute, TagIdParams } from "../shared/validation.js";
 
 export interface DeleteTagValidationContext {
   id: string;
@@ -11,12 +11,9 @@ export function validate(
   req: Request<{ tagId: string }>,
   res: Response,
 ): DeleteTagValidationContext | null {
-  const { tagId } = req.params;
-  if (!isValidUUID(tagId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  return { id: tagId };
+  const parsed = parseRoute(req, res, { params: TagIdParams });
+  if (!parsed) return null;
+  return { id: parsed.params.tagId };
 }
 
 export async function handler(req: Request<{ tagId: string }>, res: Response): Promise<void> {

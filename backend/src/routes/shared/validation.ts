@@ -2,12 +2,6 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { sendBadRequest } from "./responses.js";
 
-// Legacy — will be removed when all routes migrate to parseRoute (tasks 2 & 3)
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-export function isValidUUID(id: string): boolean {
-  return UUID_REGEX.test(id);
-}
-
 // --- Param Schemas ---
 
 const uuid = z.string().uuid();
@@ -22,6 +16,10 @@ export const LinkParams = z.object({
   sourceItemId: uuid,
   targetItemId: uuid,
 });
+
+// --- Body Schemas ---
+
+export const CanvasNameBody = z.object({ name: z.string().trim().min(1) });
 
 // --- parseRoute ---
 

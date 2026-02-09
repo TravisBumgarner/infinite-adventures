@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
 import type { UpdateTagInput } from "shared";
+import { UpdateTagInputSchema } from "shared";
 import { updateTag } from "../../services/tagService.js";
 import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { parseRoute, TagIdParams } from "../shared/validation.js";
 
 export interface UpdateTagValidationContext {
   id: string;
@@ -13,17 +14,13 @@ export function validate(
   req: Request<{ tagId: string }>,
   res: Response,
 ): UpdateTagValidationContext | null {
-  const { tagId } = req.params;
-  if (!isValidUUID(tagId)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
-  const { name, icon, color } = req.body;
-  if (!name && !icon && !color) {
+  const parsed = parseRoute(req, res, { params: TagIdParams, body: UpdateTagInputSchema });
+  if (!parsed) return null;
+  if (!parsed.body.name && !parsed.body.icon && !parsed.body.color) {
     sendBadRequest(res);
     return null;
   }
-  return { id: tagId, input: { name, icon, color } };
+  return { id: parsed.params.tagId, input: parsed.body };
 }
 
 export async function handler(req: Request<{ tagId: string }>, res: Response): Promise<void> {
