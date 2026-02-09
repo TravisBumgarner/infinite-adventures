@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { updateCanvas } from "../../services/canvasService.js";
 import { requireUserId } from "../shared/auth.js";
 import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
-import { isValidUUID } from "../shared/validation.js";
+import { IdParams, parseRoute } from "../shared/validation.js";
 
 export interface UpdateValidationContext {
   id: string;
@@ -17,17 +17,14 @@ export function validate(
 ): UpdateValidationContext | null {
   const auth = requireUserId(req as AuthenticatedRequest, res);
   if (!auth) return null;
-  const { id } = req.params;
-  if (!isValidUUID(id)) {
-    sendBadRequest(res, "INVALID_UUID");
-    return null;
-  }
+  const parsed = parseRoute(req, res, { params: IdParams });
+  if (!parsed) return null;
   const { name } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     sendBadRequest(res);
     return null;
   }
-  return { id, name: name.trim(), userId: auth.userId };
+  return { id: parsed.params.id, name: name.trim(), userId: auth.userId };
 }
 
 export async function processRequest(
