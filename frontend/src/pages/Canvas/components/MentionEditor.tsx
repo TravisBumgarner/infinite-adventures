@@ -1,9 +1,18 @@
+import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Link from "@tiptap/extension-link";
 import Mention from "@tiptap/extension-mention";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
@@ -245,106 +254,200 @@ const SuggestionController = forwardRef<
 SuggestionController.displayName = "SuggestionController";
 
 function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkLabel, setLinkLabel] = useState("");
+
   if (!editor) return null;
 
+  function openLinkDialog() {
+    if (!editor) return;
+    if (editor.isActive("link")) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    const { from, to } = editor.state.selection;
+    const selectedText = from !== to ? editor.state.doc.textBetween(from, to) : "";
+    setLinkLabel(selectedText);
+    setLinkUrl("");
+    setLinkDialogOpen(true);
+  }
+
+  function handleLinkSave() {
+    if (!editor || !linkUrl.trim()) return;
+    const href = linkUrl.trim();
+    const { from, to } = editor.state.selection;
+    if (from !== to) {
+      editor.chain().focus().setLink({ href }).run();
+    } else {
+      const label = linkLabel.trim() || href;
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "text",
+          text: label,
+          marks: [{ type: "link", attrs: { href } }],
+        })
+        .run();
+    }
+    setLinkDialogOpen(false);
+  }
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        gap: 0.25,
-        p: 0.5,
-        bgcolor: "var(--color-base)",
-        border: "1px solid var(--color-surface1)",
-        borderBottom: "none",
-      }}
-    >
-      <IconButton
-        size="small"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.chain().focus().toggleBold().run();
-        }}
-        title="Bold"
+    <>
+      <Box
         sx={{
-          borderRadius: 1,
-          fontSize: 13,
-          fontWeight: 700,
-          color: editor.isActive("bold") ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: editor.isActive("bold") ? "var(--color-surface1)" : "transparent",
+          display: "flex",
+          gap: 0.25,
+          p: 0.5,
+          bgcolor: "var(--color-base)",
+          border: "1px solid var(--color-surface1)",
+          borderBottom: "none",
         }}
       >
-        B
-      </IconButton>
-      <IconButton
-        size="small"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.chain().focus().toggleItalic().run();
-        }}
-        title="Italic"
-        sx={{
-          borderRadius: 1,
-          fontSize: 13,
-          fontWeight: 700,
-          fontStyle: "italic",
-          color: editor.isActive("italic") ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: editor.isActive("italic") ? "var(--color-surface1)" : "transparent",
-        }}
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editor.chain().focus().toggleBold().run();
+          }}
+          title="Bold"
+          sx={{
+            borderRadius: 1,
+            fontSize: 13,
+            fontWeight: 700,
+            color: editor.isActive("bold") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("bold") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          B
+        </IconButton>
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editor.chain().focus().toggleItalic().run();
+          }}
+          title="Italic"
+          sx={{
+            borderRadius: 1,
+            fontSize: 13,
+            fontWeight: 700,
+            fontStyle: "italic",
+            color: editor.isActive("italic") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("italic") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          I
+        </IconButton>
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editor.chain().focus().toggleBulletList().run();
+          }}
+          title="Bullet List"
+          sx={{
+            borderRadius: 1,
+            fontSize: 13,
+            fontWeight: 700,
+            color: editor.isActive("bulletList") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("bulletList") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          •
+        </IconButton>
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editor.chain().focus().toggleOrderedList().run();
+          }}
+          title="Ordered List"
+          sx={{
+            borderRadius: 1,
+            fontSize: 13,
+            fontWeight: 700,
+            color: editor.isActive("orderedList") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("orderedList") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          1.
+        </IconButton>
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            editor.chain().focus().toggleTaskList().run();
+          }}
+          title="Task List"
+          sx={{
+            borderRadius: 1,
+            fontSize: 17,
+            fontWeight: 700,
+            color: editor.isActive("taskList") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("taskList") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          ☑
+        </IconButton>
+        <IconButton
+          size="small"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            openLinkDialog();
+          }}
+          title={editor.isActive("link") ? "Remove Link" : "Add Link"}
+          sx={{
+            borderRadius: 1,
+            color: editor.isActive("link") ? "var(--color-text)" : "var(--color-subtext0)",
+            bgcolor: editor.isActive("link") ? "var(--color-surface1)" : "transparent",
+          }}
+        >
+          {editor.isActive("link") ? (
+            <LinkOffIcon sx={{ fontSize: 16 }} />
+          ) : (
+            <LinkIcon sx={{ fontSize: 16 }} />
+          )}
+        </IconButton>
+      </Box>
+      <Dialog
+        open={linkDialogOpen}
+        onClose={() => setLinkDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
       >
-        I
-      </IconButton>
-      <IconButton
-        size="small"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.chain().focus().toggleBulletList().run();
-        }}
-        title="Bullet List"
-        sx={{
-          borderRadius: 1,
-          fontSize: 13,
-          fontWeight: 700,
-          color: editor.isActive("bulletList") ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: editor.isActive("bulletList") ? "var(--color-surface1)" : "transparent",
-        }}
-      >
-        •
-      </IconButton>
-      <IconButton
-        size="small"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.chain().focus().toggleOrderedList().run();
-        }}
-        title="Ordered List"
-        sx={{
-          borderRadius: 1,
-          fontSize: 13,
-          fontWeight: 700,
-          color: editor.isActive("orderedList") ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: editor.isActive("orderedList") ? "var(--color-surface1)" : "transparent",
-        }}
-      >
-        1.
-      </IconButton>
-      <IconButton
-        size="small"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.chain().focus().toggleTaskList().run();
-        }}
-        title="Task List"
-        sx={{
-          borderRadius: 1,
-          fontSize: 13,
-          fontWeight: 700,
-          color: editor.isActive("taskList") ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: editor.isActive("taskList") ? "var(--color-surface1)" : "transparent",
-        }}
-      >
-        ☑
-      </IconButton>
-    </Box>
+        <DialogTitle>Add Link</DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}
+        >
+          <TextField
+            label="URL"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            size="small"
+            fullWidth
+            autoFocus
+            placeholder="https://..."
+          />
+          <TextField
+            label="Label"
+            value={linkLabel}
+            onChange={(e) => setLinkLabel(e.target.value)}
+            size="small"
+            fullWidth
+            placeholder="Display text (optional)"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLinkDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleLinkSave} variant="contained" disabled={!linkUrl.trim()}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 
@@ -378,9 +481,15 @@ export default function MentionEditor({
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
+        link: false,
       }),
       TaskList,
       TaskItem.configure({ nested: true }),
+      Link.configure({
+        autolink: true,
+        openOnClick: false,
+        linkOnPaste: true,
+      }),
       Mention.configure({
         HTMLAttributes: {
           class: "mention",
