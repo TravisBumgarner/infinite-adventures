@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import type { UpdateCanvasItemInput } from "shared";
+import { UpdateCanvasItemInputSchema } from "shared";
 import { updateItem } from "../../services/canvasItemService.js";
 import { sendNotFound, sendSuccess } from "../shared/responses.js";
 import { IdParams, parseRoute } from "../shared/validation.js";
@@ -13,10 +14,9 @@ export function validate(
   req: Request<{ id: string }>,
   res: Response,
 ): UpdateValidationContext | null {
-  const parsed = parseRoute(req, res, { params: IdParams });
+  const parsed = parseRoute(req, res, { params: IdParams, body: UpdateCanvasItemInputSchema });
   if (!parsed) return null;
-  const { title, summary, canvas_x, canvas_y, session_date } = req.body;
-  return { id: parsed.params.id, input: { title, summary, canvas_x, canvas_y, session_date } };
+  return { id: parsed.params.id, input: parsed.body };
 }
 
 export async function handler(req: Request<{ id: string }>, res: Response): Promise<void> {

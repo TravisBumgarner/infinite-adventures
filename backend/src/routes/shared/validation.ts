@@ -23,6 +23,10 @@ export const LinkParams = z.object({
   targetItemId: uuid,
 });
 
+// --- Body Schemas ---
+
+export const CanvasNameBody = z.object({ name: z.string().trim().min(1) });
+
 // --- parseRoute ---
 
 type ParseRouteConfig<P extends z.ZodType, B extends z.ZodType | undefined> = {

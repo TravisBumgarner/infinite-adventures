@@ -3,6 +3,7 @@ import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { createCanvas } from "../../services/canvasService.js";
 import { requireUserId } from "../shared/auth.js";
 import { sendBadRequest, sendSuccess } from "../shared/responses.js";
+import { CanvasNameBody } from "../shared/validation.js";
 
 export interface CreateValidationContext {
   name: string;
@@ -12,12 +13,12 @@ export interface CreateValidationContext {
 export function validate(req: Request, res: Response): CreateValidationContext | null {
   const auth = requireUserId(req as AuthenticatedRequest, res);
   if (!auth) return null;
-  const { name } = req.body;
-  if (!name || typeof name !== "string" || !name.trim()) {
+  const bodyResult = CanvasNameBody.safeParse(req.body);
+  if (!bodyResult.success) {
     sendBadRequest(res);
     return null;
   }
-  return { name: name.trim(), userId: auth.userId };
+  return { name: bodyResult.data.name, userId: auth.userId };
 }
 
 export async function processRequest(

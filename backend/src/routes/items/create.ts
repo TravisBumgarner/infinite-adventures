@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import type { CreateCanvasItemInput } from "shared";
+import { CreateCanvasItemInputSchema } from "shared";
 import { createItem, ValidationError } from "../../services/canvasItemService.js";
 import { sendBadRequest, sendSuccess } from "../shared/responses.js";
 import { CanvasIdParams, parseRoute } from "../shared/validation.js";
@@ -10,18 +11,12 @@ export interface CreateValidationContext {
 }
 
 export function validate(req: Request, res: Response): CreateValidationContext | null {
-  const parsed = parseRoute(req, res, { params: CanvasIdParams });
+  const parsed = parseRoute(req, res, {
+    params: CanvasIdParams,
+    body: CreateCanvasItemInputSchema,
+  });
   if (!parsed) return null;
-  const { type, title, canvas_x, canvas_y } = req.body;
-  if (!title) {
-    sendBadRequest(res);
-    return null;
-  }
-  if (!type) {
-    sendBadRequest(res);
-    return null;
-  }
-  return { input: { type, title, canvas_x, canvas_y }, canvasId: parsed.params.canvasId };
+  return { input: parsed.body, canvasId: parsed.params.canvasId };
 }
 
 export async function handler(req: Request, res: Response): Promise<void> {
