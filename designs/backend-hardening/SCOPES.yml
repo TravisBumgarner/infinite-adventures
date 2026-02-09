@@ -138,7 +138,7 @@ tasks:
       - Existing tests updated to provide userId context
     depends_on: [4]
     effort: 3
-    status: implementing
+    status: completed
 
   # ── Milestone 3: React Query Migration ──
 
