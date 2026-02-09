@@ -1,8 +1,11 @@
 import type { Request, Response } from "express";
 import type { CreateCanvasItemInput } from "shared";
 import { CreateCanvasItemInputSchema } from "shared";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { userOwnsCanvas } from "../../services/authorizationService.js";
 import { createItem, ValidationError } from "../../services/canvasItemService.js";
-import { sendBadRequest, sendSuccess } from "../shared/responses.js";
+import { requireUserId } from "../shared/auth.js";
+import { sendBadRequest, sendForbidden, sendSuccess } from "../shared/responses.js";
 import { CanvasIdParams, parseRoute } from "../shared/validation.js";
 
 export interface CreateValidationContext {
@@ -20,8 +23,14 @@ export function validate(req: Request, res: Response): CreateValidationContext |
 }
 
 export async function handler(req: Request, res: Response): Promise<void> {
+  const auth = requireUserId(req as AuthenticatedRequest, res);
+  if (!auth) return;
   const context = validate(req, res);
   if (!context) return;
+  if (!(await userOwnsCanvas(auth.userId, context.canvasId))) {
+    sendForbidden(res);
+    return;
+  }
   try {
     const item = await createItem(context.input, context.canvasId);
     sendSuccess(res, item, 201);
