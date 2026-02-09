@@ -103,7 +103,7 @@ tasks:
       - Tests cover each resource type including not-found and unauthorized cases
     depends_on: []
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 5
     github_issue: 162
