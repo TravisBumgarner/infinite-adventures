@@ -121,7 +121,7 @@ tasks:
       - Existing tests updated to pass userId where needed
     depends_on: [4]
     effort: 2
-    status: scoped
+    status: implementing
 
   - id: 6
     github_issue: 163

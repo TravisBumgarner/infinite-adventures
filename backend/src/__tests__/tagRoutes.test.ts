@@ -12,7 +12,7 @@ import {
   listItems,
 } from "../services/canvasItemService.js";
 import { createTag } from "../services/tagService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 function createMockRes() {
   const res = {
@@ -59,6 +59,7 @@ describe("tag routes", () => {
       const req = createMockReq({
         body: { name: "Important", icon: "Star", color: "#f9e2af" },
         params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await createHandler(req, res);
@@ -75,7 +76,10 @@ describe("tag routes", () => {
       await createTag({ name: "Tag1", icon: "Star", color: "#f9e2af" }, DEFAULT_CANVAS_ID);
       await createTag({ name: "Tag2", icon: "Flag", color: "#f38ba8" }, DEFAULT_CANVAS_ID);
 
-      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
+      const req = createMockReq({
+        params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await listHandler(req, res);
 

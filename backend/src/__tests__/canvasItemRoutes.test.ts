@@ -6,7 +6,7 @@ import { handler as listHandler, validate as listValidate } from "../routes/item
 import { handler as searchHandler, validate as searchValidate } from "../routes/items/search.js";
 import { handler as updateHandler, validate as updateValidate } from "../routes/items/update.js";
 import { createItem, DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 function createMockRes() {
   const res = {
@@ -50,7 +50,10 @@ describe("canvas item routes", () => {
       await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
 
-      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
+      const req = createMockReq({
+        params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await listHandler(req, res);
 
@@ -142,6 +145,7 @@ describe("canvas item routes", () => {
       const req = createMockReq({
         body: { type: "person", title: "Gandalf", canvas_x: 10, canvas_y: 20 },
         params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await createHandler(req, res);
@@ -157,6 +161,7 @@ describe("canvas item routes", () => {
       const req = createMockReq({
         body: { type: "dragon", title: "Smaug" },
         params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await createHandler(req, res);
@@ -279,6 +284,7 @@ describe("canvas item routes", () => {
       const req = createMockReq({
         query: { q: "Gandalf" },
         params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await searchHandler(req, res);
@@ -296,6 +302,7 @@ describe("canvas item routes", () => {
       const req = createMockReq({
         query: { q: "dragon" },
         params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await searchHandler(req, res);

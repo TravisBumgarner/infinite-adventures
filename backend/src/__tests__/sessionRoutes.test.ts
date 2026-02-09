@@ -110,7 +110,10 @@ describe("sessions", () => {
         DEFAULT_CANVAS_ID,
       );
 
-      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
+      const req = createMockReq({
+        params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await listHandler(req, res);
 
@@ -122,7 +125,10 @@ describe("sessions", () => {
     });
 
     it("handler returns empty array when no sessions exist", async () => {
-      const req = createMockReq({ params: { canvasId: DEFAULT_CANVAS_ID } });
+      const req = createMockReq({
+        params: { canvasId: DEFAULT_CANVAS_ID },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await listHandler(req, res);
 
