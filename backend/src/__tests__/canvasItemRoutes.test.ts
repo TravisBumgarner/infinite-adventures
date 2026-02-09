@@ -82,7 +82,7 @@ describe("canvas item routes", () => {
 
     it("handler returns item in success envelope", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
-      const req = createMockReq({ params: { id: item.id } });
+      const req = createMockReq({ params: { id: item.id }, user: { userId: TEST_USER_ID } });
       const res = createMockRes();
       await getHandler(req as import("express").Request<{ id: string }>, res);
 
@@ -93,15 +93,15 @@ describe("canvas item routes", () => {
       expect(jsonArg.data.title).toBe("Gandalf");
     });
 
-    it("handler returns 404 with CANVAS_ITEM_NOT_FOUND for missing item", async () => {
-      const req = createMockReq({ params: { id: "550e8400-e29b-41d4-a716-446655440000" } });
+    it("handler returns 403 for non-existent item", async () => {
+      const req = createMockReq({
+        params: { id: "550e8400-e29b-41d4-a716-446655440000" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await getHandler(req as import("express").Request<{ id: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.success).toBe(false);
-      expect(jsonArg.errorCode).toBe("CANVAS_ITEM_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
   });
 
@@ -198,6 +198,7 @@ describe("canvas item routes", () => {
       const req = createMockReq({
         params: { id: item.id },
         body: { title: "Gandalf the Grey" },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await updateHandler(req as import("express").Request<{ id: string }>, res);
@@ -208,17 +209,16 @@ describe("canvas item routes", () => {
       expect(jsonArg.data.title).toBe("Gandalf the Grey");
     });
 
-    it("handler returns 404 with CANVAS_ITEM_NOT_FOUND for missing item", async () => {
+    it("handler returns 403 for non-existent item", async () => {
       const req = createMockReq({
         params: { id: "550e8400-e29b-41d4-a716-446655440000" },
         body: { title: "test" },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await updateHandler(req as import("express").Request<{ id: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("CANVAS_ITEM_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
   });
 
@@ -240,7 +240,10 @@ describe("canvas item routes", () => {
 
     it("handler deletes item and returns success envelope", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
-      const req = createMockReq({ params: { id: item.id } });
+      const req = createMockReq({
+        params: { id: item.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
 
@@ -249,14 +252,15 @@ describe("canvas item routes", () => {
       expect(jsonArg.success).toBe(true);
     });
 
-    it("handler returns 404 with CANVAS_ITEM_NOT_FOUND for missing item", async () => {
-      const req = createMockReq({ params: { id: "550e8400-e29b-41d4-a716-446655440000" } });
+    it("handler returns 403 for non-existent item", async () => {
+      const req = createMockReq({
+        params: { id: "550e8400-e29b-41d4-a716-446655440000" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ id: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("CANVAS_ITEM_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
   });
 

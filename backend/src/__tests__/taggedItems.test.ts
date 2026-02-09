@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { handler as taggedHandler, validate as taggedValidate } from "../routes/items/tagged.js";
 import { createItem, DEFAULT_CANVAS_ID, getTaggedItems } from "../services/canvasItemService.js";
 import { createNote } from "../services/noteService.js";
-import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 function createMockRes() {
   const res = {
@@ -178,7 +178,10 @@ describe("tagged items", () => {
       );
       await createNote(session.id, { content: "Met @Gandalf today." });
 
-      const req = createMockReq({ params: { id: session.id } });
+      const req = createMockReq({
+        params: { id: session.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await taggedHandler(req, res);
 
@@ -195,7 +198,10 @@ describe("tagged items", () => {
         DEFAULT_CANVAS_ID,
       );
 
-      const req = createMockReq({ params: { id: session.id } });
+      const req = createMockReq({
+        params: { id: session.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await taggedHandler(req, res);
 

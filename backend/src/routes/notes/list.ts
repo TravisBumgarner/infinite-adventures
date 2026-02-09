@@ -1,7 +1,10 @@
 import type { Request, Response } from "express";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { userOwnsResource } from "../../services/authorizationService.js";
 import { getItem } from "../../services/canvasItemService.js";
 import { listNotes } from "../../services/noteService.js";
-import { sendNotFound, sendSuccess } from "../shared/responses.js";
+import { requireUserId } from "../shared/auth.js";
+import { sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { ItemIdParams, parseRoute } from "../shared/validation.js";
 
 export function validate(req: Request<{ itemId: string }>, res: Response): string | null {
@@ -11,8 +14,14 @@ export function validate(req: Request<{ itemId: string }>, res: Response): strin
 }
 
 export async function handler(req: Request<{ itemId: string }>, res: Response): Promise<void> {
+  const auth = requireUserId(req as AuthenticatedRequest, res);
+  if (!auth) return;
   const itemId = validate(req, res);
   if (!itemId) return;
+  if (!(await userOwnsResource(auth.userId, "item", itemId))) {
+    sendForbidden(res);
+    return;
+  }
 
   // Verify item exists
   const item = await getItem(itemId);

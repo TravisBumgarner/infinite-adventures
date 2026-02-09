@@ -98,17 +98,16 @@ describe("tag routes", () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it("handler returns 404 for non-existent tag", async () => {
+    it("handler returns 403 for non-existent tag", async () => {
       const req = createMockReq({
         params: { tagId: "550e8400-e29b-41d4-a716-446655440000" },
         body: { name: "New" },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await updateHandler(req as import("express").Request<{ tagId: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
-      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      expect(jsonArg.errorCode).toBe("TAG_NOT_FOUND");
+      expect(res.status).toHaveBeenCalledWith(403);
     });
 
     it("handler updates tag and returns success", async () => {
@@ -119,6 +118,7 @@ describe("tag routes", () => {
       const req = createMockReq({
         params: { tagId: tag.id },
         body: { name: "Critical" },
+        user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
       await updateHandler(req as import("express").Request<{ tagId: string }>, res);
@@ -142,7 +142,10 @@ describe("tag routes", () => {
         { name: "Important", icon: "Star", color: "#f9e2af" },
         DEFAULT_CANVAS_ID,
       );
-      const req = createMockReq({ params: { tagId: tag.id } });
+      const req = createMockReq({
+        params: { tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ tagId: string }>, res);
 
@@ -151,12 +154,15 @@ describe("tag routes", () => {
       expect(jsonArg.success).toBe(true);
     });
 
-    it("handler returns 404 for non-existent tag", async () => {
-      const req = createMockReq({ params: { tagId: "550e8400-e29b-41d4-a716-446655440000" } });
+    it("handler returns 403 for non-existent tag", async () => {
+      const req = createMockReq({
+        params: { tagId: "550e8400-e29b-41d4-a716-446655440000" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await deleteHandler(req as import("express").Request<{ tagId: string }>, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.status).toHaveBeenCalledWith(403);
     });
   });
 
@@ -177,7 +183,10 @@ describe("tag routes", () => {
       );
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
-      const req = createMockReq({ params: { itemId: item.id, tagId: tag.id } });
+      const req = createMockReq({
+        params: { itemId: item.id, tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await assignHandler(req as import("express").Request<{ itemId: string; tagId: string }>, res);
 
@@ -205,14 +214,20 @@ describe("tag routes", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       // First assign, then remove
-      const assignReq = createMockReq({ params: { itemId: item.id, tagId: tag.id } });
+      const assignReq = createMockReq({
+        params: { itemId: item.id, tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const assignRes = createMockRes();
       await assignHandler(
         assignReq as import("express").Request<{ itemId: string; tagId: string }>,
         assignRes,
       );
 
-      const req = createMockReq({ params: { itemId: item.id, tagId: tag.id } });
+      const req = createMockReq({
+        params: { itemId: item.id, tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
       await removeHandler(req as import("express").Request<{ itemId: string; tagId: string }>, res);
 
@@ -231,7 +246,10 @@ describe("tag routes", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       // Assign the tag
-      const assignReq = createMockReq({ params: { itemId: item.id, tagId: tag.id } });
+      const assignReq = createMockReq({
+        params: { itemId: item.id, tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const assignRes = createMockRes();
       await assignHandler(
         assignReq as import("express").Request<{ itemId: string; tagId: string }>,
@@ -253,7 +271,10 @@ describe("tag routes", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       // Assign the tag
-      const assignReq = createMockReq({ params: { itemId: item.id, tagId: tag.id } });
+      const assignReq = createMockReq({
+        params: { itemId: item.id, tagId: tag.id },
+        user: { userId: TEST_USER_ID },
+      });
       const assignRes = createMockRes();
       await assignHandler(
         assignReq as import("express").Request<{ itemId: string; tagId: string }>,

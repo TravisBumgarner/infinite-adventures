@@ -1,8 +1,11 @@
 import type { Request, Response } from "express";
 import type { UpdateTagInput } from "shared";
 import { UpdateTagInputSchema } from "shared";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { userOwnsResource } from "../../services/authorizationService.js";
 import { updateTag } from "../../services/tagService.js";
-import { sendBadRequest, sendNotFound, sendSuccess } from "../shared/responses.js";
+import { requireUserId } from "../shared/auth.js";
+import { sendBadRequest, sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { parseRoute, TagIdParams } from "../shared/validation.js";
 
 export interface UpdateTagValidationContext {
@@ -24,8 +27,14 @@ export function validate(
 }
 
 export async function handler(req: Request<{ tagId: string }>, res: Response): Promise<void> {
+  const auth = requireUserId(req as AuthenticatedRequest, res);
+  if (!auth) return;
   const context = validate(req, res);
   if (!context) return;
+  if (!(await userOwnsResource(auth.userId, "tag", context.id))) {
+    sendForbidden(res);
+    return;
+  }
   const tag = await updateTag(context.id, context.input);
   if (!tag) {
     sendNotFound(res, "TAG_NOT_FOUND");
