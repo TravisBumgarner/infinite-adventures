@@ -9,10 +9,12 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import Typography from "@mui/material/Typography";
+import { useRef } from "react";
 import type { CanvasItem, Note } from "shared";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { statusLabel } from "../utils/statusLabel";
+import LinkTooltip from "./LinkTooltip";
 
 interface NotesTabProps {
   notes: Note[];
@@ -47,6 +49,8 @@ export default function NotesTab({
   onCreateMentionItem,
   getNotePreview,
 }: NotesTabProps) {
+  const notesListRef = useRef<HTMLDivElement>(null);
+
   if (editingNoteId) {
     return (
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
@@ -110,7 +114,8 @@ export default function NotesTab({
       >
         Add Note
       </Button>
-      <Box sx={{ flex: 1, overflowY: "auto" }}>
+      <Box ref={notesListRef} sx={{ flex: 1, overflowY: "auto" }}>
+        <LinkTooltip containerRef={notesListRef} />
         {notes.length === 0 ? (
           <Typography
             variant="body2"

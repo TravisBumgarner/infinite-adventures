@@ -22,6 +22,7 @@ import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CanvasItem, CanvasItemType } from "shared";
+import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -253,10 +254,25 @@ const SuggestionController = forwardRef<
 
 SuggestionController.displayName = "SuggestionController";
 
-function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+export interface FormattingToolbarRef {
+  openLinkDialogWithUrl: (url: string) => void;
+}
+
+const FormattingToolbar = forwardRef<
+  FormattingToolbarRef,
+  { editor: ReturnType<typeof useEditor> }
+>(function FormattingToolbar({ editor }, ref) {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
+
+  useImperativeHandle(ref, () => ({
+    openLinkDialogWithUrl(url: string) {
+      setLinkUrl(url);
+      setLinkLabel("");
+      setLinkDialogOpen(true);
+    },
+  }));
 
   if (!editor) return null;
 
@@ -449,7 +465,7 @@ function FormattingToolbar({ editor }: { editor: ReturnType<typeof useEditor> })
       </Dialog>
     </>
   );
-}
+});
 
 export default function MentionEditor({
   value,
@@ -464,6 +480,8 @@ export default function MentionEditor({
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
   const [suggestionPosition, setSuggestionPosition] = useState<SuggestionPosition | null>(null);
   const suggestionRef = useRef<SuggestionComponentRef>(null);
+  const toolbarRef = useRef<FormattingToolbarRef>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
 
   const handleRender = useCallback(
@@ -487,7 +505,7 @@ export default function MentionEditor({
       TaskItem.configure({ nested: true }),
       Link.configure({
         autolink: true,
-        openOnClick: true,
+        openOnClick: false,
         linkOnPaste: true,
         HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
       }),
@@ -562,12 +580,17 @@ export default function MentionEditor({
     }
   }, [value, editor, itemsCache]);
 
+  const handleEditLink = useCallback((url: string) => {
+    toolbarRef.current?.openLinkDialogWithUrl(url);
+  }, []);
+
   return (
     <Box sx={{ position: "relative", display: "flex", flexDirection: "column", ...containerStyle }}>
-      <FormattingToolbar editor={editor} />
-      <div style={{ ...style, flex: 1 }} className="mention-editor-wrapper">
+      <FormattingToolbar ref={toolbarRef} editor={editor} />
+      <div ref={wrapperRef} style={{ ...style, flex: 1 }} className="mention-editor-wrapper">
         <EditorContent editor={editor} />
       </div>
+      <LinkTooltip containerRef={wrapperRef} onEdit={handleEditLink} />
       <SuggestionController
         ref={suggestionRef}
         onRender={handleRender}

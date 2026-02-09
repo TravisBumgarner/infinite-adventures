@@ -15,6 +15,7 @@ import type { CanvasItem, Note } from "shared";
 import { fetchItem } from "../../../api/client";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { queryKeys, useTaggedItems } from "../../../hooks/queries";
+import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { getContrastText } from "../../../utils/getContrastText";
 
@@ -32,6 +33,7 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
   const [expandedTaggedId, setExpandedTaggedId] = useState<string | null>(null);
   const [expandedItem, setExpandedItem] = useState<CanvasItem | null>(null);
   const [loadingExpand, setLoadingExpand] = useState(false);
+  const taggedListRef = useRef<HTMLDivElement>(null);
 
   // Fetch tagged items via React Query
   const { data: taggedItems = [] } = useTaggedItems(sessionId);
@@ -111,7 +113,8 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", p: 2, pt: 1 }}>
+      <Box ref={taggedListRef} sx={{ flex: 1, overflowY: "auto", p: 2, pt: 1 }}>
+        <LinkTooltip containerRef={taggedListRef} />
         {taggedItems.length === 0 ? (
           <Typography
             variant="body2"
