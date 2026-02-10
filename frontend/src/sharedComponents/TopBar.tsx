@@ -32,7 +32,7 @@ export default function TopBar({ left, center, right }: TopBarProps) {
       }}
     >
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>{left}</Box>
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>{center}</Box>
+      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", gap: 1 }}>{center}</Box>
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>{right}</Box>
     </Box>
   );

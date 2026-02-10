@@ -59,7 +59,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
     }
   };
 
-  // Calculate center position accounting for sidebars
   const leftOffset = leftSidebarOpen ? SIDEBAR_WIDTH : 0;
   const rightOffset = rightSidebarOpen ? SIDEBAR_WIDTH : 0;
 

@@ -50,13 +50,6 @@ const steps: Step[] = [
       "Canvas for the big picture, Sessions for notes, Timeline for chronological order, Gallery for photos.",
   },
   {
-    target: '[data-tour="search-filter"]',
-    placement: "bottom",
-    disableBeacon: true,
-    title: "Search & Filter",
-    content: "Search by name or filter by type and tags to find what you need.",
-  },
-  {
     target: '[data-tour="tool-sidebar"]',
     placement: "right",
     disableBeacon: true,

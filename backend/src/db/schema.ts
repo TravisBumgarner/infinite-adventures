@@ -125,7 +125,7 @@ export const canvasItems = pgTable(
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
     searchVector: tsvector("search_vector").generatedAlwaysAs(
-      sql`to_tsvector('english', coalesce("title", ''))`,
+      sql`to_tsvector('english', coalesce("title", '') || ' ' || coalesce("summary", ''))`,
     ),
   },
   (table) => [

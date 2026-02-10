@@ -8,6 +8,13 @@
       "when": 1770702504586,
       "tag": "0000_optimal_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770753807570,
+      "tag": "0001_lush_ronan",
+      "breakpoints": true
     }
   ]
 }

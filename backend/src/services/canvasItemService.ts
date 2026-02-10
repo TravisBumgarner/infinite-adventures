@@ -388,12 +388,25 @@ export async function searchItems(
 
   const result = await db.execute<CanvasItemSearchResult>(
     sql`SELECT ci.id, ci.type, ci.title,
-          ts_headline('english', ci.title, to_tsquery('english', ${tsquery}),
+          ts_headline('english',
+            coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '') || ' ' || coalesce(notes_agg.all_notes, ''),
+            to_tsquery('english', ${tsquery}),
             'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet
      FROM canvas_items ci
-     WHERE ci.search_vector @@ to_tsquery('english', ${tsquery})
-       AND ci.canvas_id = ${canvasId}
-     ORDER BY ts_rank(ci.search_vector, to_tsquery('english', ${tsquery})) DESC
+     LEFT JOIN (
+       SELECT canvas_item_id, string_agg(content, ' ') as all_notes
+       FROM notes
+       GROUP BY canvas_item_id
+     ) notes_agg ON notes_agg.canvas_item_id = ci.id
+     WHERE ci.canvas_id = ${canvasId}
+       AND (
+         ci.search_vector @@ to_tsquery('english', ${tsquery})
+         OR to_tsvector('english', coalesce(notes_agg.all_notes, '')) @@ to_tsquery('english', ${tsquery})
+       )
+     ORDER BY ts_rank(
+       to_tsvector('english',
+         coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '') || ' ' || coalesce(notes_agg.all_notes, '')),
+       to_tsquery('english', ${tsquery})) DESC
      LIMIT 20`,
   );
 

@@ -51,6 +51,9 @@ interface CanvasState {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
 
+  showSearchBar: boolean;
+  setShowSearchBar: (show: boolean) => void;
+
   showOnboarding: boolean;
   setShowOnboarding: (show: boolean) => void;
 
@@ -116,6 +119,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
+
+  showSearchBar: false,
+  setShowSearchBar: (show) => set({ showSearchBar: show }),
 
   showOnboarding: !localStorage.getItem(ONBOARDING_COMPLETE_KEY),
   setShowOnboarding: (show) => {
