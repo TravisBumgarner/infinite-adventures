@@ -46,7 +46,7 @@ tasks:
       - npx tsc --noEmit passes for shared package
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 2
     milestone: 1
@@ -82,7 +82,7 @@ tasks:
       - Note sorting still puts is_important notes first
     depends_on: [1]
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 3
     milestone: 1
@@ -121,7 +121,7 @@ tasks:
       - Tests cover gallery service
     depends_on: [1]
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 4
     milestone: 2
@@ -154,7 +154,7 @@ tasks:
       - All frontend tests pass
     depends_on: [2]
     effort: 3
-    status: scoped
+    status: testing
 
   - id: 5
     milestone: 2
