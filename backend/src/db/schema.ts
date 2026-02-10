@@ -95,7 +95,7 @@ export const notes = pgTable(
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
-    is_pinned: boolean("is_pinned").notNull().default(false),
+    is_important: boolean("is_important").notNull().default(false),
     created_at: text("created_at").notNull().default(sql`now()::text`),
     updated_at: text("updated_at").notNull().default(sql`now()::text`),
   },
@@ -151,7 +151,8 @@ export const photos = pgTable(
     filename: text("filename").notNull(),
     original_name: text("original_name").notNull(),
     mime_type: text("mime_type").notNull(),
-    is_selected: boolean("is_selected").notNull().default(false),
+    is_main_photo: boolean("is_main_photo").notNull().default(false),
+    is_important: boolean("is_important").notNull().default(false),
     aspect_ratio: doublePrecision("aspect_ratio"),
     blurhash: text("blurhash"),
     created_at: text("created_at").notNull().default(sql`now()::text`),

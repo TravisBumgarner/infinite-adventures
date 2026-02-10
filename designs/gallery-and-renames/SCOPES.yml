@@ -1,0 +1,193 @@
+project: Gallery Page + Schema Renames
+repo: TravisBumgarner/infinite-adventures
+design_file: n/a
+scoping_date: 2026-02-09
+
+milestones:
+  - number: 1
+    title: "1. Schema reset + backend renames + gallery endpoint"
+    description: Nuke migrations, rename is_selected/is_pinned, add is_important to photos, update all backend services/routes/tests, add gallery endpoint.
+    branch:
+      working: gallery-backend
+      base: main
+
+  - number: 2
+    title: "2. Frontend renames + star UI + Gallery page"
+    description: Propagate all renames through frontend, replace pin with star, create Gallery page, add is_important filtering.
+    branch:
+      working: gallery-frontend
+      base: gallery-backend
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Reset migrations, rename schema columns, update shared types
+    description: |
+      Delete all existing migration files and snapshots in `backend/drizzle/`. Update the DB
+      schema and shared types for the renames and new column.
+
+      **`backend/src/db/schema.ts`:**
+      - `photos.is_selected` → `photos.is_main_photo` (boolean, default false)
+      - `notes.is_pinned` → `notes.is_important` (boolean, default false)
+      - Add `photos.is_important` (boolean, default false)
+
+      **`shared/src/index.ts`:**
+      - `PhotoSchema`: `is_selected` → `is_main_photo`, add `is_important: z.boolean()`
+      - `NoteSchema`: `is_pinned` → `is_important`
+      - `UpdateNoteInputSchema`: `is_pinned` → `is_important`
+
+      **Regenerate migration** with `npx drizzle-kit generate` to create a single fresh migration
+      from the updated schema.
+    acceptance_criteria:
+      - All old migration files and snapshots deleted
+      - schema.ts uses is_main_photo, is_important (notes), is_important (photos)
+      - Shared types match schema renames
+      - Single fresh migration generated
+      - npx tsc --noEmit passes for shared package
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    milestone: 1
+    title: Update all backend services, routes, and tests for renames + is_important
+    description: |
+      Propagate is_selected → is_main_photo and is_pinned → is_important through all backend code.
+
+      **Services:**
+      - `photoService.ts`: `is_selected` → `is_main_photo` in all queries, return objects, and
+        the `selectPhoto` function (which can keep its name — it selects the main photo)
+      - `noteService.ts`: `is_pinned` → `is_important` in orderBy, mappings, createNote,
+        updateNote. Retain sort behavior: `desc(notes.is_important)` keeps starred notes first.
+      - `canvasItemService.ts`: `eq(photos.is_selected, true)` → `eq(photos.is_main_photo, true)`
+        in listItems, listSessions, getTaggedItems, getItem photo mapping
+      - `timelineService.ts`: include `is_important` in TimelineEntry for both notes and photos
+
+      **Shared types:**
+      - `TimelineEntrySchema`: add `is_important: z.boolean()`
+
+      **Routes:**
+      - `photos/upload.ts`: `is_selected` → `is_main_photo` in response
+      - `photos/select.ts`: `is_selected` → `is_main_photo` in response
+      - `notes/update.ts`: `is_pinned` → `is_important` in validation check
+
+      **Tests:**
+      - `photoService.test.ts`: update all is_selected → is_main_photo assertions
+      - `photoRoutes.test.ts`: update is_selected → is_main_photo in handler test
+      - `timelineService.test.ts`: update if needed for is_important
+    acceptance_criteria:
+      - Zero occurrences of is_selected or is_pinned in backend code (except migrations)
+      - All existing tests pass with updated field names
+      - Timeline entries include is_important field
+      - Note sorting still puts is_important notes first
+    depends_on: [1]
+    effort: 3
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Add gallery backend endpoint
+    description: |
+      New endpoint returning all photos for a canvas with parent item info and importance flags.
+
+      **Shared types** (`shared/src/index.ts`):
+      - `GalleryEntrySchema`: `{ id, url, original_name, aspect_ratio?, blurhash?, is_main_photo,
+        is_important, created_at, parent_item_id, parent_item_type, parent_item_title }`
+      - `PaginatedGallerySchema`: `{ entries: GalleryEntry[], next_cursor: string | null }`
+
+      **Service** (`backend/src/services/galleryService.ts`):
+      - `getGalleryEntries(canvasId, { cursor?, limit?, important_only? })` — query photos joined
+        with canvas_items via content_id/content_type, filtered by canvas_id. Cursor-based
+        pagination ordered by created_at desc.
+
+      **Route** (`backend/src/routes/gallery/list.ts`):
+      - `GET /api/canvases/:canvasId/gallery?cursor=&limit=&important_only=true`
+      - Use `parseRoute` with query schema for validation
+      - Auth: user must own canvas (same as timeline)
+
+      **Route registration** (`backend/src/routes/gallery/index.ts`):
+      - Create gallery router, register in `backend/src/index.ts`
+
+      **Frontend hooks** (prep for milestone 2):
+      - `fetchGalleryEntries(canvasId, params)` in `api/client.ts`
+      - Query key in `queryKeys.ts`
+      - `useGallery(canvasId, params)` infinite query hook in `hooks/queries/index.ts`
+    acceptance_criteria:
+      - GET /canvases/:canvasId/gallery returns photos with parent item info
+      - important_only filter works
+      - Cursor-based pagination works
+      - Auth check enforced
+      - Frontend fetch function and hook available
+      - Tests cover gallery service
+    depends_on: [1]
+    effort: 3
+    status: scoped
+
+  - id: 4
+    milestone: 2
+    title: Propagate renames through frontend + replace pin with star
+    description: |
+      Update all frontend code for the is_selected → is_main_photo and is_pinned → is_important
+      renames. Replace pin UI with star UI for notes.
+
+      **Components:**
+      - `PhotosTab.tsx`: `is_selected` → `is_main_photo` in filter logic, border styling, star
+        button color. The existing star icon already works for "main photo" selection.
+      - `NotesTab.tsx`: Replace pin icon (`PushPinIcon`/`PushPinOutlinedIcon`) with star icon
+        (`StarIcon`/`StarOutlineIcon`). Rename `onTogglePin` → `onToggleImportant`.
+        `note.is_pinned` → `note.is_important`.
+      - `CanvasItemPanel.tsx`: `is_pinned` → `is_important` in updateNote mutation call.
+        Rename pin handler.
+      - `SessionDetail.tsx`: same as CanvasItemPanel — `is_pinned` → `is_important`.
+      - `TaggedItemsPanel.tsx`: `is_selected` → `is_main_photo` in photo lookup.
+      - `useCanvasActions.ts`: `is_selected` → `is_main_photo` in photo find.
+      - `Timeline.tsx`: `is_selected` → `is_main_photo` if referenced. Add `is_important`
+        to TimelineEntry display (star badge on important items).
+
+      **Tests:**
+      - `apiClient.test.ts`: `is_selected` → `is_main_photo` in all mock data and assertions.
+    acceptance_criteria:
+      - Zero occurrences of is_selected or is_pinned in frontend code
+      - Notes show star icon instead of pin icon
+      - Star toggle calls updateNote with is_important
+      - Important notes still sort to top
+      - All frontend tests pass
+    depends_on: [2]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: Create Gallery page with is_important filtering on Gallery and Timeline
+    description: |
+      New Gallery page showing all photos in a masonry/grid layout, plus is_important filtering
+      on both Gallery and Timeline pages.
+
+      **New page** (`frontend/src/pages/Gallery/Gallery.tsx`):
+      - Photo grid/masonry layout showing all photos from the canvas
+      - Each photo shows: image with blurhash placeholder, parent item title overlay,
+        star badge if is_important
+      - Click photo opens lightbox
+      - Filter toggle: "All" / "Important only" (is_important filter)
+      - Uses `useGallery` infinite query hook with infinite scroll
+
+      **PageToggle** (`frontend/src/sharedComponents/PageToggle.tsx`):
+      - Add "Gallery" tab with `PhotoLibraryIcon` (or similar MUI icon)
+      - Update `activePage` type to include `"gallery"`
+
+      **Router** (`frontend/src/components/Router.tsx`):
+      - Add `/gallery` route wrapped in MemberRoute + MemberLayout
+
+      **Timeline filtering** (`frontend/src/pages/Timeline/Timeline.tsx`):
+      - Add "Important only" toggle/chip that filters entries to `is_important === true`
+    acceptance_criteria:
+      - /gallery route renders Gallery page inside MemberLayout
+      - PageToggle shows four tabs (Canvas, Sessions, Timeline, Gallery)
+      - Gallery shows all photos with parent item info
+      - Important-only filter works on Gallery page
+      - Important-only filter works on Timeline page
+      - Clicking a photo opens lightbox
+      - Infinite scroll loads more photos
+    depends_on: [3, 4]
+    effort: 4
+    status: scoped

@@ -9,6 +9,7 @@ import type {
   CreateNoteInput,
   CreateTagInput,
   Note,
+  PaginatedGallery,
   PaginatedTimeline,
   Photo,
   SessionSummary,
@@ -133,6 +134,18 @@ export function fetchTimelineCounts(
 ): Promise<TimelineDayCounts> {
   const params = new URLSearchParams({ start, end });
   return request<TimelineDayCounts>(`/canvases/${canvasId}/timeline/counts?${params}`);
+}
+
+// --- Gallery functions ---
+
+export function fetchGallery(
+  canvasId: string,
+  options: { cursor?: string; limit?: number; importantOnly?: boolean } = {},
+): Promise<PaginatedGallery> {
+  const params = new URLSearchParams({ limit: String(options.limit ?? 30) });
+  if (options.cursor) params.set("cursor", options.cursor);
+  if (options.importantOnly) params.set("important_only", "true");
+  return request<PaginatedGallery>(`/canvases/${canvasId}/gallery?${params}`);
 }
 
 // --- Session functions ---

@@ -17,7 +17,8 @@ export interface PhotoInfo {
   filename: string;
   original_name: string;
   mime_type: string;
-  is_selected: boolean;
+  is_main_photo: boolean;
+  is_important: boolean;
   aspect_ratio: number | null;
   blurhash: string | null;
   created_at: string;
@@ -84,9 +85,9 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     // Non-fatal: leave as null for unsupported formats
   }
 
-  // Auto-select if this is the first photo for the content item
+  // Auto-select as main photo if this is the first photo for the content item
   const existing = await listPhotos(input.content_type, input.content_id);
-  const isSelected = existing.length === 0;
+  const isMainPhoto = existing.length === 0;
 
   // Insert metadata into database
   await db.insert(photos).values({
@@ -96,7 +97,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     filename,
     original_name: input.original_name,
     mime_type: input.mime_type,
-    is_selected: isSelected,
+    is_main_photo: isMainPhoto,
     aspect_ratio,
     blurhash,
     created_at: now,
@@ -109,7 +110,8 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     filename,
     original_name: input.original_name,
     mime_type: input.mime_type,
-    is_selected: isSelected,
+    is_main_photo: isMainPhoto,
+    is_important: false,
     aspect_ratio,
     blurhash,
     created_at: now,
@@ -180,13 +182,13 @@ export async function selectPhoto(id: string): Promise<PhotoInfo | null> {
   // Unselect all photos for the same content item
   await db
     .update(photos)
-    .set({ is_selected: false })
+    .set({ is_main_photo: false })
     .where(
       and(eq(photos.content_type, photo.content_type), eq(photos.content_id, photo.content_id)),
     );
 
   // Select the specified photo
-  await db.update(photos).set({ is_selected: true }).where(eq(photos.id, id));
+  await db.update(photos).set({ is_main_photo: true }).where(eq(photos.id, id));
 
   // Return updated photo
   return getPhoto(id);

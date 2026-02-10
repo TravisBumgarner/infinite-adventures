@@ -95,7 +95,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
         and(
           eq(photos.content_type, item.type),
           eq(photos.content_id, item.content_id),
-          eq(photos.is_selected, true),
+          eq(photos.is_main_photo, true),
         ),
       );
 
@@ -149,7 +149,8 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     id: p.id,
     url: `/api/photos/${p.filename}`,
     original_name: p.original_name,
-    is_selected: p.is_selected,
+    is_main_photo: p.is_main_photo,
+    is_important: p.is_important,
     aspect_ratio: p.aspect_ratio ?? undefined,
     blurhash: p.blurhash ?? undefined,
   }));
@@ -424,7 +425,7 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
         and(
           eq(photos.content_type, "session"),
           eq(photos.content_id, item.content_id),
-          eq(photos.is_selected, true),
+          eq(photos.is_main_photo, true),
         ),
       );
 
@@ -498,7 +499,7 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
           and(
             eq(photos.content_type, targetItem.type),
             eq(photos.content_id, targetItem.content_id),
-            eq(photos.is_selected, true),
+            eq(photos.is_main_photo, true),
           ),
         );
 

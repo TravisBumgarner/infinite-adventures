@@ -1,6 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   fetchCanvases,
+  fetchGallery,
   fetchItem,
   fetchItems,
   fetchSessions,
@@ -63,6 +64,16 @@ export function useTimelineCounts(canvasId: string | undefined, start: string, e
   return useQuery({
     queryKey: queryKeys.timeline.counts(canvasId!, start, end),
     queryFn: () => fetchTimelineCounts(canvasId!, start, end),
+    enabled: !!canvasId,
+  });
+}
+
+export function useGallery(canvasId: string | undefined, importantOnly = false) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.gallery.list(canvasId!, importantOnly),
+    queryFn: ({ pageParam }) => fetchGallery(canvasId!, { cursor: pageParam, importantOnly }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     enabled: !!canvasId,
   });
 }

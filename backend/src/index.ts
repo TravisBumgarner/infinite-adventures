@@ -4,6 +4,7 @@ import express from "express";
 import multer from "multer";
 import { initDb } from "./db/connection.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
+import { galleryRouter } from "./routes/gallery/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
 import { linksRouter } from "./routes/links/index.js";
 import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
@@ -38,6 +39,9 @@ app.use("/api/canvases/:canvasId/sessions", sessionsRouter);
 
 // Timeline routes
 app.use("/api/canvases/:canvasId/timeline", timelineRouter);
+
+// Gallery routes
+app.use("/api/canvases/:canvasId/gallery", galleryRouter);
 
 // Note routes
 app.use("/api/notes", notesRouter);

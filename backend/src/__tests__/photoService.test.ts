@@ -68,7 +68,7 @@ describe("photoService", () => {
       expect(photo.content_id).toBe(TEST_CONTENT_ID);
       expect(photo.original_name).toBe("gandalf.png");
       expect(photo.mime_type).toBe("image/png");
-      expect(photo.is_selected).toBe(true);
+      expect(photo.is_main_photo).toBe(true);
       expect(photo.created_at).toBeDefined();
     });
 
@@ -181,7 +181,7 @@ describe("photoService", () => {
   });
 
   describe("selectPhoto", () => {
-    it("sets is_selected to true", async () => {
+    it("sets is_main_photo to true", async () => {
       const uploaded = await uploadPhoto({
         content_type: TEST_CONTENT_TYPE,
         content_id: TEST_CONTENT_ID,
@@ -191,7 +191,7 @@ describe("photoService", () => {
       });
 
       const selected = await selectPhoto(uploaded.id);
-      expect(selected?.is_selected).toBe(true);
+      expect(selected?.is_main_photo).toBe(true);
     });
 
     it("unselects previously selected photo for same content", async () => {
@@ -216,8 +216,8 @@ describe("photoService", () => {
       const updatedPhoto1 = await getPhoto(photo1.id);
       const updatedPhoto2 = await getPhoto(photo2.id);
 
-      expect(updatedPhoto1?.is_selected).toBe(false);
-      expect(updatedPhoto2?.is_selected).toBe(true);
+      expect(updatedPhoto1?.is_main_photo).toBe(false);
+      expect(updatedPhoto2?.is_main_photo).toBe(true);
     });
 
     it("does not affect photos of other content items", async () => {
@@ -240,7 +240,7 @@ describe("photoService", () => {
       await selectPhoto(photo2.id);
 
       const updatedPhoto1 = await getPhoto(photo1.id);
-      expect(updatedPhoto1?.is_selected).toBe(true);
+      expect(updatedPhoto1?.is_main_photo).toBe(true);
     });
 
     it("returns null for non-existent ID", async () => {
