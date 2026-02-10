@@ -18,7 +18,11 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const showSettings = useCanvasStore((s) => s.showSettings);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
 
-  const activePage = location.pathname.startsWith("/sessions") ? "sessions" : "canvas";
+  const activePage = location.pathname.startsWith("/sessions")
+    ? "sessions"
+    : location.pathname.startsWith("/timeline")
+      ? "timeline"
+      : "canvas";
 
   return (
     <>

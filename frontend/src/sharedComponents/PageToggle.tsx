@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 
 interface PageToggleProps {
-  activePage: "canvas" | "sessions";
+  activePage: "canvas" | "sessions" | "timeline";
 }
 
 export default function PageToggle({ activePage }: PageToggleProps) {
@@ -54,6 +54,23 @@ export default function PageToggle({ activePage }: PageToggleProps) {
         }}
       >
         Sessions
+      </Button>
+      <Button
+        size="small"
+        onClick={() => navigate("/timeline")}
+        sx={{
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: 14,
+          px: 2,
+          py: 0.5,
+          borderRadius: 1.5,
+          color: activePage === "timeline" ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: activePage === "timeline" ? "var(--color-surface0)" : "transparent",
+          "&:hover": { bgcolor: "var(--color-surface0)" },
+        }}
+      >
+        Timeline
       </Button>
     </Box>
   );
