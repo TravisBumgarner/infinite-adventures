@@ -238,3 +238,14 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
     archive.finalize();
   });
 }
+
+/**
+ * Import a canvas from a zip buffer. Creates a new canvas with fresh UUIDs.
+ * Returns the new canvas id and name.
+ */
+export async function importCanvas(
+  _zipBuffer: Buffer,
+  _userId: string,
+): Promise<{ id: string; name: string }> {
+  throw new Error("Not implemented");
+}
