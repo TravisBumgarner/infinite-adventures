@@ -92,10 +92,11 @@ export default function PanelHeader({
             whiteSpace: "nowrap",
             flex: 1,
             cursor: "pointer",
+            ...(title ? {} : { color: "text.secondary", fontStyle: "italic" }),
           }}
           onClick={() => setIsEditing(true)}
         >
-          {title}
+          {title || "Untitled"}
         </Typography>
       )}
       <Chip
