@@ -155,6 +155,23 @@ export const UpdateCanvasInputSchema = z.object({
   name: z.string().optional(),
 });
 
+// --- Timeline ---
+
+export const TimelineEntrySchema = z.object({
+  id: z.string(),
+  kind: z.enum(["note", "photo"]),
+  created_at: z.string(),
+  updated_at: z.string(),
+  content: z.string().optional(),
+  photo_url: z.string().optional(),
+  original_name: z.string().optional(),
+  parent_item_id: z.string(),
+  parent_item_type: CanvasItemTypeSchema,
+  parent_item_title: z.string(),
+});
+
+export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
+
 // --- Error codes ---
 
 export const ERROR_CODES = [

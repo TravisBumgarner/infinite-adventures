@@ -1,0 +1,93 @@
+project: Timeline Page
+repo: TravisBumgarner/infinite-adventures
+design_file: n/a
+scoping_date: 2026-02-09
+
+milestones:
+  - number: 28
+    title: "1. Timeline backend endpoint"
+    description: Add timeline endpoint returning all notes and photos with parent item info, shared types, and frontend query hook.
+    branch:
+      working: 186-timeline-endpoint
+      base: main
+
+  - number: 29
+    title: "2. Timeline page"
+    description: Add Timeline page showing notes/photos feed with sort toggle and type filters.
+    branch:
+      working: 187-timeline-page
+      base: 186-timeline-endpoint
+
+tasks:
+  - id: 1
+    github_issue: 186
+    milestone: 28
+    title: Add timeline endpoint returning notes and photos with parent item info
+    description: |
+      Add `GET /api/canvases/:canvasId/timeline?sort=created_at|updated_at` returning a flat
+      array of timeline entries. Each entry is either a note or a photo, annotated with parent
+      canvas item type and title.
+
+      **Shared type** (`shared/src/index.ts`):
+      Add `TimelineEntrySchema` — `{ id, kind: "note"|"photo", created_at, updated_at,
+      content?, photo_url?, original_name?, parent_item_id, parent_item_type, parent_item_title }`.
+
+      **Backend service** (new `timelineService.ts`):
+      - Query notes joined with canvas_items (via `notes.canvas_item_id`) filtered by `canvas_items.canvas_id`
+      - Query photos joined with canvas_items (via `photos.content_id = canvas_items.content_id AND
+        photos.content_type = canvas_items.type`) filtered by `canvas_items.canvas_id`
+      - Map each to a `TimelineEntry`, merge, sort descending by requested field
+
+      **Backend route** (new `routes/timeline/list.ts`):
+      - Validate canvasId param, optional `sort` query param (default `created_at`)
+      - Auth: user must own canvas
+      - Call service, return results
+
+      **Frontend** (`api/client.ts` + `hooks/queries/index.ts`):
+      - `fetchTimeline(canvasId, sort)` function
+      - `useTimeline(canvasId, sort)` React Query hook with query key
+    acceptance_criteria:
+      - GET /canvases/:canvasId/timeline returns notes and photos with parent item type/title
+      - Sorted descending by created_at by default, updated_at when requested
+      - Auth check enforced (user owns canvas)
+      - Shared TimelineEntry type defined
+      - Frontend fetchTimeline and useTimeline hook available
+    depends_on: []
+    effort: 3
+    status: testing
+
+  - id: 2
+    github_issue: 187
+    milestone: 29
+    title: Add Timeline page showing notes and photos feed
+    description: |
+      New `/timeline` route as a third tab alongside Canvas and Sessions. Shows a chronological
+      feed of all notes and photos, each row showing its parent item type and title.
+
+      **New files:**
+      - `frontend/src/pages/Timeline/Timeline.tsx` — page component
+      - `frontend/src/pages/Timeline/index.ts` — barrel export
+
+      **Modified files:**
+      - `PageToggle.tsx` — add "Timeline" button, update `activePage` type to include `"timeline"`
+      - `Router.tsx` — add `/timeline` route wrapped in MemberRoute + MemberLayout
+      - `MemberLayout.tsx` — detect `/timeline` path for activePage
+
+      **UI controls bar:** Sort toggle (Created / Last Updated) + type filter chips (person,
+      place, thing, session, event) filtering by parent item type. All active by default.
+
+      **Timeline list:** Each row shows: parent type chip (colored) + parent title, entry kind
+      (Note/Photo), content preview or filename, timestamp. Clicking navigates to `/canvas`
+      and selects the parent item via `canvasStore.setActiveItemId`.
+
+      **Data:** Use `useTimeline(canvasId, sort)` hook. Type filtering is client-side.
+    acceptance_criteria:
+      - /timeline route renders Timeline page inside MemberLayout
+      - PageToggle shows three tabs with correct active states
+      - Timeline rows show notes/photos with parent item type and title
+      - Sort toggle switches between created and last updated
+      - Type filter chips filter by parent item type
+      - Clicking a row navigates to canvas and selects the parent item
+    depends_on: [1]
+    effort: 3
+    status: scoped
