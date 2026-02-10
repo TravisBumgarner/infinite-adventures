@@ -1,8 +1,11 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import express from "express";
 import multer from "multer";
+import config from "./config.js";
 import { initDb } from "./db/connection.js";
+import { logger } from "./lib/logger.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { galleryRouter } from "./routes/gallery/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
@@ -13,7 +16,10 @@ import { sessionsRouter } from "./routes/sessions/index.js";
 import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
 import { timelineRouter } from "./routes/timeline/index.js";
 
-const PORT = parseInt(process.env.PORT || "3021", 10);
+Sentry.init({
+  dsn: "https://6ef02465e2d32a4e41d39e0fdd83f73e@o196886.ingest.us.sentry.io/4510862831386624",
+  sendDefaultPii: true,
+});
 
 // Configure multer for photo uploads (10MB limit)
 const upload = multer({
@@ -58,8 +64,10 @@ app.use("/api/items/:itemId/tags", itemTagsRouter);
 // Link routes
 app.use("/api/links", linksRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+Sentry.setupExpressErrorHandler(app);
+
+app.listen(config.port, () => {
+  logger.info(`Server running on port ${config.port}`);
 });
 
 export default app;

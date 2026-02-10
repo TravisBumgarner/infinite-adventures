@@ -18,6 +18,7 @@ const pool = new Pool({
 const db = drizzle(pool);
 
 async function main() {
+  // biome-ignore lint/suspicious/noConsole: CLI migration script
   console.log("Running migrations...");
   // In dev (tsx): __dirname is backend/src/db, drizzle is at backend/drizzle
   // In prod (bundled): __dirname is backend/dist/db, drizzle is at backend/drizzle
@@ -26,11 +27,13 @@ async function main() {
     ? resolve(__dirname, "..", "..", "drizzle")
     : resolve(__dirname, "..", "..", "drizzle");
   await migrate(db, { migrationsFolder });
+  // biome-ignore lint/suspicious/noConsole: CLI migration script
   console.log("Migrations complete");
   await pool.end();
 }
 
 main().catch((err) => {
+  // biome-ignore lint/suspicious/noConsole: CLI migration script
   console.error("Migration failed:", err);
   process.exit(1);
 });
