@@ -26,7 +26,7 @@ import {
   things,
 } from "../db/schema.js";
 import { parseMentionsWithPositions } from "./canvasItemLinkService.js";
-import { listNotes } from "./noteService.js";
+import { listNotes, recomputePlainContentForMentionedItem } from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 import { listTagIdsForItem, listTagsForItem } from "./tagService.js";
 
@@ -308,6 +308,11 @@ export async function updateItem(
       .where(eq(sessions.id, existing.contentId));
   }
 
+  // If title changed, recompute plainContent for notes mentioning this item
+  if (input.title !== undefined && input.title !== existing.title) {
+    await recomputePlainContentForMentionedItem(id);
+  }
+
   // Get updated item
   const [updated] = await db.select().from(canvasItems).where(eq(canvasItems.id, id));
 
@@ -361,13 +366,6 @@ export async function getItemContentId(itemId: string): Promise<string | null> {
 }
 
 /**
- * Strip HTML tags and @{id} mention syntax from text for full-text search.
- */
-const STRIP_HTML_SQL = sql.raw(
-  `regexp_replace(regexp_replace(content, '<[^>]*>', ' ', 'g'), '@\\{[^}]+\\}', ' ', 'g')`,
-);
-
-/**
  * Search canvas items and notes within a canvas.
  * Returns item-level matches (title/summary) and individual note matches as separate rows.
  */
@@ -413,19 +411,19 @@ export async function searchItems(
 
        UNION ALL
 
-       -- Individual note matches
+       -- Individual note matches (uses pre-computed plain_content column)
        SELECT ci.id as "itemId", ci.type, ci.title, n.id as "noteId",
               ts_headline('simple',
-                ${STRIP_HTML_SQL},
+                n.plain_content,
                 to_tsquery('simple', ${tsquery}),
                 'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet,
               ts_rank(
-                to_tsvector('simple', ${STRIP_HTML_SQL}),
+                to_tsvector('simple', n.plain_content),
                 to_tsquery('simple', ${tsquery})) as rank
        FROM notes n
        JOIN canvas_items ci ON ci.id = n.canvas_item_id
        WHERE ci.canvas_id = ${canvasId}
-         AND to_tsvector('simple', ${STRIP_HTML_SQL}) @@ to_tsquery('simple', ${tsquery})
+         AND to_tsvector('simple', n.plain_content) @@ to_tsquery('simple', ${tsquery})
      ) results
      ORDER BY rank DESC
      LIMIT 20`,

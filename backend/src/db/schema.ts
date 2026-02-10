@@ -95,6 +95,7 @@ export const notes = pgTable(
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
+    plainContent: text("plain_content").notNull().default(""),
     isImportant: boolean("is_important").notNull().default(false),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),

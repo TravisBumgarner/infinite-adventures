@@ -26,6 +26,7 @@ import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
+import { getNotePreview } from "../../utils/getNotePreview";
 import TaggedItemsPanel from "./components/TaggedItemsPanel";
 
 const MIN_LEFT_WIDTH = 400;
@@ -330,24 +331,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
-  function getNotePreview(content: string): string {
-    let text = content.replace(/<[^>]*>/g, "").trim();
-    if (!text) return "Empty note";
-    if (text.length > 300) text = `${text.slice(0, 300)}...`;
-    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
-      const cached = itemsCache.get(id);
-      const name = cached ? cached.title : "mention";
-      return `<strong>@${name}</strong>`;
-    });
-    text = text.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
-    );
-    text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    return text;
-  }
+  const notePreview = useCallback(
+    (content: string) => getNotePreview(content, itemsCache),
+    [itemsCache],
+  );
 
   if (!item) {
     return (
@@ -489,7 +476,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             }}
             onToggleImportant={handleToggleImportant}
             onCreateMentionItem={handleCreateMentionItem}
-            getNotePreview={getNotePreview}
+            getNotePreview={notePreview}
           />
         )}
 
