@@ -21,6 +21,7 @@ interface SelectionContextMenuState {
 }
 
 const ACTIVE_CANVAS_KEY = "infinite-adventures-active-canvas";
+export const ONBOARDING_COMPLETE_KEY = "infinite-adventures-onboarding-complete";
 
 export function getViewportKey(canvasId: string): string {
   return `infinite-adventures-viewport-${canvasId}`;
@@ -49,6 +50,9 @@ interface CanvasState {
 
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
+
+  showOnboarding: boolean;
+  setShowOnboarding: (show: boolean) => void;
 
   closeAllPanels: () => void;
 
@@ -112,6 +116,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
+
+  showOnboarding: false,
+  setShowOnboarding: (_show) => {},
 
   closeAllPanels: () =>
     set({

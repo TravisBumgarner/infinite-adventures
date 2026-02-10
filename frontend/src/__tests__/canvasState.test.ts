@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { getViewportKey, useCanvasStore } from "../stores/canvasStore";
+import { getViewportKey, ONBOARDING_COMPLETE_KEY, useCanvasStore } from "../stores/canvasStore";
 
 const canvas1 = { id: "c1", name: "Default" };
 const canvas2 = { id: "c2", name: "Battle Map" };
@@ -64,5 +64,36 @@ describe("canvasStore active canvas", () => {
       expect(useCanvasStore.getState().activeCanvasId).toBe("c2");
       expect(localStorage.getItem("infinite-adventures-active-canvas")).toBe("c2");
     });
+  });
+});
+
+describe("canvasStore onboarding", () => {
+  it("defaults to true when no completion key in localStorage", () => {
+    expect(useCanvasStore.getState().showOnboarding).toBe(true);
+  });
+
+  it("defaults to false when completion key exists in localStorage", () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
+    // Re-create store state to pick up localStorage
+    useCanvasStore.setState({
+      showOnboarding: !localStorage.getItem(ONBOARDING_COMPLETE_KEY),
+    });
+
+    expect(useCanvasStore.getState().showOnboarding).toBe(false);
+  });
+
+  it("setShowOnboarding(false) persists completion to localStorage", () => {
+    useCanvasStore.getState().setShowOnboarding(false);
+
+    expect(useCanvasStore.getState().showOnboarding).toBe(false);
+    expect(localStorage.getItem(ONBOARDING_COMPLETE_KEY)).toBe("true");
+  });
+
+  it("setShowOnboarding(true) clears completion from localStorage", () => {
+    localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
+    useCanvasStore.getState().setShowOnboarding(true);
+
+    expect(useCanvasStore.getState().showOnboarding).toBe(true);
+    expect(localStorage.getItem(ONBOARDING_COMPLETE_KEY)).toBeNull();
   });
 });
