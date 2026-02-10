@@ -16,6 +16,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.93.3",
     "@types/archiver": "^7.0.0",
+    "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "blurhash": "^2.0.5",
     "cors": "^2.8.5",
@@ -36,7 +37,6 @@
     "@types/pg": "^8.16.0",
     "@types/sharp": "^0.31.1",
     "@types/uuid": "^10.0.0",
-    "adm-zip": "^0.5.16",
     "drizzle-kit": "^0.31.8",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",

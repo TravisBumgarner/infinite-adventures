@@ -1,7 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import AdmZip from "adm-zip";
 import archiver from "archiver";
 import { and, eq, inArray } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 import config from "../config.js";
 import { getDb } from "../db/connection.js";
 import type { CanvasItemType } from "../db/schema.js";
@@ -10,6 +12,7 @@ import {
   canvasItemLinks,
   canvasItems,
   canvasItemTags,
+  canvasUsers,
   events,
   notes,
   people,
@@ -244,8 +247,218 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
  * Returns the new canvas id and name.
  */
 export async function importCanvas(
-  _zipBuffer: Buffer,
-  _userId: string,
+  zipBuffer: Buffer,
+  userId: string,
 ): Promise<{ id: string; name: string }> {
-  throw new Error("Not implemented");
+  const zip = new AdmZip(zipBuffer);
+
+  // Extract and validate manifest
+  const manifestEntry = zip.getEntry("manifest.json");
+  if (!manifestEntry) throw new Error("Invalid backup file: missing manifest.json");
+  const manifest: BackupManifest = JSON.parse(manifestEntry.getData().toString("utf-8"));
+
+  if (manifest.schemaVersion > CURRENT_SCHEMA_VERSION) {
+    throw new Error("Backup was created with a newer version");
+  }
+
+  // Extract data
+  const dataEntry = zip.getEntry("data.json");
+  if (!dataEntry) throw new Error("Invalid backup file: missing data.json");
+  const data: BackupData = JSON.parse(dataEntry.getData().toString("utf-8"));
+
+  // Build UUID remap maps
+  const canvasIdMap = new Map<string, string>();
+  const contentIdMap = new Map<string, string>();
+  const canvasItemIdMap = new Map<string, string>();
+  const noteIdMap = new Map<string, string>();
+  const photoIdMap = new Map<string, string>();
+  const tagIdMap = new Map<string, string>();
+
+  // 1. New canvas ID
+  const newCanvasId = uuidv4();
+  canvasIdMap.set(data.canvas.id, newCanvasId);
+
+  // 2. New content IDs (people, places, things, sessions, events)
+  for (const p of data.people) contentIdMap.set(p.id, uuidv4());
+  for (const p of data.places) contentIdMap.set(p.id, uuidv4());
+  for (const t of data.things) contentIdMap.set(t.id, uuidv4());
+  for (const s of data.sessions) contentIdMap.set(s.id, uuidv4());
+  for (const e of data.events) contentIdMap.set(e.id, uuidv4());
+
+  // 3. New canvas item IDs
+  for (const ci of data.canvasItems) canvasItemIdMap.set(ci.id, uuidv4());
+
+  // 4. New note IDs
+  for (const n of data.notes) noteIdMap.set(n.id, uuidv4());
+
+  // 5. New photo IDs
+  for (const p of data.photos) photoIdMap.set(p.id, uuidv4());
+
+  // 6. New tag IDs
+  for (const t of data.tags) tagIdMap.set(t.id, uuidv4());
+
+  // Track written photo files for cleanup on failure
+  const writtenPhotoPaths: string[] = [];
+
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  try {
+    await db.transaction(async (tx) => {
+      // Insert canvas
+      await tx.insert(canvases).values({
+        id: newCanvasId,
+        name: data.canvas.name,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Insert canvas_users
+      await tx.insert(canvasUsers).values({
+        canvasId: newCanvasId,
+        userId,
+      });
+
+      // Insert content tables
+      for (const p of data.people) {
+        await tx.insert(people).values({
+          id: contentIdMap.get(p.id)!,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+        });
+      }
+      for (const p of data.places) {
+        await tx.insert(places).values({
+          id: contentIdMap.get(p.id)!,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+        });
+      }
+      for (const t of data.things) {
+        await tx.insert(things).values({
+          id: contentIdMap.get(t.id)!,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        });
+      }
+      for (const s of data.sessions) {
+        await tx.insert(sessions).values({
+          id: contentIdMap.get(s.id)!,
+          sessionDate: s.sessionDate,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
+        });
+      }
+      for (const e of data.events) {
+        await tx.insert(events).values({
+          id: contentIdMap.get(e.id)!,
+          createdAt: e.createdAt,
+          updatedAt: e.updatedAt,
+        });
+      }
+
+      // Insert canvas items (remap canvasId and contentId)
+      for (const ci of data.canvasItems) {
+        await tx.insert(canvasItems).values({
+          id: canvasItemIdMap.get(ci.id)!,
+          type: ci.type,
+          title: ci.title,
+          summary: ci.summary,
+          canvasX: ci.canvasX,
+          canvasY: ci.canvasY,
+          canvasId: newCanvasId,
+          userId: null,
+          contentId: contentIdMap.get(ci.contentId)!,
+          createdAt: ci.createdAt,
+          updatedAt: ci.updatedAt,
+        });
+      }
+
+      // Insert notes (remap canvasItemId)
+      for (const n of data.notes) {
+        await tx.insert(notes).values({
+          id: noteIdMap.get(n.id)!,
+          canvasItemId: canvasItemIdMap.get(n.canvasItemId)!,
+          content: n.content,
+          isImportant: n.isImportant,
+          createdAt: n.createdAt,
+          updatedAt: n.updatedAt,
+        });
+      }
+
+      // Write photo files and insert photo records
+      if (!fs.existsSync(UPLOADS_DIR)) {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+      }
+
+      for (const p of data.photos) {
+        const newPhotoId = photoIdMap.get(p.id)!;
+        const ext = path.extname(p.filename);
+        const newFilename = `${newPhotoId}${ext}`;
+
+        // Extract photo from zip
+        const photoEntry = zip.getEntry(`photos/${p.filename}`);
+        if (photoEntry) {
+          const filePath = path.join(UPLOADS_DIR, newFilename);
+          fs.writeFileSync(filePath, photoEntry.getData());
+          writtenPhotoPaths.push(filePath);
+        }
+
+        await tx.insert(photos).values({
+          id: newPhotoId,
+          contentType: p.contentType,
+          contentId: contentIdMap.get(p.contentId)!,
+          filename: newFilename,
+          originalName: p.originalName,
+          mimeType: p.mimeType,
+          isMainPhoto: p.isMainPhoto,
+          isImportant: p.isImportant,
+          aspectRatio: p.aspectRatio,
+          blurhash: p.blurhash,
+          createdAt: p.createdAt,
+        });
+      }
+
+      // Insert tags (remap canvasId)
+      for (const t of data.tags) {
+        await tx.insert(tags).values({
+          id: tagIdMap.get(t.id)!,
+          name: t.name,
+          icon: t.icon,
+          color: t.color,
+          canvasId: newCanvasId,
+          createdAt: t.createdAt,
+          updatedAt: t.updatedAt,
+        });
+      }
+
+      // Insert canvas_item_tags (remap both canvasItemId and tagId)
+      for (const cit of data.canvasItemTags) {
+        await tx.insert(canvasItemTags).values({
+          canvasItemId: canvasItemIdMap.get(cit.canvasItemId)!,
+          tagId: tagIdMap.get(cit.tagId)!,
+        });
+      }
+
+      // Insert canvas_item_links (remap both sourceItemId and targetItemId)
+      for (const link of data.canvasItemLinks) {
+        await tx.insert(canvasItemLinks).values({
+          sourceItemId: canvasItemIdMap.get(link.sourceItemId)!,
+          targetItemId: canvasItemIdMap.get(link.targetItemId)!,
+          snippet: link.snippet,
+          createdAt: link.createdAt,
+        });
+      }
+    });
+  } catch (err) {
+    // Clean up any photo files written before the failure
+    for (const filePath of writtenPhotoPaths) {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    throw err;
+  }
+
+  return { id: newCanvasId, name: data.canvas.name };
 }
