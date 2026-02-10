@@ -521,7 +521,7 @@ export default function CanvasItemPanel({
       variant="persistent"
       anchor="right"
       open
-      data-tour="item-panel"
+      slotProps={{ paper: { "data-tour": "item-panel" } as Record<string, string> }}
       sx={{
         "& .MuiDrawer-paper": {
           width: SIDEBAR_WIDTH,
