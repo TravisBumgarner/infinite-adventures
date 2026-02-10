@@ -13,6 +13,7 @@ import {
   ValidationError,
 } from "../services/canvasItemService.js";
 import { createCanvas } from "../services/canvasService.js";
+import { createNote } from "../services/noteService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
 describe("canvasItemService", () => {
@@ -281,6 +282,15 @@ describe("canvasItemService", () => {
       await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
       const results = await searchItems("Gan", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.title).toBe("Gandalf");
+    });
+
+    it("finds items by note content", async () => {
+      const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createNote(item.id, { content: "A wizard who loves fireworks" });
+
+      const results = await searchItems("fireworks", DEFAULT_CANVAS_ID);
       expect(results).toHaveLength(1);
       expect(results[0]?.title).toBe("Gandalf");
     });
