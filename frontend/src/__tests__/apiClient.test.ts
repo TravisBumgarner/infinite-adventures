@@ -10,9 +10,11 @@ import {
   deleteCanvas,
   deleteItem,
   deletePhoto,
+  exportCanvas,
   fetchCanvases,
   fetchItem,
   fetchItems,
+  importCanvas,
   searchItems,
   selectPhoto,
   updateCanvas,
@@ -422,6 +424,71 @@ describe("photo API functions", () => {
       const result = await selectPhoto("photo-123");
 
       expect(result.isMainPhoto).toBe(true);
+    });
+  });
+});
+
+describe("backup API functions", () => {
+  describe("exportCanvas", () => {
+    it("calls GET /canvases/:canvasId/export and returns blob", async () => {
+      const blobContent = new Blob(["zip-data"], { type: "application/zip" });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        blob: () => Promise.resolve(blobContent),
+      });
+
+      const result = await exportCanvas("canvas-123");
+
+      expect(getCalledUrl()).toContain("/canvases/canvas-123/export");
+      expect(result).toBeInstanceOf(Blob);
+    });
+
+    it("throws error when export fails", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        blob: () => Promise.resolve(new Blob()),
+      });
+
+      await expect(exportCanvas("canvas-123")).rejects.toThrow();
+    });
+
+    it("does not set Content-Type to application/json", async () => {
+      const blobContent = new Blob(["zip-data"], { type: "application/zip" });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        blob: () => Promise.resolve(blobContent),
+      });
+
+      await exportCanvas("canvas-123");
+
+      const headers = getCalledOptions().headers as Record<string, string>;
+      expect(headers["Content-Type"]).toBeUndefined();
+    });
+  });
+
+  describe("importCanvas", () => {
+    it("calls POST /canvases/import with FormData containing file", async () => {
+      mockOkResponse({ id: "new-canvas-id", name: "Imported Canvas" });
+
+      const file = new File(["zip-data"], "backup.zip", { type: "application/zip" });
+      await importCanvas(file);
+
+      expect(getCalledUrl()).toContain("/canvases/import");
+      expect(getCalledOptions().method).toBe("POST");
+      const body = getCalledOptions().body;
+      expect(body).toBeInstanceOf(FormData);
+      expect((body as FormData).get("file")).toBeInstanceOf(File);
+    });
+
+    it("returns id and name of imported canvas", async () => {
+      mockOkResponse({ id: "new-canvas-id", name: "Imported Canvas" });
+
+      const file = new File(["zip-data"], "backup.zip", { type: "application/zip" });
+      const result = await importCanvas(file);
+
+      expect(result.id).toBe("new-canvas-id");
+      expect(result.name).toBe("Imported Canvas");
     });
   });
 });

@@ -8,6 +8,7 @@ import type {
   CreateCanvasItemInput,
   CreateNoteInput,
   CreateTagInput,
+  ImportCanvasResult,
   Note,
   PaginatedGallery,
   PaginatedTimeline,
@@ -260,4 +261,14 @@ export function addTagToItem(itemId: string, tagId: string): Promise<void> {
 
 export function removeTagFromItem(itemId: string, tagId: string): Promise<void> {
   return request<void>(`/items/${itemId}/tags/${tagId}`, { method: "DELETE" });
+}
+
+// --- Backup functions ---
+
+export async function exportCanvas(_canvasId: string): Promise<Blob> {
+  throw new Error("Not implemented");
+}
+
+export async function importCanvas(_file: File): Promise<ImportCanvasResult> {
+  throw new Error("Not implemented");
 }
