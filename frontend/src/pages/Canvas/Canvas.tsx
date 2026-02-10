@@ -15,8 +15,6 @@ import {
 } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
-import Toast from "../../sharedComponents/Toast";
-import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
 import CanvasItemNodeComponent from "./components/CanvasItemNode";
@@ -56,8 +54,6 @@ export default function Canvas() {
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
   const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setSelectionContextMenu = useCanvasStore((s) => s.setSelectionContextMenu);
-  const toastMessage = useAppStore((s) => s.toastMessage);
-  const clearToast = useAppStore((s) => s.clearToast);
 
   // Fetch canvases via React Query and initialize the active canvas
   const { data: canvases = [] } = useCanvases();
@@ -374,8 +370,6 @@ export default function Canvas() {
           itemsCache={itemsCache}
         />
       )}
-
-      <Toast open={!!toastMessage} message={toastMessage ?? ""} onClose={clearToast} />
     </div>
   );
 }
