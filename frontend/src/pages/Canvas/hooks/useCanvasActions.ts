@@ -36,7 +36,7 @@ function toFlowNode(
   }
 
   // Find selected photo URL
-  const selectedPhoto = item.photos.find((p) => p.is_selected);
+  const selectedPhoto = item.photos.find((p) => p.is_main_photo);
 
   // Count connections (links_to + linked_from)
   const connectionsCount = (item.links_to?.length ?? 0) + (item.linked_from?.length ?? 0);

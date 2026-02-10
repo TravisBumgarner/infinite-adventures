@@ -154,7 +154,7 @@ tasks:
       - All frontend tests pass
     depends_on: [2]
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 5
     milestone: 2

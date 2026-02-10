@@ -1,8 +1,8 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PushPinIcon from "@mui/icons-material/PushPin";
-import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -28,7 +28,7 @@ interface NotesTabProps {
   onDeleteNote: (noteId: string) => void;
   onBackToList: () => void;
   onNoteContentChange: (value: string) => void;
-  onTogglePin: (noteId: string, isPinned: boolean) => void;
+  onToggleImportant: (noteId: string, isImportant: boolean) => void;
   onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
 }
@@ -45,7 +45,7 @@ export default function NotesTab({
   onDeleteNote,
   onBackToList,
   onNoteContentChange,
-  onTogglePin,
+  onToggleImportant,
   onCreateMentionItem,
   getNotePreview,
 }: NotesTabProps) {
@@ -157,14 +157,14 @@ export default function NotesTab({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onTogglePin(note.id, !note.is_pinned);
+                    onToggleImportant(note.id, !note.is_important);
                   }}
                   sx={{ color: "var(--color-subtext0)", ml: 1 }}
                 >
-                  {note.is_pinned ? (
-                    <PushPinIcon sx={{ fontSize: 18 }} />
+                  {note.is_important ? (
+                    <StarIcon sx={{ fontSize: 18 }} />
                   ) : (
-                    <PushPinOutlinedIcon sx={{ fontSize: 18 }} />
+                    <StarOutlineIcon sx={{ fontSize: 18 }} />
                   )}
                 </IconButton>
                 <IconButton

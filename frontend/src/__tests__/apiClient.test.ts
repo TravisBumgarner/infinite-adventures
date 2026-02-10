@@ -231,7 +231,12 @@ describe("canvas item API functions", () => {
         updated_at: "",
         content: { id: "c1", notes: "A wizard" },
         photos: [
-          { id: "p1", url: "/api/photos/p1.jpg", original_name: "gandalf.jpg", is_selected: true },
+          {
+            id: "p1",
+            url: "/api/photos/p1.jpg",
+            original_name: "gandalf.jpg",
+            is_main_photo: true,
+          },
         ],
         links_to: [],
         linked_from: [],
@@ -321,7 +326,7 @@ describe("photo API functions", () => {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "test.jpg",
-        is_selected: false,
+        is_main_photo: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -336,7 +341,7 @@ describe("photo API functions", () => {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "test.jpg",
-        is_selected: false,
+        is_main_photo: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -352,7 +357,7 @@ describe("photo API functions", () => {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "test.jpg",
-        is_selected: false,
+        is_main_photo: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -367,7 +372,7 @@ describe("photo API functions", () => {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "gandalf.jpg",
-        is_selected: false,
+        is_main_photo: false,
       };
       mockOkResponse(photo);
 
@@ -396,7 +401,7 @@ describe("photo API functions", () => {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "test.jpg",
-        is_selected: true,
+        is_main_photo: true,
       });
 
       await selectPhoto("photo-123");
@@ -405,18 +410,18 @@ describe("photo API functions", () => {
       expect(getCalledOptions().method).toBe("PUT");
     });
 
-    it("returns photo with is_selected true", async () => {
+    it("returns photo with is_main_photo true", async () => {
       const photo = {
         id: "p1",
         url: "/api/photos/p1.jpg",
         original_name: "test.jpg",
-        is_selected: true,
+        is_main_photo: true,
       };
       mockOkResponse(photo);
 
       const result = await selectPhoto("photo-123");
 
-      expect(result.is_selected).toBe(true);
+      expect(result.is_main_photo).toBe(true);
     });
   });
 });
