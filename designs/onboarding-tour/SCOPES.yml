@@ -1,0 +1,65 @@
+project: Onboarding Tour
+repo: TravisBumgarner/infinite-adventures
+design_file: (inline scope from user request)
+scoping_date: 2026-02-10
+
+milestones:
+  - number: 32
+    title: "Onboarding Tour"
+    description: Interactive guided tour for new users, with relaunch from Settings
+    branch:
+      working: 206-onboarding-tour
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 206
+    milestone: 32
+    title: Install react-joyride and add onboarding state to canvasStore
+    description: |
+      Install `react-joyride` in the frontend. Add `showOnboarding` boolean and
+      `setShowOnboarding` action to `canvasStore`. Persist completion in localStorage
+      (`infinite-adventures-onboarding-complete`). First-time visitors default to true,
+      returning visitors default to false.
+    acceptance_criteria:
+      - react-joyride installed in frontend
+      - canvasStore has showOnboarding / setShowOnboarding
+      - localStorage persists completion across sessions
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 2
+    github_issue: 207
+    milestone: 32
+    title: Create OnboardingTour component with guided steps
+    description: |
+      Create `frontend/src/components/OnboardingTour.tsx` using react-joyride with 7 steps:
+      welcome, toolbar, item panel, connections, page toggle, search/filter, settings.
+
+      Add `data-tour` attributes to Toolbar, PageToggle, search/filter Stack, and
+      SettingsButton. Render in MemberLayout when `showOnboarding` is true. Use continuous
+      mode with Next/Back/Skip. On completion or skip, call `setShowOnboarding(false)`.
+    acceptance_criteria:
+      - OnboardingTour renders 7-step tour via react-joyride
+      - data-tour attributes added to Toolbar, PageToggle, search/filter, SettingsButton
+      - Tour renders in MemberLayout when showOnboarding is true
+      - Completing or skipping sets showOnboarding to false
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    github_issue: 208
+    milestone: 32
+    title: Add Restart Tour button to Settings sidebar
+    description: |
+      Add a "Restart Tour" button to SettingsSidebar between Community and Logout.
+      On click: close settings, clear localStorage key, set showOnboarding to true.
+    acceptance_criteria:
+      - Restart Tour button visible in Settings sidebar
+      - Clicking it closes settings and launches the tour
+      - Tour runs fully again after restart
+    depends_on: [2]
+    effort: 1
+    status: scoped
