@@ -1,9 +1,12 @@
 import CloseIcon from "@mui/icons-material/Close";
+import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
+import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Photo } from "shared";
@@ -14,6 +17,7 @@ interface PhotosTabProps {
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDelete: (photoId: string) => void;
   onSelect: (photoId: string) => void;
+  onToggleImportant: (photoId: string) => void;
   onOpenLightbox: (index: number) => void;
   onFileDrop?: (file: File) => void;
 }
@@ -23,6 +27,7 @@ export default function PhotosTab({
   onUpload,
   onDelete,
   onSelect,
+  onToggleImportant,
   onOpenLightbox,
   onFileDrop,
 }: PhotosTabProps) {
@@ -60,8 +65,8 @@ export default function PhotosTab({
   // Starred photos first, then the rest. Both groups keep the API's
   // original order, which is creation date (oldest first).
   const sortedPhotos = useMemo(() => {
-    const selected = photos.filter((p) => p.is_selected);
-    const rest = photos.filter((p) => !p.is_selected);
+    const selected = photos.filter((p) => p.is_main_photo);
+    const rest = photos.filter((p) => !p.is_main_photo);
     return [...selected, ...rest];
   }, [photos]);
 
@@ -120,7 +125,7 @@ export default function PhotosTab({
                   position: "relative",
                   width: 100,
                   height: 100,
-                  border: photo.is_selected
+                  border: photo.is_main_photo
                     ? "2px solid var(--color-blue)"
                     : "1px solid var(--color-surface1)",
                   borderRadius: 1,
@@ -144,44 +149,71 @@ export default function PhotosTab({
                   }}
                   onClick={() => onOpenLightbox(originalIndex)}
                 />
-                <IconButton
-                  size="small"
-                  onClick={() => onSelect(photo.id)}
-                  sx={{
-                    position: "absolute",
-                    bottom: 2,
-                    left: 2,
-                    bgcolor: "rgba(0,0,0,0.5)",
-                    color: photo.is_selected ? "var(--color-yellow)" : "white",
-                    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                    width: 20,
-                    height: 20,
-                    zIndex: 2,
-                  }}
-                >
-                  {photo.is_selected ? (
-                    <StarIcon sx={{ fontSize: 14 }} />
-                  ) : (
-                    <StarOutlineIcon sx={{ fontSize: 14 }} />
-                  )}
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => onDelete(photo.id)}
-                  sx={{
-                    position: "absolute",
-                    top: 2,
-                    right: 2,
-                    bgcolor: "rgba(0,0,0,0.5)",
-                    color: "white",
-                    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                    width: 20,
-                    height: 20,
-                    zIndex: 2,
-                  }}
-                >
-                  <CloseIcon sx={{ fontSize: 14 }} />
-                </IconButton>
+                <Tooltip title="Set as main photo" placement="top">
+                  <IconButton
+                    size="small"
+                    onClick={() => onSelect(photo.id)}
+                    sx={{
+                      position: "absolute",
+                      bottom: 2,
+                      left: 2,
+                      bgcolor: "rgba(0,0,0,0.5)",
+                      color: photo.is_main_photo ? "var(--color-blue)" : "white",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                      width: 20,
+                      height: 20,
+                      zIndex: 2,
+                    }}
+                  >
+                    {photo.is_main_photo ? (
+                      <PhotoSizeSelectActualIcon sx={{ fontSize: 14 }} />
+                    ) : (
+                      <PhotoSizeSelectActualOutlinedIcon sx={{ fontSize: 14 }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Mark as important" placement="top">
+                  <IconButton
+                    size="small"
+                    onClick={() => onToggleImportant(photo.id)}
+                    sx={{
+                      position: "absolute",
+                      bottom: 2,
+                      left: 24,
+                      bgcolor: "rgba(0,0,0,0.5)",
+                      color: photo.is_important ? "var(--color-yellow)" : "white",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                      width: 20,
+                      height: 20,
+                      zIndex: 2,
+                    }}
+                  >
+                    {photo.is_important ? (
+                      <StarIcon sx={{ fontSize: 14 }} />
+                    ) : (
+                      <StarOutlineIcon sx={{ fontSize: 14 }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete photo" placement="top">
+                  <IconButton
+                    size="small"
+                    onClick={() => onDelete(photo.id)}
+                    sx={{
+                      position: "absolute",
+                      top: 2,
+                      right: 2,
+                      bgcolor: "rgba(0,0,0,0.5)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                      width: 20,
+                      height: 20,
+                      zIndex: 2,
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
               </Box>
             );
           })

@@ -2,6 +2,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Canvas from "../pages/Canvas/Canvas";
+import Gallery from "../pages/Gallery";
 import Login from "../pages/Login/Login.js";
 import Marketing from "../pages/Marketing/Marketing";
 import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
@@ -108,6 +109,16 @@ export default function Router() {
           <MemberRoute>
             <MemberLayout>
               <Timeline />
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/gallery"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <Gallery />
             </MemberLayout>
           </MemberRoute>
         }

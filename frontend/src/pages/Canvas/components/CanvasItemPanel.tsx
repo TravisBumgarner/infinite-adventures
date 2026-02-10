@@ -22,6 +22,7 @@ import {
   useDeletePhoto,
   useRemoveTagFromItem,
   useSelectPhoto,
+  useTogglePhotoImportant,
   useUpdateItem,
   useUpdateNote,
   useUploadPhoto,
@@ -95,6 +96,7 @@ export default function CanvasItemPanel({
   const uploadPhotoMutation = useUploadPhoto(itemId, activeCanvasId ?? "");
   const deletePhotoMutation = useDeletePhoto(itemId, activeCanvasId ?? "");
   const selectPhotoMutation = useSelectPhoto(itemId, activeCanvasId ?? "");
+  const togglePhotoImportantMutation = useTogglePhotoImportant(itemId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
   const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
   const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
@@ -244,6 +246,16 @@ export default function CanvasItemPanel({
 
   async function handlePhotoSelect(photoId: string) {
     await selectPhotoMutation.mutateAsync(photoId);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+      onSaved(updated);
+    }
+  }
+
+  async function handleTogglePhotoImportant(photoId: string) {
+    await togglePhotoImportantMutation.mutateAsync(photoId);
     const { data: updated } = await refetchItem();
     if (updated) {
       setItem(updated);
@@ -432,10 +444,10 @@ export default function CanvasItemPanel({
     return text;
   }
 
-  async function handleTogglePin(noteId: string, isPinned: boolean) {
+  async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
       noteId,
-      input: { is_pinned: isPinned },
+      input: { is_important: isImportant },
     });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -680,7 +692,7 @@ export default function CanvasItemPanel({
             setNoteContent(val);
             markNoteDirty();
           }}
-          onTogglePin={handleTogglePin}
+          onToggleImportant={handleToggleImportant}
           onCreateMentionItem={handleCreateMentionItem}
           getNotePreview={getNotePreview}
         />
@@ -692,6 +704,7 @@ export default function CanvasItemPanel({
           onUpload={handlePhotoUpload}
           onDelete={handlePhotoDelete}
           onSelect={handlePhotoSelect}
+          onToggleImportant={handleTogglePhotoImportant}
           onOpenLightbox={handleOpenLightbox}
           onFileDrop={handleFileUpload}
         />

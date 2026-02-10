@@ -186,6 +186,10 @@ export function selectPhoto(id: string): Promise<Photo> {
   return request<Photo>(`/photos/${id}/select`, { method: "PUT" });
 }
 
+export function togglePhotoImportant(id: string): Promise<Photo> {
+  return request<Photo>(`/photos/${id}/important`, { method: "PUT" });
+}
+
 // --- Note functions ---
 
 export function fetchNotes(itemId: string): Promise<Note[]> {
