@@ -23,35 +23,60 @@ export const CanvasNameBody = z.object({ name: z.string().trim().min(1) });
 
 // --- parseRoute ---
 
-type ParseRouteConfig<P extends z.ZodType, B extends z.ZodType | undefined> = {
+type ParseRouteConfig<
+  P extends z.ZodType,
+  B extends z.ZodType | undefined,
+  Q extends z.ZodType | undefined,
+> = {
   params: P;
   body?: B;
+  query?: Q;
 };
 
-type ParseRouteResult<P extends z.ZodType, B extends z.ZodType | undefined> = {
+type ParseRouteResult<
+  P extends z.ZodType,
+  B extends z.ZodType | undefined,
+  Q extends z.ZodType | undefined,
+> = {
   params: z.infer<P>;
   body: B extends z.ZodType ? z.infer<B> : undefined;
+  query: Q extends z.ZodType ? z.infer<Q> : undefined;
 };
 
-export function parseRoute<P extends z.ZodType, B extends z.ZodType | undefined = undefined>(
+export function parseRoute<
+  P extends z.ZodType,
+  B extends z.ZodType | undefined = undefined,
+  Q extends z.ZodType | undefined = undefined,
+>(
   req: Request,
   res: Response,
-  config: ParseRouteConfig<P, B>,
-): ParseRouteResult<P, B> | null {
+  config: ParseRouteConfig<P, B, Q>,
+): ParseRouteResult<P, B, Q> | null {
   const paramsResult = config.params.safeParse(req.params);
   if (!paramsResult.success) {
     sendBadRequest(res, "INVALID_UUID");
     return null;
   }
 
+  let body: unknown;
   if (config.body) {
     const bodyResult = config.body.safeParse(req.body);
     if (!bodyResult.success) {
       sendBadRequest(res);
       return null;
     }
-    return { params: paramsResult.data, body: bodyResult.data } as ParseRouteResult<P, B>;
+    body = bodyResult.data;
   }
 
-  return { params: paramsResult.data, body: undefined } as ParseRouteResult<P, B>;
+  let query: unknown;
+  if (config.query) {
+    const queryResult = config.query.safeParse(req.query);
+    if (!queryResult.success) {
+      sendBadRequest(res);
+      return null;
+    }
+    query = queryResult.data;
+  }
+
+  return { params: paramsResult.data, body, query } as ParseRouteResult<P, B, Q>;
 }
