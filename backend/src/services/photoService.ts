@@ -1,6 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { encode } from "blurhash";
 import { and, eq } from "drizzle-orm";
+import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 import config from "../config.js";
 import { getDb } from "../db/connection.js";
@@ -16,6 +18,8 @@ export interface PhotoInfo {
   original_name: string;
   mime_type: string;
   is_selected: boolean;
+  aspect_ratio: number | null;
+  blurhash: string | null;
   created_at: string;
 }
 
@@ -62,6 +66,24 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const filePath = path.join(UPLOADS_DIR, filename);
   fs.writeFileSync(filePath, input.buffer);
 
+  // Compute aspect_ratio and blurhash
+  let aspect_ratio: number | null = null;
+  let blurhash: string | null = null;
+  try {
+    const metadata = await sharp(input.buffer).metadata();
+    if (metadata.width && metadata.height) {
+      aspect_ratio = metadata.width / metadata.height;
+      const { data, info } = await sharp(input.buffer)
+        .resize(32, 32, { fit: "inside" })
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      blurhash = encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3);
+    }
+  } catch {
+    // Non-fatal: leave as null for unsupported formats
+  }
+
   // Auto-select if this is the first photo for the content item
   const existing = await listPhotos(input.content_type, input.content_id);
   const isSelected = existing.length === 0;
@@ -75,6 +97,8 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     original_name: input.original_name,
     mime_type: input.mime_type,
     is_selected: isSelected,
+    aspect_ratio,
+    blurhash,
     created_at: now,
   });
 
@@ -86,6 +110,8 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     original_name: input.original_name,
     mime_type: input.mime_type,
     is_selected: isSelected,
+    aspect_ratio,
+    blurhash,
     created_at: now,
   };
 }

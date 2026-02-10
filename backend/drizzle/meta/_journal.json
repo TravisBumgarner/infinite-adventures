@@ -15,6 +15,13 @@
       "when": 1770590775785,
       "tag": "0001_sticky_gressill",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770695419301,
+      "tag": "0002_flawless_electro",
+      "breakpoints": true
     }
   ]
 }

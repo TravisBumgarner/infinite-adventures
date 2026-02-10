@@ -7,6 +7,7 @@ import Marketing from "../pages/Marketing/Marketing";
 import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
 import Sessions from "../pages/Sessions";
 import Signup from "../pages/Signup/Signup.js";
+import Timeline from "../pages/Timeline";
 import { useAppStore } from "../stores/appStore";
 import MemberLayout from "./MemberLayout";
 
@@ -97,6 +98,16 @@ export default function Router() {
           <MemberRoute>
             <MemberLayout>
               <Sessions />
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/timeline"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <Timeline />
             </MemberLayout>
           </MemberRoute>
         }

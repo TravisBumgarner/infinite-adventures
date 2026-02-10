@@ -66,6 +66,8 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
       url: `/api/photos/${photo.filename}`,
       original_name: photo.original_name,
       is_selected: photo.is_selected,
+      aspect_ratio: photo.aspect_ratio ?? undefined,
+      blurhash: photo.blurhash ?? undefined,
     },
     201,
   );

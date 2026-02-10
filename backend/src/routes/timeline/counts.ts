@@ -2,21 +2,20 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { userOwnsCanvas } from "../../services/authorizationService.js";
-import { getTimeline } from "../../services/timelineService.js";
+import { getTimelineDayCounts } from "../../services/timelineService.js";
 import { requireUserId } from "../shared/auth.js";
 import { sendForbidden, sendSuccess } from "../shared/responses.js";
 import { CanvasIdParams, parseRoute } from "../shared/validation.js";
 
-const ListTimelineQuery = z.object({
-  sort: z.enum(["created_at", "updated_at"]).default("created_at"),
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().positive().max(100).default(30),
+const CountsQuery = z.object({
+  start: z.string().date(),
+  end: z.string().date(),
 });
 
 export async function handler(req: Request, res: Response): Promise<void> {
   const auth = requireUserId(req as AuthenticatedRequest, res);
   if (!auth) return;
-  const parsed = parseRoute(req, res, { params: CanvasIdParams, query: ListTimelineQuery });
+  const parsed = parseRoute(req, res, { params: CanvasIdParams, query: CountsQuery });
   if (!parsed) return;
 
   if (!(await userOwnsCanvas(auth.userId, parsed.params.canvasId))) {
@@ -24,7 +23,7 @@ export async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { sort, cursor, limit } = parsed.query;
-  const result = await getTimeline(parsed.params.canvasId, sort, cursor, limit);
-  sendSuccess(res, { entries: result.entries, next_cursor: result.nextCursor });
+  const { start, end } = parsed.query;
+  const counts = await getTimelineDayCounts(parsed.params.canvasId, start, end);
+  sendSuccess(res, { counts });
 }

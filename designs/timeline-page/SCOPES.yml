@@ -90,4 +90,4 @@ tasks:
       - Clicking a row navigates to canvas and selects the parent item
     depends_on: [1]
     effort: 3
-    status: scoped
+    status: completed

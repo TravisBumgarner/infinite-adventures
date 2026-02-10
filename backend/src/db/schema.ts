@@ -152,6 +152,8 @@ export const photos = pgTable(
     original_name: text("original_name").notNull(),
     mime_type: text("mime_type").notNull(),
     is_selected: boolean("is_selected").notNull().default(false),
+    aspect_ratio: doublePrecision("aspect_ratio"),
+    blurhash: text("blurhash"),
     created_at: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("photos_content_idx").on(table.content_type, table.content_id)],

@@ -7,6 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Photo } from "shared";
+import { blurhashToDataURL } from "../utils/blurhashToDataURL";
 
 interface PhotosTabProps {
   photos: Photo[];
@@ -124,13 +125,23 @@ export default function PhotosTab({
                     : "1px solid var(--color-surface1)",
                   borderRadius: 1,
                   overflow: "hidden",
+                  backgroundImage: photo.blurhash
+                    ? `url(${blurhashToDataURL(photo.blurhash)})`
+                    : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
                 <Box
                   component="img"
                   src={photo.url}
                   alt={photo.original_name}
-                  sx={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    cursor: "pointer",
+                  }}
                   onClick={() => onOpenLightbox(originalIndex)}
                 />
                 <IconButton
@@ -145,6 +156,7 @@ export default function PhotosTab({
                     "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
                     width: 20,
                     height: 20,
+                    zIndex: 2,
                   }}
                 >
                   {photo.is_selected ? (
@@ -165,6 +177,7 @@ export default function PhotosTab({
                     "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
                     width: 20,
                     height: 20,
+                    zIndex: 2,
                   }}
                 >
                   <CloseIcon sx={{ fontSize: 14 }} />
