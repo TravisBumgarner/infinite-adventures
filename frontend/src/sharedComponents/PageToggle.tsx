@@ -15,6 +15,7 @@ export default function PageToggle({ activePage }: PageToggleProps) {
 
   return (
     <Box
+      data-tour="page-toggle"
       sx={{
         display: "flex",
         gap: 0.5,
