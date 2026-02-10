@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
+import InitiativeTracker from "../pages/Canvas/components/InitiativeTracker";
 import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
 import PageToggle from "../sharedComponents/PageToggle";
 import TopBar from "../sharedComponents/TopBar";
@@ -29,6 +30,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       <ToolSidebar />
       <DiceRoller />
       <DiceRoller3d />
+      <InitiativeTracker />
       {showSettings && <SettingsSidebar />}
     </>
   );
