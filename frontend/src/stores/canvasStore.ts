@@ -76,6 +76,9 @@ interface CanvasState {
 
   filterSearch: string;
   setFilterSearch: (search: string) => void;
+
+  highlightNoteId: string | null;
+  setHighlightNoteId: (id: string | null) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -177,4 +180,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   filterSearch: "",
   setFilterSearch: (search) => set({ filterSearch: search }),
+
+  highlightNoteId: null,
+  setHighlightNoteId: (id) => set({ highlightNoteId: id }),
 }));

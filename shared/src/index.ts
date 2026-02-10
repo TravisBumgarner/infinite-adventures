@@ -111,10 +111,11 @@ export const UpdateNoteInputSchema = z.object({
 });
 
 export const CanvasItemSearchResultSchema = z.object({
-  id: z.string(),
+  itemId: z.string(),
   type: CanvasItemTypeSchema,
   title: z.string(),
   snippet: z.string(),
+  noteId: z.string().nullable(),
 });
 
 export const SessionSummarySchema = z.object({

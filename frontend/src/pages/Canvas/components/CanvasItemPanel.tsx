@@ -62,6 +62,8 @@ export default function CanvasItemPanel({
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const highlightNoteId = useCanvasStore((s) => s.highlightNoteId);
+  const setHighlightNoteId = useCanvasStore((s) => s.setHighlightNoteId);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const tagsById = useTagStore((s) => s.tags);
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
@@ -685,6 +687,8 @@ export default function CanvasItemPanel({
           noteStatus={noteStatus}
           itemsCache={itemsCache}
           canvasId={activeCanvasId ?? ""}
+          highlightNoteId={highlightNoteId}
+          onHighlightComplete={() => setHighlightNoteId(null)}
           onAddNote={handleAddNote}
           onSelectNote={handleSelectNote}
           onDeleteNote={handleDeleteNote}

@@ -22,6 +22,12 @@ const DESTINATIONS_BY_TYPE: Record<CanvasItemType, Destination[]> = {
   event: ["Canvas", "Timeline", "Gallery"],
 };
 
+const NOTE_DESTINATIONS: Destination[] = ["Canvas"];
+
+function getDestinations(result: CanvasItemSearchResult): Destination[] {
+  return result.noteId ? NOTE_DESTINATIONS : DESTINATIONS_BY_TYPE[result.type];
+}
+
 export default function SearchBar() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -30,6 +36,8 @@ export default function SearchBar() {
   const setShowSearchBar = useCanvasStore((s) => s.setShowSearchBar);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
+  const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const setHighlightNoteId = useCanvasStore((s) => s.setHighlightNoteId);
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -94,10 +102,12 @@ export default function SearchBar() {
       switch (destination) {
         case "Canvas":
           navigate("/canvas");
-          setEditingItemId(result.id);
+          setEditingItemId(result.itemId);
+          setPanelTab("notes");
+          setHighlightNoteId(result.noteId);
           break;
         case "Sessions":
-          navigate(`/sessions/${result.id}`);
+          navigate(`/sessions/${result.itemId}`);
           break;
         case "Timeline":
           navigate("/timeline");
@@ -107,7 +117,7 @@ export default function SearchBar() {
           break;
       }
     },
-    [navigate, setEditingItemId, setShowSearchBar],
+    [navigate, setEditingItemId, setShowSearchBar, setPanelTab, setHighlightNoteId],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -125,21 +135,21 @@ export default function SearchBar() {
       e.preventDefault();
       const result = results[selectedIndex];
       if (result) {
-        const destinations = DESTINATIONS_BY_TYPE[result.type];
+        const destinations = getDestinations(result);
         setSelectedPillIndex((i) => (i + 1) % destinations.length);
       }
     } else if (e.key === "ArrowLeft" && hasResults) {
       e.preventDefault();
       const result = results[selectedIndex];
       if (result) {
-        const destinations = DESTINATIONS_BY_TYPE[result.type];
+        const destinations = getDestinations(result);
         setSelectedPillIndex((i) => (i - 1 + destinations.length) % destinations.length);
       }
     } else if (e.key === "Enter" && hasResults) {
       e.preventDefault();
       const result = results[selectedIndex];
       if (result) {
-        const destinations = DESTINATIONS_BY_TYPE[result.type];
+        const destinations = getDestinations(result);
         navigateToDestination(result, destinations[selectedPillIndex]!);
       }
     }
@@ -210,12 +220,13 @@ export default function SearchBar() {
         <Box sx={{ overflowY: "auto", maxHeight: "calc(70vh - 110px)" }}>
           {results.map((result, i) => {
             const bgColor = theme.palette.canvasItemTypes[result.type].light;
-            const destinations = DESTINATIONS_BY_TYPE[result.type];
+            const destinations = getDestinations(result);
             const isSelected = i === selectedIndex;
+            const resultKey = result.noteId ?? result.itemId;
 
             return (
               <Box
-                key={result.id}
+                key={resultKey}
                 ref={(el: HTMLDivElement | null) => {
                   if (el) {
                     resultRefs.current.set(i, el);
@@ -248,7 +259,7 @@ export default function SearchBar() {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 1,
+                    gap: 0.5,
                     mb: 0.5,
                   }}
                 >
@@ -267,6 +278,19 @@ export default function SearchBar() {
                       textTransform: "capitalize",
                     }}
                   />
+                  {result.noteId && (
+                    <Chip
+                      label="Note"
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        bgcolor: "var(--color-surface2)",
+                        color: "var(--color-subtext0)",
+                      }}
+                    />
+                  )}
                 </Box>
                 {result.snippet && (
                   <Typography

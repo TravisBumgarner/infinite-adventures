@@ -8,13 +8,19 @@ import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
+import { keyframes } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, Note } from "shared";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { statusLabel } from "../utils/statusLabel";
 import LinkTooltip from "./LinkTooltip";
+
+const flashNote = keyframes`
+  0%, 100% { border-color: var(--color-surface1); background-color: var(--color-surface0); }
+  25%, 75% { border-color: var(--color-blue); background-color: color-mix(in srgb, var(--color-blue) 15%, var(--color-surface0)); }
+`;
 
 interface NotesTabProps {
   notes: Note[];
@@ -23,6 +29,8 @@ interface NotesTabProps {
   noteStatus: SaveStatus;
   itemsCache: Map<string, CanvasItem>;
   canvasId: string;
+  highlightNoteId?: string | null;
+  onHighlightComplete?: () => void;
   onAddNote: () => void;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (noteId: string) => void;
@@ -40,6 +48,8 @@ export default function NotesTab({
   noteStatus,
   itemsCache,
   canvasId,
+  highlightNoteId,
+  onHighlightComplete,
   onAddNote,
   onSelectNote,
   onDeleteNote,
@@ -50,6 +60,31 @@ export default function NotesTab({
   getNotePreview,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
+  const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const [flashingNoteId, setFlashingNoteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!highlightNoteId || notes.length === 0) return;
+
+    // Small delay so the DOM has rendered the note elements
+    const timer = setTimeout(() => {
+      const el = noteRefs.current.get(highlightNoteId);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+      setFlashingNoteId(highlightNoteId);
+      onHighlightComplete?.();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [highlightNoteId, notes, onHighlightComplete]);
+
+  // Clear flash after animation completes
+  useEffect(() => {
+    if (!flashingNoteId) return;
+    const timer = setTimeout(() => setFlashingNoteId(null), 1200);
+    return () => clearTimeout(timer);
+  }, [flashingNoteId]);
 
   if (editingNoteId) {
     return (
@@ -128,55 +163,79 @@ export default function NotesTab({
             {notes.map((note) => (
               <ListItemButton
                 key={note.id}
+                ref={(el: HTMLElement | null) => {
+                  if (el) {
+                    noteRefs.current.set(note.id, el);
+                  } else {
+                    noteRefs.current.delete(note.id);
+                  }
+                }}
                 onClick={() => onSelectNote(note)}
                 sx={{
                   mb: 1,
                   py: 1.5,
                   px: 2,
-                  bgcolor: "var(--color-surface0)",
-                  border: "1px solid var(--color-surface1)",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  bgcolor: note.isImportant ? "var(--color-surface1)" : "var(--color-surface0)",
+                  border: note.isImportant
+                    ? "1px solid var(--color-yellow)"
+                    : "1px solid var(--color-surface1)",
                   "&:hover": {
                     bgcolor: "var(--color-surface1)",
                   },
+                  ...(flashingNoteId === note.id && {
+                    animation: `${flashNote} 0.6s ease-in-out 2`,
+                  }),
                 }}
               >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.25,
+                    mb: 0.5,
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleImportant(note.id, !note.isImportant);
                     }}
-                    dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
-                  />
-                  <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                    Last edited on {new Date(note.updatedAt).toLocaleDateString()}
-                  </Typography>
+                    sx={{
+                      color: note.isImportant ? "var(--color-yellow)" : "var(--color-subtext0)",
+                      p: 0.25,
+                    }}
+                  >
+                    {note.isImportant ? (
+                      <StarIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                      <StarOutlineIcon sx={{ fontSize: 16 }} />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteNote(note.id);
+                    }}
+                    sx={{ color: "var(--color-subtext0)", p: 0.25 }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
                 </Box>
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleImportant(note.id, !note.isImportant);
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
                   }}
-                  sx={{ color: "var(--color-subtext0)", ml: 1 }}
-                >
-                  {note.isImportant ? (
-                    <StarIcon sx={{ fontSize: 18 }} />
-                  ) : (
-                    <StarOutlineIcon sx={{ fontSize: 18 }} />
-                  )}
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteNote(note.id);
-                  }}
-                  sx={{ color: "var(--color-subtext0)" }}
-                >
-                  <DeleteIcon sx={{ fontSize: 18 }} />
-                </IconButton>
+                  dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
+                />
+                <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
+                  Last edited on {new Date(note.updatedAt).toLocaleDateString()}
+                </Typography>
               </ListItemButton>
             ))}
           </List>

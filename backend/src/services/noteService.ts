@@ -11,7 +11,7 @@ export async function listNotes(canvasItemId: string): Promise<Note[]> {
     .select()
     .from(notes)
     .where(eq(notes.canvasItemId, canvasItemId))
-    .orderBy(desc(notes.isImportant), notes.createdAt);
+    .orderBy(desc(notes.isImportant), desc(notes.createdAt));
 
   return rows.map((row) => ({
     id: row.id,

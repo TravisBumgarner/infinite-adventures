@@ -361,7 +361,15 @@ export async function getItemContentId(itemId: string): Promise<string | null> {
 }
 
 /**
- * Search canvas items by title within a canvas.
+ * Strip HTML tags and @{id} mention syntax from text for full-text search.
+ */
+const STRIP_HTML_SQL = sql.raw(
+  `regexp_replace(regexp_replace(content, '<[^>]*>', ' ', 'g'), '@\\{[^}]+\\}', ' ', 'g')`,
+);
+
+/**
+ * Search canvas items and notes within a canvas.
+ * Returns item-level matches (title/summary) and individual note matches as separate rows.
  */
 export async function searchItems(
   query: string,
@@ -387,26 +395,39 @@ export async function searchItems(
     .join(" & ");
 
   const result = await db.execute<CanvasItemSearchResult>(
-    sql`SELECT ci.id, ci.type, ci.title,
-          ts_headline('english',
-            coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '') || ' ' || coalesce(notes_agg.all_notes, ''),
-            to_tsquery('english', ${tsquery}),
-            'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet
-     FROM canvas_items ci
-     LEFT JOIN (
-       SELECT canvas_item_id, string_agg(content, ' ') as all_notes
-       FROM notes
-       GROUP BY canvas_item_id
-     ) notes_agg ON notes_agg.canvas_item_id = ci.id
-     WHERE ci.canvas_id = ${canvasId}
-       AND (
-         ci.search_vector @@ to_tsquery('english', ${tsquery})
-         OR to_tsvector('english', coalesce(notes_agg.all_notes, '')) @@ to_tsquery('english', ${tsquery})
-       )
-     ORDER BY ts_rank(
-       to_tsvector('english',
-         coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '') || ' ' || coalesce(notes_agg.all_notes, '')),
-       to_tsquery('english', ${tsquery})) DESC
+    sql`
+     SELECT * FROM (
+       -- Item-level matches (title / summary)
+       SELECT ci.id as "itemId", ci.type, ci.title, NULL::text as "noteId",
+              ts_headline('simple',
+                coalesce(ci.title, '') || ' ' || coalesce(ci.summary, ''),
+                to_tsquery('simple', ${tsquery}),
+                'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet,
+              ts_rank(
+                to_tsvector('simple', coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '')),
+                to_tsquery('simple', ${tsquery})) as rank
+       FROM canvas_items ci
+       WHERE ci.canvas_id = ${canvasId}
+         AND to_tsvector('simple', coalesce(ci.title, '') || ' ' || coalesce(ci.summary, ''))
+             @@ to_tsquery('simple', ${tsquery})
+
+       UNION ALL
+
+       -- Individual note matches
+       SELECT ci.id as "itemId", ci.type, ci.title, n.id as "noteId",
+              ts_headline('simple',
+                ${STRIP_HTML_SQL},
+                to_tsquery('simple', ${tsquery}),
+                'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet,
+              ts_rank(
+                to_tsvector('simple', ${STRIP_HTML_SQL}),
+                to_tsquery('simple', ${tsquery})) as rank
+       FROM notes n
+       JOIN canvas_items ci ON ci.id = n.canvas_item_id
+       WHERE ci.canvas_id = ${canvasId}
+         AND to_tsvector('simple', ${STRIP_HTML_SQL}) @@ to_tsquery('simple', ${tsquery})
+     ) results
+     ORDER BY rank DESC
      LIMIT 20`,
   );
 

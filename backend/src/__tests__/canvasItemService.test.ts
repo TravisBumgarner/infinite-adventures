@@ -286,13 +286,26 @@ describe("canvasItemService", () => {
       expect(results[0]?.title).toBe("Gandalf");
     });
 
-    it("finds items by note content", async () => {
+    it("finds notes as separate results by content", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
-      await createNote(item.id, { content: "A wizard who loves fireworks" });
+      const note = await createNote(item.id, { content: "A wizard who loves fireworks" });
 
       const results = await searchItems("fireworks", DEFAULT_CANVAS_ID);
       expect(results).toHaveLength(1);
       expect(results[0]?.title).toBe("Gandalf");
+      expect(results[0]?.itemId).toBe(item.id);
+      expect(results[0]?.noteId).toBe(note.id);
+    });
+
+    it("finds notes with HTML content stripped", async () => {
+      const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      await createNote(item.id, {
+        content: "<p>The grey wizard traveled to <strong>Rivendell</strong></p>",
+      });
+
+      const results = await searchItems("Rivendell", DEFAULT_CANVAS_ID);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.noteId).toBeTruthy();
     });
   });
 });
