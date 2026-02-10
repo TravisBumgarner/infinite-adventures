@@ -7,7 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Photo } from "shared";
-import BlurhashCanvas from "./BlurhashCanvas";
+import { blurhashToDataURL } from "../utils/blurhashToDataURL";
 
 interface PhotosTabProps {
   photos: Photo[];
@@ -125,34 +125,22 @@ export default function PhotosTab({
                     : "1px solid var(--color-surface1)",
                   borderRadius: 1,
                   overflow: "hidden",
+                  backgroundImage: photo.blurhash
+                    ? `url(${blurhashToDataURL(photo.blurhash)})`
+                    : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
-                {photo.blurhash && (
-                  <BlurhashCanvas
-                    blurhash={photo.blurhash}
-                    width={32}
-                    height={32}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      zIndex: 0,
-                    }}
-                  />
-                )}
                 <Box
                   component="img"
                   src={photo.url}
                   alt={photo.original_name}
                   sx={{
-                    position: "relative",
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
                     cursor: "pointer",
-                    zIndex: 1,
                   }}
                   onClick={() => onOpenLightbox(originalIndex)}
                 />

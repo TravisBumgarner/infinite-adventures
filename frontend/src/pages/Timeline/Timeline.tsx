@@ -17,7 +17,7 @@ import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../constants";
 import { useCreateCanvas, useDeleteCanvas, useUpdateCanvas } from "../../hooks/mutations";
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
-import BlurhashCanvas from "../../sharedComponents/BlurhashCanvas";
+import BlurImage from "../../sharedComponents/BlurImage";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
@@ -464,41 +464,16 @@ export default function Timeline() {
 
                       {/* Row 2: full content */}
                       {entry.kind === "photo" ? (
-                        <Box
+                        <BlurImage
+                          src={entry.photo_url!}
+                          alt={entry.original_name ?? ""}
+                          blurhash={entry.blurhash}
                           sx={{
-                            position: "relative",
                             width: "100%",
                             maxHeight: 300,
                             borderRadius: 1,
-                            overflow: "hidden",
                           }}
-                        >
-                          {entry.blurhash && (
-                            <BlurhashCanvas
-                              blurhash={entry.blurhash}
-                              width={32}
-                              height={32}
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                              }}
-                            />
-                          )}
-                          <Box
-                            component="img"
-                            src={entry.photo_url}
-                            alt={entry.original_name}
-                            sx={{
-                              position: "relative",
-                              width: "100%",
-                              maxHeight: 300,
-                              objectFit: "contain",
-                            }}
-                          />
-                        </Box>
+                        />
                       ) : (
                         <Typography
                           variant="body2"

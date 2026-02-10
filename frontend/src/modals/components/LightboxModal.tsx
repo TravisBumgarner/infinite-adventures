@@ -6,7 +6,7 @@ import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import BlurhashCanvas from "../../sharedComponents/BlurhashCanvas";
+import BlurImage from "../../sharedComponents/BlurImage";
 import { useModalStore } from "../store";
 import type { LightboxModalProps } from "../types";
 
@@ -97,30 +97,14 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
             justifyContent: "center",
           }}
         >
-          {currentPhoto.blurhash && (
-            <BlurhashCanvas
-              blurhash={currentPhoto.blurhash}
-              width={32}
-              height={Math.round(32 / (currentPhoto.aspect_ratio || 1))}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                borderRadius: 4,
-              }}
-            />
-          )}
-          <Box
-            component="img"
+          <BlurImage
             src={currentPhoto.url}
             alt={currentPhoto.original_name}
+            blurhash={currentPhoto.blurhash}
             sx={{
-              position: "relative",
               maxWidth: "100%",
               maxHeight: "calc(80vh - 60px)",
-              objectFit: "contain",
+              borderRadius: 1,
             }}
           />
         </Box>
