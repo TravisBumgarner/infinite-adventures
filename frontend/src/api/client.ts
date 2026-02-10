@@ -8,6 +8,7 @@ import type {
   CreateCanvasItemInput,
   CreateNoteInput,
   CreateTagInput,
+  ImportCanvasResult,
   Note,
   PaginatedGallery,
   PaginatedTimeline,
@@ -260,4 +261,35 @@ export function addTagToItem(itemId: string, tagId: string): Promise<void> {
 
 export function removeTagFromItem(itemId: string, tagId: string): Promise<void> {
   return request<void>(`/items/${itemId}/tags/${tagId}`, { method: "DELETE" });
+}
+
+// --- Backup functions ---
+
+export async function exportCanvas(canvasId: string): Promise<Blob> {
+  const authHeaders = await getAuthHeaders();
+  const res = await fetch(`${config.apiBaseUrl}/canvases/${canvasId}/export`, {
+    headers: { ...authHeaders },
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return res.blob();
+}
+
+export async function importCanvas(file: File): Promise<ImportCanvasResult> {
+  const authHeaders = await getAuthHeaders();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${config.apiBaseUrl}/canvases/import`, {
+    method: "POST",
+    headers: { ...authHeaders },
+    body: formData,
+  });
+
+  const body: ApiResponse<ImportCanvasResult> = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.errorCode || `HTTP ${res.status}`);
+  }
+  return body.data as ImportCanvasResult;
 }
