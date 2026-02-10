@@ -78,6 +78,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
       }}
     >
       <Box
+        data-tour="toolbar"
         sx={{
           display: "flex",
           gap: 1.5,

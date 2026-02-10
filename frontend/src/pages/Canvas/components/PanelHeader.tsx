@@ -111,6 +111,7 @@ export default function PanelHeader({
         }}
       />
       <IconButton
+        data-tour="panel-menu"
         size="small"
         onClick={(e) => setMenuAnchor(e.currentTarget)}
         sx={{ color: "var(--color-subtext0)", p: 0.5 }}

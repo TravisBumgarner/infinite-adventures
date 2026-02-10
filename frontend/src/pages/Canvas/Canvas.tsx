@@ -284,7 +284,7 @@ export default function Canvas() {
           "& > *": { pointerEvents: "auto" },
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack data-tour="search-filter" direction="row" spacing={1} alignItems="center">
           <SearchBar canvasId={activeCanvasId} onNavigate={navigateToItem} />
           <FilterBar />
         </Stack>

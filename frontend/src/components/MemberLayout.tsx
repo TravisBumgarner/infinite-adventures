@@ -7,6 +7,7 @@ import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
 import PageToggle from "../sharedComponents/PageToggle";
 import TopBar from "../sharedComponents/TopBar";
 import { useCanvasStore } from "../stores/canvasStore";
+import OnboardingTour from "./OnboardingTour";
 import { SettingsButton, SettingsSidebar } from "./SettingsSidebar";
 
 interface MemberLayoutProps {
@@ -17,6 +18,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
   const showSettings = useCanvasStore((s) => s.showSettings);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const showOnboarding = useCanvasStore((s) => s.showOnboarding);
 
   const activePage = location.pathname.startsWith("/sessions")
     ? "sessions"
@@ -38,6 +40,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       <DiceRoller3d />
       <InitiativeTracker />
       {showSettings && <SettingsSidebar />}
+      {showOnboarding && <OnboardingTour />}
     </>
   );
 }

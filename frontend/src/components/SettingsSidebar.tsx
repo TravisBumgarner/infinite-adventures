@@ -1,6 +1,7 @@
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadIcon from "@mui/icons-material/Download";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SchoolIcon from "@mui/icons-material/School";
 import SettingsIcon from "@mui/icons-material/Settings";
 import UploadIcon from "@mui/icons-material/Upload";
 import Box from "@mui/material/Box";
@@ -29,6 +30,7 @@ interface SettingsButtonProps {
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
     <IconButton
+      data-tour="settings-button"
       onClick={onClick}
       title="Settings"
       sx={{
@@ -52,6 +54,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 const DISCORD_URL = "https://discord.com/invite/J8jwMxEEff";
 export function SettingsSidebar() {
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const setShowOnboarding = useCanvasStore((s) => s.setShowOnboarding);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const canvases = useCanvasStore((s) => s.canvases);
   const showToast = useAppStore((s) => s.showToast);
@@ -196,6 +199,18 @@ export function SettingsSidebar() {
           Join us on Discord
         </Button>
       </Box>
+
+      {/* Restart Tour */}
+      <Button
+        variant="outlined"
+        startIcon={<SchoolIcon />}
+        onClick={() => {
+          setShowSettings(false);
+          setShowOnboarding(true);
+        }}
+      >
+        Restart Tour
+      </Button>
 
       {/* Logout */}
       <Box sx={{ mt: "auto" }}>
