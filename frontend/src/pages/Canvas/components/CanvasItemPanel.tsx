@@ -521,6 +521,7 @@ export default function CanvasItemPanel({
       variant="persistent"
       anchor="right"
       open
+      data-tour="item-panel"
       sx={{
         "& .MuiDrawer-paper": {
           width: SIDEBAR_WIDTH,

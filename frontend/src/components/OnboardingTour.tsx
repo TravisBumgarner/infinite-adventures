@@ -1,6 +1,11 @@
+import { useEffect, useRef, useState } from "react";
 import type { CallBackProps, Step } from "react-joyride";
-import { Joyride, STATUS } from "react-joyride";
+import { ACTIONS, EVENTS, Joyride, STATUS } from "react-joyride";
 import { useCanvasStore } from "../stores/canvasStore";
+
+const STEP_CREATE = 1;
+const STEP_PANEL = 2;
+const STEP_DELETE = 3;
 
 const steps: Step[] = [
   {
@@ -8,29 +13,33 @@ const steps: Step[] = [
     placement: "center",
     disableBeacon: true,
     title: "Welcome to Infinite Adventures!",
-    content: "Let's walk through the basics so you can start building your campaign.",
+    content: "Let's walk through the basics. You'll create an item, explore it, then clean up.",
   },
   {
     target: '[data-tour="toolbar"]',
     placement: "top",
     disableBeacon: true,
-    title: "Create Items",
-    content:
-      "Click or drag these to add sessions, people, places, things, and events to your canvas.",
+    spotlightClicks: true,
+    hideFooter: true,
+    title: "Create Your First Item",
+    content: "Click any item type below to add it to your canvas.",
   },
   {
-    target: '[data-tour="toolbar"]',
-    placement: "top",
+    target: '[data-tour="item-panel"]',
+    placement: "left",
     disableBeacon: true,
-    title: "Edit Items",
-    content: "Click any item on the canvas to open it. Add notes, photos, tags, and connections.",
+    title: "The Item Panel",
+    content: "This is where you edit your item — title, summary, notes, photos, and connections.",
   },
   {
-    target: '[data-tour="toolbar"]',
-    placement: "top",
+    target: '[data-tour="panel-menu"]',
+    placement: "left",
     disableBeacon: true,
-    title: "Connect Items",
-    content: "Drag from one item's edge to another to link them together.",
+    spotlightClicks: true,
+    disableOverlay: true,
+    hideFooter: true,
+    title: "Now Delete It",
+    content: 'Click the \u22EE menu and select "Delete Item" to remove it.',
   },
   {
     target: '[data-tour="page-toggle"]',
@@ -38,7 +47,7 @@ const steps: Step[] = [
     disableBeacon: true,
     title: "Switch Views",
     content:
-      "Canvas for the big picture, Sessions for session notes, Timeline for chronological order, Gallery for photos.",
+      "Canvas for the big picture, Sessions for notes, Timeline for chronological order, Gallery for photos.",
   },
   {
     target: '[data-tour="search-filter"]',
@@ -65,19 +74,61 @@ const steps: Step[] = [
 
 export default function OnboardingTour() {
   const setShowOnboarding = useCanvasStore((s) => s.setShowOnboarding);
+  const editingItemId = useCanvasStore((s) => s.editingItemId);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [run, setRun] = useState(true);
+  const prevEditingRef = useRef(editingItemId);
+
+  // Advance interactive steps based on store state changes
+  useEffect(() => {
+    const prev = prevEditingRef.current;
+    prevEditingRef.current = editingItemId;
+
+    // Item created: advance from Create step to Panel step
+    if (stepIndex === STEP_CREATE && prev == null && editingItemId != null) {
+      setRun(false);
+      setTimeout(() => {
+        setStepIndex(STEP_PANEL);
+        setRun(true);
+      }, 400);
+    }
+
+    // Item deleted/closed: advance from Delete step to next informational step
+    if (stepIndex === STEP_DELETE && prev != null && editingItemId == null) {
+      setRun(false);
+      setTimeout(() => {
+        setStepIndex(STEP_DELETE + 1);
+        setRun(true);
+      }, 400);
+    }
+  }, [editingItemId, stepIndex]);
 
   const handleCallback = (data: CallBackProps) => {
-    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+    const { status, action, index, type } = data;
+
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setShowOnboarding(false);
+      return;
+    }
+
+    if (type === EVENTS.STEP_AFTER) {
+      if (action === ACTIONS.NEXT) {
+        setStepIndex(index + 1);
+      } else if (action === ACTIONS.PREV) {
+        setStepIndex(index - 1);
+      }
     }
   };
 
   return (
     <Joyride
       steps={steps}
+      stepIndex={stepIndex}
+      run={run}
       continuous
       showSkipButton
       showProgress
+      hideBackButton
       disableOverlayClose
       callback={handleCallback}
       styles={{
