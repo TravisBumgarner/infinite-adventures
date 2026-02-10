@@ -15,6 +15,7 @@
         "noNonNullAssertion": "off"
       },
       "suspicious": {
+        "noConsole": "error",
         "noExplicitAny": "off"
       },
       "security": {

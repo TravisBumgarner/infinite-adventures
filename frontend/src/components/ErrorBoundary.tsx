@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import type { ErrorInfo, ReactNode } from "react";
 import { Component } from "react";
+import { logger } from "../lib/logger";
 import FeedbackForm from "../sharedComponents/FeedbackForm";
 
 interface Props {
@@ -20,8 +21,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info);
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    logger.error("ErrorBoundary caught", error);
   }
 
   render() {

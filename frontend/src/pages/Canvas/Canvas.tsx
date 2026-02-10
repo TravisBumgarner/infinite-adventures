@@ -14,6 +14,7 @@ import {
   useUpdateCanvas,
 } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
+import { logger } from "../../lib/logger";
 import { MODAL_ID, useModalStore } from "../../modals";
 import { useCanvasStore } from "../../stores/canvasStore";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
@@ -174,7 +175,7 @@ export default function Canvas() {
         printWindow.document.close();
       }
     } catch (error) {
-      console.error("Failed to export canvas:", error);
+      logger.error("Failed to export canvas", error);
     }
   }, [canvases, activeCanvasId]);
 
