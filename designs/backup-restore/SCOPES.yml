@@ -108,4 +108,4 @@ tasks:
       - Canvas list refreshes after successful import
     depends_on: [3]
     effort: 2
-    status: implementing
+    status: completed
