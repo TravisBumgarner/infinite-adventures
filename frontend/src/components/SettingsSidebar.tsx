@@ -1,6 +1,8 @@
 import CloseIcon from "@mui/icons-material/Close";
+import DownloadIcon from "@mui/icons-material/Download";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
+import UploadIcon from "@mui/icons-material/Upload";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
@@ -9,9 +11,11 @@ import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { exportCanvas } from "../api/client";
 import { logout } from "../auth/service";
 import { SIDEBAR_WIDTH } from "../constants";
+import { useImportCanvas } from "../hooks/mutations";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import type { ThemePreference } from "../styles/styleConsts";
@@ -51,10 +55,17 @@ const MAX_CHARS = 800;
 
 export function SettingsSidebar() {
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+  const canvases = useCanvasStore((s) => s.canvases);
   const showToast = useAppStore((s) => s.showToast);
   const { preference, setPreference } = useThemePreference();
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const importMutation = useImportCanvas();
+
+  const activeCanvas = canvases.find((c) => c.id === activeCanvasId);
 
   const onClose = useCallback(() => setShowSettings(false), [setShowSettings]);
 
@@ -73,6 +84,39 @@ export function SettingsSidebar() {
     },
     [],
   );
+
+  const handleExport = async () => {
+    if (!activeCanvasId) return;
+    setExporting(true);
+    try {
+      const blob = await exportCanvas(activeCanvasId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${activeCanvas?.name ?? "canvas"}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Canvas exported");
+    } catch {
+      showToast("Failed to export canvas");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    importMutation.mutate(file, {
+      onSuccess: () => {
+        showToast("Canvas imported successfully");
+      },
+      onError: () => {
+        showToast("Failed to import canvas");
+      },
+    });
+    e.target.value = "";
+  };
 
   const handleSubmitFeedback = async () => {
     const trimmed = feedbackMessage.trim();
@@ -146,6 +190,30 @@ export function SettingsSidebar() {
 
       {/* Manage Tags */}
       <ManageTags />
+
+      {/* Data */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+          Data
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExport}
+          disabled={exporting || !activeCanvasId}
+        >
+          {exporting ? "Exporting..." : "Export Canvas"}
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<UploadIcon />}
+          onClick={() => importInputRef.current?.click()}
+          disabled={importMutation.isPending}
+        >
+          {importMutation.isPending ? "Importing..." : "Import Canvas"}
+        </Button>
+        <input ref={importInputRef} type="file" accept=".zip" hidden onChange={handleImport} />
+      </Box>
 
       {/* Feedback */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>

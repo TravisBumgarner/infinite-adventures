@@ -22,6 +22,7 @@ import {
   deleteNote,
   deletePhoto,
   deleteTag,
+  importCanvas,
   removeTagFromItem,
   selectPhoto,
   togglePhotoImportant,
@@ -273,6 +274,18 @@ export function useDeleteLink(canvasId: string) {
         queryKey: queryKeys.items.detail(targetItemId),
       });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+    },
+  });
+}
+
+// --- Backup mutations ---
+
+export function useImportCanvas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => importCanvas(file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.canvases.all });
     },
   });
 }
