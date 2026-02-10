@@ -24,6 +24,7 @@ import {
   deleteTag,
   removeTagFromItem,
   selectPhoto,
+  togglePhotoImportant,
   updateCanvas,
   updateItem,
   updateNote,
@@ -165,6 +166,20 @@ export function useSelectPhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+    },
+  });
+}
+
+export function useTogglePhotoImportant(itemId: string, canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (photoId: string) => togglePhotoImportant(photoId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
+      qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({
+        queryKey: ["canvases", canvasId, "gallery"],
+      });
     },
   });
 }

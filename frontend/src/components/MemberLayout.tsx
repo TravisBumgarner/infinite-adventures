@@ -22,7 +22,9 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     ? "sessions"
     : location.pathname.startsWith("/timeline")
       ? "timeline"
-      : "canvas";
+      : location.pathname.startsWith("/gallery")
+        ? "gallery"
+        : "canvas";
 
   return (
     <>
