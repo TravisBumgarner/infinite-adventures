@@ -19,7 +19,7 @@ export const CanvasItemSummarySchema = z.object({
 export const NoteSchema = z.object({
   id: z.string(),
   content: z.string(),
-  is_pinned: z.boolean(),
+  is_important: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -28,7 +28,8 @@ export const PhotoSchema = z.object({
   id: z.string(),
   url: z.string(),
   original_name: z.string(),
-  is_selected: z.boolean(),
+  is_main_photo: z.boolean(),
+  is_important: z.boolean(),
   aspect_ratio: z.number().optional(),
   blurhash: z.string().optional(),
 });
@@ -106,7 +107,7 @@ export const CreateNoteInputSchema = z.object({
 
 export const UpdateNoteInputSchema = z.object({
   content: z.string().optional(),
-  is_pinned: z.boolean().optional(),
+  is_important: z.boolean().optional(),
 });
 
 export const CanvasItemSearchResultSchema = z.object({
@@ -164,6 +165,7 @@ export const TimelineEntrySchema = z.object({
   kind: z.enum(["note", "photo"]),
   created_at: z.string(),
   updated_at: z.string(),
+  is_important: z.boolean(),
   content: z.string().optional(),
   photo_url: z.string().optional(),
   original_name: z.string().optional(),
@@ -188,6 +190,31 @@ export const TimelineDayCountsSchema = z.object({
 });
 
 export type TimelineDayCounts = z.infer<typeof TimelineDayCountsSchema>;
+
+// --- Gallery ---
+
+export const GalleryEntrySchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  original_name: z.string(),
+  aspect_ratio: z.number().optional(),
+  blurhash: z.string().optional(),
+  is_main_photo: z.boolean(),
+  is_important: z.boolean(),
+  created_at: z.string(),
+  parent_item_id: z.string(),
+  parent_item_type: CanvasItemTypeSchema,
+  parent_item_title: z.string(),
+});
+
+export type GalleryEntry = z.infer<typeof GalleryEntrySchema>;
+
+export const PaginatedGallerySchema = z.object({
+  entries: z.array(GalleryEntrySchema),
+  next_cursor: z.string().nullable(),
+});
+
+export type PaginatedGallery = z.infer<typeof PaginatedGallerySchema>;
 
 // --- Error codes ---
 

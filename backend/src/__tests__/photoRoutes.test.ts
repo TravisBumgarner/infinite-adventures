@@ -232,7 +232,7 @@ describe("photo routes", () => {
       expect(res.status).toHaveBeenCalledWith(403);
     });
 
-    it("handler selects photo and returns success envelope with is_selected true", async () => {
+    it("handler selects photo and returns success envelope with is_main_photo true", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
@@ -254,7 +254,7 @@ describe("photo routes", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(jsonArg.success).toBe(true);
-      expect(jsonArg.data.is_selected).toBe(true);
+      expect(jsonArg.data.is_main_photo).toBe(true);
     });
   });
 });

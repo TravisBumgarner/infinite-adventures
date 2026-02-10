@@ -16,6 +16,7 @@ CREATE TABLE "canvas_items" (
 	"id" text PRIMARY KEY NOT NULL,
 	"type" text NOT NULL,
 	"title" text NOT NULL,
+	"summary" text DEFAULT '' NOT NULL,
 	"canvas_x" double precision DEFAULT 0 NOT NULL,
 	"canvas_y" double precision DEFAULT 0 NOT NULL,
 	"canvas_id" text NOT NULL,
@@ -49,6 +50,7 @@ CREATE TABLE "notes" (
 	"id" text PRIMARY KEY NOT NULL,
 	"canvas_item_id" text NOT NULL,
 	"content" text DEFAULT '' NOT NULL,
+	"is_important" boolean DEFAULT false NOT NULL,
 	"created_at" text DEFAULT now()::text NOT NULL,
 	"updated_at" text DEFAULT now()::text NOT NULL
 );
@@ -66,7 +68,10 @@ CREATE TABLE "photos" (
 	"filename" text NOT NULL,
 	"original_name" text NOT NULL,
 	"mime_type" text NOT NULL,
-	"is_selected" boolean DEFAULT false NOT NULL,
+	"is_main_photo" boolean DEFAULT false NOT NULL,
+	"is_important" boolean DEFAULT false NOT NULL,
+	"aspect_ratio" double precision,
+	"blurhash" text,
 	"created_at" text DEFAULT now()::text NOT NULL
 );
 --> statement-breakpoint

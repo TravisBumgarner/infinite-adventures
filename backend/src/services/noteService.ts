@@ -11,12 +11,12 @@ export async function listNotes(canvasItemId: string): Promise<Note[]> {
     .select()
     .from(notes)
     .where(eq(notes.canvas_item_id, canvasItemId))
-    .orderBy(desc(notes.is_pinned), notes.created_at);
+    .orderBy(desc(notes.is_important), notes.created_at);
 
   return rows.map((row) => ({
     id: row.id,
     content: row.content,
-    is_pinned: row.is_pinned,
+    is_important: row.is_important,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }));
@@ -31,7 +31,7 @@ export async function getNote(noteId: string): Promise<Note | null> {
   return {
     id: row.id,
     content: row.content,
-    is_pinned: row.is_pinned,
+    is_important: row.is_important,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -58,7 +58,7 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
   return {
     id,
     content: input.content ?? "",
-    is_pinned: false,
+    is_important: false,
     created_at: now,
     updated_at: now,
   };
@@ -74,7 +74,7 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
 
   const updates: Record<string, unknown> = { updated_at: now };
   if (input.content !== undefined) updates.content = input.content;
-  if (input.is_pinned !== undefined) updates.is_pinned = input.is_pinned;
+  if (input.is_important !== undefined) updates.is_important = input.is_important;
 
   await db.update(notes).set(updates).where(eq(notes.id, noteId));
 
@@ -86,7 +86,7 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
   return {
     id: noteId,
     content: input.content ?? existing.content,
-    is_pinned: input.is_pinned ?? existing.is_pinned,
+    is_important: input.is_important ?? existing.is_important,
     created_at: existing.created_at,
     updated_at: now,
   };

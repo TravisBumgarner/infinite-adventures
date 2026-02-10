@@ -1,5 +1,5 @@
 {
-  "id": "74fb8e4e-c31b-4524-913a-6e0fc5c1b414",
+  "id": "1fc8b8ba-b704-4bc8-aa69-4db1ac173f33",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -158,6 +158,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
         },
         "canvas_x": {
           "name": "canvas_x",
@@ -467,6 +474,13 @@
           "notNull": true,
           "default": "''"
         },
+        "is_important": {
+          "name": "is_important",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -593,12 +607,31 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_selected": {
-          "name": "is_selected",
+        "is_main_photo": {
+          "name": "is_main_photo",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "is_important": {
+          "name": "is_important",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "aspect_ratio": {
+          "name": "aspect_ratio",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blurhash": {
+          "name": "blurhash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

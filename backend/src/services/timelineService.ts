@@ -48,6 +48,7 @@ export async function getTimeline(
     .select({
       id: notes.id,
       content: notes.content,
+      is_important: notes.is_important,
       created_at: notes.created_at,
       updated_at: notes.updated_at,
       parent_item_id: canvasItems.id,
@@ -65,6 +66,7 @@ export async function getTimeline(
     kind: "note" as const,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    is_important: row.is_important,
     content: row.content,
     parent_item_id: row.parent_item_id,
     parent_item_type: row.parent_item_type,
@@ -87,6 +89,7 @@ export async function getTimeline(
     .select({
       id: photos.id,
       original_name: photos.original_name,
+      is_important: photos.is_important,
       created_at: photos.created_at,
       aspect_ratio: photos.aspect_ratio,
       blurhash: photos.blurhash,
@@ -108,6 +111,7 @@ export async function getTimeline(
     kind: "photo" as const,
     created_at: row.created_at,
     updated_at: row.created_at,
+    is_important: row.is_important,
     photo_url: `/api/photos/${row.id}`,
     original_name: row.original_name,
     aspect_ratio: row.aspect_ratio ?? undefined,

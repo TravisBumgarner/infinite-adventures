@@ -37,6 +37,6 @@ export async function handler(req: Request<{ id: string }>, res: Response): Prom
     id: photo.id,
     url: `/api/photos/${photo.filename}`,
     original_name: photo.original_name,
-    is_selected: photo.is_selected,
+    is_main_photo: photo.is_main_photo,
   });
 }

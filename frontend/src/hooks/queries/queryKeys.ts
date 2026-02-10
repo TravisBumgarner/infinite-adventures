@@ -13,6 +13,10 @@ export const queryKeys = {
     counts: (canvasId: string, start: string, end: string) =>
       ["canvases", canvasId, "timeline", "counts", start, end] as const,
   },
+  gallery: {
+    list: (canvasId: string, importantOnly: boolean) =>
+      ["canvases", canvasId, "gallery", importantOnly] as const,
+  },
   sessions: {
     list: (canvasId: string) => ["canvases", canvasId, "sessions"] as const,
   },
