@@ -143,7 +143,7 @@ describe("canvas item routes", () => {
 
     it("handler creates item and returns 201 with success envelope", async () => {
       const req = createMockReq({
-        body: { type: "person", title: "Gandalf", canvas_x: 10, canvas_y: 20 },
+        body: { type: "person", title: "Gandalf", canvasX: 10, canvasY: 20 },
         params: { canvasId: DEFAULT_CANVAS_ID },
         user: { userId: TEST_USER_ID },
       });

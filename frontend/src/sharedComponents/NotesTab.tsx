@@ -150,18 +150,18 @@ export default function NotesTab({
                     dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
                   />
                   <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                    Last edited on {new Date(note.updated_at).toLocaleDateString()}
+                    Last edited on {new Date(note.updatedAt).toLocaleDateString()}
                   </Typography>
                 </Box>
                 <IconButton
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleImportant(note.id, !note.is_important);
+                    onToggleImportant(note.id, !note.isImportant);
                   }}
                   sx={{ color: "var(--color-subtext0)", ml: 1 }}
                 >
-                  {note.is_important ? (
+                  {note.isImportant ? (
                     <StarIcon sx={{ fontSize: 18 }} />
                   ) : (
                     <StarOutlineIcon sx={{ fontSize: 18 }} />

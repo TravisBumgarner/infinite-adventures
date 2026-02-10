@@ -119,7 +119,7 @@ describe("photo routes", () => {
       expect(res.status).toHaveBeenCalledWith(201);
       const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(jsonArg.success).toBe(true);
-      expect(jsonArg.data.original_name).toBe("gandalf.jpg");
+      expect(jsonArg.data.originalName).toBe("gandalf.jpg");
     });
   });
 
@@ -137,10 +137,10 @@ describe("photo routes", () => {
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
-        content_type: fullItem!.type,
-        content_id: contentId!,
-        original_name: "test.jpg",
-        mime_type: "image/jpeg",
+        contentType: fullItem!.type,
+        contentId: contentId!,
+        originalName: "test.jpg",
+        mimeType: "image/jpeg",
         buffer: Buffer.from("test image data"),
       });
 
@@ -185,10 +185,10 @@ describe("photo routes", () => {
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
-        content_type: fullItem!.type,
-        content_id: contentId!,
-        original_name: "test.jpg",
-        mime_type: "image/jpeg",
+        contentType: fullItem!.type,
+        contentId: contentId!,
+        originalName: "test.jpg",
+        mimeType: "image/jpeg",
         buffer: Buffer.from("test image data"),
       });
 
@@ -232,15 +232,15 @@ describe("photo routes", () => {
       expect(res.status).toHaveBeenCalledWith(403);
     });
 
-    it("handler selects photo and returns success envelope with is_main_photo true", async () => {
+    it("handler selects photo and returns success envelope with isMainPhoto true", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
-        content_type: fullItem!.type,
-        content_id: contentId!,
-        original_name: "test.jpg",
-        mime_type: "image/jpeg",
+        contentType: fullItem!.type,
+        contentId: contentId!,
+        originalName: "test.jpg",
+        mimeType: "image/jpeg",
         buffer: Buffer.from("test image data"),
       });
 
@@ -254,7 +254,7 @@ describe("photo routes", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(jsonArg.success).toBe(true);
-      expect(jsonArg.data.is_main_photo).toBe(true);
+      expect(jsonArg.data.isMainPhoto).toBe(true);
     });
   });
 });

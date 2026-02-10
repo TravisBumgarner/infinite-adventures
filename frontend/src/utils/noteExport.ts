@@ -34,13 +34,13 @@ export function formatItemExport(item: CanvasItem, itemsCache: Map<string, Canva
   const seen = new Set<string>();
   const connectedIds: string[] = [];
 
-  for (const link of item.links_to) {
+  for (const link of item.linksTo) {
     if (!seen.has(link.id)) {
       seen.add(link.id);
       connectedIds.push(link.id);
     }
   }
-  for (const link of item.linked_from) {
+  for (const link of item.linkedFrom) {
     if (!seen.has(link.id)) {
       seen.add(link.id);
       connectedIds.push(link.id);

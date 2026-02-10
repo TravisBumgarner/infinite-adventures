@@ -43,7 +43,7 @@ describe("sessions", () => {
     it("returns only session-type items", async () => {
       await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       await createItem(
-        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        { type: "session", title: "Session One", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 
@@ -52,13 +52,13 @@ describe("sessions", () => {
       expect(result[0]!.title).toBe("Session One");
     });
 
-    it("returns sessions sorted by session_date descending", async () => {
+    it("returns sessions sorted by sessionDate descending", async () => {
       await createItem(
-        { type: "session", title: "Older Session", session_date: "2025-01-01" },
+        { type: "session", title: "Older Session", sessionDate: "2025-01-01" },
         DEFAULT_CANVAS_ID,
       );
       await createItem(
-        { type: "session", title: "Newer Session", session_date: "2025-06-15" },
+        { type: "session", title: "Newer Session", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 
@@ -71,11 +71,11 @@ describe("sessions", () => {
     it("returns sessions for the specified canvas only", async () => {
       const otherCanvas = await createCanvas("Other Canvas", TEST_USER_ID);
       await createItem(
-        { type: "session", title: "Session A", session_date: "2025-06-15" },
+        { type: "session", title: "Session A", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createItem(
-        { type: "session", title: "Session B", session_date: "2025-06-15" },
+        { type: "session", title: "Session B", sessionDate: "2025-06-15" },
         otherCanvas.id,
       );
 
@@ -84,15 +84,15 @@ describe("sessions", () => {
       expect(result[0]!.title).toBe("Session A");
     });
 
-    it("includes session_date and created_at in response", async () => {
+    it("includes sessionDate and createdAt in response", async () => {
       await createItem(
-        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        { type: "session", title: "Session One", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 
       const result = await listSessions(DEFAULT_CANVAS_ID);
-      expect(result[0]!.session_date).toBe("2025-06-15");
-      expect(result[0]!.created_at).toBeDefined();
+      expect(result[0]!.sessionDate).toBe("2025-06-15");
+      expect(result[0]!.createdAt).toBeDefined();
     });
   });
 
@@ -106,7 +106,7 @@ describe("sessions", () => {
 
     it("handler returns sessions in success envelope", async () => {
       await createItem(
-        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        { type: "session", title: "Session One", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 

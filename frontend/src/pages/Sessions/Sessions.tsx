@@ -106,7 +106,7 @@ export default function Sessions() {
       await createItemMutation.mutateAsync({
         type: "session",
         title: newTitle.trim(),
-        session_date: newDate,
+        sessionDate: newDate,
       });
       setNewTitle("");
       setNewDate(new Date().toISOString().split("T")[0]!);
@@ -283,7 +283,7 @@ export default function Sessions() {
                 >
                   <ListItemText
                     primary={session.title}
-                    secondary={formatDate(session.session_date)}
+                    secondary={formatDate(session.sessionDate)}
                     slotProps={{
                       primary: {
                         sx: { fontWeight: 600, color: "var(--color-text)" },

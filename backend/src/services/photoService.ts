@@ -12,23 +12,23 @@ const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
 
 export interface PhotoInfo {
   id: string;
-  content_type: CanvasItemType;
-  content_id: string;
+  contentType: CanvasItemType;
+  contentId: string;
   filename: string;
-  original_name: string;
-  mime_type: string;
-  is_main_photo: boolean;
-  is_important: boolean;
-  aspect_ratio: number | null;
+  originalName: string;
+  mimeType: string;
+  isMainPhoto: boolean;
+  isImportant: boolean;
+  aspectRatio: number | null;
   blurhash: string | null;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface UploadPhotoInput {
-  content_type: CanvasItemType;
-  content_id: string;
-  original_name: string;
-  mime_type: string;
+  contentType: CanvasItemType;
+  contentId: string;
+  originalName: string;
+  mimeType: string;
   buffer: Buffer;
 }
 
@@ -56,7 +56,7 @@ function getExtension(filename: string): string {
 export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const db = getDb();
   const id = uuidv4();
-  const ext = getExtension(input.original_name);
+  const ext = getExtension(input.originalName);
   const filename = `${id}${ext}`;
   const now = new Date().toISOString();
 
@@ -67,13 +67,13 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const filePath = path.join(UPLOADS_DIR, filename);
   fs.writeFileSync(filePath, input.buffer);
 
-  // Compute aspect_ratio and blurhash
-  let aspect_ratio: number | null = null;
+  // Compute aspectRatio and blurhash
+  let aspectRatio: number | null = null;
   let blurhash: string | null = null;
   try {
     const metadata = await sharp(input.buffer).metadata();
     if (metadata.width && metadata.height) {
-      aspect_ratio = metadata.width / metadata.height;
+      aspectRatio = metadata.width / metadata.height;
       const { data, info } = await sharp(input.buffer)
         .resize(32, 32, { fit: "inside" })
         .ensureAlpha()
@@ -86,35 +86,35 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   }
 
   // Auto-select as main photo if this is the first photo for the content item
-  const existing = await listPhotos(input.content_type, input.content_id);
+  const existing = await listPhotos(input.contentType, input.contentId);
   const isMainPhoto = existing.length === 0;
 
   // Insert metadata into database
   await db.insert(photos).values({
     id,
-    content_type: input.content_type,
-    content_id: input.content_id,
+    contentType: input.contentType,
+    contentId: input.contentId,
     filename,
-    original_name: input.original_name,
-    mime_type: input.mime_type,
-    is_main_photo: isMainPhoto,
-    aspect_ratio,
+    originalName: input.originalName,
+    mimeType: input.mimeType,
+    isMainPhoto: isMainPhoto,
+    aspectRatio,
     blurhash,
-    created_at: now,
+    createdAt: now,
   });
 
   return {
     id,
-    content_type: input.content_type,
-    content_id: input.content_id,
+    contentType: input.contentType,
+    contentId: input.contentId,
     filename,
-    original_name: input.original_name,
-    mime_type: input.mime_type,
-    is_main_photo: isMainPhoto,
-    is_important: false,
-    aspect_ratio,
+    originalName: input.originalName,
+    mimeType: input.mimeType,
+    isMainPhoto: isMainPhoto,
+    isImportant: false,
+    aspectRatio,
     blurhash,
-    created_at: now,
+    createdAt: now,
   };
 }
 
@@ -139,7 +139,7 @@ export async function listPhotos(
   const result = await db
     .select()
     .from(photos)
-    .where(and(eq(photos.content_type, contentType), eq(photos.content_id, contentId)));
+    .where(and(eq(photos.contentType, contentType), eq(photos.contentId, contentId)));
   return result as PhotoInfo[];
 }
 
@@ -182,20 +182,18 @@ export async function selectPhoto(id: string): Promise<PhotoInfo | null> {
   // Unselect all photos for the same content item
   await db
     .update(photos)
-    .set({ is_main_photo: false })
-    .where(
-      and(eq(photos.content_type, photo.content_type), eq(photos.content_id, photo.content_id)),
-    );
+    .set({ isMainPhoto: false })
+    .where(and(eq(photos.contentType, photo.contentType), eq(photos.contentId, photo.contentId)));
 
   // Select the specified photo
-  await db.update(photos).set({ is_main_photo: true }).where(eq(photos.id, id));
+  await db.update(photos).set({ isMainPhoto: true }).where(eq(photos.id, id));
 
   // Return updated photo
   return getPhoto(id);
 }
 
 /**
- * Toggle the is_important flag on a photo.
+ * Toggle the isImportant flag on a photo.
  * Returns the updated photo or null if not found.
  */
 export async function togglePhotoImportant(id: string): Promise<PhotoInfo | null> {
@@ -203,7 +201,7 @@ export async function togglePhotoImportant(id: string): Promise<PhotoInfo | null
   const photo = await getPhoto(id);
   if (!photo) return null;
 
-  await db.update(photos).set({ is_important: !photo.is_important }).where(eq(photos.id, id));
+  await db.update(photos).set({ isImportant: !photo.isImportant }).where(eq(photos.id, id));
 
   return getPhoto(id);
 }
@@ -240,7 +238,7 @@ export async function deletePhotosForContent(
   // Delete from database
   await db
     .delete(photos)
-    .where(and(eq(photos.content_type, contentType), eq(photos.content_id, contentId)));
+    .where(and(eq(photos.contentType, contentType), eq(photos.contentId, contentId)));
 
   return photosToDelete.length;
 }

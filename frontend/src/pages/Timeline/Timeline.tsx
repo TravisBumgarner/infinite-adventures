@@ -72,7 +72,7 @@ export default function Timeline() {
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
 
-  const [sort, setSort] = useState<"created_at" | "updated_at">("created_at");
+  const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(
     () => new Set(CANVAS_ITEM_TYPES.map((t) => t.value)),
   );
@@ -182,12 +182,12 @@ export default function Timeline() {
   const filtered = useMemo(
     () =>
       allEntries.filter((e) => {
-        if (!activeFilters.has(e.parent_item_type)) return false;
+        if (!activeFilters.has(e.parentItemType)) return false;
         if (selectedDate) {
-          const entryDate = e.created_at.slice(0, 10);
+          const entryDate = e.createdAt.slice(0, 10);
           if (entryDate !== selectedDate) return false;
         }
-        if (importantOnly && !e.is_important) return false;
+        if (importantOnly && !e.isImportant) return false;
         return true;
       }),
     [allEntries, activeFilters, selectedDate, importantOnly],
@@ -318,11 +318,11 @@ export default function Timeline() {
               }}
               size="small"
             >
-              <ToggleButton value="created_at" sx={{ textTransform: "none", gap: 0.5 }}>
+              <ToggleButton value="createdAt" sx={{ textTransform: "none", gap: 0.5 }}>
                 <SortIcon fontSize="small" />
                 Created
               </ToggleButton>
-              <ToggleButton value="updated_at" sx={{ textTransform: "none", gap: 0.5 }}>
+              <ToggleButton value="updatedAt" sx={{ textTransform: "none", gap: 0.5 }}>
                 <SortIcon fontSize="small" />
                 Last Updated
               </ToggleButton>
@@ -389,17 +389,17 @@ export default function Timeline() {
           ) : (
             <List disablePadding>
               {filtered.map((entry, idx) => {
-                const colors = theme.palette.canvasItemTypes[entry.parent_item_type];
+                const colors = theme.palette.canvasItemTypes[entry.parentItemType];
                 const typeLabel =
-                  CANVAS_ITEM_TYPES.find((t) => t.value === entry.parent_item_type)?.label ??
-                  entry.parent_item_type;
-                const ts = sort === "updated_at" ? entry.updated_at : entry.created_at;
+                  CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
+                  entry.parentItemType;
+                const ts = sort === "updatedAt" ? entry.updatedAt : entry.createdAt;
                 const currentDateKey = getDateKey(ts);
                 const prevEntry = idx > 0 ? filtered[idx - 1] : null;
                 const prevTs = prevEntry
-                  ? sort === "updated_at"
-                    ? prevEntry.updated_at
-                    : prevEntry.created_at
+                  ? sort === "updatedAt"
+                    ? prevEntry.updatedAt
+                    : prevEntry.createdAt
                   : null;
                 const showDivider = !prevTs || getDateKey(prevTs) !== currentDateKey;
 
@@ -468,7 +468,7 @@ export default function Timeline() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {entry.parent_item_title}
+                          {entry.parentItemTitle}
                         </Typography>
                         <Typography
                           variant="caption"
@@ -485,8 +485,8 @@ export default function Timeline() {
                       {/* Row 2: full content */}
                       {entry.kind === "photo" ? (
                         <BlurImage
-                          src={entry.photo_url!}
-                          alt={entry.original_name ?? ""}
+                          src={entry.photoUrl!}
+                          alt={entry.originalName ?? ""}
                           blurhash={entry.blurhash}
                           sx={{
                             width: "100%",
@@ -515,7 +515,7 @@ export default function Timeline() {
                           size="small"
                           startIcon={<MapIcon sx={{ fontSize: 14 }} />}
                           onClick={() => {
-                            setEditingItemId(entry.parent_item_id);
+                            setEditingItemId(entry.parentItemId);
                             navigate("/canvas");
                           }}
                           sx={{
@@ -527,11 +527,11 @@ export default function Timeline() {
                         >
                           Open in Canvas
                         </Button>
-                        {entry.parent_item_type === "session" && (
+                        {entry.parentItemType === "session" && (
                           <Button
                             size="small"
                             startIcon={<CalendarMonthIcon sx={{ fontSize: 14 }} />}
-                            onClick={() => navigate(`/sessions/${entry.parent_item_id}`)}
+                            onClick={() => navigate(`/sessions/${entry.parentItemId}`)}
                             sx={{
                               textTransform: "none",
                               fontSize: 12,

@@ -36,15 +36,15 @@ function toFlowNode(
   }
 
   // Find selected photo URL
-  const selectedPhoto = item.photos.find((p) => p.is_main_photo);
+  const selectedPhoto = item.photos.find((p) => p.isMainPhoto);
 
-  // Count connections (links_to + linked_from)
-  const connectionsCount = (item.links_to?.length ?? 0) + (item.linked_from?.length ?? 0);
+  // Count connections (linksTo + linkedFrom)
+  const connectionsCount = (item.linksTo?.length ?? 0) + (item.linkedFrom?.length ?? 0);
 
   return {
     id: item.id,
     type: "canvasItem",
-    position: { x: item.canvas_x, y: item.canvas_y },
+    position: { x: item.canvasX, y: item.canvasY },
     data: {
       itemId: item.id,
       type: item.type,
@@ -69,8 +69,8 @@ function buildEdges(
 ): Edge[] {
   const edges: Edge[] = [];
   for (const item of items) {
-    if (!item.links_to) continue;
-    for (const link of item.links_to) {
+    if (!item.linksTo) continue;
+    for (const link of item.linksTo) {
       const targetItem = cache.get(link.id);
       edges.push({
         id: `${item.id}->${link.id}`,
@@ -267,7 +267,7 @@ export function useCanvasActions() {
     (itemId: string) => {
       const item = useCanvasStore.getState().itemsCache.get(itemId);
       if (item) {
-        reactFlowInstance.setCenter(item.canvas_x, item.canvas_y, {
+        reactFlowInstance.setCenter(item.canvasX, item.canvasY, {
           zoom: 1.2,
           duration: 500,
         });
@@ -287,8 +287,8 @@ export function useCanvasActions() {
       const item = await createItemMutation.mutateAsync({
         type,
         title: "New Item",
-        canvas_x: pos.x,
-        canvas_y: pos.y,
+        canvasX: pos.x,
+        canvasY: pos.y,
       });
       const fullItem = await fetchItemViaQuery(item.id);
       const cache = useCanvasStore.getState().itemsCache;
@@ -443,10 +443,10 @@ export function useCanvasActions() {
     const cache = useCanvasStore.getState().itemsCache;
     const nextCache = new Map(cache);
     for (const [id, pos] of moves) {
-      updateItemMutation.mutate({ id, input: { canvas_x: pos.x, canvas_y: pos.y } });
+      updateItemMutation.mutate({ id, input: { canvasX: pos.x, canvasY: pos.y } });
       const cached = nextCache.get(id);
       if (cached) {
-        nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
+        nextCache.set(id, { ...cached, canvasX: pos.x, canvasY: pos.y });
       }
     }
     setItemsCache(nextCache);
@@ -478,10 +478,10 @@ export function useCanvasActions() {
       const cache = useCanvasStore.getState().itemsCache;
       const nextCache = new Map(cache);
       for (const [id, pos] of positions) {
-        updateItemMutation.mutate({ id, input: { canvas_x: pos.x, canvas_y: pos.y } });
+        updateItemMutation.mutate({ id, input: { canvasX: pos.x, canvasY: pos.y } });
         const cached = nextCache.get(id);
         if (cached) {
-          nextCache.set(id, { ...cached, canvas_x: pos.x, canvas_y: pos.y });
+          nextCache.set(id, { ...cached, canvasX: pos.x, canvasY: pos.y });
         }
       }
       setItemsCache(nextCache);

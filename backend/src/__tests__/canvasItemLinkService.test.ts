@@ -147,7 +147,7 @@ describe("canvasItemLinkService", () => {
       const links = await db
         .select()
         .from(canvasItemLinks)
-        .where(eq(canvasItemLinks.source_item_id, source.id));
+        .where(eq(canvasItemLinks.sourceItemId, source.id));
       expect(links).toHaveLength(1);
     });
 
@@ -161,7 +161,7 @@ describe("canvasItemLinkService", () => {
       const [link] = await db
         .select()
         .from(canvasItemLinks)
-        .where(eq(canvasItemLinks.source_item_id, source.id));
+        .where(eq(canvasItemLinks.sourceItemId, source.id));
 
       expect(link?.snippet).toBeDefined();
       expect(link?.snippet).toContain("Gandalf");
@@ -176,7 +176,7 @@ describe("canvasItemLinkService", () => {
       expect(resolved[0]?.title).toBe("Rivendell");
       expect(resolved[0]?.created).toBe(true);
 
-      // Verify the new item inherits source's canvas_id and is type 'person'
+      // Verify the new item inherits source's canvasId and is type 'person'
       const db = getDb();
       const [newItem] = await db
         .select()
@@ -184,7 +184,7 @@ describe("canvasItemLinkService", () => {
         .where(eq(canvasItems.id, resolved[0]?.targetItemId));
       expect(newItem?.type).toBe("person");
       expect(newItem?.title).toBe("Rivendell");
-      expect(newItem?.canvas_id).toBe(DEFAULT_CANVAS_ID);
+      expect(newItem?.canvasId).toBe(DEFAULT_CANVAS_ID);
     });
 
     it("removes stale links when mentions are removed", async () => {
@@ -199,7 +199,7 @@ describe("canvasItemLinkService", () => {
       let links = await db
         .select()
         .from(canvasItemLinks)
-        .where(eq(canvasItemLinks.source_item_id, source.id));
+        .where(eq(canvasItemLinks.sourceItemId, source.id));
       expect(links).toHaveLength(2);
 
       // Now remove Shire mention
@@ -208,7 +208,7 @@ describe("canvasItemLinkService", () => {
       links = await db
         .select()
         .from(canvasItemLinks)
-        .where(eq(canvasItemLinks.source_item_id, source.id));
+        .where(eq(canvasItemLinks.sourceItemId, source.id));
       expect(links).toHaveLength(1);
     });
 
@@ -229,7 +229,7 @@ describe("canvasItemLinkService", () => {
       const links = await db
         .select()
         .from(canvasItemLinks)
-        .where(eq(canvasItemLinks.source_item_id, source.id));
+        .where(eq(canvasItemLinks.sourceItemId, source.id));
       expect(links).toHaveLength(0);
     });
 

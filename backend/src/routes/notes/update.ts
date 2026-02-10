@@ -19,7 +19,7 @@ export function validate(
 ): UpdateValidationContext | null {
   const parsed = parseRoute(req, res, { params: NoteIdParams, body: UpdateNoteInputSchema });
   if (!parsed) return null;
-  if (parsed.body.content === undefined && parsed.body.is_important === undefined) {
+  if (parsed.body.content === undefined && parsed.body.isImportant === undefined) {
     sendBadRequest(res, "INVALID_INPUT");
     return null;
   }

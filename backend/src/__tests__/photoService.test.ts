@@ -56,28 +56,28 @@ describe("photoService", () => {
   describe("uploadPhoto", () => {
     it("uploads a photo and returns photo info", async () => {
       const photo = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
       expect(photo.id).toBeDefined();
-      expect(photo.content_type).toBe(TEST_CONTENT_TYPE);
-      expect(photo.content_id).toBe(TEST_CONTENT_ID);
-      expect(photo.original_name).toBe("gandalf.png");
-      expect(photo.mime_type).toBe("image/png");
-      expect(photo.is_main_photo).toBe(true);
-      expect(photo.created_at).toBeDefined();
+      expect(photo.contentType).toBe(TEST_CONTENT_TYPE);
+      expect(photo.contentId).toBe(TEST_CONTENT_ID);
+      expect(photo.originalName).toBe("gandalf.png");
+      expect(photo.mimeType).toBe("image/png");
+      expect(photo.isMainPhoto).toBe(true);
+      expect(photo.createdAt).toBeDefined();
     });
 
     it("stores the file on disk with UUID filename", async () => {
       const photo = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
@@ -87,10 +87,10 @@ describe("photoService", () => {
 
     it("preserves original file extension in stored filename", async () => {
       const photo = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.jpeg",
-        mime_type: "image/jpeg",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.jpeg",
+        mimeType: "image/jpeg",
         buffer: TEST_JPEG_BUFFER,
       });
 
@@ -101,17 +101,17 @@ describe("photoService", () => {
   describe("getPhoto", () => {
     it("returns photo by ID", async () => {
       const uploaded = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
       const photo = await getPhoto(uploaded.id);
       expect(photo).not.toBeNull();
       expect(photo?.id).toBe(uploaded.id);
-      expect(photo?.original_name).toBe("gandalf.png");
+      expect(photo?.originalName).toBe("gandalf.png");
     });
 
     it("returns null for non-existent ID", async () => {
@@ -128,40 +128,40 @@ describe("photoService", () => {
 
     it("returns photos for specified content only", async () => {
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo1.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo1.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo2.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo2.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID_2,
-        original_name: "other.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID_2,
+        originalName: "other.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
       const photos = await listPhotos(TEST_CONTENT_TYPE, TEST_CONTENT_ID);
       expect(photos).toHaveLength(2);
-      expect(photos.every((p) => p.content_id === TEST_CONTENT_ID)).toBe(true);
+      expect(photos.every((p) => p.contentId === TEST_CONTENT_ID)).toBe(true);
     });
   });
 
   describe("deletePhoto", () => {
     it("deletes photo metadata and file", async () => {
       const uploaded = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       const filePath = getPhotoPath(uploaded.filename);
@@ -181,34 +181,34 @@ describe("photoService", () => {
   });
 
   describe("selectPhoto", () => {
-    it("sets is_main_photo to true", async () => {
+    it("sets isMainPhoto to true", async () => {
       const uploaded = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "gandalf.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "gandalf.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
       const selected = await selectPhoto(uploaded.id);
-      expect(selected?.is_main_photo).toBe(true);
+      expect(selected?.isMainPhoto).toBe(true);
     });
 
     it("unselects previously selected photo for same content", async () => {
       const photo1 = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo1.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo1.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await selectPhoto(photo1.id);
 
       const photo2 = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo2.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo2.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await selectPhoto(photo2.id);
@@ -216,31 +216,31 @@ describe("photoService", () => {
       const updatedPhoto1 = await getPhoto(photo1.id);
       const updatedPhoto2 = await getPhoto(photo2.id);
 
-      expect(updatedPhoto1?.is_main_photo).toBe(false);
-      expect(updatedPhoto2?.is_main_photo).toBe(true);
+      expect(updatedPhoto1?.isMainPhoto).toBe(false);
+      expect(updatedPhoto2?.isMainPhoto).toBe(true);
     });
 
     it("does not affect photos of other content items", async () => {
       const photo1 = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo1.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo1.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await selectPhoto(photo1.id);
 
       const photo2 = await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID_2,
-        original_name: "photo2.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID_2,
+        originalName: "photo2.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await selectPhoto(photo2.id);
 
       const updatedPhoto1 = await getPhoto(photo1.id);
-      expect(updatedPhoto1?.is_main_photo).toBe(true);
+      expect(updatedPhoto1?.isMainPhoto).toBe(true);
     });
 
     it("returns null for non-existent ID", async () => {
@@ -259,17 +259,17 @@ describe("photoService", () => {
   describe("deletePhotosForContent", () => {
     it("deletes all photos for a content item", async () => {
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo1.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo1.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo2.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo2.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 
@@ -286,17 +286,17 @@ describe("photoService", () => {
 
     it("does not affect photos of other content items", async () => {
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID,
-        original_name: "photo1.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID,
+        originalName: "photo1.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
       await uploadPhoto({
-        content_type: TEST_CONTENT_TYPE,
-        content_id: TEST_CONTENT_ID_2,
-        original_name: "photo2.png",
-        mime_type: "image/png",
+        contentType: TEST_CONTENT_TYPE,
+        contentId: TEST_CONTENT_ID_2,
+        originalName: "photo2.png",
+        mimeType: "image/png",
         buffer: TEST_PNG_BUFFER,
       });
 

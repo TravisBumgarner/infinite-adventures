@@ -72,10 +72,10 @@ describe("authorizationService", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const contentId = await getItemContentId(item.id);
       const photo = await uploadPhoto({
-        content_type: "person",
-        content_id: contentId!,
-        original_name: "test.jpg",
-        mime_type: "image/jpeg",
+        contentType: "person",
+        contentId: contentId!,
+        originalName: "test.jpg",
+        mimeType: "image/jpeg",
         buffer: Buffer.from("fake"),
       });
       expect(await getCanvasIdForPhoto(photo.id)).toBe(DEFAULT_CANVAS_ID);

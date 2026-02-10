@@ -7,12 +7,12 @@ function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }
     type: "person",
     content: { id: overrides.id, notes: "" },
     photos: [],
-    canvas_x: 0,
-    canvas_y: 0,
-    created_at: "2024-01-01",
-    updated_at: "2024-01-01",
-    links_to: [],
-    linked_from: [],
+    canvasX: 0,
+    canvasY: 0,
+    createdAt: "2024-01-01",
+    updatedAt: "2024-01-01",
+    linksTo: [],
+    linkedFrom: [],
     ...overrides,
   };
 }
@@ -64,7 +64,7 @@ describe("formatItemExport", () => {
     expect(result).toContain("@unknown-id");
   });
 
-  it("includes connected items from links_to", () => {
+  it("includes connected items from linksTo", () => {
     const frodo = makeItem({
       id: "2",
       title: "Frodo",
@@ -73,7 +73,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "2", title: "Frodo", type: "person" }],
+      linksTo: [{ id: "2", title: "Frodo", type: "person" }],
     });
     const cache = new Map<string, CanvasItem>([
       ["1", item],
@@ -84,7 +84,7 @@ describe("formatItemExport", () => {
     expect(result).toContain("A hobbit");
   });
 
-  it("includes connected items from linked_from", () => {
+  it("includes connected items from linkedFrom", () => {
     const shire = makeItem({
       id: "3",
       title: "The Shire",
@@ -94,7 +94,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      linked_from: [{ id: "3", title: "The Shire", type: "place" }],
+      linkedFrom: [{ id: "3", title: "The Shire", type: "place" }],
     });
     const cache = new Map<string, CanvasItem>([
       ["1", item],
@@ -105,7 +105,7 @@ describe("formatItemExport", () => {
     expect(result).toContain("A peaceful place");
   });
 
-  it("deduplicates items that appear in both links_to and linked_from", () => {
+  it("deduplicates items that appear in both linksTo and linkedFrom", () => {
     const frodo = makeItem({
       id: "2",
       title: "Frodo",
@@ -114,8 +114,8 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "2", title: "Frodo", type: "person" }],
-      linked_from: [{ id: "2", title: "Frodo", type: "person" }],
+      linksTo: [{ id: "2", title: "Frodo", type: "person" }],
+      linkedFrom: [{ id: "2", title: "Frodo", type: "person" }],
     });
     const cache = new Map<string, CanvasItem>([
       ["1", item],
@@ -147,7 +147,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      links_to: [{ id: "missing", title: "Ghost", type: "person" }],
+      linksTo: [{ id: "missing", title: "Ghost", type: "person" }],
     });
     const cache = new Map<string, CanvasItem>([["1", item]]);
     const result = formatItemExport(item, cache);

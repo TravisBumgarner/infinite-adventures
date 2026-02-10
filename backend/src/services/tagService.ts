@@ -14,9 +14,9 @@ export async function createTag(input: CreateTagInput, canvasId: string): Promis
     name: input.name,
     icon: input.icon,
     color: input.color,
-    canvas_id: canvasId,
-    created_at: now,
-    updated_at: now,
+    canvasId: canvasId,
+    createdAt: now,
+    updatedAt: now,
   });
 
   return { id, name: input.name, icon: input.icon, color: input.color };
@@ -24,7 +24,7 @@ export async function createTag(input: CreateTagInput, canvasId: string): Promis
 
 export async function listTags(canvasId: string): Promise<Tag[]> {
   const db = getDb();
-  const rows = await db.select().from(tags).where(eq(tags.canvas_id, canvasId));
+  const rows = await db.select().from(tags).where(eq(tags.canvasId, canvasId));
   return rows.map((r) => ({ id: r.id, name: r.name, icon: r.icon, color: r.color }));
 }
 
@@ -47,7 +47,7 @@ export async function updateTag(id: string, input: UpdateTagInput): Promise<Tag 
       name: input.name ?? existing.name,
       icon: input.icon ?? existing.icon,
       color: input.color ?? existing.color,
-      updated_at: now,
+      updatedAt: now,
     })
     .where(eq(tags.id, id));
 
@@ -69,7 +69,7 @@ export async function addTagToItem(canvasItemId: string, tagId: string): Promise
   const db = getDb();
   await db
     .insert(canvasItemTags)
-    .values({ canvas_item_id: canvasItemId, tag_id: tagId })
+    .values({ canvasItemId: canvasItemId, tagId: tagId })
     .onConflictDoNothing();
 }
 
@@ -77,8 +77,8 @@ export async function removeTagFromItem(canvasItemId: string, tagId: string): Pr
   const db = getDb();
   const result = await db
     .delete(canvasItemTags)
-    .where(and(eq(canvasItemTags.canvas_item_id, canvasItemId), eq(canvasItemTags.tag_id, tagId)))
-    .returning({ canvas_item_id: canvasItemTags.canvas_item_id });
+    .where(and(eq(canvasItemTags.canvasItemId, canvasItemId), eq(canvasItemTags.tagId, tagId)))
+    .returning({ canvasItemId: canvasItemTags.canvasItemId });
   return result.length > 0;
 }
 
@@ -92,16 +92,16 @@ export async function listTagsForItem(canvasItemId: string): Promise<Tag[]> {
       color: tags.color,
     })
     .from(canvasItemTags)
-    .innerJoin(tags, eq(tags.id, canvasItemTags.tag_id))
-    .where(eq(canvasItemTags.canvas_item_id, canvasItemId));
+    .innerJoin(tags, eq(tags.id, canvasItemTags.tagId))
+    .where(eq(canvasItemTags.canvasItemId, canvasItemId));
   return rows;
 }
 
 export async function listTagIdsForItem(canvasItemId: string): Promise<string[]> {
   const db = getDb();
   const rows = await db
-    .select({ tag_id: canvasItemTags.tag_id })
+    .select({ tagId: canvasItemTags.tagId })
     .from(canvasItemTags)
-    .where(eq(canvasItemTags.canvas_item_id, canvasItemId));
-  return rows.map((r) => r.tag_id);
+    .where(eq(canvasItemTags.canvasItemId, canvasItemId));
+  return rows.map((r) => r.tagId);
 }

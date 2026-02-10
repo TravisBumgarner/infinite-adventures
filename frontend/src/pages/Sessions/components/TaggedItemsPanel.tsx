@@ -142,10 +142,10 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
                       py: 1.5,
                     }}
                   >
-                    {tagged.selected_photo_url && (
+                    {tagged.selectedPhotoUrl && (
                       <Box
                         component="img"
-                        src={tagged.selected_photo_url}
+                        src={tagged.selectedPhotoUrl}
                         alt={tagged.title}
                         sx={{
                           width: 40,
@@ -198,10 +198,10 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
                         </Box>
                       ) : expandedItem ? (
                         <>
-                          {expandedItem.photos.find((p) => p.is_main_photo) && (
+                          {expandedItem.photos.find((p) => p.isMainPhoto) && (
                             <Box
                               component="img"
-                              src={expandedItem.photos.find((p) => p.is_main_photo)!.url}
+                              src={expandedItem.photos.find((p) => p.isMainPhoto)!.url}
                               alt={expandedItem.title}
                               sx={{
                                 width: 120,
@@ -230,11 +230,11 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
                                   variant="caption"
                                   sx={{ color: "var(--color-subtext0)" }}
                                 >
-                                  {new Date(note.updated_at).toLocaleDateString()}
+                                  {new Date(note.updatedAt).toLocaleDateString()}
                                 </Typography>
                               </Box>
                             ))
-                          ) : !expandedItem.photos.find((p) => p.is_main_photo) ? (
+                          ) : !expandedItem.photos.find((p) => p.isMainPhoto) ? (
                             <Typography variant="body2" sx={{ color: "var(--color-overlay0)" }}>
                               No additional details
                             </Typography>

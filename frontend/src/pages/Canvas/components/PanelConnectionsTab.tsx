@@ -22,8 +22,8 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
   const [activeTypes, setActiveTypes] = useState<Set<CanvasItemType>>(new Set());
 
   const allEntries = useMemo(
-    () => buildConnectionEntries(item.links_to, item.linked_from),
-    [item.links_to, item.linked_from],
+    () => buildConnectionEntries(item.linksTo, item.linkedFrom),
+    [item.linksTo, item.linkedFrom],
   );
 
   const filtered = useMemo(

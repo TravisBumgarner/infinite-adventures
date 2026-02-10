@@ -7,43 +7,43 @@ export async function userOwnsCanvas(userId: string, canvasId: string): Promise<
   const [row] = await db
     .select()
     .from(canvasUsers)
-    .where(and(eq(canvasUsers.canvas_id, canvasId), eq(canvasUsers.user_id, userId)));
+    .where(and(eq(canvasUsers.canvasId, canvasId), eq(canvasUsers.userId, userId)));
   return !!row;
 }
 
 export async function getCanvasIdForItem(itemId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
-    .select({ canvas_id: canvasItems.canvas_id })
+    .select({ canvasId: canvasItems.canvasId })
     .from(canvasItems)
     .where(eq(canvasItems.id, itemId));
-  return row?.canvas_id ?? null;
+  return row?.canvasId ?? null;
 }
 
 export async function getCanvasIdForNote(noteId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
-    .select({ canvas_id: canvasItems.canvas_id })
+    .select({ canvasId: canvasItems.canvasId })
     .from(notes)
-    .innerJoin(canvasItems, eq(canvasItems.id, notes.canvas_item_id))
+    .innerJoin(canvasItems, eq(canvasItems.id, notes.canvasItemId))
     .where(eq(notes.id, noteId));
-  return row?.canvas_id ?? null;
+  return row?.canvasId ?? null;
 }
 
 export async function getCanvasIdForPhoto(photoId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
-    .select({ canvas_id: canvasItems.canvas_id })
+    .select({ canvasId: canvasItems.canvasId })
     .from(photos)
-    .innerJoin(canvasItems, eq(canvasItems.content_id, photos.content_id))
+    .innerJoin(canvasItems, eq(canvasItems.contentId, photos.contentId))
     .where(eq(photos.id, photoId));
-  return row?.canvas_id ?? null;
+  return row?.canvasId ?? null;
 }
 
 export async function getCanvasIdForTag(tagId: string): Promise<string | null> {
   const db = getDb();
-  const [row] = await db.select({ canvas_id: tags.canvas_id }).from(tags).where(eq(tags.id, tagId));
-  return row?.canvas_id ?? null;
+  const [row] = await db.select({ canvasId: tags.canvasId }).from(tags).where(eq(tags.id, tagId));
+  return row?.canvasId ?? null;
 }
 
 export type ResourceType = "item" | "note" | "photo" | "tag";

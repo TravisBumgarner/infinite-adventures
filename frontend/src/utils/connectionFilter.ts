@@ -6,7 +6,7 @@ export interface ConnectionEntry {
 }
 
 /**
- * Build a combined list of connections from an item's links_to and linked_from.
+ * Build a combined list of connections from an item's linksTo and linkedFrom.
  * Deduplicates entries that appear in both directions.
  */
 export function buildConnectionEntries(

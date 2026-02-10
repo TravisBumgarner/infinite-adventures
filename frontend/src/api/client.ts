@@ -118,7 +118,7 @@ export async function searchItems(
 
 export function fetchTimeline(
   canvasId: string,
-  sort: "created_at" | "updated_at" = "created_at",
+  sort: "createdAt" | "updatedAt" = "createdAt",
   cursor?: string,
   limit = 30,
 ): Promise<PaginatedTimeline> {
@@ -144,7 +144,7 @@ export function fetchGallery(
 ): Promise<PaginatedGallery> {
   const params = new URLSearchParams({ limit: String(options.limit ?? 30) });
   if (options.cursor) params.set("cursor", options.cursor);
-  if (options.importantOnly) params.set("important_only", "true");
+  if (options.importantOnly) params.set("importantOnly", "true");
   return request<PaginatedGallery>(`/canvases/${canvasId}/gallery?${params}`);
 }
 

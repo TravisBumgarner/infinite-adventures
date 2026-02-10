@@ -10,15 +10,15 @@ export async function listNotes(canvasItemId: string): Promise<Note[]> {
   const rows = await db
     .select()
     .from(notes)
-    .where(eq(notes.canvas_item_id, canvasItemId))
-    .orderBy(desc(notes.is_important), notes.created_at);
+    .where(eq(notes.canvasItemId, canvasItemId))
+    .orderBy(desc(notes.isImportant), notes.createdAt);
 
   return rows.map((row) => ({
     id: row.id,
     content: row.content,
-    is_important: row.is_important,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    isImportant: row.isImportant,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   }));
 }
 
@@ -31,9 +31,9 @@ export async function getNote(noteId: string): Promise<Note | null> {
   return {
     id: row.id,
     content: row.content,
-    is_important: row.is_important,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    isImportant: row.isImportant,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -44,10 +44,10 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
 
   await db.insert(notes).values({
     id,
-    canvas_item_id: canvasItemId,
+    canvasItemId: canvasItemId,
     content: input.content ?? "",
-    created_at: now,
-    updated_at: now,
+    createdAt: now,
+    updatedAt: now,
   });
 
   // Process @mentions and update links
@@ -58,9 +58,9 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
   return {
     id,
     content: input.content ?? "",
-    is_important: false,
-    created_at: now,
-    updated_at: now,
+    isImportant: false,
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
@@ -68,34 +68,34 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
   const db = getDb();
   const now = new Date().toISOString();
 
-  // Get the note to find the canvas_item_id
+  // Get the note to find the canvasItemId
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
   if (!existing) return null;
 
-  const updates: Record<string, unknown> = { updated_at: now };
+  const updates: Record<string, unknown> = { updatedAt: now };
   if (input.content !== undefined) updates.content = input.content;
-  if (input.is_important !== undefined) updates.is_important = input.is_important;
+  if (input.isImportant !== undefined) updates.isImportant = input.isImportant;
 
   await db.update(notes).set(updates).where(eq(notes.id, noteId));
 
   // Process @mentions and update links for the canvas item
   if (input.content !== undefined) {
-    await resolveCanvasItemLinks(existing.canvas_item_id, input.content);
+    await resolveCanvasItemLinks(existing.canvasItemId, input.content);
   }
 
   return {
     id: noteId,
     content: input.content ?? existing.content,
-    is_important: input.is_important ?? existing.is_important,
-    created_at: existing.created_at,
-    updated_at: now,
+    isImportant: input.isImportant ?? existing.isImportant,
+    createdAt: existing.createdAt,
+    updatedAt: now,
   };
 }
 
 export async function deleteNote(noteId: string): Promise<boolean> {
   const db = getDb();
 
-  // Get the note to find the canvas_item_id for re-resolving links
+  // Get the note to find the canvasItemId for re-resolving links
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
   if (!existing) return false;
 
@@ -104,9 +104,9 @@ export async function deleteNote(noteId: string): Promise<boolean> {
   if (result.rowCount === 0) return false;
 
   // Re-resolve links for the canvas item based on remaining notes
-  const remainingNotes = await listNotes(existing.canvas_item_id);
+  const remainingNotes = await listNotes(existing.canvasItemId);
   const combinedContent = remainingNotes.map((n) => n.content).join("\n");
-  await resolveCanvasItemLinks(existing.canvas_item_id, combinedContent);
+  await resolveCanvasItemLinks(existing.canvasItemId, combinedContent);
 
   return true;
 }
@@ -114,9 +114,9 @@ export async function deleteNote(noteId: string): Promise<boolean> {
 export async function getNoteCanvasItemId(noteId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
-    .select({ canvas_item_id: notes.canvas_item_id })
+    .select({ canvasItemId: notes.canvasItemId })
     .from(notes)
     .where(eq(notes.id, noteId));
 
-  return row?.canvas_item_id ?? null;
+  return row?.canvasItemId ?? null;
 }

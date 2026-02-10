@@ -8,7 +8,7 @@ import { sendForbidden, sendSuccess } from "../shared/responses.js";
 import { CanvasIdParams, parseRoute } from "../shared/validation.js";
 
 const ListTimelineQuery = z.object({
-  sort: z.enum(["created_at", "updated_at"]).default("created_at"),
+  sort: z.enum(["createdAt", "updatedAt"]).default("createdAt"),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().positive().max(100).default(30),
 });
@@ -26,5 +26,5 @@ export async function handler(req: Request, res: Response): Promise<void> {
 
   const { sort, cursor, limit } = parsed.query;
   const result = await getTimeline(parsed.params.canvasId, sort, cursor, limit);
-  sendSuccess(res, { entries: result.entries, next_cursor: result.nextCursor });
+  sendSuccess(res, { entries: result.entries, nextCursor: result.nextCursor });
 }

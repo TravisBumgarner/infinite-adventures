@@ -137,7 +137,7 @@ export default function CanvasItemPanel({
   const saveDateFn = useCallback(async () => {
     await updateItemMutation.mutateAsync({
       id: itemIdRef.current,
-      input: { session_date: sessionDateRef.current },
+      input: { sessionDate: sessionDateRef.current },
     });
     const { data: refreshed } = await refetchItem();
     if (refreshed) onSaved(refreshed);
@@ -200,7 +200,7 @@ export default function CanvasItemPanel({
       setItem(queryItem);
       setTitle(queryItem.title);
       setSummary(queryItem.summary);
-      setSessionDate(queryItem.session_date ?? "");
+      setSessionDate(queryItem.sessionDate ?? "");
       setNotes(queryItem.notes);
       setPhotos(queryItem.photos);
       // Only reset editing state when switching to a different item,
@@ -285,8 +285,8 @@ export default function CanvasItemPanel({
     if (!item) return;
 
     const connections = [
-      ...(item.links_to?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
-      ...(item.linked_from?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
+      ...(item.linksTo?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
+      ...(item.linkedFrom?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
     ];
 
     const html = `
@@ -325,7 +325,7 @@ export default function CanvasItemPanel({
               const linked = itemsCache.get(id);
               return linked ? `@${linked.title}` : "@mention";
             })}
-            <div class="note-date">Last edited: ${new Date(note.updated_at).toLocaleDateString()}</div>
+            <div class="note-date">Last edited: ${new Date(note.updatedAt).toLocaleDateString()}</div>
           </div>
         `,
                 )
@@ -333,7 +333,7 @@ export default function CanvasItemPanel({
         }
 
         <h2>Photos (${photos.length})</h2>
-        ${photos.length === 0 ? '<p style="color: #888;">No photos</p>' : `<div class="photos">${photos.map((photo) => `<img class="photo" src="${photo.url}" alt="${photo.original_name}" />`).join("")}</div>`}
+        ${photos.length === 0 ? '<p style="color: #888;">No photos</p>' : `<div class="photos">${photos.map((photo) => `<img class="photo" src="${photo.url}" alt="${photo.originalName}" />`).join("")}</div>`}
 
         <h2>Connections (${connections.length})</h2>
         ${
@@ -412,8 +412,8 @@ export default function CanvasItemPanel({
       const newItem = await createItemMutation.mutateAsync({
         type: "person",
         title: mentionTitle,
-        canvas_x: item.canvas_x + 220,
-        canvas_y: item.canvas_y,
+        canvasX: item.canvasX + 220,
+        canvasY: item.canvasY,
       });
       onSaved(newItem);
       return { id: newItem.id, title: newItem.title };
@@ -447,7 +447,7 @@ export default function CanvasItemPanel({
   async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
       noteId,
-      input: { is_important: isImportant },
+      input: { isImportant },
     });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {

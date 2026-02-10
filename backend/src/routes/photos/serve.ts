@@ -26,6 +26,6 @@ export async function handler(req: Request<{ filename: string }>, res: Response)
     return;
   }
 
-  res.setHeader("Content-Type", photo.mime_type);
+  res.setHeader("Content-Type", photo.mimeType);
   res.sendFile(filePath);
 }

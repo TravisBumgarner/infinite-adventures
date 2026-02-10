@@ -5,16 +5,16 @@ import { users } from "../db/schema.js";
 
 export interface UserRow {
   id: string;
-  auth_id: string;
+  authId: string;
   email: string;
-  display_name: string;
-  created_at: string;
-  updated_at: string;
+  displayName: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export async function getUserByAuthId(authId: string): Promise<UserRow | undefined> {
   const db = getDb();
-  const [row] = await db.select().from(users).where(eq(users.auth_id, authId));
+  const [row] = await db.select().from(users).where(eq(users.authId, authId));
   return row;
 }
 
@@ -40,9 +40,9 @@ export async function getOrCreateUserByAuth(input: {
 
   await db.insert(users).values({
     id,
-    auth_id: input.authId,
+    authId: input.authId,
     email: input.email,
-    display_name: displayName,
+    displayName: displayName,
   });
 
   return (await getUserByAuthId(input.authId)) as UserRow;

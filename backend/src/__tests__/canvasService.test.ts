@@ -34,8 +34,8 @@ describe("canvasService", () => {
 
       expect(canvas.id).toBeDefined();
       expect(canvas.name).toBe("Adventure Map");
-      expect(canvas.created_at).toBeDefined();
-      expect(canvas.updated_at).toBeDefined();
+      expect(canvas.createdAt).toBeDefined();
+      expect(canvas.updatedAt).toBeDefined();
     });
   });
 
@@ -165,8 +165,8 @@ describe("canvasService", () => {
       // First insert the content record
       await db.insert(people).values({
         id: contentId,
-        created_at: now,
-        updated_at: now,
+        createdAt: now,
+        updatedAt: now,
       });
 
       // Then insert the canvas item
@@ -174,12 +174,12 @@ describe("canvasService", () => {
         id: itemId,
         type: "person",
         title: "Doomed Person",
-        canvas_x: 0,
-        canvas_y: 0,
-        canvas_id: canvas.id,
-        content_id: contentId,
-        created_at: now,
-        updated_at: now,
+        canvasX: 0,
+        canvasY: 0,
+        canvasId: canvas.id,
+        contentId: contentId,
+        createdAt: now,
+        updatedAt: now,
       });
 
       // Verify item exists
