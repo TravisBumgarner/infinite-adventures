@@ -245,10 +245,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
-  async function handleTogglePin(noteId: string, isPinned: boolean) {
+  async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
       noteId,
-      input: { is_pinned: isPinned },
+      input: { is_important: isImportant },
     });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -476,7 +476,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
               setNoteContent(val);
               markNoteDirty();
             }}
-            onTogglePin={handleTogglePin}
+            onToggleImportant={handleToggleImportant}
             onCreateMentionItem={handleCreateMentionItem}
             getNotePreview={getNotePreview}
           />

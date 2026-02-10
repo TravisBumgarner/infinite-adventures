@@ -198,10 +198,10 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
                         </Box>
                       ) : expandedItem ? (
                         <>
-                          {expandedItem.photos.find((p) => p.is_selected) && (
+                          {expandedItem.photos.find((p) => p.is_main_photo) && (
                             <Box
                               component="img"
-                              src={expandedItem.photos.find((p) => p.is_selected)!.url}
+                              src={expandedItem.photos.find((p) => p.is_main_photo)!.url}
                               alt={expandedItem.title}
                               sx={{
                                 width: 120,
@@ -234,7 +234,7 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
                                 </Typography>
                               </Box>
                             ))
-                          ) : !expandedItem.photos.find((p) => p.is_selected) ? (
+                          ) : !expandedItem.photos.find((p) => p.is_main_photo) ? (
                             <Typography variant="body2" sx={{ color: "var(--color-overlay0)" }}>
                               No additional details
                             </Typography>
