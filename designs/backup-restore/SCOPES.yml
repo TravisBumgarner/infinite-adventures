@@ -1,0 +1,111 @@
+project: Canvas Backup & Restore
+repo: TravisBumgarner/infinite-adventures
+design_file: designs/backup-restore/DESIGN.md
+scoping_date: 2026-02-10
+
+milestones:
+  - number: 1
+    title: "1. Canvas backup/restore backend"
+    description: Export and import endpoints, backup service with UUID remapping, schema versioning.
+    branch:
+      working: backup-restore-backend
+      base: main
+
+  - number: 2
+    title: "2. Canvas backup/restore frontend"
+    description: Settings sidebar UI for export/import with progress feedback.
+    branch:
+      working: backup-restore-frontend
+      base: backup-restore-backend
+
+tasks:
+  - id: 1
+    github_issue: 195
+    milestone: 1
+    title: Implement canvas export service and endpoint
+    description: |
+      Create `backupService.ts` with `exportCanvas(canvasId)` that queries all canvas-scoped
+      tables (canvas, canvas_items, content tables, notes, photos, tags, canvas_item_tags,
+      canvas_item_links) and assembles a zip containing `manifest.json`, `data.json`, and
+      `photos/` directory with all photo files.
+
+      Add `GET /api/canvases/:canvasId/export` route that streams the zip as a download.
+      Auth: user must own canvas.
+    acceptance_criteria:
+      - Export endpoint returns a valid zip with manifest.json, data.json, and photos/
+      - manifest.json contains schemaVersion=1, exportedAt, canvasName
+      - data.json contains all canvas-scoped table data
+      - Auth check enforced (403 for non-owner)
+    depends_on: []
+    effort: 3
+    status: completed
+
+  - id: 2
+    github_issue: 196
+    milestone: 1
+    title: Implement canvas import service with UUID remapping
+    description: |
+      Extend `backupService.ts` with `importCanvas(zipBuffer, userId)` that extracts a zip,
+      validates the manifest, remaps all UUIDs to fresh values, and inserts all data in a
+      database transaction. Photo files are written to disk with new UUID-based filenames.
+
+      UUID remapping order: canvas → content tables → canvas_items → notes → photos → tags →
+      canvas_item_tags → canvas_item_links. Build an oldId→newId map for each entity type
+      and apply it to all foreign key references.
+
+      Create canvas_users record linking the importing user to the new canvas.
+      Transaction-safe: rollback on failure, clean up written photo files.
+      Schema versioning: reject schemaVersion > CURRENT_VERSION, run migration chain for older versions.
+    acceptance_criteria:
+      - Import creates a new canvas with fresh UUIDs for all records
+      - All FK relationships correctly remapped
+      - Photo files written to disk with new filenames
+      - Transaction-safe with rollback and photo cleanup on failure
+      - Rejects zip with schemaVersion > current
+    depends_on: [1]
+    effort: 3
+    status: scoped
+
+  - id: 3
+    github_issue: 197
+    milestone: 1
+    title: Add canvas import endpoint
+    description: |
+      Add `POST /api/canvases/import` route that accepts a multipart/form-data zip upload
+      (100MB limit via multer), calls `importCanvas`, and returns `{ id, name }` of the
+      new canvas.
+
+      Add `ImportCanvasResultSchema` to shared types.
+      Register multer middleware on this specific route in canvasesRouter.
+    acceptance_criteria:
+      - POST endpoint accepts zip upload and returns new canvas id/name
+      - 400 for invalid zip, missing manifest, bad schema version
+      - 413 for oversized files
+      - Auth enforced
+    depends_on: [2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    github_issue: 198
+    milestone: 2
+    title: Add export/import UI to Settings sidebar
+    description: |
+      Add a "Data" section to SettingsSidebar.tsx between Manage Tags and Feedback with
+      Export Canvas and Import Canvas buttons.
+
+      Export: fetch blob from GET /api/canvases/:canvasId/export, trigger browser download.
+      Import: hidden file input for .zip, upload via POST /api/canvases/import as FormData,
+      invalidate canvas list query on success.
+
+      Add `exportCanvas` and `importCanvas` to the API client.
+      Show loading states and success/error toasts.
+    acceptance_criteria:
+      - Export button downloads a zip named after the canvas
+      - Import button opens file picker and uploads zip
+      - Loading states during operations
+      - Success/error toasts displayed
+      - Canvas list refreshes after successful import
+    depends_on: [3]
+    effort: 2
+    status: scoped
