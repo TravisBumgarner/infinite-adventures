@@ -10,6 +10,7 @@ export default function SearchBarButton({ onClick }: SearchBarButtonProps) {
     <IconButton
       onClick={onClick}
       title="Search (⌘K)"
+      data-tour="search-button"
       sx={{
         bgcolor: "var(--color-base)",
         border: "1px solid var(--color-surface1)",
