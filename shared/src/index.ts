@@ -158,6 +158,11 @@ export const UpdateCanvasInputSchema = z.object({
   name: z.string().optional(),
 });
 
+export const ImportCanvasResultSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
 // --- Timeline ---
 
 export const TimelineEntrySchema = z.object({
@@ -231,6 +236,7 @@ export const ERROR_CODES = [
   "PHOTO_NOT_FOUND",
   "TAG_NOT_FOUND",
   "LAST_CANVAS",
+  "INVALID_BACKUP",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -262,3 +268,4 @@ export type CanvasSummary = z.infer<typeof CanvasSummarySchema>;
 export type Canvas = z.infer<typeof CanvasSchema>;
 export type CreateCanvasInput = z.infer<typeof CreateCanvasInputSchema>;
 export type UpdateCanvasInput = z.infer<typeof UpdateCanvasInputSchema>;
+export type ImportCanvasResult = z.infer<typeof ImportCanvasResultSchema>;
