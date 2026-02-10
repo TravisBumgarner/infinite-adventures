@@ -1,6 +1,7 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MapIcon from "@mui/icons-material/Map";
 import SortIcon from "@mui/icons-material/Sort";
+import StarIcon from "@mui/icons-material/Star";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -76,6 +77,7 @@ export default function Timeline() {
     () => new Set(CANVAS_ITEM_TYPES.map((t) => t.value)),
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [importantOnly, setImportantOnly] = useState(false);
 
   // Calendar window state
   const now = new Date();
@@ -176,7 +178,7 @@ export default function Timeline() {
     });
   };
 
-  // Client-side filtering by parent item type + selected date
+  // Client-side filtering by parent item type + selected date + importance
   const filtered = useMemo(
     () =>
       allEntries.filter((e) => {
@@ -185,9 +187,10 @@ export default function Timeline() {
           const entryDate = e.created_at.slice(0, 10);
           if (entryDate !== selectedDate) return false;
         }
+        if (importantOnly && !e.is_important) return false;
         return true;
       }),
-    [allEntries, activeFilters, selectedDate],
+    [allEntries, activeFilters, selectedDate, importantOnly],
   );
 
   // Infinite scroll sentinel
@@ -324,6 +327,23 @@ export default function Timeline() {
                 Last Updated
               </ToggleButton>
             </ToggleButtonGroup>
+
+            {/* Important only filter */}
+            <Chip
+              label="Important only"
+              icon={<StarIcon sx={{ fontSize: 14 }} />}
+              size="small"
+              onClick={() => setImportantOnly(!importantOnly)}
+              sx={{
+                bgcolor: importantOnly ? "var(--color-yellow)" : "transparent",
+                color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
+                border: importantOnly ? "none" : "1px solid var(--color-surface1)",
+                fontWeight: 600,
+                fontSize: 11,
+                cursor: "pointer",
+                "&:hover": { opacity: 0.8 },
+              }}
+            />
 
             {/* Type filter chips */}
             <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
