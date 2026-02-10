@@ -49,13 +49,13 @@ export function useSearchItems(query: string, canvasId: string | undefined) {
 
 export function useTimeline(
   canvasId: string | undefined,
-  sort: "created_at" | "updated_at" = "created_at",
+  sort: "createdAt" | "updatedAt" = "createdAt",
 ) {
   return useInfiniteQuery({
     queryKey: queryKeys.timeline.list(canvasId!, sort),
     queryFn: ({ pageParam }) => fetchTimeline(canvasId!, sort, pageParam),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!canvasId,
   });
 }
@@ -73,7 +73,7 @@ export function useGallery(canvasId: string | undefined, importantOnly = false) 
     queryKey: queryKeys.gallery.list(canvasId!, importantOnly),
     queryFn: ({ pageParam }) => fetchGallery(canvasId!, { cursor: pageParam, importantOnly }),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!canvasId,
   });
 }

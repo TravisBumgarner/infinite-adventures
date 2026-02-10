@@ -20,8 +20,8 @@ export async function createLink(sourceItemId: string, targetItemId: string): Pr
     .from(canvasItemLinks)
     .where(
       and(
-        eq(canvasItemLinks.source_item_id, sourceItemId),
-        eq(canvasItemLinks.target_item_id, targetItemId),
+        eq(canvasItemLinks.sourceItemId, sourceItemId),
+        eq(canvasItemLinks.targetItemId, targetItemId),
       ),
     );
 
@@ -30,10 +30,10 @@ export async function createLink(sourceItemId: string, targetItemId: string): Pr
   }
 
   await db.insert(canvasItemLinks).values({
-    source_item_id: sourceItemId,
-    target_item_id: targetItemId,
+    sourceItemId: sourceItemId,
+    targetItemId: targetItemId,
     snippet: null,
-    created_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
   });
 
   return true;
@@ -50,8 +50,8 @@ export async function deleteLink(sourceItemId: string, targetItemId: string): Pr
     .delete(canvasItemLinks)
     .where(
       and(
-        eq(canvasItemLinks.source_item_id, sourceItemId),
-        eq(canvasItemLinks.target_item_id, targetItemId),
+        eq(canvasItemLinks.sourceItemId, sourceItemId),
+        eq(canvasItemLinks.targetItemId, targetItemId),
       ),
     )
     .returning();
@@ -207,19 +207,19 @@ export async function resolveCanvasItemLinks(
   const db = getDb();
   const mentionsWithPositions = parseMentionsWithPositions(content);
 
-  // Get the source item for positioning new items nearby and inheriting canvas_id
+  // Get the source item for positioning new items nearby and inheriting canvasId
   const [sourceItem] = await db
     .select({
-      canvas_x: canvasItems.canvas_x,
-      canvas_y: canvasItems.canvas_y,
-      canvas_id: canvasItems.canvas_id,
+      canvasX: canvasItems.canvasX,
+      canvasY: canvasItems.canvasY,
+      canvasId: canvasItems.canvasId,
     })
     .from(canvasItems)
     .where(eq(canvasItems.id, sourceItemId));
 
-  const baseX = sourceItem?.canvas_x ?? 0;
-  const baseY = sourceItem?.canvas_y ?? 0;
-  const canvasId = sourceItem?.canvas_id ?? "";
+  const baseX = sourceItem?.canvasX ?? 0;
+  const baseY = sourceItem?.canvasY ?? 0;
+  const canvasId = sourceItem?.canvasId ?? "";
 
   const resolved: ResolvedCanvasItemLink[] = [];
 
@@ -256,8 +256,8 @@ export async function resolveCanvasItemLinks(
           {
             type: "person",
             title: mention.value,
-            canvas_x: offsetX,
-            canvas_y: offsetY,
+            canvasX: offsetX,
+            canvasY: offsetY,
           },
           canvasId,
         );
@@ -282,13 +282,13 @@ export async function resolveCanvasItemLinks(
       await db
         .insert(canvasItemLinks)
         .values({
-          source_item_id: sourceItemId,
-          target_item_id: targetItem.id,
+          sourceItemId: sourceItemId,
+          targetItemId: targetItem.id,
           snippet,
-          created_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
         })
         .onConflictDoUpdate({
-          target: [canvasItemLinks.source_item_id, canvasItemLinks.target_item_id],
+          target: [canvasItemLinks.sourceItemId, canvasItemLinks.targetItemId],
           set: { snippet },
         });
     }
@@ -303,12 +303,12 @@ export async function resolveCanvasItemLinks(
   // Remove stale links: links from this source that are no longer mentioned
   const currentTargetIds = resolved.map((r) => r.targetItemId);
   const existingLinks = await db
-    .select({ target_item_id: canvasItemLinks.target_item_id })
+    .select({ targetItemId: canvasItemLinks.targetItemId })
     .from(canvasItemLinks)
-    .where(eq(canvasItemLinks.source_item_id, sourceItemId));
+    .where(eq(canvasItemLinks.sourceItemId, sourceItemId));
 
   const staleIds = existingLinks
-    .map((l) => l.target_item_id)
+    .map((l) => l.targetItemId)
     .filter((id) => !currentTargetIds.includes(id));
 
   for (const staleId of staleIds) {
@@ -316,8 +316,8 @@ export async function resolveCanvasItemLinks(
       .delete(canvasItemLinks)
       .where(
         and(
-          eq(canvasItemLinks.source_item_id, sourceItemId),
-          eq(canvasItemLinks.target_item_id, staleId),
+          eq(canvasItemLinks.sourceItemId, sourceItemId),
+          eq(canvasItemLinks.targetItemId, staleId),
         ),
       );
   }

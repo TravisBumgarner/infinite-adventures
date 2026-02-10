@@ -25,10 +25,10 @@ describe("timelineService", () => {
 
     const contentId = (await getItemContentId(item.id))!;
     await uploadPhoto({
-      content_type: "person",
-      content_id: contentId,
-      original_name: "gandalf.png",
-      mime_type: "image/png",
+      contentType: "person",
+      contentId: contentId,
+      originalName: "gandalf.png",
+      mimeType: "image/png",
       buffer: Buffer.from("fake"),
     });
 
@@ -37,15 +37,15 @@ describe("timelineService", () => {
 
     const note = result.entries.find((e) => e.kind === "note")!;
     expect(note.content).toBe("A wizard");
-    expect(note.parent_item_id).toBe(item.id);
-    expect(note.parent_item_type).toBe("person");
-    expect(note.parent_item_title).toBe("Gandalf");
+    expect(note.parentItemId).toBe(item.id);
+    expect(note.parentItemType).toBe("person");
+    expect(note.parentItemTitle).toBe("Gandalf");
 
     const photo = result.entries.find((e) => e.kind === "photo")!;
-    expect(photo.photo_url).toContain("/api/photos/");
-    expect(photo.original_name).toBe("gandalf.png");
-    expect(photo.parent_item_id).toBe(item.id);
-    expect(photo.parent_item_type).toBe("person");
+    expect(photo.photoUrl).toContain("/api/photos/");
+    expect(photo.originalName).toBe("gandalf.png");
+    expect(photo.parentItemId).toBe(item.id);
+    expect(photo.parentItemType).toBe("person");
   });
 
   it("only returns entries for the specified canvas", async () => {
@@ -65,7 +65,7 @@ describe("timelineService", () => {
     expect(otherResult.entries[0]!.content).toBe("Other canvas note");
   });
 
-  it("sorts by created_at descending by default", async () => {
+  it("sorts by createdAt descending by default", async () => {
     const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
     await createNote(item.id, { content: "First" });
@@ -85,10 +85,10 @@ describe("timelineService", () => {
 
       const contentId = (await getItemContentId(item.id))!;
       await uploadPhoto({
-        content_type: "person",
-        content_id: contentId,
-        original_name: "pic.png",
-        mime_type: "image/png",
+        contentType: "person",
+        contentId: contentId,
+        originalName: "pic.png",
+        mimeType: "image/png",
         buffer: Buffer.from("fake"),
       });
 
@@ -116,17 +116,17 @@ describe("timelineService", () => {
     });
   });
 
-  it("sorts by updated_at when requested", async () => {
+  it("sorts by updatedAt when requested", async () => {
     const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
 
     const older = await createNote(item.id, { content: "Older note" });
     await new Promise((r) => setTimeout(r, 50));
     await createNote(item.id, { content: "Newer note" });
     await new Promise((r) => setTimeout(r, 50));
-    // Update the older note so its updated_at becomes the most recent
+    // Update the older note so its updatedAt becomes the most recent
     await updateNote(older.id, { content: "Older note edited" });
 
-    const result = await getTimeline(DEFAULT_CANVAS_ID, "updated_at");
+    const result = await getTimeline(DEFAULT_CANVAS_ID, "updatedAt");
     expect(result.entries[0]!.content).toBe("Older note edited");
   });
 });

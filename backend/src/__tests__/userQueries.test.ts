@@ -22,18 +22,18 @@ describe("user queries", () => {
         email: "gandalf@middle.earth",
       });
 
-      expect(user.auth_id).toBe("supabase-123");
+      expect(user.authId).toBe("supabase-123");
       expect(user.email).toBe("gandalf@middle.earth");
       expect(user.id).toBeDefined();
     });
 
-    it("uses email prefix as display_name when not provided", async () => {
+    it("uses email prefix as displayName when not provided", async () => {
       const user = await getOrCreateUserByAuth({
         authId: "supabase-123",
         email: "gandalf@middle.earth",
       });
 
-      expect(user.display_name).toBe("gandalf");
+      expect(user.displayName).toBe("gandalf");
     });
 
     it("uses provided displayName", async () => {
@@ -43,7 +43,7 @@ describe("user queries", () => {
         displayName: "Gandalf the Grey",
       });
 
-      expect(user.display_name).toBe("Gandalf the Grey");
+      expect(user.displayName).toBe("Gandalf the Grey");
     });
 
     it("returns existing user when auth ID already exists", async () => {
@@ -89,7 +89,7 @@ describe("user queries", () => {
       });
 
       const found = await getUserById(created.id);
-      expect(found?.auth_id).toBe("supabase-789");
+      expect(found?.authId).toBe("supabase-789");
       expect(found?.email).toBe("sam@shire.com");
     });
   });

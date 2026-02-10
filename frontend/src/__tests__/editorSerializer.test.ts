@@ -127,14 +127,14 @@ const makeCache = (...items: { id: string; title: string }[]) => {
       id: item.id,
       title: item.title,
       type: "person",
-      canvas_x: 0,
-      canvas_y: 0,
-      created_at: "",
-      updated_at: "",
+      canvasX: 0,
+      canvasY: 0,
+      createdAt: "",
+      updatedAt: "",
       content: { id: item.id, notes: "" },
       photos: [],
-      links_to: [],
-      linked_from: [],
+      linksTo: [],
+      linkedFrom: [],
     });
   }
   return cache;

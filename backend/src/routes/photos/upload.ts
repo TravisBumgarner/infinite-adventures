@@ -30,7 +30,7 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
     return;
   }
 
-  // Get the item to find its content_id and type
+  // Get the item to find its contentId and type
   const item = await getItem(context.itemId);
   if (!item) {
     sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
@@ -44,7 +44,7 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
     return;
   }
 
-  // Get content_id for photo association
+  // Get contentId for photo association
   const contentId = await getItemContentId(context.itemId);
   if (!contentId) {
     sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
@@ -52,10 +52,10 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
   }
 
   const photo = await uploadPhoto({
-    content_type: item.type,
-    content_id: contentId,
-    original_name: file.originalname,
-    mime_type: file.mimetype,
+    contentType: item.type,
+    contentId: contentId,
+    originalName: file.originalname,
+    mimeType: file.mimetype,
     buffer: file.buffer,
   });
 
@@ -64,10 +64,10 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
     {
       id: photo.id,
       url: `/api/photos/${photo.filename}`,
-      original_name: photo.original_name,
-      is_main_photo: photo.is_main_photo,
-      is_important: photo.is_important,
-      aspect_ratio: photo.aspect_ratio ?? undefined,
+      originalName: photo.originalName,
+      isMainPhoto: photo.isMainPhoto,
+      isImportant: photo.isImportant,
+      aspectRatio: photo.aspectRatio ?? undefined,
       blurhash: photo.blurhash ?? undefined,
     },
     201,

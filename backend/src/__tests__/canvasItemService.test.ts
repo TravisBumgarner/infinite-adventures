@@ -50,8 +50,8 @@ describe("canvasItemService", () => {
         {
           type: "person",
           title: "Gandalf",
-          canvas_x: 100,
-          canvas_y: 200,
+          canvasX: 100,
+          canvasY: 200,
         },
         DEFAULT_CANVAS_ID,
       );
@@ -59,9 +59,9 @@ describe("canvasItemService", () => {
       expect(item.id).toBeDefined();
       expect(item.type).toBe("person");
       expect(item.title).toBe("Gandalf");
-      expect(item.canvas_x).toBe(100);
-      expect(item.canvas_y).toBe(200);
-      expect(item.created_at).toBeDefined();
+      expect(item.canvasX).toBe(100);
+      expect(item.canvasY).toBe(200);
+      expect(item.createdAt).toBeDefined();
     });
 
     it("creates content record in the correct type-specific table", async () => {
@@ -76,8 +76,8 @@ describe("canvasItemService", () => {
 
       const fullItem = await getItem(item.id);
       expect(fullItem?.notes).toEqual([]);
-      expect(item.canvas_x).toBe(0);
-      expect(item.canvas_y).toBe(0);
+      expect(item.canvasX).toBe(0);
+      expect(item.canvasY).toBe(0);
     });
 
     it("throws ValidationError for missing title", async () => {
@@ -92,19 +92,19 @@ describe("canvasItemService", () => {
       ).rejects.toThrow(ValidationError);
     });
 
-    it("stores session_date when provided for session-type items", async () => {
+    it("stores sessionDate when provided for session-type items", async () => {
       await createItem(
-        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        { type: "session", title: "Session One", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 
       const db = getDb();
       const allSessions = await db.select().from(sessions);
       expect(allSessions).toHaveLength(1);
-      expect(allSessions[0]!.session_date).toBe("2025-06-15");
+      expect(allSessions[0]!.sessionDate).toBe("2025-06-15");
     });
 
-    it("defaults session_date to current date for session-type items", async () => {
+    it("defaults sessionDate to current date for session-type items", async () => {
       await createItem({ type: "session", title: "Session Two" }, DEFAULT_CANVAS_ID);
 
       const db = getDb();
@@ -112,15 +112,15 @@ describe("canvasItemService", () => {
       expect(allSessions).toHaveLength(1);
       // Should be today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split("T")[0];
-      expect(allSessions[0]!.session_date).toBe(today);
+      expect(allSessions[0]!.sessionDate).toBe(today);
     });
 
-    it("ignores session_date for non-session types", async () => {
+    it("ignores sessionDate for non-session types", async () => {
       const item = await createItem(
-        { type: "person", title: "Gandalf", session_date: "2025-06-15" },
+        { type: "person", title: "Gandalf", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
-      // Should not throw — session_date is silently ignored for non-session types
+      // Should not throw — sessionDate is silently ignored for non-session types
       expect(item.type).toBe("person");
     });
   });
@@ -154,8 +154,8 @@ describe("canvasItemService", () => {
       expect(items[0]).toHaveProperty("id");
       expect(items[0]).toHaveProperty("type");
       expect(items[0]).toHaveProperty("title");
-      expect(items[0]).toHaveProperty("canvas_x");
-      expect(items[0]).toHaveProperty("canvas_y");
+      expect(items[0]).toHaveProperty("canvasX");
+      expect(items[0]).toHaveProperty("canvasY");
     });
   });
 
@@ -169,27 +169,27 @@ describe("canvasItemService", () => {
       expect(item?.title).toBe("Gandalf");
       expect(item?.notes).toEqual([]);
       expect(item?.photos).toEqual([]);
-      expect(item?.links_to).toEqual([]);
-      expect(item?.linked_from).toEqual([]);
+      expect(item?.linksTo).toEqual([]);
+      expect(item?.linkedFrom).toEqual([]);
     });
 
     it("returns null for non-existent id", async () => {
       expect(await getItem("non-existent")).toBeNull();
     });
 
-    it("returns session_date for session-type items", async () => {
+    it("returns sessionDate for session-type items", async () => {
       const created = await createItem(
-        { type: "session", title: "Session One", session_date: "2025-06-15" },
+        { type: "session", title: "Session One", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       const item = await getItem(created.id);
-      expect(item?.session_date).toBe("2025-06-15");
+      expect(item?.sessionDate).toBe("2025-06-15");
     });
 
-    it("returns undefined session_date for non-session items", async () => {
+    it("returns undefined sessionDate for non-session items", async () => {
       const created = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const item = await getItem(created.id);
-      expect(item?.session_date).toBeUndefined();
+      expect(item?.sessionDate).toBeUndefined();
     });
   });
 
@@ -205,14 +205,14 @@ describe("canvasItemService", () => {
 
     it("updates the position", async () => {
       const created = await createItem(
-        { type: "person", title: "Gandalf", canvas_x: 0, canvas_y: 0 },
+        { type: "person", title: "Gandalf", canvasX: 0, canvasY: 0 },
         DEFAULT_CANVAS_ID,
       );
 
-      const updated = await updateItem(created.id, { canvas_x: 150, canvas_y: 250 });
+      const updated = await updateItem(created.id, { canvasX: 150, canvasY: 250 });
 
-      expect(updated?.canvas_x).toBe(150);
-      expect(updated?.canvas_y).toBe(250);
+      expect(updated?.canvasX).toBe(150);
+      expect(updated?.canvasY).toBe(250);
     });
 
     it("returns null for non-existent id", async () => {

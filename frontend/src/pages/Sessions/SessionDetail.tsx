@@ -97,7 +97,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const saveDateFn = useCallback(async () => {
     await updateItemMutation.mutateAsync({
       id: sessionIdRef.current,
-      input: { session_date: sessionDateRef.current },
+      input: { sessionDate: sessionDateRef.current },
     });
   }, [updateItemMutation]);
 
@@ -147,7 +147,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     if (queryItem) {
       setItem(queryItem);
       setTitle(queryItem.title);
-      setSessionDate(queryItem.session_date ?? "");
+      setSessionDate(queryItem.sessionDate ?? "");
       setNotes(queryItem.notes);
       setPhotos(queryItem.photos);
       // Only reset editing state when switching to a different session,
@@ -250,7 +250,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
       noteId,
-      input: { is_important: isImportant },
+      input: { isImportant },
     });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -321,8 +321,8 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       const newItem = await createItemMutation.mutateAsync({
         type: "person",
         title: mentionTitle,
-        canvas_x: item.canvas_x + 220,
-        canvas_y: item.canvas_y,
+        canvasX: item.canvasX + 220,
+        canvasY: item.canvasY,
       });
       return { id: newItem.id, title: newItem.title };
     } catch {

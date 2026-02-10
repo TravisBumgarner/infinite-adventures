@@ -262,8 +262,8 @@ describe("tag routes", () => {
     });
   });
 
-  describe("listItems returns tag_ids", () => {
-    it("includes tag_ids in item summaries", async () => {
+  describe("listItems returns tagIds", () => {
+    it("includes tagIds in item summaries", async () => {
       const tag = await createTag(
         { name: "Important", icon: "Star", color: "#f9e2af" },
         DEFAULT_CANVAS_ID,
@@ -283,7 +283,7 @@ describe("tag routes", () => {
 
       const items = await listItems(DEFAULT_CANVAS_ID);
       const gandalf = items.find((i) => i.id === item.id);
-      expect(gandalf?.tag_ids).toEqual([tag.id]);
+      expect(gandalf?.tagIds).toEqual([tag.id]);
     });
   });
 });

@@ -37,7 +37,7 @@ describe("tagged items", () => {
   describe("getTaggedItems", () => {
     it("returns empty array when item has no notes", async () => {
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       const result = await getTaggedItems(session.id);
@@ -46,7 +46,7 @@ describe("tagged items", () => {
 
     it("returns empty array when notes have no mentions", async () => {
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "No mentions here." });
@@ -58,7 +58,7 @@ describe("tagged items", () => {
     it("returns items mentioned by title", async () => {
       const person = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Met with @Gandalf today." });
@@ -73,7 +73,7 @@ describe("tagged items", () => {
     it("returns items mentioned by ID", async () => {
       const place = await createItem({ type: "place", title: "Rivendell" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: `Traveled to @{${place.id}}.` });
@@ -87,7 +87,7 @@ describe("tagged items", () => {
     it("returns items mentioned with bracket syntax", async () => {
       const thing = await createItem({ type: "thing", title: "One Ring" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Found @[One Ring] in cave." });
@@ -101,7 +101,7 @@ describe("tagged items", () => {
     it("deduplicates mentions across notes", async () => {
       const person = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Saw @Gandalf at breakfast." });
@@ -116,7 +116,7 @@ describe("tagged items", () => {
       const gandalf = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const frodo = await createItem({ type: "person", title: "Frodo" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Met @Gandalf first." });
@@ -130,7 +130,7 @@ describe("tagged items", () => {
 
     it("skips mentions that don't match any item", async () => {
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Met @{00000000-0000-0000-0000-000000000099}." });
@@ -139,18 +139,18 @@ describe("tagged items", () => {
       expect(result).toEqual([]);
     });
 
-    it("includes selected_photo_url when available", async () => {
+    it("includes selectedPhotoUrl when available", async () => {
       // Note: This test verifies the field is undefined when no photo is set
       // Full photo testing requires photo upload which is handled at the API level
       await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Met @Gandalf." });
 
       const result = await getTaggedItems(session.id);
-      expect(result[0]!.selected_photo_url).toBeUndefined();
+      expect(result[0]!.selectedPhotoUrl).toBeUndefined();
     });
   });
 
@@ -173,7 +173,7 @@ describe("tagged items", () => {
     it("handler returns tagged items in success envelope", async () => {
       const person = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
       await createNote(session.id, { content: "Met @Gandalf today." });
@@ -194,7 +194,7 @@ describe("tagged items", () => {
 
     it("handler returns empty array when no tagged items", async () => {
       const session = await createItem(
-        { type: "session", title: "Session 1", session_date: "2025-06-15" },
+        { type: "session", title: "Session 1", sessionDate: "2025-06-15" },
         DEFAULT_CANVAS_ID,
       );
 

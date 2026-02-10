@@ -53,7 +53,7 @@ describe("API client request handling", () => {
   describe("successful responses", () => {
     it("unwraps { success: true, data } envelope from list endpoint", async () => {
       const items = [
-        { id: "1", type: "person", title: "Gandalf", canvas_x: 0, canvas_y: 0, created_at: "" },
+        { id: "1", type: "person", title: "Gandalf", canvasX: 0, canvasY: 0, createdAt: "" },
       ];
       mockOkResponse(items);
 
@@ -66,14 +66,14 @@ describe("API client request handling", () => {
         id: "1",
         type: "person",
         title: "Gandalf",
-        canvas_x: 0,
-        canvas_y: 0,
-        created_at: "",
-        updated_at: "",
+        canvasX: 0,
+        canvasY: 0,
+        createdAt: "",
+        updatedAt: "",
         content: { id: "c1", notes: "" },
         photos: [],
-        links_to: [],
-        linked_from: [],
+        linksTo: [],
+        linkedFrom: [],
       };
       mockOkResponse(item);
 
@@ -142,7 +142,7 @@ describe("canvas API functions", () => {
 
   describe("createCanvas", () => {
     it("calls POST /canvases with name in body", async () => {
-      mockOkResponse({ id: "c1", name: "New Map", created_at: "", updated_at: "" });
+      mockOkResponse({ id: "c1", name: "New Map", createdAt: "", updatedAt: "" });
 
       await createCanvas({ name: "New Map" });
 
@@ -154,7 +154,7 @@ describe("canvas API functions", () => {
 
   describe("updateCanvas", () => {
     it("calls PUT /canvases/:id with input in body", async () => {
-      mockOkResponse({ id: "c1", name: "Renamed", created_at: "", updated_at: "" });
+      mockOkResponse({ id: "c1", name: "Renamed", createdAt: "", updatedAt: "" });
 
       await updateCanvas("c1", { name: "Renamed" });
 
@@ -189,7 +189,7 @@ describe("canvas item API functions", () => {
 
     it("returns array of canvas item summaries", async () => {
       const items = [
-        { id: "1", type: "person", title: "Gandalf", canvas_x: 10, canvas_y: 20, created_at: "" },
+        { id: "1", type: "person", title: "Gandalf", canvasX: 10, canvasY: 20, createdAt: "" },
       ];
       mockOkResponse(items);
 
@@ -205,14 +205,14 @@ describe("canvas item API functions", () => {
         id: "1",
         type: "person",
         title: "Gandalf",
-        canvas_x: 0,
-        canvas_y: 0,
-        created_at: "",
-        updated_at: "",
+        canvasX: 0,
+        canvasY: 0,
+        createdAt: "",
+        updatedAt: "",
         content: { id: "c1", notes: "" },
         photos: [],
-        links_to: [],
-        linked_from: [],
+        linksTo: [],
+        linkedFrom: [],
       });
 
       await fetchItem("item-123");
@@ -225,21 +225,21 @@ describe("canvas item API functions", () => {
         id: "1",
         type: "person",
         title: "Gandalf",
-        canvas_x: 0,
-        canvas_y: 0,
-        created_at: "",
-        updated_at: "",
+        canvasX: 0,
+        canvasY: 0,
+        createdAt: "",
+        updatedAt: "",
         content: { id: "c1", notes: "A wizard" },
         photos: [
           {
             id: "p1",
             url: "/api/photos/p1.jpg",
-            original_name: "gandalf.jpg",
-            is_main_photo: true,
+            originalName: "gandalf.jpg",
+            isMainPhoto: true,
           },
         ],
-        links_to: [],
-        linked_from: [],
+        linksTo: [],
+        linkedFrom: [],
       };
       mockOkResponse(item);
 
@@ -325,8 +325,8 @@ describe("photo API functions", () => {
       mockOkResponse({
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "test.jpg",
-        is_main_photo: false,
+        originalName: "test.jpg",
+        isMainPhoto: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -340,8 +340,8 @@ describe("photo API functions", () => {
       mockOkResponse({
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "test.jpg",
-        is_main_photo: false,
+        originalName: "test.jpg",
+        isMainPhoto: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -356,8 +356,8 @@ describe("photo API functions", () => {
       mockOkResponse({
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "test.jpg",
-        is_main_photo: false,
+        originalName: "test.jpg",
+        isMainPhoto: false,
       });
 
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
@@ -371,8 +371,8 @@ describe("photo API functions", () => {
       const photo = {
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "gandalf.jpg",
-        is_main_photo: false,
+        originalName: "gandalf.jpg",
+        isMainPhoto: false,
       };
       mockOkResponse(photo);
 
@@ -380,7 +380,7 @@ describe("photo API functions", () => {
       const result = await uploadPhoto("item-123", file);
 
       expect(result.id).toBe("p1");
-      expect(result.original_name).toBe("gandalf.jpg");
+      expect(result.originalName).toBe("gandalf.jpg");
     });
   });
 
@@ -400,8 +400,8 @@ describe("photo API functions", () => {
       mockOkResponse({
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "test.jpg",
-        is_main_photo: true,
+        originalName: "test.jpg",
+        isMainPhoto: true,
       });
 
       await selectPhoto("photo-123");
@@ -410,18 +410,18 @@ describe("photo API functions", () => {
       expect(getCalledOptions().method).toBe("PUT");
     });
 
-    it("returns photo with is_main_photo true", async () => {
+    it("returns photo with isMainPhoto true", async () => {
       const photo = {
         id: "p1",
         url: "/api/photos/p1.jpg",
-        original_name: "test.jpg",
-        is_main_photo: true,
+        originalName: "test.jpg",
+        isMainPhoto: true,
       };
       mockOkResponse(photo);
 
       const result = await selectPhoto("photo-123");
 
-      expect(result.is_main_photo).toBe(true);
+      expect(result.isMainPhoto).toBe(true);
     });
   });
 });

@@ -3,7 +3,7 @@ import type { TimelineEntry } from "shared";
 import { getDb } from "../db/connection.js";
 import { canvasItems, notes, photos } from "../db/schema.js";
 
-export type TimelineSort = "created_at" | "updated_at";
+export type TimelineSort = "createdAt" | "updatedAt";
 
 interface TimelineCursor {
   timestamp: string;
@@ -25,7 +25,7 @@ function encodeCursor(timestamp: string, id: string): string {
 
 export async function getTimeline(
   canvasId: string,
-  sort: TimelineSort = "created_at",
+  sort: TimelineSort = "createdAt",
   cursor?: string,
   limit = 30,
 ): Promise<PaginatedTimelineResult> {
@@ -33,7 +33,7 @@ export async function getTimeline(
   const parsed = cursor ? decodeCursor(cursor) : null;
 
   // Build note cursor conditions
-  const noteSortCol = sort === "updated_at" ? notes.updated_at : notes.created_at;
+  const noteSortCol = sort === "updatedAt" ? notes.updatedAt : notes.createdAt;
   const noteCursorCondition = parsed
     ? or(
         lt(noteSortCol, parsed.timestamp),
@@ -41,22 +41,22 @@ export async function getTimeline(
       )
     : undefined;
 
-  const noteConditions = [eq(canvasItems.canvas_id, canvasId)];
+  const noteConditions = [eq(canvasItems.canvasId, canvasId)];
   if (noteCursorCondition) noteConditions.push(noteCursorCondition);
 
   const noteRows = await db
     .select({
       id: notes.id,
       content: notes.content,
-      is_important: notes.is_important,
-      created_at: notes.created_at,
-      updated_at: notes.updated_at,
-      parent_item_id: canvasItems.id,
-      parent_item_type: canvasItems.type,
-      parent_item_title: canvasItems.title,
+      isImportant: notes.isImportant,
+      createdAt: notes.createdAt,
+      updatedAt: notes.updatedAt,
+      parentItemId: canvasItems.id,
+      parentItemType: canvasItems.type,
+      parentItemTitle: canvasItems.title,
     })
     .from(notes)
-    .innerJoin(canvasItems, eq(notes.canvas_item_id, canvasItems.id))
+    .innerJoin(canvasItems, eq(notes.canvasItemId, canvasItems.id))
     .where(and(...noteConditions))
     .orderBy(sql`${noteSortCol} DESC, ${notes.id} DESC`)
     .limit(limit + 1);
@@ -64,68 +64,68 @@ export async function getTimeline(
   const noteEntries: TimelineEntry[] = noteRows.map((row) => ({
     id: row.id,
     kind: "note" as const,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    is_important: row.is_important,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    isImportant: row.isImportant,
     content: row.content,
-    parent_item_id: row.parent_item_id,
-    parent_item_type: row.parent_item_type,
-    parent_item_title: row.parent_item_title,
+    parentItemId: row.parentItemId,
+    parentItemType: row.parentItemType,
+    parentItemTitle: row.parentItemTitle,
   }));
 
   // Build photo cursor conditions
-  // Photos only have created_at, so sort field is always created_at
+  // Photos only have createdAt, so sort field is always createdAt
   const photoCursorCondition = parsed
     ? or(
-        lt(photos.created_at, parsed.timestamp),
-        and(eq(photos.created_at, parsed.timestamp), lt(photos.id, parsed.id)),
+        lt(photos.createdAt, parsed.timestamp),
+        and(eq(photos.createdAt, parsed.timestamp), lt(photos.id, parsed.id)),
       )
     : undefined;
 
-  const photoConditions = [eq(canvasItems.canvas_id, canvasId)];
+  const photoConditions = [eq(canvasItems.canvasId, canvasId)];
   if (photoCursorCondition) photoConditions.push(photoCursorCondition);
 
   const photoRows = await db
     .select({
       id: photos.id,
-      original_name: photos.original_name,
-      is_important: photos.is_important,
-      created_at: photos.created_at,
-      aspect_ratio: photos.aspect_ratio,
+      originalName: photos.originalName,
+      isImportant: photos.isImportant,
+      createdAt: photos.createdAt,
+      aspectRatio: photos.aspectRatio,
       blurhash: photos.blurhash,
-      parent_item_id: canvasItems.id,
-      parent_item_type: canvasItems.type,
-      parent_item_title: canvasItems.title,
+      parentItemId: canvasItems.id,
+      parentItemType: canvasItems.type,
+      parentItemTitle: canvasItems.title,
     })
     .from(photos)
     .innerJoin(
       canvasItems,
-      and(eq(photos.content_type, canvasItems.type), eq(photos.content_id, canvasItems.content_id)),
+      and(eq(photos.contentType, canvasItems.type), eq(photos.contentId, canvasItems.contentId)),
     )
     .where(and(...photoConditions))
-    .orderBy(sql`${photos.created_at} DESC, ${photos.id} DESC`)
+    .orderBy(sql`${photos.createdAt} DESC, ${photos.id} DESC`)
     .limit(limit + 1);
 
   const photoEntries: TimelineEntry[] = photoRows.map((row) => ({
     id: row.id,
     kind: "photo" as const,
-    created_at: row.created_at,
-    updated_at: row.created_at,
-    is_important: row.is_important,
-    photo_url: `/api/photos/${row.id}`,
-    original_name: row.original_name,
-    aspect_ratio: row.aspect_ratio ?? undefined,
+    createdAt: row.createdAt,
+    updatedAt: row.createdAt,
+    isImportant: row.isImportant,
+    photoUrl: `/api/photos/${row.id}`,
+    originalName: row.originalName,
+    aspectRatio: row.aspectRatio ?? undefined,
     blurhash: row.blurhash ?? undefined,
-    parent_item_id: row.parent_item_id,
-    parent_item_type: row.parent_item_type,
-    parent_item_title: row.parent_item_title,
+    parentItemId: row.parentItemId,
+    parentItemType: row.parentItemType,
+    parentItemTitle: row.parentItemTitle,
   }));
 
   // Merge and sort descending by requested field
   const all = [...noteEntries, ...photoEntries];
   all.sort((a, b) => {
-    const aVal = sort === "updated_at" ? a.updated_at : a.created_at;
-    const bVal = sort === "updated_at" ? b.updated_at : b.created_at;
+    const aVal = sort === "updatedAt" ? a.updatedAt : a.createdAt;
+    const bVal = sort === "updatedAt" ? b.updatedAt : b.createdAt;
     const cmp = bVal.localeCompare(aVal);
     if (cmp !== 0) return cmp;
     return b.id.localeCompare(a.id);
@@ -138,7 +138,7 @@ export async function getTimeline(
 
   if (hasMore && entries.length > 0) {
     const last = entries[entries.length - 1]!;
-    const ts = sort === "updated_at" ? last.updated_at : last.created_at;
+    const ts = sort === "updatedAt" ? last.updatedAt : last.createdAt;
     nextCursor = encodeCursor(ts, last.id);
   }
 
@@ -152,18 +152,18 @@ export async function getTimelineDayCounts(
 ): Promise<Record<string, number>> {
   const db = getDb();
 
-  const dateExpr = sql`substr(${notes.created_at}, 1, 10)`;
+  const dateExpr = sql`substr(${notes.createdAt}, 1, 10)`;
   const noteRows = await db
     .select({
       day: dateExpr.as("day"),
       count: sql<number>`count(*)`.as("count"),
     })
     .from(notes)
-    .innerJoin(canvasItems, eq(notes.canvas_item_id, canvasItems.id))
-    .where(and(eq(canvasItems.canvas_id, canvasId), between(dateExpr, startDate, endDate)))
+    .innerJoin(canvasItems, eq(notes.canvasItemId, canvasItems.id))
+    .where(and(eq(canvasItems.canvasId, canvasId), between(dateExpr, startDate, endDate)))
     .groupBy(dateExpr);
 
-  const photoDateExpr = sql`substr(${photos.created_at}, 1, 10)`;
+  const photoDateExpr = sql`substr(${photos.createdAt}, 1, 10)`;
   const photoRows = await db
     .select({
       day: photoDateExpr.as("day"),
@@ -172,9 +172,9 @@ export async function getTimelineDayCounts(
     .from(photos)
     .innerJoin(
       canvasItems,
-      and(eq(photos.content_type, canvasItems.type), eq(photos.content_id, canvasItems.content_id)),
+      and(eq(photos.contentType, canvasItems.type), eq(photos.contentId, canvasItems.contentId)),
     )
-    .where(and(eq(canvasItems.canvas_id, canvasId), between(photoDateExpr, startDate, endDate)))
+    .where(and(eq(canvasItems.canvasId, canvasId), between(photoDateExpr, startDate, endDate)))
     .groupBy(photoDateExpr);
 
   const counts: Record<string, number> = {};

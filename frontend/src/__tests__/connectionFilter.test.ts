@@ -19,7 +19,7 @@ function makeLinkWithSnippet(
 }
 
 describe("buildConnectionEntries", () => {
-  it("returns outgoing entries for links_to", () => {
+  it("returns outgoing entries for linksTo", () => {
     const linksTo = [makeLink("a", "Alpha", "person")];
     const result = buildConnectionEntries(linksTo, []);
     expect(result).toHaveLength(1);
@@ -27,7 +27,7 @@ describe("buildConnectionEntries", () => {
     expect(result[0].link.id).toBe("a");
   });
 
-  it("returns incoming entries for linked_from", () => {
+  it("returns incoming entries for linkedFrom", () => {
     const linkedFrom = [makeLinkWithSnippet("b", "Beta", "person")];
     const result = buildConnectionEntries([], linkedFrom);
     expect(result).toHaveLength(1);

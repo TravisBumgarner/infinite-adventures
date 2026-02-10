@@ -9,28 +9,28 @@ export const CanvasItemSummarySchema = z.object({
   type: CanvasItemTypeSchema,
   title: z.string(),
   summary: z.string(),
-  canvas_x: z.number(),
-  canvas_y: z.number(),
-  selected_photo_url: z.string().optional(),
-  tag_ids: z.array(z.string()).optional(),
-  created_at: z.string(),
+  canvasX: z.number(),
+  canvasY: z.number(),
+  selectedPhotoUrl: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
+  createdAt: z.string(),
 });
 
 export const NoteSchema = z.object({
   id: z.string(),
   content: z.string(),
-  is_important: z.boolean(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  isImportant: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export const PhotoSchema = z.object({
   id: z.string(),
   url: z.string(),
-  original_name: z.string(),
-  is_main_photo: z.boolean(),
-  is_important: z.boolean(),
-  aspect_ratio: z.number().optional(),
+  originalName: z.string(),
+  isMainPhoto: z.boolean(),
+  isImportant: z.boolean(),
+  aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
 });
 
@@ -71,32 +71,32 @@ export const CanvasItemSchema = z.object({
   type: CanvasItemTypeSchema,
   title: z.string(),
   summary: z.string(),
-  canvas_x: z.number(),
-  canvas_y: z.number(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  session_date: z.string().optional(),
+  canvasX: z.number(),
+  canvasY: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  sessionDate: z.string().optional(),
   notes: z.array(NoteSchema),
   photos: z.array(PhotoSchema),
   tags: z.array(TagSchema),
-  links_to: z.array(CanvasItemLinkSchema),
-  linked_from: z.array(CanvasItemLinkWithSnippetSchema),
+  linksTo: z.array(CanvasItemLinkSchema),
+  linkedFrom: z.array(CanvasItemLinkWithSnippetSchema),
 });
 
 export const CreateCanvasItemInputSchema = z.object({
   type: CanvasItemTypeSchema,
   title: z.string(),
-  canvas_x: z.number().optional(),
-  canvas_y: z.number().optional(),
-  session_date: z.string().optional(),
+  canvasX: z.number().optional(),
+  canvasY: z.number().optional(),
+  sessionDate: z.string().optional(),
 });
 
 export const UpdateCanvasItemInputSchema = z.object({
   title: z.string().optional(),
   summary: z.string().optional(),
-  canvas_x: z.number().optional(),
-  canvas_y: z.number().optional(),
-  session_date: z.string().optional(),
+  canvasX: z.number().optional(),
+  canvasY: z.number().optional(),
+  sessionDate: z.string().optional(),
 });
 
 // --- Note Input Schemas ---
@@ -107,7 +107,7 @@ export const CreateNoteInputSchema = z.object({
 
 export const UpdateNoteInputSchema = z.object({
   content: z.string().optional(),
-  is_important: z.boolean().optional(),
+  isImportant: z.boolean().optional(),
 });
 
 export const CanvasItemSearchResultSchema = z.object({
@@ -120,16 +120,16 @@ export const CanvasItemSearchResultSchema = z.object({
 export const SessionSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
-  session_date: z.string(),
-  selected_photo_url: z.string().optional(),
-  created_at: z.string(),
+  sessionDate: z.string(),
+  selectedPhotoUrl: z.string().optional(),
+  createdAt: z.string(),
 });
 
 export const TaggedItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   type: CanvasItemTypeSchema,
-  selected_photo_url: z.string().optional(),
+  selectedPhotoUrl: z.string().optional(),
 });
 
 export const UserSchema = z.object({
@@ -146,8 +146,8 @@ export const CanvasSummarySchema = z.object({
 export const CanvasSchema = z.object({
   id: z.string(),
   name: z.string(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export const CreateCanvasInputSchema = z.object({
@@ -163,24 +163,24 @@ export const UpdateCanvasInputSchema = z.object({
 export const TimelineEntrySchema = z.object({
   id: z.string(),
   kind: z.enum(["note", "photo"]),
-  created_at: z.string(),
-  updated_at: z.string(),
-  is_important: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  isImportant: z.boolean(),
   content: z.string().optional(),
-  photo_url: z.string().optional(),
-  original_name: z.string().optional(),
-  aspect_ratio: z.number().optional(),
+  photoUrl: z.string().optional(),
+  originalName: z.string().optional(),
+  aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
-  parent_item_id: z.string(),
-  parent_item_type: CanvasItemTypeSchema,
-  parent_item_title: z.string(),
+  parentItemId: z.string(),
+  parentItemType: CanvasItemTypeSchema,
+  parentItemTitle: z.string(),
 });
 
 export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
 
 export const PaginatedTimelineSchema = z.object({
   entries: z.array(TimelineEntrySchema),
-  next_cursor: z.string().nullable(),
+  nextCursor: z.string().nullable(),
 });
 
 export type PaginatedTimeline = z.infer<typeof PaginatedTimelineSchema>;
@@ -196,22 +196,22 @@ export type TimelineDayCounts = z.infer<typeof TimelineDayCountsSchema>;
 export const GalleryEntrySchema = z.object({
   id: z.string(),
   url: z.string(),
-  original_name: z.string(),
-  aspect_ratio: z.number().optional(),
+  originalName: z.string(),
+  aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
-  is_main_photo: z.boolean(),
-  is_important: z.boolean(),
-  created_at: z.string(),
-  parent_item_id: z.string(),
-  parent_item_type: CanvasItemTypeSchema,
-  parent_item_title: z.string(),
+  isMainPhoto: z.boolean(),
+  isImportant: z.boolean(),
+  createdAt: z.string(),
+  parentItemId: z.string(),
+  parentItemType: CanvasItemTypeSchema,
+  parentItemTitle: z.string(),
 });
 
 export type GalleryEntry = z.infer<typeof GalleryEntrySchema>;
 
 export const PaginatedGallerySchema = z.object({
   entries: z.array(GalleryEntrySchema),
-  next_cursor: z.string().nullable(),
+  nextCursor: z.string().nullable(),
 });
 
 export type PaginatedGallery = z.infer<typeof PaginatedGallerySchema>;

@@ -46,7 +46,7 @@ export async function requireAuth(
   });
 
   req.user = {
-    authId: user.auth_id,
+    authId: user.authId,
     userId: user.id,
     email: user.email,
   };

@@ -88,13 +88,13 @@ export default function Gallery() {
     const photos: Photo[] = allEntries.map((e) => ({
       id: e.id,
       url: e.url,
-      original_name: e.original_name,
-      aspect_ratio: e.aspect_ratio,
+      originalName: e.originalName,
+      aspectRatio: e.aspectRatio,
       blurhash: e.blurhash,
-      is_main_photo: e.is_main_photo,
-      is_important: e.is_important,
-      created_at: e.created_at,
-      updated_at: e.created_at,
+      isMainPhoto: e.isMainPhoto,
+      isImportant: e.isImportant,
+      createdAt: e.createdAt,
+      updatedAt: e.createdAt,
     }));
     openModal({
       id: MODAL_ID.LIGHTBOX,
@@ -216,10 +216,10 @@ export default function Gallery() {
             }}
           >
             {allEntries.map((entry, idx) => {
-              const typeColors = theme.palette.canvasItemTypes[entry.parent_item_type];
+              const typeColors = theme.palette.canvasItemTypes[entry.parentItemType];
               const typeLabel =
-                CANVAS_ITEM_TYPES.find((t) => t.value === entry.parent_item_type)?.label ??
-                entry.parent_item_type;
+                CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
+                entry.parentItemType;
               return (
                 <Box
                   key={entry.id}
@@ -235,18 +235,18 @@ export default function Gallery() {
                 >
                   <BlurImage
                     src={entry.url}
-                    alt={entry.original_name}
+                    alt={entry.originalName}
                     blurhash={entry.blurhash}
                     sx={{
                       width: "100%",
-                      aspectRatio: entry.aspect_ratio ? String(entry.aspect_ratio) : "1",
+                      aspectRatio: entry.aspectRatio ? String(entry.aspectRatio) : "1",
                       minHeight: 140,
                       maxHeight: 300,
                     }}
                   />
 
                   {/* Star badge */}
-                  {entry.is_important && (
+                  {entry.isImportant && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -305,7 +305,7 @@ export default function Gallery() {
                         flex: 1,
                       }}
                     >
-                      {entry.parent_item_title}
+                      {entry.parentItemTitle}
                     </Typography>
                   </Box>
                 </Box>

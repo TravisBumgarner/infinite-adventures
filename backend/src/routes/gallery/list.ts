@@ -10,7 +10,7 @@ import { CanvasIdParams, parseRoute } from "../shared/validation.js";
 const ListGalleryQuery = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().positive().max(100).default(30),
-  important_only: z
+  importantOnly: z
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
@@ -27,11 +27,11 @@ export async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { cursor, limit, important_only } = parsed.query;
+  const { cursor, limit, importantOnly } = parsed.query;
   const result = await getGalleryEntries(parsed.params.canvasId, {
     cursor,
     limit,
-    importantOnly: important_only,
+    importantOnly,
   });
-  sendSuccess(res, { entries: result.entries, next_cursor: result.nextCursor });
+  sendSuccess(res, { entries: result.entries, nextCursor: result.nextCursor });
 }

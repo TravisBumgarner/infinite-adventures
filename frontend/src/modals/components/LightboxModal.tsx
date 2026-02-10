@@ -99,7 +99,7 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
         >
           <BlurImage
             src={currentPhoto.url}
-            alt={currentPhoto.original_name}
+            alt={currentPhoto.originalName}
             blurhash={currentPhoto.blurhash}
             sx={{
               maxWidth: "100%",

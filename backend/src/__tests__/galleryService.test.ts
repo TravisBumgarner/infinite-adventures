@@ -22,21 +22,21 @@ describe("galleryService", () => {
     const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
     const contentId = (await getItemContentId(item.id))!;
     await uploadPhoto({
-      content_type: "person",
-      content_id: contentId,
-      original_name: "gandalf.png",
-      mime_type: "image/png",
+      contentType: "person",
+      contentId: contentId,
+      originalName: "gandalf.png",
+      mimeType: "image/png",
       buffer: Buffer.from("fake"),
     });
 
     const result = await getGalleryEntries(DEFAULT_CANVAS_ID);
     expect(result.entries).toHaveLength(1);
-    expect(result.entries[0]!.original_name).toBe("gandalf.png");
-    expect(result.entries[0]!.parent_item_id).toBe(item.id);
-    expect(result.entries[0]!.parent_item_type).toBe("person");
-    expect(result.entries[0]!.parent_item_title).toBe("Gandalf");
-    expect(result.entries[0]!.is_main_photo).toBe(true);
-    expect(result.entries[0]!.is_important).toBe(false);
+    expect(result.entries[0]!.originalName).toBe("gandalf.png");
+    expect(result.entries[0]!.parentItemId).toBe(item.id);
+    expect(result.entries[0]!.parentItemType).toBe("person");
+    expect(result.entries[0]!.parentItemTitle).toBe("Gandalf");
+    expect(result.entries[0]!.isMainPhoto).toBe(true);
+    expect(result.entries[0]!.isImportant).toBe(false);
   });
 
   it("only returns photos for the specified canvas", async () => {
@@ -48,27 +48,27 @@ describe("galleryService", () => {
     const contentId2 = (await getItemContentId(item2.id))!;
 
     await uploadPhoto({
-      content_type: "person",
-      content_id: contentId1,
-      original_name: "gandalf.png",
-      mime_type: "image/png",
+      contentType: "person",
+      contentId: contentId1,
+      originalName: "gandalf.png",
+      mimeType: "image/png",
       buffer: Buffer.from("fake"),
     });
     await uploadPhoto({
-      content_type: "place",
-      content_id: contentId2,
-      original_name: "mordor.png",
-      mime_type: "image/png",
+      contentType: "place",
+      contentId: contentId2,
+      originalName: "mordor.png",
+      mimeType: "image/png",
       buffer: Buffer.from("fake"),
     });
 
     const defaultResult = await getGalleryEntries(DEFAULT_CANVAS_ID);
     expect(defaultResult.entries).toHaveLength(1);
-    expect(defaultResult.entries[0]!.original_name).toBe("gandalf.png");
+    expect(defaultResult.entries[0]!.originalName).toBe("gandalf.png");
 
     const otherResult = await getGalleryEntries(otherCanvas.id);
     expect(otherResult.entries).toHaveLength(1);
-    expect(otherResult.entries[0]!.original_name).toBe("mordor.png");
+    expect(otherResult.entries[0]!.originalName).toBe("mordor.png");
   });
 
   it("returns empty entries when no photos exist", async () => {
@@ -83,10 +83,10 @@ describe("galleryService", () => {
 
     for (let i = 0; i < 3; i++) {
       await uploadPhoto({
-        content_type: "person",
-        content_id: contentId,
-        original_name: `photo${i}.png`,
-        mime_type: "image/png",
+        contentType: "person",
+        contentId: contentId,
+        originalName: `photo${i}.png`,
+        mimeType: "image/png",
         buffer: Buffer.from("fake"),
       });
       await new Promise((r) => setTimeout(r, 20));

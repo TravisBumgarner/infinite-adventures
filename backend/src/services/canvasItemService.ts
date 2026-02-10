@@ -76,14 +76,14 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       type: canvasItems.type,
       title: canvasItems.title,
       summary: canvasItems.summary,
-      canvas_x: canvasItems.canvas_x,
-      canvas_y: canvasItems.canvas_y,
-      created_at: canvasItems.created_at,
-      content_id: canvasItems.content_id,
+      canvasX: canvasItems.canvasX,
+      canvasY: canvasItems.canvasY,
+      createdAt: canvasItems.createdAt,
+      contentId: canvasItems.contentId,
     })
     .from(canvasItems)
-    .where(eq(canvasItems.canvas_id, canvasId))
-    .orderBy(canvasItems.created_at);
+    .where(eq(canvasItems.canvasId, canvasId))
+    .orderBy(canvasItems.createdAt);
 
   // Get selected photos for these items
   const summaries: CanvasItemSummary[] = [];
@@ -93,9 +93,9 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       .from(photos)
       .where(
         and(
-          eq(photos.content_type, item.type),
-          eq(photos.content_id, item.content_id),
-          eq(photos.is_main_photo, true),
+          eq(photos.contentType, item.type),
+          eq(photos.contentId, item.contentId),
+          eq(photos.isMainPhoto, true),
         ),
       );
 
@@ -106,13 +106,11 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       type: item.type as CanvasItemType,
       title: item.title,
       summary: item.summary,
-      canvas_x: item.canvas_x,
-      canvas_y: item.canvas_y,
-      created_at: item.created_at,
-      selected_photo_url: selectedPhotos[0]
-        ? `/api/photos/${selectedPhotos[0].filename}`
-        : undefined,
-      tag_ids: tagIds.length > 0 ? tagIds : undefined,
+      canvasX: item.canvasX,
+      canvasY: item.canvasY,
+      createdAt: item.createdAt,
+      selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
+      tagIds: tagIds.length > 0 ? tagIds : undefined,
     });
   }
 
@@ -130,35 +128,35 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
 
   const type = item.type as CanvasItemType;
 
-  // Get session_date if this is a session
-  let session_date: string | undefined;
+  // Get sessionDate if this is a session
+  let sessionDate: string | undefined;
   if (type === "session") {
     const [sessionRow] = await db
-      .select({ session_date: sessions.session_date })
+      .select({ sessionDate: sessions.sessionDate })
       .from(sessions)
-      .where(eq(sessions.id, item.content_id));
-    session_date = sessionRow?.session_date;
+      .where(eq(sessions.id, item.contentId));
+    sessionDate = sessionRow?.sessionDate;
   }
 
   // Get notes
   const noteList = await listNotes(id);
 
   // Get photos
-  const photoRecords = await listPhotos(type, item.content_id);
+  const photoRecords = await listPhotos(type, item.contentId);
   const photoList: Photo[] = photoRecords.map((p) => ({
     id: p.id,
     url: `/api/photos/${p.filename}`,
-    original_name: p.original_name,
-    is_main_photo: p.is_main_photo,
-    is_important: p.is_important,
-    aspect_ratio: p.aspect_ratio ?? undefined,
+    originalName: p.originalName,
+    isMainPhoto: p.isMainPhoto,
+    isImportant: p.isImportant,
+    aspectRatio: p.aspectRatio ?? undefined,
     blurhash: p.blurhash ?? undefined,
   }));
 
   // Get tags
   const tagList = await listTagsForItem(id);
 
-  // Get links_to (items this item links to)
+  // Get linksTo (items this item links to)
   const linksTo = await db
     .select({
       id: canvasItems.id,
@@ -166,10 +164,10 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
       type: canvasItems.type,
     })
     .from(canvasItemLinks)
-    .innerJoin(canvasItems, eq(canvasItems.id, canvasItemLinks.target_item_id))
-    .where(eq(canvasItemLinks.source_item_id, id));
+    .innerJoin(canvasItems, eq(canvasItems.id, canvasItemLinks.targetItemId))
+    .where(eq(canvasItemLinks.sourceItemId, id));
 
-  // Get linked_from (items that link to this item, with snippets)
+  // Get linkedFrom (items that link to this item, with snippets)
   const linkedFrom = await db
     .select({
       id: canvasItems.id,
@@ -178,24 +176,24 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
       snippet: canvasItemLinks.snippet,
     })
     .from(canvasItemLinks)
-    .innerJoin(canvasItems, eq(canvasItems.id, canvasItemLinks.source_item_id))
-    .where(eq(canvasItemLinks.target_item_id, id));
+    .innerJoin(canvasItems, eq(canvasItems.id, canvasItemLinks.sourceItemId))
+    .where(eq(canvasItemLinks.targetItemId, id));
 
   return {
     id: item.id,
     type,
     title: item.title,
     summary: item.summary,
-    canvas_x: item.canvas_x,
-    canvas_y: item.canvas_y,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    session_date,
+    canvasX: item.canvasX,
+    canvasY: item.canvasY,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    sessionDate,
     notes: noteList,
     photos: photoList,
     tags: tagList,
-    links_to: linksTo as CanvasItemLink[],
-    linked_from: linkedFrom.map((l) => ({
+    linksTo: linksTo as CanvasItemLink[],
+    linkedFrom: linkedFrom.map((l) => ({
       id: l.id,
       title: l.title,
       type: l.type as CanvasItemType,
@@ -229,27 +227,32 @@ export async function createItem(
   const contentTable = getContentTable(type);
 
   // Create content record first
-  const contentValues: Record<string, string> = {
-    id: contentId,
-    created_at: now,
-    updated_at: now,
-  };
   if (type === "session") {
-    contentValues.session_date = input.session_date ?? now.split("T")[0]!;
+    await db.insert(sessions).values({
+      id: contentId,
+      sessionDate: input.sessionDate ?? now.split("T")[0]!,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    await db.insert(contentTable).values({
+      id: contentId,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
-  await db.insert(contentTable).values(contentValues);
 
   // Create canvas item
   await db.insert(canvasItems).values({
     id: itemId,
     type,
     title: input.title,
-    canvas_x: input.canvas_x ?? 0,
-    canvas_y: input.canvas_y ?? 0,
-    canvas_id: canvasId,
-    content_id: contentId,
-    created_at: now,
-    updated_at: now,
+    canvasX: input.canvasX ?? 0,
+    canvasY: input.canvasY ?? 0,
+    canvasId: canvasId,
+    contentId: contentId,
+    createdAt: now,
+    updatedAt: now,
   });
 
   return {
@@ -257,9 +260,9 @@ export async function createItem(
     type,
     title: input.title,
     summary: "",
-    canvas_x: input.canvas_x ?? 0,
-    canvas_y: input.canvas_y ?? 0,
-    created_at: now,
+    canvasX: input.canvasX ?? 0,
+    canvasY: input.canvasY ?? 0,
+    createdAt: now,
   };
 }
 
@@ -282,27 +285,27 @@ export async function updateItem(
   if (
     input.title !== undefined ||
     input.summary !== undefined ||
-    input.canvas_x !== undefined ||
-    input.canvas_y !== undefined
+    input.canvasX !== undefined ||
+    input.canvasY !== undefined
   ) {
     await db
       .update(canvasItems)
       .set({
         title: input.title ?? existing.title,
         summary: input.summary ?? existing.summary,
-        canvas_x: input.canvas_x ?? existing.canvas_x,
-        canvas_y: input.canvas_y ?? existing.canvas_y,
-        updated_at: now,
+        canvasX: input.canvasX ?? existing.canvasX,
+        canvasY: input.canvasY ?? existing.canvasY,
+        updatedAt: now,
       })
       .where(eq(canvasItems.id, id));
   }
 
-  // Update session_date if provided and item is a session
-  if (input.session_date !== undefined && type === "session") {
+  // Update sessionDate if provided and item is a session
+  if (input.sessionDate !== undefined && type === "session") {
     await db
       .update(sessions)
-      .set({ session_date: input.session_date, updated_at: now })
-      .where(eq(sessions.id, existing.content_id));
+      .set({ sessionDate: input.sessionDate, updatedAt: now })
+      .where(eq(sessions.id, existing.contentId));
   }
 
   // Get updated item
@@ -313,9 +316,9 @@ export async function updateItem(
     type,
     title: updated!.title,
     summary: updated!.summary,
-    canvas_x: updated!.canvas_x,
-    canvas_y: updated!.canvas_y,
-    created_at: updated!.created_at,
+    canvasX: updated!.canvasX,
+    canvasY: updated!.canvasY,
+    createdAt: updated!.createdAt,
   };
 }
 
@@ -332,7 +335,7 @@ export async function deleteItem(id: string): Promise<boolean> {
   const contentTable = getContentTable(type);
 
   // Delete photos for this content
-  await deletePhotosForContent(type, existing.content_id);
+  await deletePhotosForContent(type, existing.contentId);
 
   // Notes will be deleted by cascade when canvas item is deleted
 
@@ -340,21 +343,21 @@ export async function deleteItem(id: string): Promise<boolean> {
   await db.delete(canvasItems).where(eq(canvasItems.id, id));
 
   // Delete the content record
-  await db.delete(contentTable).where(eq(contentTable.id, existing.content_id));
+  await db.delete(contentTable).where(eq(contentTable.id, existing.contentId));
 
   return true;
 }
 
 /**
- * Get the content_id for a canvas item (used for photo association).
+ * Get the contentId for a canvas item (used for photo association).
  */
 export async function getItemContentId(itemId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
-    .select({ content_id: canvasItems.content_id })
+    .select({ contentId: canvasItems.contentId })
     .from(canvasItems)
     .where(eq(canvasItems.id, itemId));
-  return row?.content_id ?? null;
+  return row?.contentId ?? null;
 }
 
 /**
@@ -398,7 +401,7 @@ export async function searchItems(
 }
 
 /**
- * List all session-type items for a canvas, sorted by session_date descending.
+ * List all session-type items for a canvas, sorted by sessionDate descending.
  */
 export async function listSessions(canvasId: string): Promise<SessionSummary[]> {
   const db = getDb();
@@ -407,14 +410,14 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
     .select({
       id: canvasItems.id,
       title: canvasItems.title,
-      session_date: sessions.session_date,
-      created_at: canvasItems.created_at,
-      content_id: canvasItems.content_id,
+      sessionDate: sessions.sessionDate,
+      createdAt: canvasItems.createdAt,
+      contentId: canvasItems.contentId,
     })
     .from(canvasItems)
-    .innerJoin(sessions, eq(sessions.id, canvasItems.content_id))
-    .where(and(eq(canvasItems.canvas_id, canvasId), eq(canvasItems.type, "session")))
-    .orderBy(desc(sessions.session_date));
+    .innerJoin(sessions, eq(sessions.id, canvasItems.contentId))
+    .where(and(eq(canvasItems.canvasId, canvasId), eq(canvasItems.type, "session")))
+    .orderBy(desc(sessions.sessionDate));
 
   const summaries: SessionSummary[] = [];
   for (const item of items) {
@@ -423,20 +426,18 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
       .from(photos)
       .where(
         and(
-          eq(photos.content_type, "session"),
-          eq(photos.content_id, item.content_id),
-          eq(photos.is_main_photo, true),
+          eq(photos.contentType, "session"),
+          eq(photos.contentId, item.contentId),
+          eq(photos.isMainPhoto, true),
         ),
       );
 
     summaries.push({
       id: item.id,
       title: item.title,
-      session_date: item.session_date,
-      created_at: item.created_at,
-      selected_photo_url: selectedPhotos[0]
-        ? `/api/photos/${selectedPhotos[0].filename}`
-        : undefined,
+      sessionDate: item.sessionDate,
+      createdAt: item.createdAt,
+      selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
     });
   }
 
@@ -449,12 +450,12 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
 export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
   const db = getDb();
 
-  // Get all notes for this item, ordered by created_at
+  // Get all notes for this item, ordered by createdAt
   const noteRows = await db
     .select({ content: notes.content })
     .from(notes)
-    .where(eq(notes.canvas_item_id, itemId))
-    .orderBy(notes.created_at);
+    .where(eq(notes.canvasItemId, itemId))
+    .orderBy(notes.createdAt);
 
   const seenIds = new Set<string>();
   const taggedItems: TaggedItem[] = [];
@@ -462,7 +463,9 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
   for (const note of noteRows) {
     const mentions = parseMentionsWithPositions(note.content);
     for (const mention of mentions) {
-      let targetItem: { id: string; title: string; type: string; content_id: string } | undefined;
+      let targetItem:
+        | { id: string; title: string; type: CanvasItemType; contentId: string }
+        | undefined;
 
       if (mention.type === "id") {
         const [found] = await db
@@ -470,7 +473,7 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
             id: canvasItems.id,
             title: canvasItems.title,
             type: canvasItems.type,
-            content_id: canvasItems.content_id,
+            contentId: canvasItems.contentId,
           })
           .from(canvasItems)
           .where(eq(canvasItems.id, mention.value));
@@ -481,7 +484,7 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
             id: canvasItems.id,
             title: canvasItems.title,
             type: canvasItems.type,
-            content_id: canvasItems.content_id,
+            contentId: canvasItems.contentId,
           })
           .from(canvasItems)
           .where(sql`LOWER(${canvasItems.title}) = LOWER(${mention.value})`);
@@ -497,9 +500,9 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
         .from(photos)
         .where(
           and(
-            eq(photos.content_type, targetItem.type),
-            eq(photos.content_id, targetItem.content_id),
-            eq(photos.is_main_photo, true),
+            eq(photos.contentType, targetItem.type),
+            eq(photos.contentId, targetItem.contentId),
+            eq(photos.isMainPhoto, true),
           ),
         );
 
@@ -507,7 +510,7 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
         id: targetItem.id,
         title: targetItem.title,
         type: targetItem.type as CanvasItemType,
-        selected_photo_url: selectedPhotos[0]
+        selectedPhotoUrl: selectedPhotos[0]
           ? `/api/photos/${selectedPhotos[0].filename}`
           : undefined,
       });
