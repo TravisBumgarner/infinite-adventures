@@ -5,6 +5,7 @@ import Canvas from "../pages/Canvas/Canvas";
 import Gallery from "../pages/Gallery";
 import Login from "../pages/Login/Login.js";
 import Marketing from "../pages/Marketing/Marketing";
+import NotFound from "../pages/NotFound";
 import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
 import Sessions from "../pages/Sessions";
 import Signup from "../pages/Signup/Signup.js";
@@ -124,6 +125,7 @@ export default function Router() {
         }
       />
       <Route path="/password-reset" element={<PasswordReset />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
