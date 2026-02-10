@@ -19,6 +19,7 @@ export const CanvasItemSummarySchema = z.object({
 export const NoteSchema = z.object({
   id: z.string(),
   content: z.string(),
+  plainContent: z.string(),
   isImportant: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -111,10 +112,11 @@ export const UpdateNoteInputSchema = z.object({
 });
 
 export const CanvasItemSearchResultSchema = z.object({
-  id: z.string(),
+  itemId: z.string(),
   type: CanvasItemTypeSchema,
   title: z.string(),
   snippet: z.string(),
+  noteId: z.string().nullable(),
 });
 
 export const SessionSummarySchema = z.object({

@@ -2,17 +2,12 @@ import type { EdgeTypes, NodeTypes } from "@xyflow/react";
 import { Background, BackgroundVariant, MiniMap, ReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Box, Stack, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../../constants";
-import {
-  useCreateCanvas,
-  useDeleteCanvas,
-  useDeleteItem,
-  useUpdateCanvas,
-} from "../../hooks/mutations";
+import { useDeleteItem } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
 import { logger } from "../../lib/logger";
 import { MODAL_ID, useModalStore } from "../../modals";
@@ -20,12 +15,9 @@ import { useCanvasStore } from "../../stores/canvasStore";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
 import CanvasItemNodeComponent from "./components/CanvasItemNode";
 import CanvasItemPanel from "./components/CanvasItemPanel";
-import CanvasPicker from "./components/CanvasPicker";
 import ContextMenu from "./components/ContextMenu";
 import DeletableEdge from "./components/DeletableEdge";
-import FilterBar from "./components/FilterBar";
 import NodeContextMenu from "./components/NodeContextMenu";
-import SearchBar from "./components/SearchBar";
 import SelectionContextMenu from "./components/SelectionContextMenu";
 import Toolbar from "./components/Toolbar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
@@ -43,7 +35,6 @@ export default function Canvas() {
   const navigate = useNavigate();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const editingItemId = useCanvasStore((s) => s.editingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
@@ -55,6 +46,11 @@ export default function Canvas() {
   const setContextMenu = useCanvasStore((s) => s.setContextMenu);
   const setNodeContextMenu = useCanvasStore((s) => s.setNodeContextMenu);
   const setSelectionContextMenu = useCanvasStore((s) => s.setSelectionContextMenu);
+
+  // Clear editing panel when leaving Canvas
+  useEffect(() => {
+    return () => setEditingItemId(null);
+  }, [setEditingItemId]);
 
   // Fetch canvases via React Query and initialize the active canvas
   const { data: canvases = [] } = useCanvases();
@@ -92,47 +88,7 @@ export default function Canvas() {
     onEdgeMouseLeave,
   } = useCanvasActions();
 
-  // Canvas mutations
-  const createCanvasMutation = useCreateCanvas();
-  const updateCanvasMutation = useUpdateCanvas();
-  const deleteCanvasMutation = useDeleteCanvas();
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
-
-  // Canvas picker handlers
-  const handleSwitchCanvas = useCallback(
-    (canvasId: string) => {
-      setActiveCanvasId(canvasId);
-    },
-    [setActiveCanvasId],
-  );
-
-  const handleCreateCanvas = useCallback(
-    async (name: string) => {
-      const canvas = await createCanvasMutation.mutateAsync({ name });
-      setActiveCanvasId(canvas.id);
-    },
-    [createCanvasMutation, setActiveCanvasId],
-  );
-
-  const handleRenameCanvas = useCallback(
-    async (canvasId: string, newName: string) => {
-      await updateCanvasMutation.mutateAsync({ id: canvasId, input: { name: newName } });
-    },
-    [updateCanvasMutation],
-  );
-
-  const handleDeleteCanvas = useCallback(
-    async (canvasId: string) => {
-      await deleteCanvasMutation.mutateAsync(canvasId);
-      if (activeCanvasId === canvasId) {
-        const remaining = canvases.filter((c) => c.id !== canvasId);
-        if (remaining.length > 0) {
-          setActiveCanvasId(remaining[0].id);
-        }
-      }
-    },
-    [deleteCanvasMutation, activeCanvasId, canvases, setActiveCanvasId],
-  );
 
   const handleExportPdf = useCallback(async () => {
     // Find the ReactFlow viewport (contains the actual nodes)
@@ -270,55 +226,7 @@ export default function Canvas() {
         />
       </ReactFlow>
 
-      <Box
-        sx={{
-          position: "fixed",
-          top: 72,
-          left: showSettings ? SIDEBAR_WIDTH : 0,
-          right: editingItemId ? SIDEBAR_WIDTH : 0,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-          transition: "left 0.2s, right 0.2s",
-          zIndex: 50,
-          "& > *": { pointerEvents: "auto" },
-        }}
-      >
-        <Stack data-tour="search-filter" direction="row" spacing={1} alignItems="center">
-          <SearchBar canvasId={activeCanvasId} onNavigate={navigateToItem} />
-          <FilterBar />
-        </Stack>
-      </Box>
       <Toolbar onCreate={handleToolbarCreate} />
-
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          left: showSettings ? SIDEBAR_WIDTH + 16 : 16,
-          zIndex: 50,
-          pointerEvents: "auto",
-          transition: "left 0.2s",
-        }}
-      >
-        <Box
-          sx={{
-            bgcolor: "var(--color-chrome-bg)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid var(--color-surface1)",
-            borderRadius: 2,
-          }}
-        >
-          <CanvasPicker
-            canvases={canvases}
-            activeCanvasId={activeCanvasId}
-            onSwitch={handleSwitchCanvas}
-            onCreate={handleCreateCanvas}
-            onRename={handleRenameCanvas}
-            onDelete={handleDeleteCanvas}
-          />
-        </Box>
-      </Box>
 
       {contextMenu && (
         <ContextMenu

@@ -51,6 +51,9 @@ interface CanvasState {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
 
+  showSearchBar: boolean;
+  setShowSearchBar: (show: boolean) => void;
+
   showOnboarding: boolean;
   setShowOnboarding: (show: boolean) => void;
 
@@ -73,6 +76,9 @@ interface CanvasState {
 
   filterSearch: string;
   setFilterSearch: (search: string) => void;
+
+  highlightNoteId: string | null;
+  setHighlightNoteId: (id: string | null) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -116,6 +122,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
+
+  showSearchBar: false,
+  setShowSearchBar: (show) => set({ showSearchBar: show }),
 
   showOnboarding: !localStorage.getItem(ONBOARDING_COMPLETE_KEY),
   setShowOnboarding: (show) => {
@@ -171,4 +180,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   filterSearch: "",
   setFilterSearch: (search) => set({ filterSearch: search }),
+
+  highlightNoteId: null,
+  setHighlightNoteId: (id) => set({ highlightNoteId: id }),
 }));

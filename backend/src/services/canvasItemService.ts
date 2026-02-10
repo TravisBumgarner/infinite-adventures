@@ -26,7 +26,7 @@ import {
   things,
 } from "../db/schema.js";
 import { parseMentionsWithPositions } from "./canvasItemLinkService.js";
-import { listNotes } from "./noteService.js";
+import { listNotes, recomputePlainContentForMentionedItem } from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 import { listTagIdsForItem, listTagsForItem } from "./tagService.js";
 
@@ -308,6 +308,11 @@ export async function updateItem(
       .where(eq(sessions.id, existing.contentId));
   }
 
+  // If title changed, recompute plainContent for notes mentioning this item
+  if (input.title !== undefined && input.title !== existing.title) {
+    await recomputePlainContentForMentionedItem(id);
+  }
+
   // Get updated item
   const [updated] = await db.select().from(canvasItems).where(eq(canvasItems.id, id));
 
@@ -361,7 +366,8 @@ export async function getItemContentId(itemId: string): Promise<string | null> {
 }
 
 /**
- * Search canvas items by title within a canvas.
+ * Search canvas items and notes within a canvas.
+ * Returns item-level matches (title/summary) and individual note matches as separate rows.
  */
 export async function searchItems(
   query: string,
@@ -387,13 +393,39 @@ export async function searchItems(
     .join(" & ");
 
   const result = await db.execute<CanvasItemSearchResult>(
-    sql`SELECT ci.id, ci.type, ci.title,
-          ts_headline('english', ci.title, to_tsquery('english', ${tsquery}),
-            'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet
-     FROM canvas_items ci
-     WHERE ci.search_vector @@ to_tsquery('english', ${tsquery})
-       AND ci.canvas_id = ${canvasId}
-     ORDER BY ts_rank(ci.search_vector, to_tsquery('english', ${tsquery})) DESC
+    sql`
+     SELECT * FROM (
+       -- Item-level matches (title / summary)
+       SELECT ci.id as "itemId", ci.type, ci.title, NULL::text as "noteId",
+              ts_headline('simple',
+                coalesce(ci.title, '') || ' ' || coalesce(ci.summary, ''),
+                to_tsquery('simple', ${tsquery}),
+                'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet,
+              ts_rank(
+                to_tsvector('simple', coalesce(ci.title, '') || ' ' || coalesce(ci.summary, '')),
+                to_tsquery('simple', ${tsquery})) as rank
+       FROM canvas_items ci
+       WHERE ci.canvas_id = ${canvasId}
+         AND to_tsvector('simple', coalesce(ci.title, '') || ' ' || coalesce(ci.summary, ''))
+             @@ to_tsquery('simple', ${tsquery})
+
+       UNION ALL
+
+       -- Individual note matches (uses pre-computed plain_content column)
+       SELECT ci.id as "itemId", ci.type, ci.title, n.id as "noteId",
+              ts_headline('simple',
+                n.plain_content,
+                to_tsquery('simple', ${tsquery}),
+                'StartSel=<b>, StopSel=</b>, MaxFragments=1, MaxWords=32') as snippet,
+              ts_rank(
+                to_tsvector('simple', n.plain_content),
+                to_tsquery('simple', ${tsquery})) as rank
+       FROM notes n
+       JOIN canvas_items ci ON ci.id = n.canvas_item_id
+       WHERE ci.canvas_id = ${canvasId}
+         AND to_tsvector('simple', n.plain_content) @@ to_tsquery('simple', ${tsquery})
+     ) results
+     ORDER BY rank DESC
      LIMIT 20`,
   );
 

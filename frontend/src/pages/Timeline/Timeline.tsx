@@ -21,6 +21,7 @@ import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries
 import BlurImage from "../../sharedComponents/BlurImage";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
+import { getNotePreview } from "../../utils/getNotePreview";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
 import TimelineCalendar, { getCalendarRange } from "./TimelineCalendar";
 
@@ -48,18 +49,8 @@ function getDateKey(isoString: string): string {
   return new Date(isoString).toDateString();
 }
 
-function getNotePreview(content: string): string {
-  let text = content.replace(/<[^>]*>/g, "").trim();
-  if (!text) return "Empty note";
-  text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  text = text.replace(/@\{[^}]+\}/g, "<strong>@mention</strong>");
-  text = text.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
-  );
-  text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  return text;
+function timelineNotePreview(content: string): string {
+  return getNotePreview(content, undefined, 0);
 }
 
 export default function Timeline() {
@@ -504,7 +495,7 @@ export default function Timeline() {
                             wordBreak: "break-word",
                           }}
                           dangerouslySetInnerHTML={{
-                            __html: getNotePreview(entry.content || ""),
+                            __html: timelineNotePreview(entry.content || ""),
                           }}
                         />
                       )}

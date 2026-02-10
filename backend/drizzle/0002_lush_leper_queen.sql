@@ -1,0 +1,1 @@
+ALTER TABLE "notes" ADD COLUMN "plain_content" text DEFAULT '' NOT NULL;

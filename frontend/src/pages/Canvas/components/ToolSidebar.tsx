@@ -1,3 +1,4 @@
+import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { SIDEBAR_WIDTH } from "../../../constants";
@@ -16,43 +17,48 @@ export default function ToolSidebar() {
   const toggleInitiative = useInitiativeStore((s) => s.toggle);
 
   return (
-    <div
-      data-tour="tool-sidebar"
-      style={{
+    <Box
+      sx={{
         position: "fixed",
-        top: 72,
-        left: showSettings ? SIDEBAR_WIDTH : 0,
-        width: 48,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        paddingTop: 8,
-        gap: 4,
-        background: "var(--color-chrome-bg)",
-        backdropFilter: "blur(8px)",
-        borderRight: "1px solid var(--color-surface1)",
-        borderBottom: "1px solid var(--color-surface1)",
-        borderRadius: "0 0 8px 0",
+        top: "50%",
+        left: showSettings ? SIDEBAR_WIDTH + 8 : 8,
+        transform: "translateY(-50%)",
         zIndex: 50,
         pointerEvents: "auto",
         transition: "left 0.2s",
       }}
     >
-      <Tooltip title="Dice Roller" placement="right">
-        <IconButton onClick={toggle} size="small">
-          <DiceIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="3D Dice" placement="right">
-        <IconButton onClick={toggle3d} size="small">
-          <Dice3dIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="Initiative Tracker" placement="right">
-        <IconButton onClick={toggleInitiative} size="small">
-          <InitiativeIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    </div>
+      <Box
+        data-tour="tool-sidebar"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 0.5,
+          px: 0.5,
+          py: 1,
+          bgcolor: "var(--color-chrome-bg)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid var(--color-surface1)",
+          borderRadius: 2,
+        }}
+      >
+        <Tooltip title="Dice Roller" placement="right">
+          <IconButton onClick={toggle} size="small">
+            <DiceIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="3D Dice" placement="right">
+          <IconButton onClick={toggle3d} size="small">
+            <Dice3dIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Initiative Tracker" placement="right">
+          <IconButton onClick={toggleInitiative} size="small">
+            <InitiativeIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
   );
 }

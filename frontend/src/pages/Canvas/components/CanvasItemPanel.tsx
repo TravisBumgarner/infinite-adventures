@@ -36,6 +36,7 @@ import { TagPill } from "../../../sharedComponents/TagPill";
 import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
+import { getNotePreview } from "../../../utils/getNotePreview";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
@@ -62,6 +63,8 @@ export default function CanvasItemPanel({
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const panelTab = useCanvasStore((s) => s.panelTab);
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
+  const highlightNoteId = useCanvasStore((s) => s.highlightNoteId);
+  const setHighlightNoteId = useCanvasStore((s) => s.setHighlightNoteId);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const tagsById = useTagStore((s) => s.tags);
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
@@ -422,27 +425,10 @@ export default function CanvasItemPanel({
     }
   }
 
-  function getNotePreview(content: string): string {
-    let text = content.replace(/<[^>]*>/g, "").trim();
-    if (!text) return "Empty note";
-    if (text.length > 300) text = `${text.slice(0, 300)}...`;
-    // Escape HTML entities
-    text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    // Render mentions
-    text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
-      const cached = itemsCache.get(id);
-      const name = cached ? cached.title : "mention";
-      return `<strong>@${name}</strong>`;
-    });
-    // Render links, bold, italic
-    text = text.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
-    );
-    text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    return text;
-  }
+  const notePreview = useCallback(
+    (content: string) => getNotePreview(content, itemsCache),
+    [itemsCache],
+  );
 
   async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
@@ -685,6 +671,8 @@ export default function CanvasItemPanel({
           noteStatus={noteStatus}
           itemsCache={itemsCache}
           canvasId={activeCanvasId ?? ""}
+          highlightNoteId={highlightNoteId}
+          onHighlightComplete={() => setHighlightNoteId(null)}
           onAddNote={handleAddNote}
           onSelectNote={handleSelectNote}
           onDeleteNote={handleDeleteNote}
@@ -695,7 +683,7 @@ export default function CanvasItemPanel({
           }}
           onToggleImportant={handleToggleImportant}
           onCreateMentionItem={handleCreateMentionItem}
-          getNotePreview={getNotePreview}
+          getNotePreview={notePreview}
         />
       )}
 

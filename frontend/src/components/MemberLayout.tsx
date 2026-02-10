@@ -1,10 +1,13 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
 import InitiativeTracker from "../pages/Canvas/components/InitiativeTracker";
 import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
+import ConnectedCanvasPicker from "../sharedComponents/ConnectedCanvasPicker";
 import PageToggle from "../sharedComponents/PageToggle";
+import SearchBar from "../sharedComponents/SearchBar";
+import SearchBarButton from "../sharedComponents/SearchBarButton";
 import TopBar from "../sharedComponents/TopBar";
 import { useCanvasStore } from "../stores/canvasStore";
 import OnboardingTour from "./OnboardingTour";
@@ -18,7 +21,20 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
   const showSettings = useCanvasStore((s) => s.showSettings);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const setShowSearchBar = useCanvasStore((s) => s.setShowSearchBar);
   const showOnboarding = useCanvasStore((s) => s.showOnboarding);
+
+  // Global Cmd+K / Ctrl+K shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearchBar(true);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [setShowSearchBar]);
 
   const activePage = location.pathname.startsWith("/sessions")
     ? "sessions"
@@ -31,10 +47,17 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   return (
     <>
       <TopBar
-        center={<PageToggle activePage={activePage} />}
+        left={<ConnectedCanvasPicker />}
+        center={
+          <>
+            <PageToggle activePage={activePage} />
+            <SearchBarButton onClick={() => setShowSearchBar(true)} />
+          </>
+        }
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
       {children}
+      <SearchBar />
       <ToolSidebar />
       <DiceRoller />
       <DiceRoller3d />
