@@ -54,7 +54,7 @@ tasks:
       - Frontend fetchTimeline and useTimeline hook available
     depends_on: []
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 2
     github_issue: 187
