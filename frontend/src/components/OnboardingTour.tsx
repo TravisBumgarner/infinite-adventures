@@ -48,6 +48,13 @@ const steps: Step[] = [
     content: "Search by name or filter by type and tags to find what you need.",
   },
   {
+    target: '[data-tour="tool-sidebar"]',
+    placement: "right",
+    disableBeacon: true,
+    title: "Tools",
+    content: "Roll dice, throw 3D dice, and track initiative right from the sidebar.",
+  },
+  {
     target: '[data-tour="settings-button"]',
     placement: "bottom",
     disableBeacon: true,

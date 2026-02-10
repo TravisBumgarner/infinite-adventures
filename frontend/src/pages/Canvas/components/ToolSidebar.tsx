@@ -17,6 +17,7 @@ export default function ToolSidebar() {
 
   return (
     <div
+      data-tour="tool-sidebar"
       style={{
         position: "fixed",
         top: 72,
