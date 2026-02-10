@@ -117,8 +117,15 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
 
-  showOnboarding: false,
-  setShowOnboarding: (_show) => {},
+  showOnboarding: !localStorage.getItem(ONBOARDING_COMPLETE_KEY),
+  setShowOnboarding: (show) => {
+    if (show) {
+      localStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+    } else {
+      localStorage.setItem(ONBOARDING_COMPLETE_KEY, "true");
+    }
+    set({ showOnboarding: show });
+  },
 
   closeAllPanels: () =>
     set({
