@@ -9,11 +9,12 @@ import type {
   CreateNoteInput,
   CreateTagInput,
   Note,
+  PaginatedTimeline,
   Photo,
   SessionSummary,
   Tag,
   TaggedItem,
-  TimelineEntry,
+  TimelineDayCounts,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
   UpdateNoteInput,
@@ -117,8 +118,21 @@ export async function searchItems(
 export function fetchTimeline(
   canvasId: string,
   sort: "created_at" | "updated_at" = "created_at",
-): Promise<TimelineEntry[]> {
-  return request<TimelineEntry[]>(`/canvases/${canvasId}/timeline?sort=${sort}`);
+  cursor?: string,
+  limit = 30,
+): Promise<PaginatedTimeline> {
+  const params = new URLSearchParams({ sort, limit: String(limit) });
+  if (cursor) params.set("cursor", cursor);
+  return request<PaginatedTimeline>(`/canvases/${canvasId}/timeline?${params}`);
+}
+
+export function fetchTimelineCounts(
+  canvasId: string,
+  start: string,
+  end: string,
+): Promise<TimelineDayCounts> {
+  const params = new URLSearchParams({ start, end });
+  return request<TimelineDayCounts>(`/canvases/${canvasId}/timeline/counts?${params}`);
 }
 
 // --- Session functions ---

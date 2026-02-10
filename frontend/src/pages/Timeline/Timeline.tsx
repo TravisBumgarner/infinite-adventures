@@ -1,24 +1,27 @@
-import ImageIcon from "@mui/icons-material/Image";
-import NoteIcon from "@mui/icons-material/Note";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import MapIcon from "@mui/icons-material/Map";
 import SortIcon from "@mui/icons-material/Sort";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItemType, TimelineEntry } from "shared";
+import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../constants";
 import { useCreateCanvas, useDeleteCanvas, useUpdateCanvas } from "../../hooks/mutations";
-import { useCanvases, useTimeline } from "../../hooks/queries";
+import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
+import BlurhashCanvas from "../../sharedComponents/BlurhashCanvas";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
 import CanvasPicker from "../Canvas/components/CanvasPicker";
+import TimelineCalendar, { getCalendarRange } from "./TimelineCalendar";
 
 function formatTimestamp(isoString: string): string {
   const date = new Date(isoString);
@@ -29,6 +32,33 @@ function formatTimestamp(isoString: string): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatDateLabel(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function getDateKey(isoString: string): string {
+  return new Date(isoString).toDateString();
+}
+
+function getNotePreview(content: string): string {
+  let text = content.replace(/<[^>]*>/g, "").trim();
+  if (!text) return "Empty note";
+  text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  text = text.replace(/@\{[^}]+\}/g, "<strong>@mention</strong>");
+  text = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue)">$1</a>',
+  );
+  text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  text = text.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  return text;
 }
 
 export default function Timeline() {
@@ -45,6 +75,12 @@ export default function Timeline() {
   const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(
     () => new Set(CANVAS_ITEM_TYPES.map((t) => t.value)),
   );
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Calendar window state
+  const now = new Date();
+  const [calEndYear, setCalEndYear] = useState(now.getFullYear());
+  const [calEndMonth, setCalEndMonth] = useState(now.getMonth());
 
   // Fetch canvases and initialize active canvas
   const { data: canvases = [] } = useCanvases();
@@ -54,8 +90,40 @@ export default function Timeline() {
     }
   }, [canvases, initActiveCanvas]);
 
-  // Fetch timeline data
-  const { data: entries = [], isLoading } = useTimeline(activeCanvasId ?? undefined, sort);
+  // Fetch timeline data (infinite query)
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useTimeline(
+    activeCanvasId ?? undefined,
+    sort,
+  );
+
+  // Flatten pages into entries
+  const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
+
+  // Calendar counts query
+  const { start: calStart, end: calEnd } = useMemo(
+    () => getCalendarRange(calEndYear, calEndMonth),
+    [calEndYear, calEndMonth],
+  );
+  const { data: countsData } = useTimelineCounts(activeCanvasId ?? undefined, calStart, calEnd);
+  const calCounts = countsData?.counts ?? {};
+
+  const handleShiftMonth = useCallback((delta: number) => {
+    setCalEndMonth((m) => {
+      let newM = m + delta;
+      if (newM > 11) {
+        setCalEndYear((y) => y + 1);
+        newM -= 12;
+      } else if (newM < 0) {
+        setCalEndYear((y) => y - 1);
+        newM += 12;
+      }
+      return newM;
+    });
+  }, []);
+
+  const handleShiftYear = useCallback((delta: number) => {
+    setCalEndYear((y) => y + delta);
+  }, []);
 
   // Canvas mutations
   const createCanvasMutation = useCreateCanvas();
@@ -108,21 +176,44 @@ export default function Timeline() {
     });
   };
 
-  // Client-side filtering by parent item type
+  // Client-side filtering by parent item type + selected date
   const filtered = useMemo(
-    () => entries.filter((e) => activeFilters.has(e.parent_item_type)),
-    [entries, activeFilters],
+    () =>
+      allEntries.filter((e) => {
+        if (!activeFilters.has(e.parent_item_type)) return false;
+        if (selectedDate) {
+          const entryDate = e.created_at.slice(0, 10);
+          if (entryDate !== selectedDate) return false;
+        }
+        return true;
+      }),
+    [allEntries, activeFilters, selectedDate],
   );
 
-  const handleRowClick = (entry: TimelineEntry) => {
-    setEditingItemId(entry.parent_item_id);
-    navigate("/canvas");
-  };
+  // Infinite scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "var(--color-base)" }}>
+    <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
       {/* Canvas picker */}
       <Box
         sx={{
@@ -153,195 +244,327 @@ export default function Timeline() {
         </Box>
       </Box>
 
-      {/* Main content */}
+      {/* Main content: two-column layout */}
       <Box
         sx={{
-          maxWidth: 720,
+          display: "flex",
+          gap: 3,
+          maxWidth: 1040,
           mx: "auto",
           pt: 10,
           px: 3,
-          ml: showSettings ? "calc((100vw - 720px) / 2 + 180px)" : "auto",
+          ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
           transition: "margin-left 0.2s",
         }}
       >
-        {/* Header */}
+        {/* Left column: calendar sidebar */}
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
+            width: 280,
+            flexShrink: 0,
+            position: "sticky",
+            top: 80,
+            alignSelf: "flex-start",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <TimelineIcon sx={{ color: "var(--color-subtext0)" }} />
-            <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--color-text)" }}>
-              Timeline
+          <TimelineCalendar
+            endYear={calEndYear}
+            endMonth={calEndMonth}
+            counts={calCounts}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            onShiftMonth={handleShiftMonth}
+            onShiftYear={handleShiftYear}
+          />
+          {selectedDate && (
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                textAlign: "center",
+                mt: 1,
+                color: "var(--color-blue)",
+                cursor: "pointer",
+                "&:hover": { textDecoration: "underline" },
+              }}
+              onClick={() => setSelectedDate(null)}
+            >
+              Clear date filter
             </Typography>
-          </Box>
+          )}
         </Box>
 
-        {/* Controls bar */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            mb: 3,
-            flexWrap: "wrap",
-          }}
-        >
-          {/* Sort toggle */}
-          <ToggleButtonGroup
-            value={sort}
-            exclusive
-            onChange={(_, val) => {
-              if (val) setSort(val);
+        {/* Right column: timeline feed */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* Controls bar */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              mb: 3,
+              flexWrap: "wrap",
             }}
-            size="small"
           >
-            <ToggleButton value="created_at" sx={{ textTransform: "none", gap: 0.5 }}>
-              <SortIcon fontSize="small" />
-              Created
-            </ToggleButton>
-            <ToggleButton value="updated_at" sx={{ textTransform: "none", gap: 0.5 }}>
-              <SortIcon fontSize="small" />
-              Last Updated
-            </ToggleButton>
-          </ToggleButtonGroup>
+            {/* Sort toggle */}
+            <ToggleButtonGroup
+              value={sort}
+              exclusive
+              onChange={(_, val) => {
+                if (val) setSort(val);
+              }}
+              size="small"
+            >
+              <ToggleButton value="created_at" sx={{ textTransform: "none", gap: 0.5 }}>
+                <SortIcon fontSize="small" />
+                Created
+              </ToggleButton>
+              <ToggleButton value="updated_at" sx={{ textTransform: "none", gap: 0.5 }}>
+                <SortIcon fontSize="small" />
+                Last Updated
+              </ToggleButton>
+            </ToggleButtonGroup>
 
-          {/* Type filter chips */}
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-            {CANVAS_ITEM_TYPES.map((t) => {
-              const colors = theme.palette.canvasItemTypes[t.value];
-              const isActive = activeFilters.has(t.value);
-              return (
-                <Chip
-                  key={t.value}
-                  label={t.label}
-                  size="small"
-                  onClick={() => toggleFilter(t.value)}
-                  sx={{
-                    bgcolor: isActive ? colors.light : "transparent",
-                    color: isActive ? getContrastText(colors.light) : "var(--color-subtext0)",
-                    border: isActive ? "none" : "1px solid var(--color-surface1)",
-                    fontWeight: 600,
-                    fontSize: 11,
-                    cursor: "pointer",
-                    "&:hover": { opacity: 0.8 },
-                  }}
-                />
-              );
-            })}
-          </Box>
-        </Box>
-
-        {/* Timeline list */}
-        {isLoading ? (
-          <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
-            Loading timeline...
-          </Typography>
-        ) : filtered.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 8, color: "var(--color-subtext0)" }}>
-            <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              No entries yet
-            </Typography>
-            <Typography variant="body2">
-              Notes and photos from your canvas items will appear here.
-            </Typography>
-          </Box>
-        ) : (
-          <List disablePadding>
-            {filtered.map((entry) => {
-              const colors = theme.palette.canvasItemTypes[entry.parent_item_type];
-              const typeLabel =
-                CANVAS_ITEM_TYPES.find((t) => t.value === entry.parent_item_type)?.label ??
-                entry.parent_item_type;
-              return (
-                <ListItemButton
-                  key={`${entry.kind}-${entry.id}`}
-                  onClick={() => handleRowClick(entry)}
-                  sx={{
-                    mb: 1,
-                    borderRadius: 2,
-                    border: "1px solid var(--color-surface1)",
-                    bgcolor: "var(--color-base)",
-                    "&:hover": { bgcolor: "var(--color-surface0)" },
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    py: 1.5,
-                  }}
-                >
-                  {/* Parent type chip */}
+            {/* Type filter chips */}
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+              {CANVAS_ITEM_TYPES.map((t) => {
+                const colors = theme.palette.canvasItemTypes[t.value];
+                const isActive = activeFilters.has(t.value);
+                return (
                   <Chip
-                    label={typeLabel}
+                    key={t.value}
+                    label={t.label}
                     size="small"
+                    onClick={() => toggleFilter(t.value)}
                     sx={{
-                      bgcolor: colors.light,
-                      color: getContrastText(colors.light),
-                      fontSize: 10,
+                      bgcolor: isActive ? colors.light : "transparent",
+                      color: isActive ? getContrastText(colors.light) : "var(--color-subtext0)",
+                      border: isActive ? "none" : "1px solid var(--color-surface1)",
                       fontWeight: 600,
-                      height: 22,
-                      minWidth: 60,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      "&:hover": { opacity: 0.8 },
                     }}
                   />
+                );
+              })}
+            </Box>
+          </Box>
 
-                  {/* Parent title */}
-                  <Typography
-                    sx={{
-                      fontWeight: 600,
-                      color: "var(--color-text)",
-                      minWidth: 100,
-                      maxWidth: 160,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {entry.parent_item_title}
-                  </Typography>
+          {/* Timeline list */}
+          {isLoading ? (
+            <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
+              Loading timeline...
+            </Typography>
+          ) : filtered.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8, color: "var(--color-subtext0)" }}>
+              <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                No entries yet
+              </Typography>
+              <Typography variant="body2">
+                Notes and photos from your canvas items will appear here.
+              </Typography>
+            </Box>
+          ) : (
+            <List disablePadding>
+              {filtered.map((entry, idx) => {
+                const colors = theme.palette.canvasItemTypes[entry.parent_item_type];
+                const typeLabel =
+                  CANVAS_ITEM_TYPES.find((t) => t.value === entry.parent_item_type)?.label ??
+                  entry.parent_item_type;
+                const ts = sort === "updated_at" ? entry.updated_at : entry.created_at;
+                const currentDateKey = getDateKey(ts);
+                const prevEntry = idx > 0 ? filtered[idx - 1] : null;
+                const prevTs = prevEntry
+                  ? sort === "updated_at"
+                    ? prevEntry.updated_at
+                    : prevEntry.created_at
+                  : null;
+                const showDivider = !prevTs || getDateKey(prevTs) !== currentDateKey;
 
-                  {/* Entry kind icon */}
-                  {entry.kind === "note" ? (
-                    <NoteIcon sx={{ fontSize: 16, color: "var(--color-subtext0)" }} />
-                  ) : (
-                    <ImageIcon sx={{ fontSize: 16, color: "var(--color-subtext0)" }} />
-                  )}
+                return (
+                  <Box key={`${entry.kind}-${entry.id}`}>
+                    {/* Date divider */}
+                    {showDivider && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          my: 2,
+                        }}
+                      >
+                        <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "var(--color-subtext0)",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDateLabel(ts)}
+                        </Typography>
+                        <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
+                      </Box>
+                    )}
 
-                  {/* Content preview */}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      flex: 1,
-                      color: "var(--color-subtext0)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {entry.kind === "note"
-                      ? entry.content || "Empty note"
-                      : entry.original_name || "Photo"}
-                  </Typography>
+                    <Box
+                      sx={{
+                        mb: 1,
+                        borderRadius: 2,
+                        border: "1px solid var(--color-surface1)",
+                        bgcolor: "var(--color-base)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        gap: 1,
+                        py: 1.5,
+                        px: 2,
+                      }}
+                    >
+                      {/* Row 1: type chip + title + date */}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip
+                          label={typeLabel}
+                          size="small"
+                          sx={{
+                            bgcolor: colors.light,
+                            color: getContrastText(colors.light),
+                            fontSize: 10,
+                            fontWeight: 600,
+                            height: 22,
+                            minWidth: 60,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            color: "var(--color-text)",
+                            flex: 1,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {entry.parent_item_title}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "var(--color-overlay0)",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {formatTimestamp(ts)}
+                        </Typography>
+                      </Box>
 
-                  {/* Timestamp */}
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "var(--color-overlay0)",
-                      whiteSpace: "nowrap",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {formatTimestamp(sort === "updated_at" ? entry.updated_at : entry.created_at)}
-                  </Typography>
-                </ListItemButton>
-              );
-            })}
-          </List>
-        )}
+                      {/* Row 2: full content */}
+                      {entry.kind === "photo" ? (
+                        <Box
+                          sx={{
+                            position: "relative",
+                            width: "100%",
+                            maxHeight: 300,
+                            borderRadius: 1,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {entry.blurhash && (
+                            <BlurhashCanvas
+                              blurhash={entry.blurhash}
+                              width={32}
+                              height={32}
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                              }}
+                            />
+                          )}
+                          <Box
+                            component="img"
+                            src={entry.photo_url}
+                            alt={entry.original_name}
+                            sx={{
+                              position: "relative",
+                              width: "100%",
+                              maxHeight: 300,
+                              objectFit: "contain",
+                            }}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          component="div"
+                          sx={{
+                            color: "var(--color-subtext0)",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                          }}
+                          dangerouslySetInnerHTML={{
+                            __html: getNotePreview(entry.content || ""),
+                          }}
+                        />
+                      )}
+
+                      {/* Row 3: action buttons */}
+                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                        <Button
+                          size="small"
+                          startIcon={<MapIcon sx={{ fontSize: 14 }} />}
+                          onClick={() => {
+                            setEditingItemId(entry.parent_item_id);
+                            navigate("/canvas");
+                          }}
+                          sx={{
+                            textTransform: "none",
+                            fontSize: 12,
+                            color: "var(--color-subtext0)",
+                            "&:hover": { color: "var(--color-text)" },
+                          }}
+                        >
+                          Open in Canvas
+                        </Button>
+                        {entry.parent_item_type === "session" && (
+                          <Button
+                            size="small"
+                            startIcon={<CalendarMonthIcon sx={{ fontSize: 14 }} />}
+                            onClick={() => navigate(`/sessions/${entry.parent_item_id}`)}
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 12,
+                              color: "var(--color-subtext0)",
+                              "&:hover": { color: "var(--color-text)" },
+                            }}
+                          >
+                            Open in Session
+                          </Button>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </List>
+          )}
+
+          {/* Infinite scroll sentinel */}
+          <Box ref={sentinelRef} sx={{ height: 1 }} />
+
+          {/* Loading indicator for next page */}
+          {isFetchingNextPage && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+        </Box>
       </Box>
     </Box>
   );

@@ -6,6 +6,7 @@ import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+import BlurhashCanvas from "../../sharedComponents/BlurhashCanvas";
 import { useModalStore } from "../store";
 import type { LightboxModalProps } from "../types";
 
@@ -62,7 +63,7 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
             color: "white",
             bgcolor: "rgba(0,0,0,0.5)",
             "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-            zIndex: 1,
+            zIndex: 2,
           }}
         >
           <CloseIcon />
@@ -78,23 +79,51 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
               color: "white",
               bgcolor: "rgba(0,0,0,0.5)",
               "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+              zIndex: 2,
             }}
           >
             <ChevronLeftIcon sx={{ fontSize: 32 }} />
           </IconButton>
         )}
 
-        {/* Image */}
+        {/* Blurhash backdrop + Image */}
         <Box
-          component="img"
-          src={currentPhoto.url}
-          alt={currentPhoto.original_name}
           sx={{
+            position: "relative",
             maxWidth: "calc(100% - 120px)",
             maxHeight: "calc(100% - 60px)",
-            objectFit: "contain",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
-        />
+        >
+          {currentPhoto.blurhash && (
+            <BlurhashCanvas
+              blurhash={currentPhoto.blurhash}
+              width={32}
+              height={Math.round(32 / (currentPhoto.aspect_ratio || 1))}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                borderRadius: 4,
+              }}
+            />
+          )}
+          <Box
+            component="img"
+            src={currentPhoto.url}
+            alt={currentPhoto.original_name}
+            sx={{
+              position: "relative",
+              maxWidth: "100%",
+              maxHeight: "calc(80vh - 60px)",
+              objectFit: "contain",
+            }}
+          />
+        </Box>
 
         {/* Next button */}
         {photos.length > 1 && (
@@ -106,6 +135,7 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
               color: "white",
               bgcolor: "rgba(0,0,0,0.5)",
               "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+              zIndex: 2,
             }}
           >
             <ChevronRightIcon sx={{ fontSize: 32 }} />
@@ -125,6 +155,7 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
             px: 1.5,
             py: 0.5,
             borderRadius: 1,
+            zIndex: 2,
           }}
         >
           {currentIndex + 1} / {photos.length}

@@ -15,12 +15,14 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.93.3",
+    "blurhash": "^2.0.5",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
     "multer": "^2.0.2",
     "pg": "^8.18.0",
+    "sharp": "^0.34.5",
     "uuid": "^13.0.0",
     "zod": "^4.3.6"
   },
@@ -29,6 +31,7 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.0.0",
     "@types/pg": "^8.16.0",
+    "@types/sharp": "^0.31.1",
     "@types/uuid": "^10.0.0",
     "drizzle-kit": "^0.31.8",
     "tsx": "^4.19.0",

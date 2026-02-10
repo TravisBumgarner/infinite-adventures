@@ -1,3 +1,6 @@
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import MapIcon from "@mui/icons-material/Map";
+import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
@@ -31,11 +34,15 @@ export default function PageToggle({ activePage }: PageToggleProps) {
           px: 2,
           py: 0.5,
           borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
           color: activePage === "canvas" ? "var(--color-text)" : "var(--color-subtext0)",
           bgcolor: activePage === "canvas" ? "var(--color-surface0)" : "transparent",
           "&:hover": { bgcolor: "var(--color-surface0)" },
         }}
       >
+        <MapIcon sx={{ fontSize: 16 }} />
         Canvas
       </Button>
       <Button
@@ -48,11 +55,15 @@ export default function PageToggle({ activePage }: PageToggleProps) {
           px: 2,
           py: 0.5,
           borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
           color: activePage === "sessions" ? "var(--color-text)" : "var(--color-subtext0)",
           bgcolor: activePage === "sessions" ? "var(--color-surface0)" : "transparent",
           "&:hover": { bgcolor: "var(--color-surface0)" },
         }}
       >
+        <CalendarMonthIcon sx={{ fontSize: 16 }} />
         Sessions
       </Button>
       <Button
@@ -65,11 +76,15 @@ export default function PageToggle({ activePage }: PageToggleProps) {
           px: 2,
           py: 0.5,
           borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
           color: activePage === "timeline" ? "var(--color-text)" : "var(--color-subtext0)",
           bgcolor: activePage === "timeline" ? "var(--color-surface0)" : "transparent",
           "&:hover": { bgcolor: "var(--color-surface0)" },
         }}
       >
+        <TimelineIcon sx={{ fontSize: 16 }} />
         Timeline
       </Button>
     </Box>

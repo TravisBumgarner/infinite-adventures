@@ -176,17 +176,11 @@ export default function Sessions() {
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "flex-end",
               alignItems: "center",
               mb: 3,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CalendarTodayIcon sx={{ color: "var(--color-subtext0)" }} />
-              <Typography variant="h5" sx={{ fontWeight: 600, color: "var(--color-text)" }}>
-                Sessions
-              </Typography>
-            </Box>
             <Button
               variant="contained"
               startIcon={<AddIcon />}

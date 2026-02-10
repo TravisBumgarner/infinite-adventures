@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   fetchCanvases,
   fetchItem,
@@ -7,6 +7,7 @@ import {
   fetchTaggedItems,
   fetchTags,
   fetchTimeline,
+  fetchTimelineCounts,
   searchItems,
 } from "../../api/client.js";
 import { queryKeys } from "./queryKeys.js";
@@ -49,9 +50,19 @@ export function useTimeline(
   canvasId: string | undefined,
   sort: "created_at" | "updated_at" = "created_at",
 ) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.timeline.list(canvasId!, sort),
-    queryFn: () => fetchTimeline(canvasId!, sort),
+    queryFn: ({ pageParam }) => fetchTimeline(canvasId!, sort, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    enabled: !!canvasId,
+  });
+}
+
+export function useTimelineCounts(canvasId: string | undefined, start: string, end: string) {
+  return useQuery({
+    queryKey: queryKeys.timeline.counts(canvasId!, start, end),
+    queryFn: () => fetchTimelineCounts(canvasId!, start, end),
     enabled: !!canvasId,
   });
 }

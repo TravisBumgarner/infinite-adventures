@@ -29,6 +29,8 @@ export const PhotoSchema = z.object({
   url: z.string(),
   original_name: z.string(),
   is_selected: z.boolean(),
+  aspect_ratio: z.number().optional(),
+  blurhash: z.string().optional(),
 });
 
 export const TagSchema = z.object({
@@ -165,12 +167,27 @@ export const TimelineEntrySchema = z.object({
   content: z.string().optional(),
   photo_url: z.string().optional(),
   original_name: z.string().optional(),
+  aspect_ratio: z.number().optional(),
+  blurhash: z.string().optional(),
   parent_item_id: z.string(),
   parent_item_type: CanvasItemTypeSchema,
   parent_item_title: z.string(),
 });
 
 export type TimelineEntry = z.infer<typeof TimelineEntrySchema>;
+
+export const PaginatedTimelineSchema = z.object({
+  entries: z.array(TimelineEntrySchema),
+  next_cursor: z.string().nullable(),
+});
+
+export type PaginatedTimeline = z.infer<typeof PaginatedTimelineSchema>;
+
+export const TimelineDayCountsSchema = z.object({
+  counts: z.record(z.string(), z.number()),
+});
+
+export type TimelineDayCounts = z.infer<typeof TimelineDayCountsSchema>;
 
 // --- Error codes ---
 

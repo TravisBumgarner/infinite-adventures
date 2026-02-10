@@ -150,6 +150,8 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     url: `/api/photos/${p.filename}`,
     original_name: p.original_name,
     is_selected: p.is_selected,
+    aspect_ratio: p.aspect_ratio ?? undefined,
+    blurhash: p.blurhash ?? undefined,
   }));
 
   // Get tags
