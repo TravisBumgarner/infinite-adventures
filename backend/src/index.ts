@@ -10,6 +10,7 @@ import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
 import { sessionsRouter } from "./routes/sessions/index.js";
 import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
+import { timelineRouter } from "./routes/timeline/index.js";
 
 const PORT = parseInt(process.env.PORT || "3021", 10);
 
@@ -34,6 +35,9 @@ app.use("/api/items", itemsRouter);
 
 // Session routes
 app.use("/api/canvases/:canvasId/sessions", sessionsRouter);
+
+// Timeline routes
+app.use("/api/canvases/:canvasId/timeline", timelineRouter);
 
 // Note routes
 app.use("/api/notes", notesRouter);

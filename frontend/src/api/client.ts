@@ -13,6 +13,7 @@ import type {
   SessionSummary,
   Tag,
   TaggedItem,
+  TimelineEntry,
   UpdateCanvasInput,
   UpdateCanvasItemInput,
   UpdateNoteInput,
@@ -109,6 +110,15 @@ export async function searchItems(
     `/canvases/${canvasId}/items/search?q=${encoded}`,
   );
   return data.results;
+}
+
+// --- Timeline functions ---
+
+export function fetchTimeline(
+  canvasId: string,
+  sort: "created_at" | "updated_at" = "created_at",
+): Promise<TimelineEntry[]> {
+  return request<TimelineEntry[]>(`/canvases/${canvasId}/timeline?sort=${sort}`);
 }
 
 // --- Session functions ---

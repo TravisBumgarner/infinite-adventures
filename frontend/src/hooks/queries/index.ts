@@ -6,6 +6,7 @@ import {
   fetchSessions,
   fetchTaggedItems,
   fetchTags,
+  fetchTimeline,
   searchItems,
 } from "../../api/client.js";
 import { queryKeys } from "./queryKeys.js";
@@ -41,6 +42,17 @@ export function useSearchItems(query: string, canvasId: string | undefined) {
     queryFn: () => searchItems(query, canvasId!),
     enabled: !!canvasId,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useTimeline(
+  canvasId: string | undefined,
+  sort: "created_at" | "updated_at" = "created_at",
+) {
+  return useQuery({
+    queryKey: queryKeys.timeline.list(canvasId!, sort),
+    queryFn: () => fetchTimeline(canvasId!, sort),
+    enabled: !!canvasId,
   });
 }
 

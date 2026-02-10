@@ -8,6 +8,9 @@ export const queryKeys = {
     search: (canvasId: string, query: string) =>
       ["canvases", canvasId, "items", "search", query] as const,
   },
+  timeline: {
+    list: (canvasId: string, sort: string) => ["canvases", canvasId, "timeline", sort] as const,
+  },
   sessions: {
     list: (canvasId: string) => ["canvases", canvasId, "sessions"] as const,
   },
