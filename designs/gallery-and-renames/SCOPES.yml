@@ -190,4 +190,4 @@ tasks:
       - Infinite scroll loads more photos
     depends_on: [3, 4]
     effort: 4
-    status: scoped
+    status: completed

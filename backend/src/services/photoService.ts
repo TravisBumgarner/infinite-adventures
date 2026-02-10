@@ -195,6 +195,20 @@ export async function selectPhoto(id: string): Promise<PhotoInfo | null> {
 }
 
 /**
+ * Toggle the is_important flag on a photo.
+ * Returns the updated photo or null if not found.
+ */
+export async function togglePhotoImportant(id: string): Promise<PhotoInfo | null> {
+  const db = getDb();
+  const photo = await getPhoto(id);
+  if (!photo) return null;
+
+  await db.update(photos).set({ is_important: !photo.is_important }).where(eq(photos.id, id));
+
+  return getPhoto(id);
+}
+
+/**
  * Get the file path for a photo (for serving).
  */
 export function getPhotoPath(filename: string): string {

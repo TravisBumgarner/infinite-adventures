@@ -1,12 +1,13 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MapIcon from "@mui/icons-material/Map";
+import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 
 interface PageToggleProps {
-  activePage: "canvas" | "sessions" | "timeline";
+  activePage: "canvas" | "sessions" | "timeline" | "gallery";
 }
 
 export default function PageToggle({ activePage }: PageToggleProps) {
@@ -86,6 +87,27 @@ export default function PageToggle({ activePage }: PageToggleProps) {
       >
         <TimelineIcon sx={{ fontSize: 16 }} />
         Timeline
+      </Button>
+      <Button
+        size="small"
+        onClick={() => navigate("/gallery")}
+        sx={{
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: 14,
+          px: 2,
+          py: 0.5,
+          borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          color: activePage === "gallery" ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: activePage === "gallery" ? "var(--color-surface0)" : "transparent",
+          "&:hover": { bgcolor: "var(--color-surface0)" },
+        }}
+      >
+        <PhotoLibraryIcon sx={{ fontSize: 16 }} />
+        Gallery
       </Button>
     </Box>
   );

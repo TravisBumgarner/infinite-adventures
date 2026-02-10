@@ -15,6 +15,7 @@ import {
   useDeleteNote,
   useDeletePhoto,
   useSelectPhoto,
+  useTogglePhotoImportant,
   useUpdateItem,
   useUpdateNote,
   useUploadPhoto,
@@ -69,6 +70,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const uploadPhotoMutation = useUploadPhoto(sessionId, activeCanvasId ?? "");
   const deletePhotoMutation = useDeletePhoto(sessionId, activeCanvasId ?? "");
   const selectPhotoMutation = useSelectPhoto(sessionId, activeCanvasId ?? "");
+  const togglePhotoImportantMutation = useTogglePhotoImportant(sessionId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
 
   // Refs for auto-save
@@ -293,6 +295,15 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
+  async function handleTogglePhotoImportant(photoId: string) {
+    await togglePhotoImportantMutation.mutateAsync(photoId);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+    }
+  }
+
   function handleOpenLightbox(index: number) {
     openModal({
       id: MODAL_ID.LIGHTBOX,
@@ -488,6 +499,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             onUpload={handlePhotoUpload}
             onDelete={handlePhotoDelete}
             onSelect={handlePhotoSelect}
+            onToggleImportant={handleTogglePhotoImportant}
             onOpenLightbox={handleOpenLightbox}
           />
         )}
