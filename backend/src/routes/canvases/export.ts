@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { userOwnsCanvas } from "../../services/authorizationService.js";
+import { exportCanvas } from "../../services/backupService.js";
 import { requireUserId } from "../shared/auth.js";
+import { sendForbidden, sendInternalError, sendNotFound } from "../shared/responses.js";
 import { IdParams, parseRoute } from "../shared/validation.js";
 
 export interface ExportValidationContext {
@@ -21,10 +24,27 @@ export function validate(
 
 export async function processRequest(
   _req: Request,
-  _res: Response,
-  _context: ExportValidationContext,
+  res: Response,
+  context: ExportValidationContext,
 ): Promise<void> {
-  throw new Error("Not implemented");
+  const owns = await userOwnsCanvas(context.userId, context.canvasId);
+  if (!owns) {
+    sendForbidden(res);
+    return;
+  }
+
+  try {
+    const zipBuffer = await exportCanvas(context.canvasId);
+    res.set("Content-Type", "application/zip");
+    res.set("Content-Disposition", `attachment; filename="canvas-export.zip"`);
+    res.send(zipBuffer);
+  } catch (err) {
+    if (err instanceof Error && err.message === "Canvas not found") {
+      sendNotFound(res, "CANVAS_NOT_FOUND");
+      return;
+    }
+    sendInternalError(res);
+  }
 }
 
 export async function handler(req: Request<{ id: string }>, res: Response): Promise<void> {

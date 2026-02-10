@@ -38,7 +38,7 @@ tasks:
       - Auth check enforced (403 for non-owner)
     depends_on: []
     effort: 3
-    status: testing
+    status: implementing
 
   - id: 2
     github_issue: 196
