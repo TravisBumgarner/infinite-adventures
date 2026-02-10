@@ -60,8 +60,8 @@ export default function PhotosTab({
   // Starred photos first, then the rest. Both groups keep the API's
   // original order, which is creation date (oldest first).
   const sortedPhotos = useMemo(() => {
-    const selected = photos.filter((p) => p.is_selected);
-    const rest = photos.filter((p) => !p.is_selected);
+    const selected = photos.filter((p) => p.is_main_photo);
+    const rest = photos.filter((p) => !p.is_main_photo);
     return [...selected, ...rest];
   }, [photos]);
 
@@ -120,7 +120,7 @@ export default function PhotosTab({
                   position: "relative",
                   width: 100,
                   height: 100,
-                  border: photo.is_selected
+                  border: photo.is_main_photo
                     ? "2px solid var(--color-blue)"
                     : "1px solid var(--color-surface1)",
                   borderRadius: 1,
@@ -152,14 +152,14 @@ export default function PhotosTab({
                     bottom: 2,
                     left: 2,
                     bgcolor: "rgba(0,0,0,0.5)",
-                    color: photo.is_selected ? "var(--color-yellow)" : "white",
+                    color: photo.is_main_photo ? "var(--color-yellow)" : "white",
                     "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
                     width: 20,
                     height: 20,
                     zIndex: 2,
                   }}
                 >
-                  {photo.is_selected ? (
+                  {photo.is_main_photo ? (
                     <StarIcon sx={{ fontSize: 14 }} />
                   ) : (
                     <StarOutlineIcon sx={{ fontSize: 14 }} />
