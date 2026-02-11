@@ -2,9 +2,9 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef } from "react";
@@ -17,6 +17,7 @@ import { useQuickNotes } from "../../../hooks/queries";
 import { useDraggable } from "../../../hooks/useDraggable";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useQuickNotesStore } from "../../../stores/quickNotesStore";
+import MentionEditor from "./MentionEditor";
 
 function QuickNoteItem({
   id,
@@ -30,10 +31,10 @@ function QuickNoteItem({
   const updateMutation = useUpdateQuickNote(canvasId);
   const deleteMutation = useDeleteQuickNote(canvasId);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const itemsCache = useCanvasStore((s) => s.itemsCache);
 
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const newContent = e.target.value;
+    (newContent: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         updateMutation.mutate({ id, content: newContent });
@@ -50,25 +51,21 @@ function QuickNoteItem({
 
   return (
     <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
-      <TextField
-        defaultValue={content}
+      <MentionEditor
+        value={content}
         onChange={handleChange}
-        multiline
-        minRows={1}
-        maxRows={4}
-        fullWidth
-        size="small"
-        placeholder="Type a note..."
-        variant="standard"
-        InputProps={{ disableUnderline: true }}
-        sx={{
-          "& .MuiInputBase-root": {
-            fontSize: 13,
-            py: 0.5,
-            px: 1,
-            bgcolor: "var(--color-surface0)",
-            borderRadius: 1,
-          },
+        itemsCache={itemsCache}
+        canvasId={canvasId}
+        containerStyle={{ flex: 1, minWidth: 0 }}
+        style={{
+          background: "var(--color-surface0)",
+          border: "1px solid var(--color-surface1)",
+          borderRadius: 4,
+          padding: "4px 8px",
+          color: "var(--color-text)",
+          fontSize: 13,
+          maxHeight: 120,
+          overflow: "auto",
         }}
       />
       <Tooltip title="Delete">
@@ -105,7 +102,7 @@ export default function QuickNotes() {
         position: "fixed",
         top: position.y,
         left: position.x,
-        width: 320,
+        width: 400,
         zIndex: 100,
         bgcolor: "var(--color-chrome-bg)",
         backdropFilter: "blur(8px)",
@@ -137,9 +134,19 @@ export default function QuickNotes() {
         </Typography>
         <Box sx={{ display: "flex", gap: 0.25 }}>
           <Tooltip title="Add note">
-            <IconButton size="small" onClick={() => createMutation.mutate()}>
-              <AddIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <AddIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
           </Tooltip>
           <IconButton size="small" onClick={toggle}>
             <CloseIcon fontSize="small" />
