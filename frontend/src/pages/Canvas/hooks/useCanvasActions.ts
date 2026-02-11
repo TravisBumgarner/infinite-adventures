@@ -354,13 +354,23 @@ export function useCanvasActions() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Left-click a node to open the item panel (skip when Cmd/Ctrl held for multi-select)
+  // Track pre-click selection so we can toggle on Cmd+click
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+
+  // Left-click a node to open the item panel, or toggle selection on Cmd/Ctrl+click
   const onNodeClick = useCallback(
     (event: MouseEvent | React.MouseEvent, node: Node) => {
-      if (event.metaKey || event.ctrlKey) return;
+      if (event.metaKey || event.ctrlKey) {
+        const wasSelected = nodesRef.current.find((n) => n.id === node.id)?.selected;
+        if (wasSelected) {
+          setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, selected: false } : n)));
+        }
+        return;
+      }
       setEditingItemId(node.id);
     },
-    [setEditingItemId],
+    [setEditingItemId, setNodes],
   );
 
   // Right-click a node to open context menu
