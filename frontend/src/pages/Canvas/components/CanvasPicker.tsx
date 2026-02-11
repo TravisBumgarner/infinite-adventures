@@ -71,8 +71,8 @@ export default function CanvasPicker({
           color: "var(--color-text)",
           textTransform: "none",
           fontWeight: 600,
-          fontSize: 15,
-          px: 1.5,
+          fontSize: 13,
+          px: 1,
           "&:hover": {
             bgcolor: "var(--color-surface0)",
           },
