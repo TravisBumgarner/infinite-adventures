@@ -354,7 +354,8 @@ export function useCanvasActions() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Track pre-click selection so we can toggle on Cmd+click
+  // Track pre-click selection so we can toggle on Cmd+click.
+  // nodesRef captures the selection state before React Flow processes the click.
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
 
@@ -364,7 +365,10 @@ export function useCanvasActions() {
       if (event.metaKey || event.ctrlKey) {
         const wasSelected = nodesRef.current.find((n) => n.id === node.id)?.selected;
         if (wasSelected) {
-          setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, selected: false } : n)));
+          // Defer so it runs after React Flow's internal selection update
+          requestAnimationFrame(() => {
+            setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, selected: false } : n)));
+          });
         }
         return;
       }
