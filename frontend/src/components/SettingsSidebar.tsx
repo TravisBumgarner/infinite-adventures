@@ -33,11 +33,10 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       data-tour="settings-button"
       onClick={onClick}
       title="Settings"
+      size="small"
       sx={{
-        bgcolor: "var(--color-base)",
-        border: "1px solid var(--color-surface1)",
-        color: "var(--color-text)",
-        "&:hover": { bgcolor: "var(--color-surface0)" },
+        color: "var(--color-subtext0)",
+        "&:hover": { bgcolor: "var(--color-surface0)", color: "var(--color-text)" },
       }}
     >
       <SettingsIcon />

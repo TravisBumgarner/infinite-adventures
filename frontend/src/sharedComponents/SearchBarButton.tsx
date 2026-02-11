@@ -11,11 +11,10 @@ export default function SearchBarButton({ onClick }: SearchBarButtonProps) {
       onClick={onClick}
       title="Search (⌘K)"
       data-tour="search-button"
+      size="small"
       sx={{
-        bgcolor: "var(--color-base)",
-        border: "1px solid var(--color-surface1)",
-        color: "var(--color-text)",
-        "&:hover": { bgcolor: "var(--color-surface0)" },
+        color: "var(--color-subtext0)",
+        "&:hover": { bgcolor: "var(--color-surface0)", color: "var(--color-text)" },
       }}
     >
       <SearchIcon />

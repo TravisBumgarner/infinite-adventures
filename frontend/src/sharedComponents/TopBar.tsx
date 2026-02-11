@@ -19,20 +19,24 @@ export default function TopBar({ left, center, right }: TopBarProps) {
     <Box
       sx={{
         position: "fixed",
-        top: 16,
-        left: leftSidebarOpen ? SIDEBAR_WIDTH + 16 : 16,
-        right: rightSidebarOpen ? SIDEBAR_WIDTH + 16 : 16,
+        top: 0,
+        left: leftSidebarOpen ? SIDEBAR_WIDTH : 0,
+        right: rightSidebarOpen ? SIDEBAR_WIDTH : 0,
         zIndex: 50,
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         justifyContent: "space-between",
-        pointerEvents: "none",
+        px: 1,
+        py: 0.5,
+        bgcolor: "var(--color-chrome-bg)",
+        backdropFilter: "blur(8px)",
+        borderBottom: "1px solid var(--color-surface1)",
+        pointerEvents: "auto",
         transition: "left 0.2s, right 0.2s",
-        "& > *": { pointerEvents: "auto" },
       }}
     >
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>{left}</Box>
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", gap: 1 }}>{center}</Box>
+      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", gap: 0.5 }}>{center}</Box>
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>{right}</Box>
     </Box>
   );
