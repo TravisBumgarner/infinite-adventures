@@ -40,6 +40,7 @@ export const QuickNoteSchema = z.object({
   id: z.string(),
   canvasId: z.string(),
   content: z.string(),
+  isImportant: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

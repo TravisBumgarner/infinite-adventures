@@ -28,6 +28,7 @@ import {
   removeTagFromItem,
   selectPhoto,
   togglePhotoImportant,
+  toggleQuickNoteImportant,
   updateCanvas,
   updateItem,
   updateNote,
@@ -321,6 +322,16 @@ export function useDeleteQuickNote(canvasId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteQuickNote(canvasId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
+    },
+  });
+}
+
+export function useToggleQuickNoteImportant(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => toggleQuickNoteImportant(canvasId, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
     },

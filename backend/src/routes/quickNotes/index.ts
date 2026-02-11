@@ -8,6 +8,7 @@ import {
   createQuickNote,
   deleteQuickNote,
   listQuickNotes,
+  toggleQuickNoteImportant,
   updateQuickNote,
 } from "../../services/quickNoteService.js";
 import { requireUserId } from "../shared/auth.js";
@@ -64,6 +65,29 @@ quickNotesRouter.put(
       return;
     }
     const note = await updateQuickNote(parsed.params.id, parsed.body.content);
+    if (!note) {
+      sendNotFound(res);
+      return;
+    }
+    sendSuccess(res, note);
+  },
+);
+
+const ToggleParams = z.object({ canvasId: z.string().uuid(), id: z.string().uuid() });
+
+// PATCH /api/canvases/:canvasId/quick-notes/:id/toggle-important
+quickNotesRouter.patch(
+  "/:id/toggle-important",
+  async (req: Request<{ canvasId: string; id: string }>, res: Response) => {
+    const auth = requireUserId(req as AuthenticatedRequest, res);
+    if (!auth) return;
+    const parsed = parseRoute(req, res, { params: ToggleParams });
+    if (!parsed) return;
+    if (!(await userOwnsCanvas(auth.userId, parsed.params.canvasId))) {
+      sendForbidden(res);
+      return;
+    }
+    const note = await toggleQuickNoteImportant(parsed.params.id);
     if (!note) {
       sendNotFound(res);
       return;

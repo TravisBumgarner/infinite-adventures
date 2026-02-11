@@ -174,6 +174,7 @@ export const quickNotes = pgTable(
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
     content: text("content").notNull().default(""),
+    isImportant: boolean("is_important").notNull().default(false),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },

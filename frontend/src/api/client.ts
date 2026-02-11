@@ -297,6 +297,12 @@ export function deleteQuickNote(canvasId: string, id: string): Promise<void> {
   });
 }
 
+export function toggleQuickNoteImportant(canvasId: string, id: string): Promise<QuickNote> {
+  return request<QuickNote>(`/canvases/${canvasId}/quick-notes/${id}/toggle-important`, {
+    method: "PATCH",
+  });
+}
+
 // --- Backup functions ---
 
 export async function exportCanvas(canvasId: string): Promise<Blob> {

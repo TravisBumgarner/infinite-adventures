@@ -118,8 +118,9 @@ export default function NotesTab({
           onMentionClick={onMentionClick}
           containerStyle={{ flex: 1, minHeight: 0 }}
           style={{
-            background: "var(--color-surface0)",
+            background: "var(--color-mantle)",
             border: "1px solid var(--color-surface1)",
+            borderRadius: 0,
             padding: "8px 10px",
             color: "var(--color-text)",
             fontSize: 14,
