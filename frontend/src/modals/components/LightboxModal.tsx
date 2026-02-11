@@ -126,24 +126,49 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
           </IconButton>
         )}
 
-        {/* Photo counter */}
-        <Typography
-          variant="caption"
+        {/* Caption + Photo counter */}
+        <Box
           sx={{
             position: "absolute",
             bottom: 12,
             left: "50%",
             transform: "translateX(-50%)",
-            color: "white",
-            bgcolor: "rgba(0,0,0,0.5)",
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 0.5,
             zIndex: 2,
           }}
         >
-          {currentIndex + 1} / {photos.length}
-        </Typography>
+          {currentPhoto.caption && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: "white",
+                bgcolor: "rgba(0,0,0,0.5)",
+                px: 2,
+                py: 0.5,
+                borderRadius: 1,
+                maxWidth: "60vw",
+                textAlign: "center",
+              }}
+            >
+              {currentPhoto.caption}
+            </Typography>
+          )}
+          <Typography
+            variant="caption"
+            sx={{
+              color: "white",
+              bgcolor: "rgba(0,0,0,0.5)",
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 1,
+            }}
+          >
+            {currentIndex + 1} / {photos.length}
+          </Typography>
+        </Box>
       </Box>
     </Dialog>
   );

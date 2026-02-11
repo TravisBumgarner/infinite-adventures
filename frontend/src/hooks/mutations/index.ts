@@ -15,12 +15,14 @@ import {
   createItem,
   createLink,
   createNote,
+  createQuickNote,
   createTag,
   deleteCanvas,
   deleteItem,
   deleteLink,
   deleteNote,
   deletePhoto,
+  deleteQuickNote,
   deleteTag,
   importCanvas,
   removeTagFromItem,
@@ -29,6 +31,8 @@ import {
   updateCanvas,
   updateItem,
   updateNote,
+  updatePhotoCaption,
+  updateQuickNote,
   updateTag,
   uploadPhoto,
 } from "../../api/client.js";
@@ -185,6 +189,18 @@ export function useTogglePhotoImportant(itemId: string, canvasId: string) {
   });
 }
 
+export function useUpdatePhotoCaption(itemId: string, canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ photoId, caption }: { photoId: string; caption: string }) =>
+      updatePhotoCaption(photoId, caption),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
+      qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+    },
+  });
+}
+
 // --- Tag mutations ---
 
 export function useCreateTag(canvasId: string) {
@@ -274,6 +290,39 @@ export function useDeleteLink(canvasId: string) {
         queryKey: queryKeys.items.detail(targetItemId),
       });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+    },
+  });
+}
+
+// --- Quick Note mutations ---
+
+export function useCreateQuickNote(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (content?: string) => createQuickNote(canvasId, content),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
+    },
+  });
+}
+
+export function useUpdateQuickNote(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      updateQuickNote(canvasId, id, content),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
+    },
+  });
+}
+
+export function useDeleteQuickNote(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteQuickNote(canvasId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
     },
   });
 }

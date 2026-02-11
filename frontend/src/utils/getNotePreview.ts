@@ -19,12 +19,12 @@ export function getNotePreview(
   if (maxLength > 0 && text.length > maxLength) text = `${text.slice(0, maxLength)}...`;
   // Escape HTML entities
   text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  // Render mentions
+  // Render mentions as clickable spans
   if (itemsCache) {
     text = text.replace(/@\{([^}]+)\}/g, (_match, id) => {
       const cached = itemsCache.get(id);
       const name = cached ? cached.title : "mention";
-      return `<strong>@${name}</strong>`;
+      return `<span class="mention-link" data-item-id="${id}" style="cursor:pointer;color:var(--color-blue);font-weight:600">@${name}</span>`;
     });
   } else {
     text = text.replace(/@\{[^}]+\}/g, "<strong>@mention</strong>");

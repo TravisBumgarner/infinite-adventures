@@ -100,7 +100,18 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
         </Typography>
       </Box>
 
-      <Box ref={taggedListRef} sx={{ flex: 1, overflowY: "auto", p: 2, pt: 1 }}>
+      <Box
+        ref={taggedListRef}
+        sx={{ flex: 1, overflowY: "auto", p: 2, pt: 1 }}
+        onClick={(e) => {
+          const target = (e.target as HTMLElement).closest(".mention-link") as HTMLElement | null;
+          if (target) {
+            e.stopPropagation();
+            const itemId = target.dataset.itemId;
+            if (itemId) handleViewOnCanvas(itemId);
+          }
+        }}
+      >
         <LinkTooltip containerRef={taggedListRef} />
         {taggedItems.length === 0 ? (
           <Typography

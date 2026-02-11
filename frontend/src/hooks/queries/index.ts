@@ -4,6 +4,7 @@ import {
   fetchGallery,
   fetchItem,
   fetchItems,
+  fetchQuickNotes,
   fetchSessions,
   fetchTaggedItems,
   fetchTags,
@@ -90,6 +91,14 @@ export function useTags(canvasId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.tags.list(canvasId!),
     queryFn: () => fetchTags(canvasId!),
+    enabled: !!canvasId,
+  });
+}
+
+export function useQuickNotes(canvasId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.quickNotes.list(canvasId!),
+    queryFn: () => fetchQuickNotes(canvasId!),
     enabled: !!canvasId,
   });
 }

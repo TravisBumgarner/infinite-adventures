@@ -154,12 +154,34 @@ export const photos = pgTable(
     mimeType: text("mime_type").notNull(),
     isMainPhoto: boolean("is_main_photo").notNull().default(false),
     isImportant: boolean("is_important").notNull().default(false),
+    caption: text("caption").notNull().default(""),
     aspectRatio: doublePrecision("aspect_ratio"),
     blurhash: text("blurhash"),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("photos_content_idx").on(table.contentType, table.contentId)],
 );
+
+// ============================================
+// Quick Notes (per-canvas floating notes)
+// ============================================
+
+export const quickNotes = pgTable(
+  "quick_notes",
+  {
+    id: text("id").primaryKey(),
+    canvasId: text("canvas_id")
+      .notNull()
+      .references(() => canvases.id, { onDelete: "cascade" }),
+    content: text("content").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  },
+  (table) => [index("quick_notes_canvas_id_idx").on(table.canvasId)],
+);
+
+export type QuickNote = typeof quickNotes.$inferSelect;
+export type InsertQuickNote = typeof quickNotes.$inferInsert;
 
 // ============================================
 // Tags

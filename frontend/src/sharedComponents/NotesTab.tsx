@@ -39,6 +39,7 @@ interface NotesTabProps {
   onToggleImportant: (noteId: string, isImportant: boolean) => void;
   onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
+  onMentionClick?: (itemId: string) => void;
 }
 
 export default function NotesTab({
@@ -58,6 +59,7 @@ export default function NotesTab({
   onToggleImportant,
   onCreateMentionItem,
   getNotePreview,
+  onMentionClick,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -149,7 +151,18 @@ export default function NotesTab({
       >
         Add Note
       </Button>
-      <Box ref={notesListRef} sx={{ flex: 1, overflowY: "auto" }}>
+      <Box
+        ref={notesListRef}
+        sx={{ flex: 1, overflowY: "auto" }}
+        onClick={(e) => {
+          const target = (e.target as HTMLElement).closest(".mention-link") as HTMLElement | null;
+          if (target && onMentionClick) {
+            e.stopPropagation();
+            const itemId = target.dataset.itemId;
+            if (itemId) onMentionClick(itemId);
+          }
+        }}
+      >
         <LinkTooltip containerRef={notesListRef} />
         {notes.length === 0 ? (
           <Typography

@@ -12,6 +12,7 @@ import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
 import { linksRouter } from "./routes/links/index.js";
 import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
+import { quickNotesRouter } from "./routes/quickNotes/index.js";
 import { sessionsRouter } from "./routes/sessions/index.js";
 import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
 import { timelineRouter } from "./routes/timeline/index.js";
@@ -56,6 +57,9 @@ app.use("/api/items/:itemId/notes", itemNotesRouter);
 // Photo routes
 app.use("/api/photos", photosRouter);
 app.use("/api/items/:itemId/photos", upload.single("photo"), itemPhotosRouter);
+
+// Quick notes routes
+app.use("/api/canvases/:canvasId/quick-notes", quickNotesRouter);
 
 // Tag routes
 app.use("/api/canvases/:canvasId/tags", canvasTagsRouter);

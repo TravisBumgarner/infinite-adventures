@@ -19,6 +19,7 @@ export interface PhotoInfo {
   mimeType: string;
   isMainPhoto: boolean;
   isImportant: boolean;
+  caption: string;
   aspectRatio: number | null;
   blurhash: string | null;
   createdAt: string;
@@ -112,6 +113,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     mimeType: input.mimeType,
     isMainPhoto: isMainPhoto,
     isImportant: false,
+    caption: "",
     aspectRatio,
     blurhash,
     createdAt: now,
@@ -211,6 +213,20 @@ export async function togglePhotoImportant(id: string): Promise<PhotoInfo | null
  */
 export function getPhotoPath(filename: string): string {
   return path.join(UPLOADS_DIR, filename);
+}
+
+/**
+ * Update a photo's caption.
+ * Returns the updated photo or null if not found.
+ */
+export async function updatePhotoCaption(id: string, caption: string): Promise<PhotoInfo | null> {
+  const db = getDb();
+  const photo = await getPhoto(id);
+  if (!photo) return null;
+
+  await db.update(photos).set({ caption }).where(eq(photos.id, id));
+
+  return getPhoto(id);
 }
 
 /**

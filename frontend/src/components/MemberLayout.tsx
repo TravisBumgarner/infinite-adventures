@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
 import InitiativeTracker from "../pages/Canvas/components/InitiativeTracker";
+import QuickNotes from "../pages/Canvas/components/QuickNotes";
 import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
 import ConnectedCanvasPicker from "../sharedComponents/ConnectedCanvasPicker";
 import PageToggle from "../sharedComponents/PageToggle";
@@ -62,6 +63,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       <DiceRoller />
       <DiceRoller3d />
       <InitiativeTracker />
+      <QuickNotes />
       {showSettings && <SettingsSidebar />}
       {showOnboarding && <OnboardingTour />}
     </>
