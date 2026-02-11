@@ -34,6 +34,7 @@ interface MentionEditorProps {
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
   onCreate?: (title: string) => Promise<{ id: string; title: string } | null>;
+  onMentionClick?: (itemId: string) => void;
 }
 
 interface SuggestionItem {
@@ -475,6 +476,7 @@ export default function MentionEditor({
   style,
   containerStyle,
   onCreate,
+  onMentionClick,
 }: MentionEditorProps) {
   const theme = useTheme();
   const [suggestionPopup, setSuggestionPopup] = useState<React.ReactNode | null>(null);
@@ -584,10 +586,35 @@ export default function MentionEditor({
     toolbarRef.current?.openLinkDialogWithUrl(url);
   }, []);
 
+  const handleWrapperClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!onMentionClick) return;
+      const target = (e.target as HTMLElement).closest(
+        "[data-type='mention']",
+      ) as HTMLElement | null;
+      if (target) {
+        const itemId = target.dataset.id;
+        if (itemId) {
+          e.preventDefault();
+          e.stopPropagation();
+          onMentionClick(itemId);
+        }
+      }
+    },
+    [onMentionClick],
+  );
+
   return (
     <Box sx={{ position: "relative", display: "flex", flexDirection: "column", ...containerStyle }}>
       <FormattingToolbar ref={toolbarRef} editor={editor} />
-      <div ref={wrapperRef} style={{ ...style, flex: 1 }} className="mention-editor-wrapper">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: editor wrapper delegates mention clicks */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled by TipTap */}
+      <div
+        ref={wrapperRef}
+        style={{ ...style, flex: 1 }}
+        className="mention-editor-wrapper"
+        onClick={handleWrapperClick}
+      >
         <EditorContent editor={editor} />
       </div>
       <LinkTooltip containerRef={wrapperRef} onEdit={handleEditLink} />

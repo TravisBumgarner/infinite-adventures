@@ -115,6 +115,7 @@ export default function NotesTab({
           itemsCache={itemsCache}
           canvasId={canvasId}
           onCreate={onCreateMentionItem}
+          onMentionClick={onMentionClick}
           containerStyle={{ flex: 1, minHeight: 0 }}
           style={{
             background: "var(--color-surface0)",
@@ -154,7 +155,7 @@ export default function NotesTab({
       <Box
         ref={notesListRef}
         sx={{ flex: 1, overflowY: "auto" }}
-        onClick={(e) => {
+        onClickCapture={(e) => {
           const target = (e.target as HTMLElement).closest(".mention-link") as HTMLElement | null;
           if (target && onMentionClick) {
             e.stopPropagation();
