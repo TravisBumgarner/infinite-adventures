@@ -1,0 +1,1 @@
+ALTER TABLE "quick_notes" ADD COLUMN "is_important" boolean DEFAULT false NOT NULL;

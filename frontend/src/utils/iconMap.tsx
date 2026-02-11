@@ -3,15 +3,21 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import AcUnitIcon from "@mui/icons-material/AcUnit";
 import AgricultureIcon from "@mui/icons-material/Agriculture";
+import AlarmIcon from "@mui/icons-material/Alarm";
+import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
 import AnchorIcon from "@mui/icons-material/Anchor";
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import ArchitectureIcon from "@mui/icons-material/Architecture";
+import ArchiveIcon from "@mui/icons-material/Archive";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import AutorenewIcon from "@mui/icons-material/Autorenew";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import BackpackIcon from "@mui/icons-material/Backpack";
 import BadgeIcon from "@mui/icons-material/Badge";
 import BalanceIcon from "@mui/icons-material/Balance";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
 import BedtimeIcon from "@mui/icons-material/Bedtime";
 import BiotechIcon from "@mui/icons-material/Biotech";
 import BloodtypeIcon from "@mui/icons-material/Bloodtype";
@@ -25,6 +31,7 @@ import BuildIcon from "@mui/icons-material/Build";
 import CabinIcon from "@mui/icons-material/Cabin";
 import CakeIcon from "@mui/icons-material/Cake";
 import CampaignIcon from "@mui/icons-material/Campaign";
+import CancelIcon from "@mui/icons-material/Cancel";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import CasinoIcon from "@mui/icons-material/Casino";
 import CastleIcon from "@mui/icons-material/Castle";
@@ -32,10 +39,15 @@ import CatchingPokemonIcon from "@mui/icons-material/CatchingPokemon";
 import CategoryIcon from "@mui/icons-material/Category";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import ChangeHistoryIcon from "@mui/icons-material/ChangeHistory";
+import ChatIcon from "@mui/icons-material/Chat";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CheckroomIcon from "@mui/icons-material/Checkroom";
 import ChurchIcon from "@mui/icons-material/Church";
+import CircleIcon from "@mui/icons-material/Circle";
 import CloudIcon from "@mui/icons-material/Cloud";
 import ColorizeIcon from "@mui/icons-material/Colorize";
 import ConstructionIcon from "@mui/icons-material/Construction";
+import ContentCutIcon from "@mui/icons-material/ContentCut";
 import CottageIcon from "@mui/icons-material/Cottage";
 import CrisisAlertIcon from "@mui/icons-material/CrisisAlert";
 import CrueltyFreeIcon from "@mui/icons-material/CrueltyFree";
@@ -44,6 +56,7 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import DiamondIcon from "@mui/icons-material/Diamond";
 import DirectionsBoatIcon from "@mui/icons-material/DirectionsBoat";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -60,11 +73,13 @@ import FenceIcon from "@mui/icons-material/Fence";
 import FestivalIcon from "@mui/icons-material/Festival";
 import FilterDramaIcon from "@mui/icons-material/FilterDrama";
 import FilterHdrIcon from "@mui/icons-material/FilterHdr";
+import FingerprintIcon from "@mui/icons-material/Fingerprint";
 import FireplaceIcon from "@mui/icons-material/Fireplace";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import FlagIcon from "@mui/icons-material/Flag";
 import FlareIcon from "@mui/icons-material/Flare";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
+import FlightIcon from "@mui/icons-material/Flight";
 import FloodIcon from "@mui/icons-material/Flood";
 import FoggyIcon from "@mui/icons-material/Foggy";
 import ForestIcon from "@mui/icons-material/Forest";
@@ -79,6 +94,7 @@ import HandymanIcon from "@mui/icons-material/Handyman";
 import HardwareIcon from "@mui/icons-material/Hardware";
 import HealingIcon from "@mui/icons-material/Healing";
 import HeartBrokenIcon from "@mui/icons-material/HeartBroken";
+import HelpIcon from "@mui/icons-material/Help";
 import HexagonIcon from "@mui/icons-material/Hexagon";
 import HikingIcon from "@mui/icons-material/Hiking";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
@@ -86,13 +102,17 @@ import HiveIcon from "@mui/icons-material/Hive";
 import HomeIcon from "@mui/icons-material/Home";
 import HotelIcon from "@mui/icons-material/Hotel";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import InfoIcon from "@mui/icons-material/Info";
 import InterestsIcon from "@mui/icons-material/Interests";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import KayakingIcon from "@mui/icons-material/Kayaking";
 import KeyIcon from "@mui/icons-material/Key";
 import LandscapeIcon from "@mui/icons-material/Landscape";
 import LandslideIcon from "@mui/icons-material/Landslide";
+import LibraryMusicIcon from "@mui/icons-material/LibraryMusic";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import LinkIcon from "@mui/icons-material/Link";
 import LocalActivityIcon from "@mui/icons-material/LocalActivity";
 import LocalBarIcon from "@mui/icons-material/LocalBar";
 import LocalCafeIcon from "@mui/icons-material/LocalCafe";
@@ -103,15 +123,18 @@ import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import LocalPoliceIcon from "@mui/icons-material/LocalPolice";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LoyaltyIcon from "@mui/icons-material/Loyalty";
+import MailIcon from "@mui/icons-material/Mail";
 import MapIcon from "@mui/icons-material/Map";
 import MasksIcon from "@mui/icons-material/Masks";
 import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
+import MicIcon from "@mui/icons-material/Mic";
 import MilitaryTechIcon from "@mui/icons-material/MilitaryTech";
 import MoodIcon from "@mui/icons-material/Mood";
 import MoodBadIcon from "@mui/icons-material/MoodBad";
@@ -121,25 +144,31 @@ import NatureIcon from "@mui/icons-material/Nature";
 import NaturePeopleIcon from "@mui/icons-material/NaturePeople";
 import NavigationIcon from "@mui/icons-material/Navigation";
 import NightlightIcon from "@mui/icons-material/Nightlight";
+import NightShelterIcon from "@mui/icons-material/NightShelter";
 import NightsStayIcon from "@mui/icons-material/NightsStay";
 import NorthIcon from "@mui/icons-material/North";
 import OpacityIcon from "@mui/icons-material/Opacity";
 import PaletteIcon from "@mui/icons-material/Palette";
 import ParkIcon from "@mui/icons-material/Park";
+import PentagonIcon from "@mui/icons-material/Pentagon";
 import PeopleIcon from "@mui/icons-material/People";
 import PersonIcon from "@mui/icons-material/Person";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import PestControlIcon from "@mui/icons-material/PestControl";
 import PetsIcon from "@mui/icons-material/Pets";
+import PhoneIcon from "@mui/icons-material/Phone";
+import PianoIcon from "@mui/icons-material/Piano";
 import PlaceIcon from "@mui/icons-material/Place";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import PublicIcon from "@mui/icons-material/Public";
+import QueueMusicIcon from "@mui/icons-material/QueueMusic";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import RowingIcon from "@mui/icons-material/Rowing";
 import SailingIcon from "@mui/icons-material/Sailing";
 import SavingsIcon from "@mui/icons-material/Savings";
 import ScaleIcon from "@mui/icons-material/Scale";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import SchoolIcon from "@mui/icons-material/School";
 import ScienceIcon from "@mui/icons-material/Science";
 import SecurityIcon from "@mui/icons-material/Security";
@@ -148,9 +177,13 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import ShieldMoonIcon from "@mui/icons-material/ShieldMoon";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import SpaIcon from "@mui/icons-material/Spa";
+import SportsKabaddiIcon from "@mui/icons-material/SportsKabaddi";
 import SportsMartialArtsIcon from "@mui/icons-material/SportsMartialArts";
+import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import SquareIcon from "@mui/icons-material/Square";
 import StarIcon from "@mui/icons-material/Star";
 import StarsIcon from "@mui/icons-material/Stars";
+import StorageIcon from "@mui/icons-material/Storage";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import SunnyIcon from "@mui/icons-material/Sunny";
 import SynagoqueIcon from "@mui/icons-material/Synagogue";
@@ -159,17 +192,22 @@ import TempleHinduIcon from "@mui/icons-material/TempleHindu";
 import TerrainIcon from "@mui/icons-material/Terrain";
 import TheaterComedyIcon from "@mui/icons-material/TheaterComedy";
 import ThunderstormIcon from "@mui/icons-material/Thunderstorm";
+import TimerIcon from "@mui/icons-material/Timer";
 import TokenIcon from "@mui/icons-material/Token";
 import TornadoIcon from "@mui/icons-material/Tornado";
 import TourIcon from "@mui/icons-material/Tour";
 import ToysIcon from "@mui/icons-material/Toys";
+import TrainIcon from "@mui/icons-material/Train";
+import TranslateIcon from "@mui/icons-material/Translate";
 import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import TsunamiIcon from "@mui/icons-material/Tsunami";
 import UmbrellaIcon from "@mui/icons-material/Umbrella";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import VolcanoIcon from "@mui/icons-material/Volcano";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import WarehouseIcon from "@mui/icons-material/Warehouse";
 import WarningIcon from "@mui/icons-material/Warning";
 import WaterIcon from "@mui/icons-material/Water";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
@@ -177,6 +215,7 @@ import WavesIcon from "@mui/icons-material/Waves";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
 import WineBarIcon from "@mui/icons-material/WineBar";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import YardIcon from "@mui/icons-material/Yard";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
 import type { ComponentType } from "react";
 
@@ -399,8 +438,71 @@ export const ICON_MAP: Record<string, ComponentType<SvgIconProps>> = {
   Celebration: CelebrationIcon,
   Handshake: HandshakeIcon,
 
+  // Transport
+  DirectionsCar: DirectionsCarIcon,
+  Flight: FlightIcon,
+  Train: TrainIcon,
+  LocalShipping: LocalShippingIcon,
+
+  // Communication
+  Mail: MailIcon,
+  Chat: ChatIcon,
+  Phone: PhoneIcon,
+  Translate: TranslateIcon,
+
+  // Status & indicators
+  CheckCircle: CheckCircleIcon,
+  Cancel: CancelIcon,
+  Help: HelpIcon,
+  Info: InfoIcon,
+  Timer: TimerIcon,
+  Schedule: ScheduleIcon,
+  Alarm: AlarmIcon,
+
+  // Containers & storage
+  Inventory2: Inventory2Icon,
+  Archive: ArchiveIcon,
+  Storage: StorageIcon,
+  Warehouse: WarehouseIcon,
+
+  // Shapes & abstract
+  Circle: CircleIcon,
+  Square: SquareIcon,
+  Pentagon: PentagonIcon,
+  AllInclusive: AllInclusiveIcon,
+  Autorenew: AutorenewIcon,
+
+  // Royalty & verification
+  Verified: VerifiedIcon,
+
+  // Clothing & accessories
+  Checkroom: CheckroomIcon,
+
+  // Additional nature
+  Yard: YardIcon,
+  BeachAccess: BeachAccessIcon,
+
+  // Dark & horror
+  NightShelter: NightShelterIcon,
+
+  // Music & performance
+  Piano: PianoIcon,
+  QueueMusic: QueueMusicIcon,
+  LibraryMusic: LibraryMusicIcon,
+  Mic: MicIcon,
+
+  // Sports
+  SportsKabaddi: SportsKabaddiIcon,
+  SportsScore: SportsScoreIcon,
+
+  // Combat additions
+  ContentCut: ContentCutIcon,
+
   // Misc
   RocketLaunch: RocketLaunchIcon,
+  Link: LinkIcon,
+  AttachFile: AttachFileIcon,
+  Fingerprint: FingerprintIcon,
 };
 
 export const ICON_NAMES = Object.keys(ICON_MAP);
@@ -727,6 +829,120 @@ const ICON_SYNONYMS: Record<string, string[]> = {
   betrayal: ["HeartBroken", "Dangerous", "MoodBad"],
   deception: ["Masks", "VisibilityOff", "TheaterComedy"],
   truth: ["Balance", "Lightbulb", "Visibility"],
+
+  // transport
+  car: ["DirectionsCar"],
+  drive: ["DirectionsCar"],
+  vehicle: ["DirectionsCar", "LocalShipping"],
+  carriage: ["DirectionsCar"],
+  wagon: ["DirectionsCar", "LocalShipping"],
+  plane: ["Flight"],
+  airplane: ["Flight"],
+  flying: ["Flight", "RocketLaunch"],
+  train: ["Train"],
+  rail: ["Train"],
+  cart: ["LocalShipping"],
+  deliver: ["LocalShipping"],
+  shipping: ["LocalShipping"],
+
+  // communication
+  mail: ["Mail"],
+  letter: ["Mail", "HistoryEdu"],
+  message: ["Chat", "Mail", "Forum"],
+  talk: ["Chat", "Forum", "Campaign"],
+  phone: ["Phone"],
+  call: ["Phone"],
+  translate: ["Translate"],
+  language: ["Translate"],
+
+  // status & indicators
+  check: ["CheckCircle"],
+  done: ["CheckCircle"],
+  complete: ["CheckCircle"],
+  cancel: ["Cancel"],
+  stop: ["Cancel"],
+  help: ["Help"],
+  question: ["Help"],
+  info: ["Info"],
+  information: ["Info"],
+  timer: ["Timer", "Schedule", "Alarm"],
+  countdown: ["Timer", "HourglassEmpty"],
+  schedule: ["Schedule"],
+  alarm: ["Alarm"],
+  alert: ["Alarm", "Warning", "CrisisAlert"],
+
+  // containers & storage
+  box: ["Inventory2", "Archive"],
+  crate: ["Inventory2"],
+  chest: ["Inventory2", "Lock"],
+  container: ["Inventory2", "Archive"],
+  storage: ["Storage", "Archive", "Warehouse"],
+  archive: ["Archive"],
+  warehouse: ["Warehouse"],
+  vault: ["Warehouse", "Lock", "Savings"],
+
+  // shapes
+  circle: ["Circle", "Brightness1"],
+  square: ["Square"],
+  pentagon: ["Pentagon"],
+  infinity: ["AllInclusive"],
+  loop: ["AllInclusive", "Autorenew"],
+  cycle: ["Autorenew", "Cyclone"],
+  renew: ["Autorenew"],
+  refresh: ["Autorenew"],
+
+  // royalty & verification
+  verified: ["Verified", "CheckCircle"],
+  crown: ["WorkspacePremium", "Verified"],
+  royal: ["WorkspacePremium", "Diamond", "Verified"],
+
+  // clothing
+  clothes: ["Checkroom"],
+  clothing: ["Checkroom"],
+  wardrobe: ["Checkroom"],
+  outfit: ["Checkroom"],
+  costume: ["Checkroom", "Masks"],
+
+  // additional nature
+  yard: ["Yard", "Grass"],
+  beach: ["BeachAccess", "Waves", "Sunny"],
+  coast: ["BeachAccess", "Waves"],
+  shelter: ["NightShelter", "Home", "Cabin"],
+  haunt: ["NightShelter", "DarkMode", "Dangerous"],
+
+  // music & performance
+  piano: ["Piano", "MusicNote"],
+  sing: ["Mic", "MusicNote"],
+  perform: ["Mic", "TheaterComedy"],
+  voice: ["Mic"],
+  microphone: ["Mic"],
+  playlist: ["QueueMusic", "LibraryMusic"],
+  concert: ["QueueMusic", "MusicNote"],
+  orchestra: ["LibraryMusic", "QueueMusic"],
+  choir: ["LibraryMusic", "Mic"],
+
+  // sports
+  wrestle: ["SportsKabaddi", "SportsMartialArts"],
+  grapple: ["SportsKabaddi"],
+  unarmed: ["SportsKabaddi", "SportsMartialArts"],
+  goal: ["SportsScore", "Flag"],
+  score: ["SportsScore", "EmojiEvents"],
+
+  // combat additions
+  cut: ["ContentCut", "Colorize"],
+  scissors: ["ContentCut"],
+  slash: ["ContentCut", "Hardware"],
+  blade: ["ContentCut", "Colorize"],
+
+  // misc new
+  link: ["Link"],
+  chain: ["Link"],
+  connect: ["Link", "AccountTree"],
+  attach: ["AttachFile", "Link"],
+  file: ["AttachFile"],
+  fingerprint: ["Fingerprint"],
+  identity: ["Fingerprint", "Badge"],
+  track: ["Fingerprint", "PersonSearch"],
 };
 
 /**

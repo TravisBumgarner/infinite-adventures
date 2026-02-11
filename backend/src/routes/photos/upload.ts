@@ -67,6 +67,7 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
       originalName: photo.originalName,
       isMainPhoto: photo.isMainPhoto,
       isImportant: photo.isImportant,
+      caption: photo.caption,
       aspectRatio: photo.aspectRatio ?? undefined,
       blurhash: photo.blurhash ?? undefined,
     },

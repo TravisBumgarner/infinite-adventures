@@ -149,6 +149,7 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     originalName: p.originalName,
     isMainPhoto: p.isMainPhoto,
     isImportant: p.isImportant,
+    caption: p.caption,
     aspectRatio: p.aspectRatio ?? undefined,
     blurhash: p.blurhash ?? undefined,
   }));

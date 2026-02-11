@@ -13,6 +13,7 @@ import type {
   PaginatedGallery,
   PaginatedTimeline,
   Photo,
+  QuickNote,
   SessionSummary,
   Tag,
   TaggedItem,
@@ -191,6 +192,13 @@ export function togglePhotoImportant(id: string): Promise<Photo> {
   return request<Photo>(`/photos/${id}/important`, { method: "PUT" });
 }
 
+export function updatePhotoCaption(id: string, caption: string): Promise<Photo> {
+  return request<Photo>(`/photos/${id}/caption`, {
+    method: "PUT",
+    body: JSON.stringify({ caption }),
+  });
+}
+
 // --- Note functions ---
 
 export function fetchNotes(itemId: string): Promise<Note[]> {
@@ -261,6 +269,38 @@ export function addTagToItem(itemId: string, tagId: string): Promise<void> {
 
 export function removeTagFromItem(itemId: string, tagId: string): Promise<void> {
   return request<void>(`/items/${itemId}/tags/${tagId}`, { method: "DELETE" });
+}
+
+// --- Quick Note functions ---
+
+export function fetchQuickNotes(canvasId: string): Promise<QuickNote[]> {
+  return request<QuickNote[]>(`/canvases/${canvasId}/quick-notes`);
+}
+
+export function createQuickNote(canvasId: string, content?: string): Promise<QuickNote> {
+  return request<QuickNote>(`/canvases/${canvasId}/quick-notes`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function updateQuickNote(canvasId: string, id: string, content: string): Promise<QuickNote> {
+  return request<QuickNote>(`/canvases/${canvasId}/quick-notes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  });
+}
+
+export function deleteQuickNote(canvasId: string, id: string): Promise<void> {
+  return request<void>(`/canvases/${canvasId}/quick-notes/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function toggleQuickNoteImportant(canvasId: string, id: string): Promise<QuickNote> {
+  return request<QuickNote>(`/canvases/${canvasId}/quick-notes/${id}/toggle-important`, {
+    method: "PATCH",
+  });
 }
 
 // --- Backup functions ---

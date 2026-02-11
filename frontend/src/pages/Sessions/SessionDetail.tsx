@@ -18,6 +18,7 @@ import {
   useTogglePhotoImportant,
   useUpdateItem,
   useUpdateNote,
+  useUpdatePhotoCaption,
   useUploadPhoto,
 } from "../../hooks/mutations";
 import { useItem } from "../../hooks/queries";
@@ -26,8 +27,9 @@ import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
+
 import { getNotePreview } from "../../utils/getNotePreview";
-import TaggedItemsPanel from "./components/TaggedItemsPanel";
+import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
 
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
@@ -43,6 +45,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
+  const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem } = useItem(sessionId);
@@ -57,6 +60,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("notes");
+  const [photoColumns, setPhotoColumns] = useState(4);
 
   // Resizable divider
   const [leftWidth, setLeftWidth] = useState<number | null>(null);
@@ -72,6 +76,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const deletePhotoMutation = useDeletePhoto(sessionId, activeCanvasId ?? "");
   const selectPhotoMutation = useSelectPhoto(sessionId, activeCanvasId ?? "");
   const togglePhotoImportantMutation = useTogglePhotoImportant(sessionId, activeCanvasId ?? "");
+  const updatePhotoCaptionMutation = useUpdatePhotoCaption(sessionId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
 
   // Refs for auto-save
@@ -305,6 +310,24 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
+  async function handleFileDrop(file: File) {
+    await uploadPhotoMutation.mutateAsync(file);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+    }
+  }
+
+  async function handleUpdateCaption(photoId: string, caption: string) {
+    await updatePhotoCaptionMutation.mutateAsync({ photoId, caption });
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+    }
+  }
+
   function handleOpenLightbox(index: number) {
     openModal({
       id: MODAL_ID.LIGHTBOX,
@@ -335,6 +358,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     (content: string) => getNotePreview(content, itemsCache),
     [itemsCache],
   );
+
+  const handleMentionClick = useCallback((itemId: string) => {
+    taggedPanelRef.current?.highlightItem(itemId);
+  }, []);
 
   if (!item) {
     return (
@@ -477,6 +504,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             onToggleImportant={handleToggleImportant}
             onCreateMentionItem={handleCreateMentionItem}
             getNotePreview={notePreview}
+            onMentionClick={handleMentionClick}
           />
         )}
 
@@ -488,6 +516,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             onSelect={handlePhotoSelect}
             onToggleImportant={handleTogglePhotoImportant}
             onOpenLightbox={handleOpenLightbox}
+            onFileDrop={handleFileDrop}
+            onUpdateCaption={handleUpdateCaption}
+            columns={photoColumns}
+            onColumnsChange={setPhotoColumns}
           />
         )}
       </Box>
@@ -517,7 +549,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       </Box>
 
       {/* Right column - Tagged items */}
-      <TaggedItemsPanel sessionId={sessionId} notes={notes} itemsCache={itemsCache} />
+      <TaggedItemsPanel
+        ref={taggedPanelRef}
+        sessionId={sessionId}
+        notes={notes}
+        itemsCache={itemsCache}
+      />
     </Box>
   );
 }

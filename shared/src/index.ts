@@ -31,8 +31,18 @@ export const PhotoSchema = z.object({
   originalName: z.string(),
   isMainPhoto: z.boolean(),
   isImportant: z.boolean(),
+  caption: z.string(),
   aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
+});
+
+export const QuickNoteSchema = z.object({
+  id: z.string(),
+  canvasId: z.string(),
+  content: z.string(),
+  isImportant: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export const TagSchema = z.object({
@@ -259,6 +269,7 @@ export type UpdateNoteInput = z.infer<typeof UpdateNoteInputSchema>;
 export type CanvasItemSearchResult = z.infer<typeof CanvasItemSearchResultSchema>;
 export type SessionSummary = z.infer<typeof SessionSummarySchema>;
 export type TaggedItem = z.infer<typeof TaggedItemSchema>;
+export type QuickNote = z.infer<typeof QuickNoteSchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type CreateTagInput = z.infer<typeof CreateTagInputSchema>;
 export type UpdateTagInput = z.infer<typeof UpdateTagInputSchema>;

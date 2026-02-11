@@ -1,3 +1,4 @@
+import StickyNote2Icon from "@mui/icons-material/StickyNote2";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -6,6 +7,7 @@ import { useCanvasStore } from "../../../stores/canvasStore";
 import { useDice3dStore } from "../../../stores/dice3dStore";
 import { useDiceStore } from "../../../stores/diceStore";
 import { useInitiativeStore } from "../../../stores/initiativeStore";
+import { useQuickNotesStore } from "../../../stores/quickNotesStore";
 import Dice3dIcon from "./Dice3dIcon";
 import DiceIcon from "./DiceIcon";
 import InitiativeIcon from "./InitiativeIcon";
@@ -15,6 +17,7 @@ export default function ToolSidebar() {
   const toggle = useDiceStore((s) => s.toggle);
   const toggle3d = useDice3dStore((s) => s.toggle);
   const toggleInitiative = useInitiativeStore((s) => s.toggle);
+  const toggleQuickNotes = useQuickNotesStore((s) => s.toggle);
 
   return (
     <Box
@@ -56,6 +59,11 @@ export default function ToolSidebar() {
         <Tooltip title="Initiative Tracker" placement="right">
           <IconButton onClick={toggleInitiative} size="small">
             <InitiativeIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Quick Notes" placement="right">
+          <IconButton onClick={toggleQuickNotes} size="small">
+            <StickyNote2Icon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>

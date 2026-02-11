@@ -25,6 +25,7 @@ import {
   useTogglePhotoImportant,
   useUpdateItem,
   useUpdateNote,
+  useUpdatePhotoCaption,
   useUploadPhoto,
 } from "../../../hooks/mutations";
 import { useItem } from "../../../hooks/queries";
@@ -100,6 +101,7 @@ export default function CanvasItemPanel({
   const deletePhotoMutation = useDeletePhoto(itemId, activeCanvasId ?? "");
   const selectPhotoMutation = useSelectPhoto(itemId, activeCanvasId ?? "");
   const togglePhotoImportantMutation = useTogglePhotoImportant(itemId, activeCanvasId ?? "");
+  const updatePhotoCaptionMutation = useUpdatePhotoCaption(itemId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
   const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
   const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
@@ -259,6 +261,16 @@ export default function CanvasItemPanel({
 
   async function handleTogglePhotoImportant(photoId: string) {
     await togglePhotoImportantMutation.mutateAsync(photoId);
+    const { data: updated } = await refetchItem();
+    if (updated) {
+      setItem(updated);
+      setPhotos(updated.photos);
+      onSaved(updated);
+    }
+  }
+
+  async function handleUpdateCaption(photoId: string, caption: string) {
+    await updatePhotoCaptionMutation.mutateAsync({ photoId, caption });
     const { data: updated } = await refetchItem();
     if (updated) {
       setItem(updated);
@@ -696,6 +708,7 @@ export default function CanvasItemPanel({
           onToggleImportant={handleTogglePhotoImportant}
           onOpenLightbox={handleOpenLightbox}
           onFileDrop={handleFileUpload}
+          onUpdateCaption={handleUpdateCaption}
         />
       )}
 

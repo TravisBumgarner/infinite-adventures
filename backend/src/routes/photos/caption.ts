@@ -1,27 +1,24 @@
 import type { Request, Response } from "express";
+import { z } from "zod";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { userOwnsResource } from "../../services/authorizationService.js";
-import { togglePhotoImportant } from "../../services/photoService.js";
+import { updatePhotoCaption } from "../../services/photoService.js";
 import { requireUserId } from "../shared/auth.js";
 import { sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { IdParams, parseRoute } from "../shared/validation.js";
 
-export function validate(req: Request<{ id: string }>, res: Response) {
-  const parsed = parseRoute(req, res, { params: IdParams });
-  if (!parsed) return null;
-  return { id: parsed.params.id };
-}
+const CaptionBody = z.object({ caption: z.string() });
 
 export async function handler(req: Request<{ id: string }>, res: Response): Promise<void> {
   const auth = requireUserId(req as AuthenticatedRequest, res);
   if (!auth) return;
-  const context = validate(req, res);
-  if (!context) return;
-  if (!(await userOwnsResource(auth.userId, "photo", context.id))) {
+  const parsed = parseRoute(req, res, { params: IdParams, body: CaptionBody });
+  if (!parsed) return;
+  if (!(await userOwnsResource(auth.userId, "photo", parsed.params.id))) {
     sendForbidden(res);
     return;
   }
-  const photo = await togglePhotoImportant(context.id);
+  const photo = await updatePhotoCaption(parsed.params.id, parsed.body.caption);
   if (!photo) {
     sendNotFound(res, "PHOTO_NOT_FOUND");
     return;

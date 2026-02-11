@@ -155,7 +155,7 @@ export default function Sessions() {
           sx={{
             pt: 10,
             px: 3,
-            ml: showSettings ? "360px" : 0,
+            ml: showSettings ? `${SIDEBAR_WIDTH + 16}px` : 0,
             transition: "margin-left 0.2s",
           }}
         >
@@ -165,10 +165,9 @@ export default function Sessions() {
         <Box
           sx={{
             maxWidth: 720,
-            mx: "auto",
+            ...(showSettings ? { ml: `${SIDEBAR_WIDTH + 32}px` } : { mx: "auto" }),
             pt: 10,
             px: 3,
-            ml: showSettings ? `calc((100vw - 720px) / 2 + 180px)` : "auto",
             transition: "margin-left 0.2s",
           }}
         >
