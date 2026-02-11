@@ -3,7 +3,7 @@ import type { Connection, Edge, Node } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
-import { fetchItem, fetchItems, fetchTags } from "../../../api/client";
+import { addTagToItem, fetchItem, fetchItems, fetchTags } from "../../../api/client";
 import {
   useCreateItem,
   useCreateLink,
@@ -354,9 +354,10 @@ export function useCanvasActions() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Left-click a node to open the item panel
+  // Left-click a node to open the item panel (skip when Cmd/Ctrl held for multi-select)
   const onNodeClick = useCallback(
-    (_event: MouseEvent | React.MouseEvent, node: Node) => {
+    (event: MouseEvent | React.MouseEvent, node: Node) => {
+      if (event.metaKey || event.ctrlKey) return;
       setEditingItemId(node.id);
     },
     [setEditingItemId],
@@ -583,6 +584,56 @@ export function useCanvasActions() {
     setShowSettings,
   ]);
 
+  // Add tag to a single item
+  const handleAddTag = useCallback(
+    async (itemId: string, tagId: string) => {
+      const canvasId = useCanvasStore.getState().activeCanvasId;
+      if (!canvasId) return;
+      await addTagToItem(itemId, tagId);
+      queryClient.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      const fullItem = await fetchItemViaQuery(itemId);
+      const cache = useCanvasStore.getState().itemsCache;
+      const nextCache = new Map(cache);
+      nextCache.set(fullItem.id, fullItem);
+      setItemsCache(nextCache);
+      setNodes((nds) =>
+        nds.map((n) => (n.id === itemId ? toFlowNode(fullItem, nextCache, fitBothItems) : n)),
+      );
+    },
+    [queryClient, setNodes, setItemsCache, fitBothItems, fetchItemViaQuery],
+  );
+
+  // Bulk add tag to multiple items
+  const handleBulkAddTag = useCallback(
+    async (nodeIds: string[], tagId: string) => {
+      const canvasId = useCanvasStore.getState().activeCanvasId;
+      if (!canvasId) return;
+      await Promise.all(nodeIds.map((id) => addTagToItem(id, tagId)));
+      queryClient.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      const fullItems = await Promise.all(nodeIds.map((id) => fetchItemViaQuery(id)));
+      const cache = useCanvasStore.getState().itemsCache;
+      const nextCache = new Map(cache);
+      for (const item of fullItems) {
+        nextCache.set(item.id, item);
+      }
+      setItemsCache(nextCache);
+      const nodeIdSet = new Set(nodeIds);
+      setNodes((nds) =>
+        nds.map((n) => {
+          const updated = nodeIdSet.has(n.id) ? nextCache.get(n.id) : undefined;
+          return updated ? toFlowNode(updated, nextCache, fitBothItems) : n;
+        }),
+      );
+    },
+    [queryClient, setNodes, setItemsCache, fitBothItems, fetchItemViaQuery],
+  );
+
+  // Clear all node selection
+  const clearSelection = useCallback(() => {
+    setNodes((nds) => nds.map((n) => (n.selected ? { ...n, selected: false } : n)));
+  }, [setNodes]);
+
   // Edge hover handlers
   const onEdgeMouseEnter = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
@@ -629,6 +680,9 @@ export function useCanvasActions() {
     onMoveEnd,
     onPaneClick,
     handleBulkDelete,
+    handleAddTag,
+    handleBulkAddTag,
+    clearSelection,
     onDrop,
     onDragOver,
     onEdgeMouseEnter,

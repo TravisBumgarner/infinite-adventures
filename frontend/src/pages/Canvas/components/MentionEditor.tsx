@@ -184,14 +184,19 @@ const SuggestionController = forwardRef<
       const totalItems = items.length + (hasCreateOption ? 1 : 0);
 
       if (event.key === "ArrowDown") {
-        setSelectedIndex((i) => (i + 1) % Math.max(totalItems, 1));
+        setSelectedIndex((i) => (i < 0 ? 0 : (i + 1) % Math.max(totalItems, 1)));
         return true;
       }
       if (event.key === "ArrowUp") {
-        setSelectedIndex((i) => (i - 1 + Math.max(totalItems, 1)) % Math.max(totalItems, 1));
+        setSelectedIndex((i) =>
+          i < 0
+            ? Math.max(totalItems, 1) - 1
+            : (i - 1 + Math.max(totalItems, 1)) % Math.max(totalItems, 1),
+        );
         return true;
       }
       if (event.key === "Enter" || event.key === "Tab") {
+        if (selectedIndex < 0) return false;
         if (selectedIndex < items.length) {
           const item = items[selectedIndex]!;
           handleSelect(item);
@@ -209,7 +214,7 @@ const SuggestionController = forwardRef<
     updateProps(props: SuggestionProps<SuggestionItem>) {
       setItems(props.items);
       setQuery(props.query);
-      setSelectedIndex(0);
+      setSelectedIndex(props.items.length > 0 ? 0 : -1);
       setIsActive(true);
       commandRef.current = props.command as unknown as (p: { id: string; label: string }) => void;
       // Get cursor position from clientRect

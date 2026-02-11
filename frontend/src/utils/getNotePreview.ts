@@ -16,7 +16,14 @@ export function getNotePreview(
 ): string {
   let text = content.replace(/<[^>]*>/g, "").trim();
   if (!text) return "Empty note";
-  if (maxLength > 0 && text.length > maxLength) text = `${text.slice(0, maxLength)}...`;
+  if (maxLength > 0 && text.length > maxLength) {
+    text = text.slice(0, maxLength);
+    const lastMentionStart = text.lastIndexOf("@{");
+    if (lastMentionStart !== -1 && !text.slice(lastMentionStart).includes("}")) {
+      text = text.slice(0, lastMentionStart);
+    }
+    text += "...";
+  }
   // Escape HTML entities
   text = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   // Render mentions as clickable spans
