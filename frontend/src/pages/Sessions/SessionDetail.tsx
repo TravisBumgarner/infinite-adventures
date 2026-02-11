@@ -28,14 +28,8 @@ import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
 
-function handleMentionClickNav(itemId: string, navigate: ReturnType<typeof useNavigate>) {
-  navigate("/canvas");
-  useCanvasStore.getState().setEditingItemId(itemId);
-  useCanvasStore.getState().setPanelTab("notes");
-}
-
 import { getNotePreview } from "../../utils/getNotePreview";
-import TaggedItemsPanel from "./components/TaggedItemsPanel";
+import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
 
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
@@ -51,6 +45,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
+  const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem } = useItem(sessionId);
@@ -364,10 +359,9 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     [itemsCache],
   );
 
-  const handleMentionClick = useCallback(
-    (itemId: string) => handleMentionClickNav(itemId, navigate),
-    [navigate],
-  );
+  const handleMentionClick = useCallback((itemId: string) => {
+    taggedPanelRef.current?.highlightItem(itemId);
+  }, []);
 
   if (!item) {
     return (
@@ -555,7 +549,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       </Box>
 
       {/* Right column - Tagged items */}
-      <TaggedItemsPanel sessionId={sessionId} notes={notes} itemsCache={itemsCache} />
+      <TaggedItemsPanel
+        ref={taggedPanelRef}
+        sessionId={sessionId}
+        notes={notes}
+        itemsCache={itemsCache}
+      />
     </Box>
   );
 }

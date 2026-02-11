@@ -9,7 +9,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note } from "shared";
 import { fetchItem } from "../../../api/client";
@@ -20,13 +20,20 @@ import { useCanvasStore } from "../../../stores/canvasStore";
 import { getContrastText } from "../../../utils/getContrastText";
 import { getNotePreview } from "../../../utils/getNotePreview";
 
+export interface TaggedItemsPanelRef {
+  highlightItem: (itemId: string) => void;
+}
+
 interface TaggedItemsPanelProps {
   sessionId: string;
   notes: Note[];
   itemsCache: Map<string, CanvasItem>;
 }
 
-export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: TaggedItemsPanelProps) {
+export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function TaggedItemsPanel(
+  { sessionId, notes, itemsCache },
+  ref,
+) {
   const theme = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -34,7 +41,9 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
   const [expandedTaggedId, setExpandedTaggedId] = useState<string | null>(null);
   const [expandedItem, setExpandedItem] = useState<CanvasItem | null>(null);
   const [loadingExpand, setLoadingExpand] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const taggedListRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Fetch tagged items via React Query
   const { data: taggedItems = [] } = useTaggedItems(sessionId);
@@ -47,6 +56,13 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
     }
     prevNotesRef.current = notes;
   }, [notes, sessionId, queryClient]);
+
+  // Clear highlight after animation
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timer = setTimeout(() => setHighlightedId(null), 1500);
+    return () => clearTimeout(timer);
+  }, [highlightedId]);
 
   const handleTaggedItemToggle = useCallback(
     async (itemId: string) => {
@@ -70,6 +86,19 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
     },
     [expandedTaggedId, queryClient],
   );
+
+  useImperativeHandle(ref, () => ({
+    highlightItem(itemId: string) {
+      setHighlightedId(itemId);
+      // Expand it
+      handleTaggedItemToggle(itemId);
+      // Scroll into view
+      requestAnimationFrame(() => {
+        const el = itemRefs.current.get(itemId);
+        el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    },
+  }));
 
   function handleViewOnCanvas(itemId: string) {
     navigate("/canvas");
@@ -108,7 +137,14 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
           if (target) {
             e.stopPropagation();
             const itemId = target.dataset.itemId;
-            if (itemId) handleViewOnCanvas(itemId);
+            if (itemId) {
+              setHighlightedId(itemId);
+              handleTaggedItemToggle(itemId);
+              requestAnimationFrame(() => {
+                const el = itemRefs.current.get(itemId);
+                el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              });
+            }
           }
         }}
       >
@@ -126,8 +162,24 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
               const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === tagged.type);
               const bgColor = theme.palette.canvasItemTypes[tagged.type]?.light ?? "#585b70";
               const isExpanded = expandedTaggedId === tagged.id;
+              const isHighlighted = highlightedId === tagged.id;
               return (
-                <Box key={tagged.id} sx={{ mb: 1 }}>
+                <Box
+                  key={tagged.id}
+                  ref={(el: HTMLElement | null) => {
+                    if (el) itemRefs.current.set(tagged.id, el);
+                    else itemRefs.current.delete(tagged.id);
+                  }}
+                  sx={{
+                    mb: 1,
+                    borderRadius: 1.5,
+                    transition: "box-shadow 0.3s, background-color 0.3s",
+                    ...(isHighlighted && {
+                      boxShadow: "0 0 0 2px var(--color-blue)",
+                      bgcolor: "rgba(var(--color-blue-rgb, 30 102 245), 0.08)",
+                    }),
+                  }}
+                >
                   <ListItemButton
                     onClick={() => handleTaggedItemToggle(tagged.id)}
                     sx={{
@@ -261,4 +313,4 @@ export default function TaggedItemsPanel({ sessionId, notes, itemsCache }: Tagge
       </Box>
     </Box>
   );
-}
+});
