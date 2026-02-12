@@ -1,6 +1,8 @@
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Box from "@mui/material/Box";
@@ -24,6 +26,7 @@ interface PanelHeaderProps {
   onTitleChange: (value: string) => void;
   onClose: () => void;
   onDownloadPdf: () => void;
+  onDownloadMarkdown: () => void;
   onDeleteItem: () => void;
 }
 
@@ -35,10 +38,13 @@ export default function PanelHeader({
   onTitleChange,
   onClose,
   onDownloadPdf,
+  onDownloadMarkdown,
   onDeleteItem,
 }: PanelHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
+  const exportTimeout = useRef<ReturnType<typeof setTimeout>>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -55,6 +61,11 @@ export default function PanelHeader({
       onTitleChange(item.title);
       setIsEditing(false);
     }
+  }
+
+  function closeAllMenus() {
+    setMenuAnchor(null);
+    setExportAnchor(null);
   }
 
   return (
@@ -121,7 +132,7 @@ export default function PanelHeader({
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
-        onClose={() => setMenuAnchor(null)}
+        onClose={closeAllMenus}
         slotProps={{
           paper: {
             sx: {
@@ -134,7 +145,7 @@ export default function PanelHeader({
       >
         <MenuItem
           onClick={() => {
-            setMenuAnchor(null);
+            closeAllMenus();
             setIsEditing(true);
           }}
         >
@@ -144,20 +155,26 @@ export default function PanelHeader({
           Edit Title
         </MenuItem>
         <MenuItem
-          onClick={() => {
-            setMenuAnchor(null);
-            onDownloadPdf();
+          onMouseEnter={(e) => {
+            if (exportTimeout.current) clearTimeout(exportTimeout.current);
+            setExportAnchor(e.currentTarget);
+          }}
+          onMouseLeave={() => {
+            exportTimeout.current = setTimeout(() => setExportAnchor(null), 150);
           }}
         >
           <ListItemIcon>
-            <PictureAsPdfIcon fontSize="small" />
+            <FileDownloadIcon fontSize="small" />
           </ListItemIcon>
-          Download PDF
+          Export
+          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: "auto" }}>
+            ▸
+          </Typography>
         </MenuItem>
         <Divider />
         <MenuItem
           onClick={() => {
-            setMenuAnchor(null);
+            closeAllMenus();
             onDeleteItem();
           }}
           sx={{ color: "var(--color-red)" }}
@@ -166,6 +183,55 @@ export default function PanelHeader({
             <DeleteIcon fontSize="small" />
           </ListItemIcon>
           Delete Item
+        </MenuItem>
+      </Menu>
+
+      {/* Export submenu */}
+      <Menu
+        open={Boolean(exportAnchor)}
+        anchorEl={exportAnchor}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        onClose={() => setExportAnchor(null)}
+        sx={{ pointerEvents: "none" }}
+        slotProps={{
+          paper: {
+            sx: {
+              pointerEvents: "auto",
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              boxShadow: "0 8px 24px var(--color-backdrop)",
+              minWidth: 150,
+            },
+            onMouseEnter: () => {
+              if (exportTimeout.current) clearTimeout(exportTimeout.current);
+            },
+            onMouseLeave: () => setExportAnchor(null),
+          },
+        }}
+        disableAutoFocus
+      >
+        <MenuItem
+          onClick={() => {
+            closeAllMenus();
+            onDownloadPdf();
+          }}
+        >
+          <ListItemIcon>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
+          PDF
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            closeAllMenus();
+            onDownloadMarkdown();
+          }}
+        >
+          <ListItemIcon>
+            <DescriptionIcon fontSize="small" />
+          </ListItemIcon>
+          Markdown
         </MenuItem>
       </Menu>
       <IconButton onClick={onClose} sx={{ color: "var(--color-text)", ml: "auto" }}>

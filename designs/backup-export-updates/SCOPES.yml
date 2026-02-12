@@ -59,4 +59,4 @@ tasks:
       - "Markdown" downloads a `.md` file with title, type, notes (mentions resolved), and connections
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed

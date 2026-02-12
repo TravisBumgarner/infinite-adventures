@@ -1,4 +1,4 @@
-import type { CanvasItem } from "shared";
+import type { CanvasItem, Note } from "shared";
 
 /**
  * Resolve @{id} mentions in text to @title format using the cache.
@@ -57,4 +57,50 @@ export function formatItemExport(item: CanvasItem, itemsCache: Map<string, Canva
   }
 
   return parts.join("\n");
+}
+
+/**
+ * Format an item with its notes and connections as a Markdown document.
+ * Strips HTML tags from note content and resolves @{id} mentions.
+ */
+export function formatItemMarkdown(
+  item: CanvasItem,
+  notes: Note[],
+  itemsCache: Map<string, CanvasItem>,
+): string {
+  const lines: string[] = [];
+
+  lines.push(`# ${item.title}`);
+  lines.push(`**Type:** ${item.type}`);
+  lines.push("");
+
+  lines.push("## Notes");
+  if (notes.length === 0) {
+    lines.push("No notes.");
+  } else {
+    for (const note of notes) {
+      const stripped = note.content.replace(/<[^>]*>/g, "");
+      const resolved = resolveMentions(stripped, itemsCache);
+      lines.push(resolved);
+      lines.push("");
+    }
+  }
+  lines.push("");
+
+  const connections = [
+    ...(item.linksTo?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
+    ...(item.linkedFrom?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
+  ];
+
+  lines.push("## Connections");
+  if (connections.length === 0) {
+    lines.push("No connections.");
+  } else {
+    for (const c of connections) {
+      const arrow = c.direction === "outgoing" ? "\u2192" : "\u2190";
+      lines.push(`- ${arrow} **${c.title}** (${c.type})`);
+    }
+  }
+
+  return lines.join("\n");
 }
