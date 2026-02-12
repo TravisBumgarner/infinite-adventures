@@ -4,13 +4,14 @@ import SortIcon from "@mui/icons-material/Sort";
 import StarIcon from "@mui/icons-material/Star";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import { useTheme } from "@mui/material/styles";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -64,9 +65,7 @@ export default function Timeline() {
   const showSettings = useCanvasStore((s) => s.showSettings);
 
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
-  const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(
-    () => new Set(CANVAS_ITEM_TYPES.map((t) => t.value)),
-  );
+  const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(() => new Set());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [importantOnly, setImportantOnly] = useState(false);
 
@@ -173,7 +172,7 @@ export default function Timeline() {
   const filtered = useMemo(
     () =>
       allEntries.filter((e) => {
-        if (!activeFilters.has(e.parentItemType)) return false;
+        if (activeFilters.size > 0 && !activeFilters.has(e.parentItemType)) return false;
         if (selectedDate) {
           const entryDate = e.createdAt.slice(0, 10);
           if (entryDate !== selectedDate) return false;
@@ -435,7 +434,7 @@ export default function Timeline() {
                         px: 2,
                       }}
                     >
-                      {/* Row 1: type chip + title + date */}
+                      {/* Row 1: type chip + title + date + action buttons */}
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Chip
                           label={typeLabel}
@@ -471,6 +470,37 @@ export default function Timeline() {
                         >
                           {formatTimestamp(ts)}
                         </Typography>
+                        <Tooltip title="Open in Canvas">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setEditingItemId(entry.parentItemId);
+                              navigate("/canvas");
+                            }}
+                            sx={{
+                              color: "var(--color-subtext0)",
+                              "&:hover": { color: "var(--color-text)" },
+                              p: 0.5,
+                            }}
+                          >
+                            <MapIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                        {entry.parentItemType === "session" && (
+                          <Tooltip title="Open in Session">
+                            <IconButton
+                              size="small"
+                              onClick={() => navigate(`/sessions/${entry.parentItemId}`)}
+                              sx={{
+                                color: "var(--color-subtext0)",
+                                "&:hover": { color: "var(--color-text)" },
+                                p: 0.5,
+                              }}
+                            >
+                              <CalendarMonthIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
 
                       {/* Row 2: full content */}
@@ -499,41 +529,6 @@ export default function Timeline() {
                           }}
                         />
                       )}
-
-                      {/* Row 3: action buttons */}
-                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                        <Button
-                          size="small"
-                          startIcon={<MapIcon sx={{ fontSize: 14 }} />}
-                          onClick={() => {
-                            setEditingItemId(entry.parentItemId);
-                            navigate("/canvas");
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontSize: 12,
-                            color: "var(--color-subtext0)",
-                            "&:hover": { color: "var(--color-text)" },
-                          }}
-                        >
-                          Open in Canvas
-                        </Button>
-                        {entry.parentItemType === "session" && (
-                          <Button
-                            size="small"
-                            startIcon={<CalendarMonthIcon sx={{ fontSize: 14 }} />}
-                            onClick={() => navigate(`/sessions/${entry.parentItemId}`)}
-                            sx={{
-                              textTransform: "none",
-                              fontSize: 12,
-                              color: "var(--color-subtext0)",
-                              "&:hover": { color: "var(--color-text)" },
-                            }}
-                          >
-                            Open in Session
-                          </Button>
-                        )}
-                      </Box>
                     </Box>
                   </Box>
                 );
