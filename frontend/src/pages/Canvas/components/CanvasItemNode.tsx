@@ -50,7 +50,12 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
 
   return (
     <>
-      <Handle type="target" position={Position.Top} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: "hidden" }}
+        isConnectable={false}
+      />
       <Paper
         sx={{
           bgcolor: "var(--color-base)",
@@ -168,7 +173,12 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           </Typography>
         </Box>
       </Paper>
-      <Handle type="source" position={Position.Bottom} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ visibility: "hidden" }}
+        isConnectable={false}
+      />
     </>
   );
 }
