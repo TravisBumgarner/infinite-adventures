@@ -12,12 +12,14 @@ import { useCanvases } from "../../hooks/queries";
 import { logger } from "../../lib/logger";
 import { MODAL_ID, useModalStore } from "../../modals";
 import { useCanvasStore } from "../../stores/canvasStore";
+import { useTagStore } from "../../stores/tagStore";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
 import CanvasItemNodeComponent from "./components/CanvasItemNode";
 import CanvasItemPanel from "./components/CanvasItemPanel";
 import ContextMenu from "./components/ContextMenu";
 import DeletableEdge from "./components/DeletableEdge";
 import NodeContextMenu from "./components/NodeContextMenu";
+import SelectionSync from "./components/SelectionBox";
 import SelectionContextMenu from "./components/SelectionContextMenu";
 import Toolbar from "./components/Toolbar";
 import { useCanvasActions } from "./hooks/useCanvasActions";
@@ -81,6 +83,9 @@ export default function Canvas() {
     onMoveEnd,
     onPaneClick,
     handleBulkDelete,
+    handleAddTag,
+    handleBulkAddTag,
+    clearSelection,
     viewportKey,
     onDrop,
     onDragOver,
@@ -143,8 +148,10 @@ export default function Canvas() {
   filteredNodesRef.current = filteredNodes;
   const handleBulkDeleteRef = useRef(handleBulkDelete);
   handleBulkDeleteRef.current = handleBulkDelete;
+  const clearSelectionRef = useRef(clearSelection);
+  clearSelectionRef.current = clearSelection;
 
-  // Keyboard handler for delete
+  // Keyboard handler for delete and escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Ignore if typing in an input
@@ -153,6 +160,11 @@ export default function Canvas() {
         e.target instanceof HTMLTextAreaElement ||
         (e.target as HTMLElement)?.isContentEditable
       ) {
+        return;
+      }
+
+      if (e.key === "Escape") {
+        clearSelectionRef.current();
         return;
       }
 
@@ -208,11 +220,12 @@ export default function Canvas() {
         panOnDrag={[1, 2]}
         deleteKeyCode={null}
         selectionKeyCode={null}
-        multiSelectionKeyCode={null}
+        multiSelectionKeyCode="Meta"
         minZoom={0.1}
         fitView={!localStorage.getItem(viewportKey)}
         proOptions={{ hideAttribution: true }}
       >
+        <SelectionSync />
         <Background variant={BackgroundVariant.Dots} gap={20} color="var(--color-surface0)" />
         <MiniMap
           style={{ background: "var(--color-mantle)" }}
@@ -250,10 +263,18 @@ export default function Canvas() {
           nodeId={nodeContextMenu.nodeId}
           nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
           nodeType={itemsCache.get(nodeContextMenu.nodeId)?.type}
+          tags={(() => {
+            const allTags = Object.values(useTagStore.getState().tags);
+            const nodeTagIds = new Set(
+              itemsCache.get(nodeContextMenu.nodeId)?.tags.map((t) => t.id) ?? [],
+            );
+            return allTags.filter((t) => !nodeTagIds.has(t.id));
+          })()}
           onDelete={async () => {
             await deleteItemMutation.mutateAsync(nodeContextMenu.nodeId);
             handleDeleted(nodeContextMenu.nodeId);
           }}
+          onAddTag={(tagId) => handleAddTag(nodeContextMenu.nodeId, tagId)}
           onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
           onClose={() => setNodeContextMenu(null)}
         />
@@ -264,7 +285,9 @@ export default function Canvas() {
           x={selectionContextMenu.x}
           y={selectionContextMenu.y}
           nodeIds={selectionContextMenu.nodeIds}
+          tags={Object.values(useTagStore.getState().tags)}
           onBulkDelete={() => handleBulkDelete(selectionContextMenu.nodeIds)}
+          onBulkAddTag={(tagId) => handleBulkAddTag(selectionContextMenu.nodeIds, tagId)}
           onClose={() => setSelectionContextMenu(null)}
         />
       )}
