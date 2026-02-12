@@ -1,11 +1,16 @@
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import StarIcon from "@mui/icons-material/Star";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { GalleryEntry, Photo } from "shared";
 import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../constants";
 import { useCreateCanvas, useDeleteCanvas, useUpdateCanvas } from "../../hooks/mutations";
@@ -18,8 +23,10 @@ import CanvasPicker from "../Canvas/components/CanvasPicker";
 
 export default function Gallery() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const openModal = useModalStore((s) => s.openModal);
@@ -226,10 +233,18 @@ export default function Gallery() {
                   onClick={() => handleOpenLightbox(entry, idx)}
                   sx={{
                     position: "relative",
+                    zIndex: 1,
                     borderRadius: 2,
                     overflow: "hidden",
+                    bgcolor: "var(--color-base)",
                     border: "1px solid var(--color-surface1)",
                     cursor: "pointer",
+                    transition: "transform 0.2s ease",
+                    "&:hover": {
+                      transform: "scale(1.2)",
+                      zIndex: 10,
+                      "& img": { objectFit: "contain" },
+                    },
                     "&:hover .gallery-overlay": { opacity: 1 },
                   }}
                 >
@@ -239,9 +254,7 @@ export default function Gallery() {
                     blurhash={entry.blurhash}
                     sx={{
                       width: "100%",
-                      aspectRatio: entry.aspectRatio ? String(entry.aspectRatio) : "1",
-                      minHeight: 140,
-                      maxHeight: 300,
+                      aspectRatio: "1",
                     }}
                   />
 
@@ -307,6 +320,41 @@ export default function Gallery() {
                     >
                       {entry.parentItemTitle}
                     </Typography>
+                    <Tooltip title="Open in Canvas">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingItemId(entry.parentItemId);
+                          navigate("/canvas");
+                        }}
+                        sx={{
+                          color: "white",
+                          "&:hover": { color: "var(--color-text)" },
+                          p: 0.5,
+                        }}
+                      >
+                        <MapIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                    {entry.parentItemType === "session" && (
+                      <Tooltip title="Open in Session Viewer">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/sessions/${entry.parentItemId}`);
+                          }}
+                          sx={{
+                            color: "white",
+                            "&:hover": { color: "var(--color-text)" },
+                            p: 0.5,
+                          }}
+                        >
+                          <CalendarMonthIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </Box>
               );

@@ -32,7 +32,7 @@ export default function BlurImage({ src, alt, blurhash, sx }: BlurImageProps) {
         sx={{
           width: "100%",
           height: "100%",
-          objectFit: "contain",
+          objectFit: "cover",
           display: "block",
         }}
       />
