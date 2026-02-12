@@ -148,7 +148,7 @@ tasks:
       - Expanded tagged item content also has no rounded borders
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 5
     milestone: 2
