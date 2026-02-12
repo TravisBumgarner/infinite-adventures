@@ -161,26 +161,22 @@ export function SettingsSidebar() {
         <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
           Data
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "row", gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExport}
-            disabled={exporting || !activeCanvasId}
-            sx={{ flex: 1 }}
-          >
-            {exporting ? "Backing up..." : "Backup Canvas"}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<UploadIcon />}
-            onClick={() => importInputRef.current?.click()}
-            disabled={importMutation.isPending}
-            sx={{ flex: 1 }}
-          >
-            {importMutation.isPending ? "Importing..." : "Import Canvas"}
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handleExport}
+          disabled={exporting || !activeCanvasId}
+        >
+          {exporting ? "Backing up..." : "Backup Canvas"}
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<UploadIcon />}
+          onClick={() => importInputRef.current?.click()}
+          disabled={importMutation.isPending}
+        >
+          {importMutation.isPending ? "Importing..." : "Import Canvas"}
+        </Button>
         <input ref={importInputRef} type="file" accept=".zip" hidden onChange={handleImport} />
       </Box>
 
