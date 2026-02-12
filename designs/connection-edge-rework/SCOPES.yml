@@ -83,4 +83,4 @@ tasks:
       - No orphan code left from the removed drag-to-connect feature
     depends_on: [1]
     effort: 1
-    status: scoped
+    status: completed
