@@ -1,0 +1,209 @@
+project: UI Polish
+repo: TravisBumgarner/infinite-adventures
+design_file: null
+scoping_date: 2026-02-12
+
+milestones:
+  - number: 1
+    title: "1. Icon component, labels & notes restyle"
+    description: >
+      Create centralized Icon component, rename Important→Pinned everywhere,
+      restyle NotesTab to match QuickNotes layout, fix connections snippet
+      truncation, remove tagged items border radius.
+    branch:
+      working: ui-polish-milestone-1
+      base: main
+
+  - number: 2
+    title: "2. Timeline & Gallery action buttons"
+    description: >
+      Timeline filter defaults, icon-only Open in X buttons for timeline
+      and gallery items.
+    branch:
+      working: ui-polish-milestone-2
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: 219
+    milestone: 1
+    title: Create centralized Icon component for UI action/navigation icons
+    description: |
+      Create a new `Icon` component at `frontend/src/sharedComponents/Icon.tsx`
+      that provides a curated, centralized set of UI action and navigation icons.
+      This is separate from `iconMap.tsx` (which is for canvas item decoration).
+
+      Curated icon set:
+      - Navigation: canvas (MapIcon), sessions (CalendarMonthIcon), timeline (TimelineIcon), gallery (PhotoLibraryIcon)
+      - Actions: edit (EditIcon), pin (StarIcon), unpin (StarOutlineIcon), delete (DeleteIcon), add (AddIcon), close (CloseIcon), back (ArrowBackIcon), openExternal (OpenInNewIcon)
+      - Photos: mainPhoto (PhotoSizeSelectActualIcon), mainPhotoOutline (PhotoSizeSelectActualOutlinedIcon)
+      - Misc: sort (SortIcon), moreColumns (AddCircleOutlineIcon), fewerColumns (RemoveCircleOutlineIcon)
+
+      Component API: `<Icon name="edit" sx={{ fontSize: 14 }} />`
+      Accepts standard MUI SvgIcon props plus a `name` prop.
+      Export the icon name type as `IconName` for type safety.
+
+      Other tasks in this milestone should use the new Icon component in files they touch.
+    acceptance_criteria:
+      - Icon component created at frontend/src/sharedComponents/Icon.tsx
+      - All icons listed above are included in the curated set
+      - Component accepts name prop and forwards all SvgIcon props
+      - Icon name is a TypeScript union type (not just string)
+    depends_on: []
+    effort: 1
+    status: implementing
+
+  - id: 2
+    milestone: 1
+    title: Rename Important/Star to Pin/Pinned + trash icon + tooltips
+    description: |
+      Standardize labeling and icons across the app:
+
+      Pin rename:
+      - Timeline.tsx line 324: "Important only" → "Pinned only"
+      - Gallery.tsx line 181: "Important only" → "Pinned only"
+      - Gallery.tsx line 248: comment "Star badge" → "Pin badge"
+      - PhotosTab.tsx line 273: tooltip "Mark as important" → conditional "Pin"/"Unpin"
+
+      Trash icon consistency:
+      - PhotosTab.tsx line 312: Replace CloseIcon with DeleteIcon for photo delete
+
+      Tooltip audit:
+      - Ensure all icon-only IconButton elements in modified files have Tooltip wrappers
+      - PhotosTab delete tooltip should say "Delete"
+    acceptance_criteria:
+      - "Important only" renamed to "Pinned only" in Timeline and Gallery
+      - PhotosTab importance tooltip is conditional Pin/Unpin
+      - PhotosTab delete icon changed from CloseIcon to DeleteIcon
+      - All icon-only buttons in modified files have tooltips
+    depends_on: [1]
+    effort: 1
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Restyle NotesTab list to match QuickNotes layout
+    description: |
+      Restyle the NotesTab list view (frontend/src/sharedComponents/NotesTab.tsx) to match
+      the QuickNotes layout pattern. This affects both Canvas right sidebar notes and Sessions
+      tab notes since they share this component.
+
+      Current layout (NotesTab lines 206-254):
+      - Row of icon buttons (Star, Delete) ABOVE the note content
+      - Note content below
+      - Click anywhere on note opens editor
+
+      Target layout (matching QuickNotes.tsx lines 80-190):
+      - Note content on LEFT (flex: 1)
+      - Column of 3 icon buttons on RIGHT:
+        1. Edit (EditIcon/pencil) — opens note editor via onSelectNote
+        2. Pin (StarIcon/StarOutlineIcon) — toggles importance
+        3. Delete (DeleteIcon/trash) — deletes note
+      - Each button wrapped in Tooltip: "Edit", "Pin"/"Unpin", "Delete"
+      - Button styling matches QuickNotes: size="small", p: 0.25, fontSize 14-16
+
+      Key changes:
+      1. ListItemButton flexDirection from "column" to "row"
+      2. Note preview content in left flex container
+      3. Right column with 3 icon buttons
+      4. Edit button calls onSelectNote(note)
+      5. Keep flash animation for highlighted notes
+      6. Keep important note yellow border styling
+    acceptance_criteria:
+      - Notes list shows content on left, 3 icon buttons in column on right
+      - Edit button (pencil) opens the note editor
+      - Pin button toggles importance with conditional tooltip
+      - Delete button deletes the note
+      - All 3 buttons have tooltips
+      - Flash/highlight animation still works
+      - Important notes still show yellow border
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 1
+    title: Fix connections snippet truncation + remove tagged items border radius
+    description: |
+      Two small fixes:
+
+      Connections tab snippet truncation:
+      In PanelConnectionsTab.tsx line 170, snippet text displays raw mention
+      markup like @{6234-abcd-...}. Import getNotePreview from utils and process
+      the snippet before rendering. When called without itemsCache, getNotePreview
+      replaces @{uuid} with bold @mention text.
+
+      Change line 170 from displaying raw "{snippet}" to processing through
+      getNotePreview(snippet, undefined, 80) first.
+
+      Sessions tagged items border radius:
+      In TaggedItemsPanel.tsx:
+      - Line 175: Remove borderRadius: 1.5 from parent Box
+      - Line 186: Change borderRadius from conditional 6px/1.5 to 0
+      - Line 240: Remove borderRadius: "0 0 6px 6px" from Collapse content
+    acceptance_criteria:
+      - Connection tab snippets no longer show raw @{uuid} markup
+      - Mentions in snippets display as @mention (bold) or resolved names
+      - Tagged items panel has no rounded borders
+      - Expanded tagged item content also has no rounded borders
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: Timeline filter defaults + icon-only Open in X buttons
+    description: |
+      Two changes to Timeline.tsx:
+
+      Filter defaults:
+      - Change activeFilters init (line 67-69) from new Set(all types) to new Set()
+      - Update filter logic (line 176) from:
+          if (!activeFilters.has(e.parentItemType)) return false;
+        to:
+          if (activeFilters.size > 0 && !activeFilters.has(e.parentItemType)) return false;
+      - When no filters active, all entries show (empty = show all)
+      - Type chips all appear deselected by default
+
+      Icon-only "Open in X" buttons:
+      - Convert "Open in Canvas" Button (lines 505-520) to Tooltip + IconButton with MapIcon
+      - Convert "Open in Session" Button (lines 522-535) to Tooltip + IconButton with CalendarMonthIcon
+      - Move buttons to right side of Row 1 (title row) instead of separate Row 3
+      - Remove Row 3 box entirely (lines 503-536)
+      - All icon buttons must have tooltips
+    acceptance_criteria:
+      - Timeline type filter chips are all deselected by default
+      - When no filters active, all entries shown
+      - Open in Canvas is icon-only (MapIcon) with tooltip
+      - Open in Session is icon-only (CalendarMonthIcon) with tooltip
+      - Action buttons positioned on right side of title row
+      - Row 3 action button container removed
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 6
+    milestone: 2
+    title: Gallery Open in X icon buttons + sessions tagged items view on canvas
+    description: |
+      Add "Open in X" icon buttons to Gallery items and update Sessions tagged items.
+
+      Gallery:
+      - Add icon buttons to each gallery item's hover overlay (Gallery.tsx lines 268-310)
+      - Add a MapIcon button with tooltip "Open in Canvas" that navigates to canvas
+        with the parent item focused (setEditingItemId + navigate)
+      - If parentItemType is "session", also add CalendarMonthIcon "Open in Session"
+      - Position in the overlay bar alongside existing type chip and title
+
+      Sessions tagged items:
+      - In TaggedItemsPanel.tsx line 292-303, convert the "View on Canvas" text Button
+        to an icon-only IconButton with MapIcon and tooltip "View on Canvas"
+    acceptance_criteria:
+      - Gallery items have Open in Canvas icon button in hover overlay
+      - Session-type gallery items also have Open in Session icon button
+      - Clicking icon buttons navigates correctly
+      - All icon buttons have tooltips
+      - Sessions tagged items "View on Canvas" is icon-only with tooltip
+    depends_on: []
+    effort: 2
+    status: scoped
