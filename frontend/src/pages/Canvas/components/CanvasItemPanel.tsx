@@ -38,6 +38,7 @@ import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
 import { getNotePreview } from "../../../utils/getNotePreview";
+import { formatItemMarkdown } from "../../../utils/noteExport";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
@@ -380,6 +381,18 @@ export default function CanvasItemPanel({
     }
   }
 
+  function handleDownloadMarkdown() {
+    if (!item) return;
+    const markdown = formatItemMarkdown(item, notes, itemsCache);
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${item.title || "untitled"}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleAddNote() {
     const newNote = await createNoteMutation.mutateAsync({ content: "" });
     const { data: refreshed } = await refetchItem();
@@ -539,6 +552,7 @@ export default function CanvasItemPanel({
         onTitleChange={handleTitleChange}
         onClose={onClose}
         onDownloadPdf={handleDownloadPdf}
+        onDownloadMarkdown={handleDownloadMarkdown}
         onDeleteItem={handleOpenDeleteModal}
       />
 
