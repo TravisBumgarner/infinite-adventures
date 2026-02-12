@@ -8,7 +8,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
 import { keyframes } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -178,7 +177,7 @@ export default function NotesTab({
         ) : (
           <List sx={{ p: 0 }}>
             {notes.map((note) => (
-              <ListItemButton
+              <Box
                 key={note.id}
                 ref={(el: HTMLElement | null) => {
                   if (el) {
@@ -187,28 +186,34 @@ export default function NotesTab({
                     noteRefs.current.delete(note.id);
                   }
                 }}
-                disableRipple
                 sx={{
-                  mb: 1,
-                  py: 1.5,
-                  px: 2,
-                  flexDirection: "row",
-                  alignItems: "flex-start",
+                  display: "flex",
                   gap: 0.5,
-                  cursor: "default",
-                  bgcolor: note.isImportant ? "var(--color-surface1)" : "var(--color-surface0)",
+                  alignItems: "flex-start",
+                  mb: 1,
+                  bgcolor: note.isImportant ? "var(--color-surface1)" : "transparent",
                   border: note.isImportant
                     ? "1px solid var(--color-yellow)"
-                    : "1px solid var(--color-surface1)",
-                  "&:hover": {
-                    bgcolor: "var(--color-surface1)",
-                  },
+                    : "1px solid transparent",
+                  p: note.isImportant ? 0.5 : 0,
                   ...(flashingNoteId === note.id && {
                     animation: `${flashNote} 0.6s ease-in-out 2`,
                   }),
                 }}
               >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    py: 0.5,
+                    px: 1,
+                    fontSize: 13,
+                    color: "var(--color-text)",
+                    bgcolor: "var(--color-surface0)",
+                    overflow: "hidden",
+                    wordBreak: "break-word",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     sx={{
@@ -225,10 +230,7 @@ export default function NotesTab({
                   <Tooltip title="Edit">
                     <IconButton
                       size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectNote(note);
-                      }}
+                      onClick={() => onSelectNote(note)}
                       sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                     >
                       <EditIcon sx={{ fontSize: 14 }} />
@@ -237,10 +239,7 @@ export default function NotesTab({
                   <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
                     <IconButton
                       size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleImportant(note.id, !note.isImportant);
-                      }}
+                      onClick={() => onToggleImportant(note.id, !note.isImportant)}
                       sx={{
                         color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
                         p: 0.25,
@@ -256,17 +255,14 @@ export default function NotesTab({
                   <Tooltip title="Delete">
                     <IconButton
                       size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteNote(note.id);
-                      }}
+                      onClick={() => onDeleteNote(note.id)}
                       sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                     >
                       <DeleteIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
                 </Box>
-              </ListItemButton>
+              </Box>
             ))}
           </List>
         )}
