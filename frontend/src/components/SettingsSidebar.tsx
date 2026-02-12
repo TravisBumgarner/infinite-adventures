@@ -167,7 +167,7 @@ export function SettingsSidebar() {
           onClick={handleExport}
           disabled={exporting || !activeCanvasId}
         >
-          {exporting ? "Exporting..." : "Export Canvas"}
+          {exporting ? "Backing up..." : "Backup Canvas"}
         </Button>
         <Button
           variant="outlined"
