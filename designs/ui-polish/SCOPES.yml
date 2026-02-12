@@ -180,7 +180,7 @@ tasks:
       - Row 3 action button container removed
     depends_on: []
     effort: 2
-    status: scoped
+    status: testing
 
   - id: 6
     milestone: 2
