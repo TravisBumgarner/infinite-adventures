@@ -1,14 +1,15 @@
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
 import { keyframes } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, Note } from "shared";
@@ -176,7 +177,7 @@ export default function NotesTab({
         ) : (
           <List sx={{ p: 0 }}>
             {notes.map((note) => (
-              <ListItemButton
+              <Box
                 key={note.id}
                 ref={(el: HTMLElement | null) => {
                   if (el) {
@@ -185,20 +186,16 @@ export default function NotesTab({
                     noteRefs.current.delete(note.id);
                   }
                 }}
-                onClick={() => onSelectNote(note)}
                 sx={{
+                  display: "flex",
+                  gap: 0.5,
+                  alignItems: "flex-start",
                   mb: 1,
-                  py: 1.5,
-                  px: 2,
-                  flexDirection: "column",
-                  alignItems: "stretch",
-                  bgcolor: note.isImportant ? "var(--color-surface1)" : "var(--color-surface0)",
+                  bgcolor: note.isImportant ? "var(--color-surface1)" : "transparent",
                   border: note.isImportant
                     ? "1px solid var(--color-yellow)"
-                    : "1px solid var(--color-surface1)",
-                  "&:hover": {
-                    bgcolor: "var(--color-surface1)",
-                  },
+                    : "1px solid transparent",
+                  p: note.isImportant ? 0.5 : 0,
                   ...(flashingNoteId === note.id && {
                     animation: `${flashNote} 0.6s ease-in-out 2`,
                   }),
@@ -206,52 +203,66 @@ export default function NotesTab({
               >
                 <Box
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.25,
-                    mb: 0.5,
-                  }}
-                >
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleImportant(note.id, !note.isImportant);
-                    }}
-                    sx={{
-                      color: note.isImportant ? "var(--color-yellow)" : "var(--color-subtext0)",
-                      p: 0.25,
-                    }}
-                  >
-                    {note.isImportant ? (
-                      <StarIcon sx={{ fontSize: 16 }} />
-                    ) : (
-                      <StarOutlineIcon sx={{ fontSize: 16 }} />
-                    )}
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteNote(note.id);
-                    }}
-                    sx={{ color: "var(--color-subtext0)", p: 0.25 }}
-                  >
-                    <DeleteIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    whiteSpace: "pre-wrap",
+                    flex: 1,
+                    minWidth: 0,
+                    py: 0.5,
+                    px: 1,
+                    fontSize: 13,
+                    color: "var(--color-text)",
+                    bgcolor: "var(--color-surface0)",
+                    overflow: "hidden",
                     wordBreak: "break-word",
                   }}
-                  dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
-                />
-                <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
-                  Last edited on {new Date(note.updatedAt).toLocaleDateString()}
-                </Typography>
-              </ListItemButton>
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
+                  />
+                  <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
+                    Last edited on {new Date(note.updatedAt).toLocaleDateString()}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  <Tooltip title="Edit">
+                    <IconButton
+                      size="small"
+                      onClick={() => onSelectNote(note)}
+                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                    >
+                      <EditIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
+                    <IconButton
+                      size="small"
+                      onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                      sx={{
+                        color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
+                        p: 0.25,
+                      }}
+                    >
+                      {note.isImportant ? (
+                        <StarIcon sx={{ fontSize: 14 }} />
+                      ) : (
+                        <StarOutlineIcon sx={{ fontSize: 14 }} />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete">
+                    <IconButton
+                      size="small"
+                      onClick={() => onDeleteNote(note.id)}
+                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
             ))}
           </List>
         )}
