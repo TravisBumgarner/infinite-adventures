@@ -53,7 +53,7 @@ tasks:
       - No delete functionality on edges (no modal, no hover color change)
     depends_on: []
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 2
     github_issue: null
