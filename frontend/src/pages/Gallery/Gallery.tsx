@@ -233,10 +233,18 @@ export default function Gallery() {
                   onClick={() => handleOpenLightbox(entry, idx)}
                   sx={{
                     position: "relative",
+                    zIndex: 1,
                     borderRadius: 2,
                     overflow: "hidden",
+                    bgcolor: "var(--color-base)",
                     border: "1px solid var(--color-surface1)",
                     cursor: "pointer",
+                    transition: "transform 0.2s ease",
+                    "&:hover": {
+                      transform: "scale(1.2)",
+                      zIndex: 10,
+                      "& img": { objectFit: "contain" },
+                    },
                     "&:hover .gallery-overlay": { opacity: 1 },
                   }}
                 >
@@ -246,9 +254,7 @@ export default function Gallery() {
                     blurhash={entry.blurhash}
                     sx={{
                       width: "100%",
-                      aspectRatio: entry.aspectRatio ? String(entry.aspectRatio) : "1",
-                      minHeight: 140,
-                      maxHeight: 300,
+                      aspectRatio: "1",
                     }}
                   />
 
