@@ -29,7 +29,7 @@ tasks:
       - Backup and Import buttons are displayed horizontally, equal width
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 2
     github_issue: null
