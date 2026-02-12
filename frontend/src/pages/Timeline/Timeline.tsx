@@ -477,7 +477,7 @@ export default function Timeline() {
                           </IconButton>
                         </Tooltip>
                         {entry.parentItemType === "session" && (
-                          <Tooltip title="Open in Session">
+                          <Tooltip title="Open in Session Viewer">
                             <IconButton
                               size="small"
                               onClick={() => navigate(`/sessions/${entry.parentItemId}`)}

@@ -63,7 +63,7 @@ export default function PageToggle({ activePage }: PageToggleProps) {
         }}
       >
         <CalendarMonthIcon sx={{ fontSize: 16 }} />
-        Sessions
+        Session Viewer
       </Button>
       <Button
         size="small"
