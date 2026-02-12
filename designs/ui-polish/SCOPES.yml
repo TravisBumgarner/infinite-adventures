@@ -206,4 +206,4 @@ tasks:
       - Sessions tagged items "View on Canvas" is icon-only with tooltip
     depends_on: []
     effort: 2
-    status: implementing
+    status: completed
