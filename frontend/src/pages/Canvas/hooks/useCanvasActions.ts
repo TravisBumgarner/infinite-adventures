@@ -1,19 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
-import type { Connection, Edge, Node } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
 import { addTagToItem, fetchItem, fetchItems, fetchTags } from "../../../api/client";
-import {
-  useCreateItem,
-  useCreateLink,
-  useDeleteItem,
-  useDeleteLink,
-  useUpdateItem,
-} from "../../../hooks/mutations";
+import { useCreateItem, useDeleteItem, useUpdateItem } from "../../../hooks/mutations";
 import { queryKeys } from "../../../hooks/queries";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
+import { buildEdges } from "../../../utils/buildEdges";
 import { filterEdges, filterNodes } from "../../../utils/canvasFilter";
 import { findOpenPosition, unstackNodes } from "../../../utils/findOpenPosition";
 import { getSelectedNodePositions } from "../../../utils/multiSelect";
@@ -62,33 +57,6 @@ function toFlowNode(
   };
 }
 
-function buildEdges(
-  items: CanvasItem[],
-  cache: Map<string, CanvasItem>,
-  onDelete: (sourceId: string, targetId: string) => void,
-): Edge[] {
-  const edges: Edge[] = [];
-  for (const item of items) {
-    if (!item.linksTo) continue;
-    for (const link of item.linksTo) {
-      const targetItem = cache.get(link.id);
-      edges.push({
-        id: `${item.id}->${link.id}`,
-        source: item.id,
-        target: link.id,
-        type: "deletable",
-        style: { stroke: "var(--color-surface2)", strokeWidth: 1.5 },
-        data: {
-          onDelete,
-          sourceTitle: item.title,
-          targetTitle: targetItem?.title ?? "Unknown",
-        },
-      });
-    }
-  }
-  return edges;
-}
-
 export function useCanvasActions() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<CanvasItemNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -116,8 +84,6 @@ export function useCanvasActions() {
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
-  const createLinkMutation = useCreateLink(activeCanvasId ?? "");
-  const deleteLinkMutation = useDeleteLink(activeCanvasId ?? "");
 
   // Imperative query helpers that go through React Query's cache
   const fetchItemViaQuery = useCallback(
@@ -161,32 +127,6 @@ export function useCanvasActions() {
   const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
   const filteredEdges = useMemo(() => filterEdges(edges, visibleNodeIds), [edges, visibleNodeIds]);
 
-  // Handle edge deletion
-  const handleDeleteEdge = useCallback(
-    async (sourceId: string, targetId: string) => {
-      await deleteLinkMutation.mutateAsync({
-        sourceItemId: sourceId,
-        targetItemId: targetId,
-      });
-
-      // Refetch both items to get updated links
-      const [sourceItem, targetItem] = await Promise.all([
-        fetchItemViaQuery(sourceId),
-        fetchItemViaQuery(targetId),
-      ]);
-
-      const cache = useCanvasStore.getState().itemsCache;
-      const nextCache = new Map(cache);
-      nextCache.set(sourceItem.id, sourceItem);
-      nextCache.set(targetItem.id, targetItem);
-      setItemsCache(nextCache);
-
-      // Remove the edge immediately from UI
-      setEdges((eds) => eds.filter((e) => !(e.source === sourceId && e.target === targetId)));
-    },
-    [setEdges, setItemsCache, deleteLinkMutation, fetchItemViaQuery],
-  );
-
   // Fit viewport to show both source and target items
   const fitBothItems = useCallback(
     (sourceId: string, targetId: string) => {
@@ -211,14 +151,13 @@ export function useCanvasActions() {
       const cache = new Map(fullItems.map((i) => [i.id, i]));
       setItemsCache(cache);
       setNodes(fullItems.map((i) => toFlowNode(i, cache, fitBothItems)));
-      setEdges(buildEdges(fullItems, cache, handleDeleteEdge));
+      setEdges(buildEdges(fullItems));
     },
     [
       setNodes,
       setEdges,
       fitBothItems,
       setItemsCache,
-      handleDeleteEdge,
       fetchItemsViaQuery,
       fetchTagsViaQuery,
       fetchItemViaQuery,
@@ -226,7 +165,7 @@ export function useCanvasActions() {
   );
 
   // Ref to break render loop: mutation hooks return new objects each render,
-  // cascading through handleDeleteEdge → loadAllItems identity changes.
+  // cascading through loadAllItems identity changes.
   // Using a ref ensures the effect only fires when activeCanvasId changes.
   const loadAllItemsRef = useRef(loadAllItems);
   loadAllItemsRef.current = loadAllItems;
@@ -492,42 +431,6 @@ export function useCanvasActions() {
     [setItemsCache, updateItemMutation],
   );
 
-  // Handle edge creation by dragging between handles
-  const onConnect = useCallback(
-    async (connection: Connection) => {
-      const result = await createLinkMutation.mutateAsync({
-        sourceItemId: connection.source,
-        targetItemId: connection.target,
-      });
-      if (!result.created) return;
-
-      // Refetch both items to get updated links
-      const [sourceItem, targetItem] = await Promise.all([
-        fetchItemViaQuery(connection.source),
-        fetchItemViaQuery(connection.target),
-      ]);
-
-      const cache = useCanvasStore.getState().itemsCache;
-      const nextCache = new Map(cache);
-      nextCache.set(sourceItem.id, sourceItem);
-      nextCache.set(targetItem.id, targetItem);
-      setItemsCache(nextCache);
-
-      const allItems = Array.from(nextCache.values());
-      setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
-      setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
-    },
-    [
-      setNodes,
-      setEdges,
-      fitBothItems,
-      setItemsCache,
-      handleDeleteEdge,
-      createLinkMutation,
-      fetchItemViaQuery,
-    ],
-  );
-
   // Editor callbacks
   const handleSaved = useCallback(
     async (item: CanvasItem) => {
@@ -548,17 +451,9 @@ export function useCanvasActions() {
 
       const allItems = Array.from(nextCache.values());
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
-      setEdges(buildEdges(allItems, nextCache, handleDeleteEdge));
+      setEdges(buildEdges(allItems));
     },
-    [
-      setNodes,
-      setEdges,
-      fitBothItems,
-      setItemsCache,
-      handleDeleteEdge,
-      fetchItemViaQuery,
-      fetchItemsViaQuery,
-    ],
+    [setNodes, setEdges, fitBothItems, setItemsCache, fetchItemViaQuery, fetchItemsViaQuery],
   );
 
   const handleDeleted = useCallback(
@@ -636,25 +531,6 @@ export function useCanvasActions() {
     setNodes((nds) => nds.map((n) => (n.selected ? { ...n, selected: false } : n)));
   }, [setNodes]);
 
-  // Edge hover handlers
-  const onEdgeMouseEnter = useCallback(
-    (_event: React.MouseEvent, edge: Edge) => {
-      setEdges((eds) =>
-        eds.map((e) => (e.id === edge.id ? { ...e, data: { ...e.data, isHovered: true } } : e)),
-      );
-    },
-    [setEdges],
-  );
-
-  const onEdgeMouseLeave = useCallback(
-    (_event: React.MouseEvent, edge: Edge) => {
-      setEdges((eds) =>
-        eds.map((e) => (e.id === edge.id ? { ...e, data: { ...e.data, isHovered: false } } : e)),
-      );
-    },
-    [setEdges],
-  );
-
   return {
     // React Flow state
     nodes,
@@ -673,7 +549,6 @@ export function useCanvasActions() {
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,
-    onConnect,
     onPaneContextMenu,
     onNodeClick,
     onNodeContextMenu,
@@ -687,8 +562,6 @@ export function useCanvasActions() {
     clearSelection,
     onDrop,
     onDragOver,
-    onEdgeMouseEnter,
-    onEdgeMouseLeave,
 
     // Viewport key for fitView check
     viewportKey: activeCanvasId ? getViewportKey(activeCanvasId) : "",

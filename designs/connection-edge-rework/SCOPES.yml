@@ -1,0 +1,86 @@
+project: connection-edge-rework
+repo: travisbumgarner/infinite-adventures
+design_file: null # user-provided instructions, no design file
+scoping_date: 2026-02-12
+
+milestones:
+  - number: 1
+    title: "1. Connection Edge Rework"
+    description: Replace deletable edges with count badges and remove manual drag-to-connect
+    branch:
+      working: connection-edge-rework
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: null
+    milestone: 1
+    title: Replace DeletableEdge with CountEdge showing connection count
+    description: |
+      Replace the current `DeletableEdge` component with a new `CountEdge` component
+      that shows an always-visible badge with the number of links between two nodes.
+
+      **CountEdge component** (`frontend/src/pages/Canvas/components/CountEdge.tsx`):
+      - Renders a `BaseEdge` with a label badge at the midpoint
+      - Badge shows the connection count (passed via edge data)
+      - No delete functionality, no hover-to-turn-red behavior
+      - Badge should be small, unobtrusive, always visible (e.g. a small circle
+        with the number, styled with `--color-surface2` background)
+
+      **buildEdges changes** (`frontend/src/pages/Canvas/hooks/useCanvasActions.ts`):
+      - Deduplicate edges: for each pair of nodes (A, B), emit only ONE edge
+        regardless of whether A→B, B→A, or both exist
+      - Calculate count = number of directed link rows between the pair (1 or 2)
+      - Pass `count` in edge data instead of `onDelete`/`sourceTitle`/`targetTitle`
+      - Remove `onDelete` parameter from `buildEdges` signature
+
+      **Remove delete-related code**:
+      - Delete `DeletableEdge.tsx`
+      - Delete `DeleteLinkModal.tsx` and remove from modal registry (`modals/types.ts`,
+        `modals/store.ts`, `modals/components/`)
+      - Remove `handleDeleteEdge` callback from `useCanvasActions`
+      - Remove `onEdgeMouseEnter` / `onEdgeMouseLeave` callbacks and their ReactFlow
+        props in `Canvas.tsx`
+      - Remove `useDeleteLink` usage from `useCanvasActions` (keep the hook/API if
+        used elsewhere, just remove from canvas)
+
+      **Update edge type registration** in `Canvas.tsx`:
+      - Change `edgeTypes` from `{ deletable: DeletableEdge }` to use the new CountEdge
+    acceptance_criteria:
+      - Edges show an always-visible count badge instead of an X button
+      - Only one edge rendered per node pair (deduplicated)
+      - Count reflects number of directed links (1 or 2) between the pair
+      - No delete functionality on edges (no modal, no hover color change)
+    depends_on: []
+    effort: 3
+    status: completed
+
+  - id: 2
+    github_issue: null
+    milestone: 1
+    title: Remove manual drag-to-connect from canvas
+    description: |
+      Connections should only be created via @mentions in notes. Remove the ability
+      to create connections by dragging between node handles on the canvas.
+
+      **useCanvasActions changes**:
+      - Remove the `onConnect` callback entirely
+      - Remove `createLinkMutation` (`useCreateLink`) if only used by `onConnect`
+        (check for other usages first)
+
+      **Canvas.tsx changes**:
+      - Remove `onConnect` from ReactFlow props
+      - This alone prevents new edge creation via drag. ReactFlow won't show the
+        connection line while dragging if `onConnect` is not provided.
+
+      **Cleanup**:
+      - If `edgeConnect.ts` (`appendMentionIfNew`) is no longer referenced after
+        removing `onConnect`, delete it. Check imports first.
+      - Remove `onConnect` from the returned object of `useCanvasActions`
+    acceptance_criteria:
+      - Users cannot create connections by dragging between nodes
+      - Existing @mention-based connection creation continues to work
+      - No orphan code left from the removed drag-to-connect feature
+    depends_on: [1]
+    effort: 1
+    status: scoped

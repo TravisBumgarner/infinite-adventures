@@ -3,7 +3,6 @@ import type { Photo } from "shared";
 // Modal IDs
 export const MODAL_ID = {
   DELETE_ITEM: "DELETE_ITEM",
-  DELETE_LINK: "DELETE_LINK",
   BULK_DELETE: "BULK_DELETE",
   LIGHTBOX: "LIGHTBOX",
   ITEM_SETTINGS: "ITEM_SETTINGS",
@@ -18,13 +17,6 @@ export interface DeleteItemModalProps {
   id: typeof MODAL_ID.DELETE_ITEM;
   itemId: string;
   itemTitle: string;
-  onConfirm: () => void;
-}
-
-export interface DeleteLinkModalProps {
-  id: typeof MODAL_ID.DELETE_LINK;
-  sourceTitle: string;
-  targetTitle: string;
   onConfirm: () => void;
 }
 
@@ -63,7 +55,6 @@ export interface CreateCanvasModalProps {
 // Union type of all modals
 export type ActiveModal =
   | DeleteItemModalProps
-  | DeleteLinkModalProps
   | BulkDeleteModalProps
   | LightboxModalProps
   | ItemSettingsModalProps
