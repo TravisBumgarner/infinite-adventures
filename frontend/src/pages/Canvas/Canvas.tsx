@@ -17,7 +17,7 @@ import type { CanvasItemNodeData } from "./components/CanvasItemNode";
 import CanvasItemNodeComponent from "./components/CanvasItemNode";
 import CanvasItemPanel from "./components/CanvasItemPanel";
 import ContextMenu from "./components/ContextMenu";
-import DeletableEdge from "./components/DeletableEdge";
+import CountEdge from "./components/CountEdge";
 import NodeContextMenu from "./components/NodeContextMenu";
 import SelectionSync from "./components/SelectionBox";
 import SelectionContextMenu from "./components/SelectionContextMenu";
@@ -29,7 +29,7 @@ const nodeTypes: NodeTypes = {
 };
 
 const edgeTypes: EdgeTypes = {
-  deletable: DeletableEdge,
+  count: CountEdge,
 };
 
 export default function Canvas() {
@@ -74,7 +74,6 @@ export default function Canvas() {
     handleToolbarCreate,
     handleViewAll,
     handleUnstack,
-    onConnect,
     onPaneContextMenu,
     onNodeClick,
     onNodeContextMenu,
@@ -89,8 +88,6 @@ export default function Canvas() {
     viewportKey,
     onDrop,
     onDragOver,
-    onEdgeMouseEnter,
-    onEdgeMouseLeave,
   } = useCanvasActions();
 
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
@@ -212,10 +209,7 @@ export default function Canvas() {
         onNodeContextMenu={onNodeContextMenu}
         onSelectionContextMenu={onSelectionContextMenu}
         onNodeDragStop={onNodeDragStop}
-        onConnect={onConnect}
         onMoveEnd={onMoveEnd}
-        onEdgeMouseEnter={onEdgeMouseEnter}
-        onEdgeMouseLeave={onEdgeMouseLeave}
         selectionOnDrag
         panOnDrag={[1, 2]}
         deleteKeyCode={null}
