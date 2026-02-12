@@ -178,7 +178,7 @@ export default function Gallery() {
           }}
         >
           <Chip
-            label="Important only"
+            label="Pinned only"
             icon={<StarIcon sx={{ fontSize: 14 }} />}
             size="small"
             onClick={() => setImportantOnly(!importantOnly)}
@@ -245,7 +245,7 @@ export default function Gallery() {
                     }}
                   />
 
-                  {/* Star badge */}
+                  {/* Pin badge */}
                   {entry.isImportant && (
                     <Box
                       sx={{

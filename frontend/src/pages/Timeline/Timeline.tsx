@@ -319,9 +319,9 @@ export default function Timeline() {
               </ToggleButton>
             </ToggleButtonGroup>
 
-            {/* Important only filter */}
+            {/* Pinned only filter */}
             <Chip
-              label="Important only"
+              label="Pinned only"
               icon={<StarIcon sx={{ fontSize: 14 }} />}
               size="small"
               onClick={() => setImportantOnly(!importantOnly)}
