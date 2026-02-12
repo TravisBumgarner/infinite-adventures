@@ -1,12 +1,13 @@
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import MapIcon from "@mui/icons-material/Map";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useQueryClient } from "@tanstack/react-query";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -288,18 +289,20 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                               No additional details
                             </Typography>
                           ) : null}
-                          <Button
-                            size="small"
-                            startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-                            onClick={() => handleViewOnCanvas(tagged.id)}
-                            sx={{
-                              mt: 1,
-                              textTransform: "none",
-                              color: "var(--color-subtext0)",
-                            }}
-                          >
-                            View on Canvas
-                          </Button>
+                          <Tooltip title="View on Canvas">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewOnCanvas(tagged.id)}
+                              sx={{
+                                mt: 1,
+                                color: "var(--color-subtext0)",
+                                "&:hover": { color: "var(--color-text)" },
+                                p: 0.5,
+                              }}
+                            >
+                              <MapIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
                         </>
                       ) : null}
                     </Box>
