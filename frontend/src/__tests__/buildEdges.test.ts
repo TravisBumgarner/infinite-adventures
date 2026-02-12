@@ -27,12 +27,8 @@ describe("buildEdges", () => {
       linksTo: [{ id: "b", title: "B", type: "person" }],
     });
     const b = makeItem({ id: "b", title: "B" });
-    const cache = new Map([
-      ["a", a],
-      ["b", b],
-    ]);
 
-    const edges = buildEdges([a, b], cache);
+    const edges = buildEdges([a, b]);
     expect(edges).toHaveLength(1);
     expect(edges[0]!.data?.count).toBe(1);
   });
@@ -48,12 +44,8 @@ describe("buildEdges", () => {
       title: "B",
       linksTo: [{ id: "a", title: "A", type: "person" }],
     });
-    const cache = new Map([
-      ["a", a],
-      ["b", b],
-    ]);
 
-    const edges = buildEdges([a, b], cache);
+    const edges = buildEdges([a, b]);
     expect(edges).toHaveLength(1);
     expect(edges[0]!.data?.count).toBe(2);
   });
@@ -61,12 +53,8 @@ describe("buildEdges", () => {
   it("returns no edges when there are no links", () => {
     const a = makeItem({ id: "a", title: "A" });
     const b = makeItem({ id: "b", title: "B" });
-    const cache = new Map([
-      ["a", a],
-      ["b", b],
-    ]);
 
-    const edges = buildEdges([a, b], cache);
+    const edges = buildEdges([a, b]);
     expect(edges).toHaveLength(0);
   });
 });

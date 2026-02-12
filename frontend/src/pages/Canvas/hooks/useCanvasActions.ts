@@ -151,7 +151,7 @@ export function useCanvasActions() {
       const cache = new Map(fullItems.map((i) => [i.id, i]));
       setItemsCache(cache);
       setNodes(fullItems.map((i) => toFlowNode(i, cache, fitBothItems)));
-      setEdges(buildEdges(fullItems, cache));
+      setEdges(buildEdges(fullItems));
     },
     [
       setNodes,
@@ -165,7 +165,7 @@ export function useCanvasActions() {
   );
 
   // Ref to break render loop: mutation hooks return new objects each render,
-  // cascading through handleDeleteEdge → loadAllItems identity changes.
+  // cascading through loadAllItems identity changes.
   // Using a ref ensures the effect only fires when activeCanvasId changes.
   const loadAllItemsRef = useRef(loadAllItems);
   loadAllItemsRef.current = loadAllItems;
@@ -451,7 +451,7 @@ export function useCanvasActions() {
 
       const allItems = Array.from(nextCache.values());
       setNodes(allItems.map((i) => toFlowNode(i, nextCache, fitBothItems)));
-      setEdges(buildEdges(allItems, nextCache));
+      setEdges(buildEdges(allItems));
     },
     [setNodes, setEdges, fitBothItems, setItemsCache, fetchItemViaQuery, fetchItemsViaQuery],
   );

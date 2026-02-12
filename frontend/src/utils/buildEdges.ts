@@ -6,7 +6,7 @@ import type { CanvasItem } from "shared";
  * For each pair of nodes (A, B), emits only ONE edge regardless of direction,
  * with a count reflecting how many directed links exist (1 or 2).
  */
-export function buildEdges(items: CanvasItem[], _cache: Map<string, CanvasItem>): Edge[] {
+export function buildEdges(items: CanvasItem[]): Edge[] {
   const pairCounts = new Map<string, { source: string; target: string; count: number }>();
 
   for (const item of items) {
