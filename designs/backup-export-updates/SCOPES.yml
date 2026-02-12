@@ -1,0 +1,62 @@
+project: backup-export-updates
+repo: travisbumgarner/infinite-adventures
+design_file: null # user-provided instructions, no design file
+scoping_date: 2026-02-12
+
+milestones:
+  - number: 1
+    title: "1. Backup/Export UI Updates"
+    description: Rename export to backup in settings, horizontalize buttons, add Export submenu with PDF and Markdown to item panel
+    branch:
+      working: backup-export-updates
+      base: main
+
+tasks:
+  - id: 1
+    github_issue: null
+    milestone: 1
+    title: Rename "Export Canvas" to "Backup Canvas" and lay out buttons horizontally
+    description: |
+      In `frontend/src/components/SettingsSidebar.tsx`, the Data section currently has
+      two vertically stacked buttons: "Export Canvas" and "Import Canvas".
+
+      - Rename "Export Canvas" to "Backup Canvas" (and "Exporting..." to "Backing up...").
+      - Change the container from vertical (`flexDirection: column`) to horizontal
+        (`flexDirection: row`) so the two buttons sit side by side.
+      - Both buttons should share the available width equally.
+    acceptance_criteria:
+      - Button label reads "Backup Canvas" (and "Backing up..." while in progress)
+      - Backup and Import buttons are displayed horizontally, equal width
+    depends_on: []
+    effort: 1
+    status: implementing
+
+  - id: 2
+    github_issue: null
+    milestone: 1
+    title: Replace "Download PDF" with Export submenu (PDF + Markdown) in PanelHeader
+    description: |
+      In `frontend/src/pages/Canvas/components/PanelHeader.tsx`, the three-dot menu
+      currently has a flat "Download PDF" item. Replace it with an "Export" parent item
+      that opens a nested submenu containing "PDF" and "Markdown".
+
+      **PanelHeader changes:**
+      - Add a new `onDownloadMarkdown` callback prop.
+      - Replace the "Download PDF" `MenuItem` with an "Export ▸" item that opens a
+        nested `Menu` (same hover pattern used in `ContextMenu.tsx`).
+      - The submenu has two items: "PDF" (calls `onDownloadPdf`) and "Markdown"
+        (calls `onDownloadMarkdown`). Both close the menu after firing.
+
+      **CanvasItemPanel changes (`CanvasItemPanel.tsx`):**
+      - Add `handleDownloadMarkdown()` that builds a Markdown string for the current
+        item (title as `# heading`, type badge, notes with resolved `@{id}` mentions,
+        connections list) and triggers a file download as `<title>.md`.
+      - Pass the new handler to `PanelHeader` via `onDownloadMarkdown`.
+    acceptance_criteria:
+      - "Download PDF" is replaced by "Export ▸" with a nested submenu
+      - Submenu contains "PDF" and "Markdown" options
+      - "PDF" behaves identically to the old "Download PDF"
+      - "Markdown" downloads a `.md` file with title, type, notes (mentions resolved), and connections
+    depends_on: []
+    effort: 2
+    status: scoped
