@@ -460,16 +460,6 @@ export default function Timeline() {
                         >
                           {entry.parentItemTitle}
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "var(--color-overlay0)",
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {formatTimestamp(ts)}
-                        </Typography>
                         <Tooltip title="Open in Canvas">
                           <IconButton
                             size="small"
@@ -503,7 +493,12 @@ export default function Timeline() {
                         )}
                       </Box>
 
-                      {/* Row 2: full content */}
+                      {/* Row 2: date */}
+                      <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+                        {formatTimestamp(ts)}
+                      </Typography>
+
+                      {/* Row 3: full content */}
                       {entry.kind === "photo" ? (
                         <BlurImage
                           src={entry.photoUrl!}
