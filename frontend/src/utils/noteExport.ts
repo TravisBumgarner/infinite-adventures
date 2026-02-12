@@ -1,4 +1,4 @@
-import type { CanvasItem } from "shared";
+import type { CanvasItem, Note } from "shared";
 
 /**
  * Resolve @{id} mentions in text to @title format using the cache.
@@ -57,4 +57,16 @@ export function formatItemExport(item: CanvasItem, itemsCache: Map<string, Canva
   }
 
   return parts.join("\n");
+}
+
+/**
+ * Format an item with its notes and connections as a Markdown document.
+ * Strips HTML tags from note content and resolves @{id} mentions.
+ */
+export function formatItemMarkdown(
+  _item: CanvasItem,
+  _notes: Note[],
+  _itemsCache: Map<string, CanvasItem>,
+): string {
+  return "";
 }
