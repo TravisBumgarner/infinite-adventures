@@ -13,13 +13,11 @@ import {
   addTagToItem,
   createCanvas,
   createItem,
-  createLink,
   createNote,
   createQuickNote,
   createTag,
   deleteCanvas,
   deleteItem,
-  deleteLink,
   deleteNote,
   deletePhoto,
   deleteQuickNote,
@@ -254,42 +252,6 @@ export function useRemoveTagFromItem(itemId: string, canvasId: string) {
     mutationFn: (tagId: string) => removeTagFromItem(itemId, tagId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
-      qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
-    },
-  });
-}
-
-// --- Link mutations ---
-
-export function useCreateLink(canvasId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ sourceItemId, targetItemId }: { sourceItemId: string; targetItemId: string }) =>
-      createLink(sourceItemId, targetItemId),
-    onSuccess: (_data, { sourceItemId, targetItemId }) => {
-      qc.invalidateQueries({
-        queryKey: queryKeys.items.detail(sourceItemId),
-      });
-      qc.invalidateQueries({
-        queryKey: queryKeys.items.detail(targetItemId),
-      });
-      qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
-    },
-  });
-}
-
-export function useDeleteLink(canvasId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ sourceItemId, targetItemId }: { sourceItemId: string; targetItemId: string }) =>
-      deleteLink(sourceItemId, targetItemId),
-    onSuccess: (_data, { sourceItemId, targetItemId }) => {
-      qc.invalidateQueries({
-        queryKey: queryKeys.items.detail(sourceItemId),
-      });
-      qc.invalidateQueries({
-        queryKey: queryKeys.items.detail(targetItemId),
-      });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
     },
   });
