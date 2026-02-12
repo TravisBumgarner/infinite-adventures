@@ -10,6 +10,7 @@ import type { CanvasItem, CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
+import { getNotePreview } from "../../../utils/getNotePreview";
 
 interface PanelConnectionsTabProps {
   item: CanvasItem;
@@ -166,9 +167,10 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                       whiteSpace: "nowrap",
                       width: "100%",
                     }}
-                  >
-                    "{snippet}"
-                  </Typography>
+                    dangerouslySetInnerHTML={{
+                      __html: `"${getNotePreview(snippet, undefined, 80)}"`,
+                    }}
+                  />
                 )}
               </ListItemButton>
             );
