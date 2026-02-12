@@ -78,7 +78,7 @@ tasks:
       - All icon-only buttons in modified files have tooltips
     depends_on: [1]
     effort: 1
-    status: scoped
+    status: implementing
 
   - id: 3
     milestone: 1

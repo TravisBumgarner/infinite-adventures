@@ -1,5 +1,5 @@
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
 import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
@@ -270,7 +270,7 @@ export default function PhotosTab({
                       )}
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Mark as important" placement="top">
+                  <Tooltip title={photo.isImportant ? "Unpin" : "Pin"} placement="top">
                     <IconButton
                       size="small"
                       onClick={() => onToggleImportant(photo.id)}
@@ -293,7 +293,7 @@ export default function PhotosTab({
                       )}
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Delete photo" placement="top">
+                  <Tooltip title="Delete" placement="top">
                     <IconButton
                       size="small"
                       onClick={() => onDelete(photo.id)}
@@ -309,7 +309,7 @@ export default function PhotosTab({
                         zIndex: 2,
                       }}
                     >
-                      <CloseIcon sx={{ fontSize: 14 }} />
+                      <DeleteIcon sx={{ fontSize: 14 }} />
                     </IconButton>
                   </Tooltip>
                 </Box>
