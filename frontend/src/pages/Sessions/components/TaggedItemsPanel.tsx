@@ -172,7 +172,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                   }}
                   sx={{
                     mb: 1,
-                    borderRadius: 1.5,
                     transition: "box-shadow 0.3s, background-color 0.3s",
                     ...(isHighlighted && {
                       boxShadow: "0 0 0 2px var(--color-blue)",
@@ -183,7 +182,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                   <ListItemButton
                     onClick={() => handleTaggedItemToggle(tagged.id)}
                     sx={{
-                      borderRadius: isExpanded ? "6px 6px 0 0" : 1.5,
+                      borderRadius: 0,
                       border: "1px solid var(--color-surface1)",
                       borderBottom: isExpanded ? "none" : undefined,
                       bgcolor: "var(--color-base)",
@@ -237,7 +236,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       sx={{
                         border: "1px solid var(--color-surface1)",
                         borderTop: "none",
-                        borderRadius: "0 0 6px 6px",
+                        borderRadius: 0,
                         bgcolor: "var(--color-surface0)",
                         p: 2,
                       }}
