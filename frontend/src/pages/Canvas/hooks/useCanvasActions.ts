@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import type { Connection, Edge, Node } from "@xyflow/react";
+import type { Connection, Edge, Node, NodeChange } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
@@ -90,11 +90,49 @@ function buildEdges(
 }
 
 export function useCanvasActions() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<CanvasItemNodeData>>([]);
+  const [nodes, setNodes, baseOnNodesChange] = useNodesState<Node<CanvasItemNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useReactFlow();
   const initialized = useRef(false);
   const queryClient = useQueryClient();
+
+  // Track Meta/Ctrl key state for Cmd+click deselect
+  const metaHeldRef = useRef(false);
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "Meta" || e.key === "Control") metaHeldRef.current = true;
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === "Meta" || e.key === "Control") metaHeldRef.current = false;
+    };
+    document.addEventListener("keydown", down);
+    document.addEventListener("keyup", up);
+    return () => {
+      document.removeEventListener("keydown", down);
+      document.removeEventListener("keyup", up);
+    };
+  }, []);
+
+  // Wrap onNodesChange to toggle deselect on Cmd+click
+  const onNodesChange = useCallback(
+    (changes: NodeChange<Node<CanvasItemNodeData>>[]) => {
+      if (metaHeldRef.current) {
+        const patched = changes.map((c) => {
+          if (c.type === "select" && c.selected) {
+            const node = nodes.find((n) => n.id === c.id);
+            if (node?.selected) {
+              return { ...c, selected: false };
+            }
+          }
+          return c;
+        });
+        baseOnNodesChange(patched);
+      } else {
+        baseOnNodesChange(changes);
+      }
+    },
+    [nodes, baseOnNodesChange],
+  );
 
   const {
     setItemsCache,
@@ -354,27 +392,16 @@ export function useCanvasActions() {
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  // Track pre-click selection so we can toggle on Cmd+click.
-  // nodesRef captures the selection state before React Flow processes the click.
-  const nodesRef = useRef(nodes);
-  nodesRef.current = nodes;
-
-  // Left-click a node to open the item panel, or toggle selection on Cmd/Ctrl+click
+  // Left-click a node to open the item panel; Cmd/Ctrl+click is handled by
+  // the wrapped onNodesChange which toggles selection.
   const onNodeClick = useCallback(
     (event: MouseEvent | React.MouseEvent, node: Node) => {
       if (event.metaKey || event.ctrlKey) {
-        const wasSelected = nodesRef.current.find((n) => n.id === node.id)?.selected;
-        if (wasSelected) {
-          // Defer so it runs after React Flow's internal selection update
-          requestAnimationFrame(() => {
-            setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, selected: false } : n)));
-          });
-        }
         return;
       }
       setEditingItemId(node.id);
     },
-    [setEditingItemId, setNodes],
+    [setEditingItemId],
   );
 
   // Right-click a node to open context menu
