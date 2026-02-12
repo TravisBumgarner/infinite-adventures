@@ -162,13 +162,12 @@ export default function PanelHeader({
           onMouseLeave={() => {
             exportTimeout.current = setTimeout(() => setExportAnchor(null), 150);
           }}
-          sx={{ justifyContent: "space-between" }}
         >
           <ListItemIcon>
             <FileDownloadIcon fontSize="small" />
           </ListItemIcon>
           Export
-          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: 1 }}>
+          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: "auto" }}>
             ▸
           </Typography>
         </MenuItem>
