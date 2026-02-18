@@ -49,7 +49,7 @@ tasks:
       - UpdateNoteInputSchema includes optional snapshot boolean
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 3
     milestone: 1
