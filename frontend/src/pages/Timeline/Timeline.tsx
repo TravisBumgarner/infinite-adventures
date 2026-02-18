@@ -49,6 +49,11 @@ function getDateKey(isoString: string): string {
   return new Date(isoString).toDateString();
 }
 
+function toLocalDateString(isoString: string): string {
+  const d = new Date(isoString);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function timelineNotePreview(content: string): string {
   return getNotePreview(content, undefined, 0);
 }
@@ -133,7 +138,7 @@ export default function Timeline() {
       allEntries.filter((e) => {
         if (activeFilters.size > 0 && !activeFilters.has(e.parentItemType)) return false;
         if (selectedDate) {
-          const entryDate = e.createdAt.slice(0, 10);
+          const entryDate = toLocalDateString(e.createdAt);
           if (entryDate !== selectedDate) return false;
         }
         if (importantOnly && !e.isImportant) return false;

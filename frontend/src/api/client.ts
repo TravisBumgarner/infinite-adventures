@@ -134,7 +134,11 @@ export function fetchTimelineCounts(
   start: string,
   end: string,
 ): Promise<TimelineDayCounts> {
-  const params = new URLSearchParams({ start, end });
+  const params = new URLSearchParams({
+    start,
+    end,
+    tzOffset: String(new Date().getTimezoneOffset()),
+  });
   return request<TimelineDayCounts>(`/canvases/${canvasId}/timeline/counts?${params}`);
 }
 

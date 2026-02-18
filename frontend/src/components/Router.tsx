@@ -2,6 +2,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Canvas from "../pages/Canvas/Canvas";
+import CharlieView from "../pages/CharlieView";
 import Gallery from "../pages/Gallery";
 import Login from "../pages/Login/Login.js";
 import Marketing from "../pages/Marketing/Marketing";
@@ -132,6 +133,18 @@ export default function Router() {
             <MemberLayout>
               <ReactFlowProvider>
                 <TreeView />
+              </ReactFlowProvider>
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/charlie"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <ReactFlowProvider>
+                <CharlieView />
               </ReactFlowProvider>
             </MemberLayout>
           </MemberRoute>
