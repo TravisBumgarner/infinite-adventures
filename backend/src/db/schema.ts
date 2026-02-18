@@ -104,6 +104,23 @@ export const notes = pgTable(
 );
 
 // ============================================
+// Note History (snapshots of note content)
+// ============================================
+
+export const noteHistory = pgTable(
+  "note_history",
+  {
+    id: text("id").primaryKey(),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    snapshotAt: text("snapshot_at").notNull(),
+  },
+  (table) => [index("note_history_note_id_idx").on(table.noteId)],
+);
+
+// ============================================
 // Canvas Items (base table)
 // ============================================
 
@@ -265,3 +282,5 @@ export type Tag = typeof tags.$inferSelect;
 export type InsertTag = typeof tags.$inferInsert;
 export type CanvasItemTag = typeof canvasItemTags.$inferSelect;
 export type InsertCanvasItemTag = typeof canvasItemTags.$inferInsert;
+export type NoteHistory = typeof noteHistory.$inferSelect;
+export type InsertNoteHistory = typeof noteHistory.$inferInsert;
