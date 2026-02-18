@@ -149,21 +149,25 @@ export async function getTimelineDayCounts(
   canvasId: string,
   startDate: string,
   endDate: string,
+  tzOffset?: number,
 ): Promise<Record<string, number>> {
   const db = getDb();
 
-  const dateExpr = sql`substr(${notes.createdAt}, 1, 10)`;
+  // tzOffset is the user's getTimezoneOffset() in minutes (e.g. 300 for UTC-5).
+  // We subtract it to convert UTC → local: timestamp - interval '300 minutes' for UTC-5.
+  const offsetMinutes = tzOffset ?? 0;
+  const noteDateExpr = sql`to_char(${notes.createdAt}::timestamptz - interval '${sql.raw(String(offsetMinutes))} minutes', 'YYYY-MM-DD')`;
   const noteRows = await db
     .select({
-      day: dateExpr.as("day"),
+      day: noteDateExpr.as("day"),
       count: sql<number>`count(*)`.as("count"),
     })
     .from(notes)
     .innerJoin(canvasItems, eq(notes.canvasItemId, canvasItems.id))
-    .where(and(eq(canvasItems.canvasId, canvasId), between(dateExpr, startDate, endDate)))
-    .groupBy(dateExpr);
+    .where(and(eq(canvasItems.canvasId, canvasId), between(noteDateExpr, startDate, endDate)))
+    .groupBy(noteDateExpr);
 
-  const photoDateExpr = sql`substr(${photos.createdAt}, 1, 10)`;
+  const photoDateExpr = sql`to_char(${photos.createdAt}::timestamptz - interval '${sql.raw(String(offsetMinutes))} minutes', 'YYYY-MM-DD')`;
   const photoRows = await db
     .select({
       day: photoDateExpr.as("day"),
