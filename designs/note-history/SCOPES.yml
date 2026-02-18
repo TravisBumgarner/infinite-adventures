@@ -70,7 +70,7 @@ tasks:
       - Unit tests for snapshot creation, listing, and deduplication
     depends_on: [1, 2]
     effort: 2
-    status: scoped
+    status: testing
 
   - id: 4
     milestone: 1
