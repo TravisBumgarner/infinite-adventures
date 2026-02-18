@@ -1,0 +1,141 @@
+project: Note History
+design_file: null # scoped from user description, no formal design file
+scoping_date: 2026-02-18
+
+milestones:
+  - number: 1
+    title: "1. Note History — Backend"
+    description: Database schema, shared types, service layer, and API routes for note history snapshots
+    branch:
+      working: task-1-note-history-backend
+      base: main
+
+  - number: 2
+    title: "2. Note History — Frontend"
+    description: API client, history modal UI, snapshot throttling, and integration into NotesTab
+    branch:
+      working: task-5-note-history-frontend
+      base: task-1-note-history-backend
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Add note_history table and Drizzle migration
+    description: |
+      Add a `note_history` table to `backend/src/db/schema.ts` with columns: id (text PK),
+      noteId (FK → notes.id CASCADE), content (text), snapshotAt (text ISO timestamp).
+      Index on noteId. Generate migration via `drizzle-kit generate`.
+    acceptance_criteria:
+      - note_history table defined in schema.ts with all columns
+      - Foreign key to notes.id with ON DELETE CASCADE
+      - Index on noteId
+      - Migration file generated and applies cleanly
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 2
+    milestone: 1
+    title: Add shared NoteHistoryEntry type and snapshot flag on UpdateNoteInput
+    description: |
+      Add `NoteHistoryEntrySchema` and `NoteHistoryEntry` type to `shared/src/index.ts`.
+      Fields: id, noteId, content, snapshotAt.
+
+      Also add an optional `snapshot: boolean` field to `UpdateNoteInputSchema`. When true,
+      the backend will create a history snapshot before applying the content change. The
+      frontend controls when to set this flag based on a time threshold.
+    acceptance_criteria:
+      - NoteHistoryEntrySchema and NoteHistoryEntry exported from shared
+      - UpdateNoteInputSchema includes optional snapshot boolean
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Add note history service and snapshot-on-update logic
+    description: |
+      Create `noteHistoryService.ts` with `createSnapshot` and `listHistory` functions.
+      Modify `noteService.updateNote` to snapshot old content before applying content changes,
+      but ONLY when `input.snapshot === true`.
+
+      Even when snapshot is requested, guard against identical content — if old content
+      matches new content, skip the snapshot. This is a backend safety net; the primary
+      throttling happens on the frontend.
+    acceptance_criteria:
+      - createSnapshot and listHistory functions implemented
+      - updateNote snapshots old content only when input.snapshot is true
+      - No snapshot when content is identical even if snapshot flag is set
+      - No snapshot for isImportant-only updates
+      - Unit tests for snapshot creation, listing, and deduplication
+    depends_on: [1, 2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 1
+    title: Add note history API route
+    description: |
+      Add `GET /api/notes/:noteId/history` route returning history entries newest first.
+      Use existing auth and ownership patterns. Register in notes router.
+    acceptance_criteria:
+      - GET /notes/:noteId/history returns history entries
+      - Auth and ownership checks enforced
+      - Route tests cover authenticated list, empty history, unauthorized access
+    depends_on: [3]
+    effort: 1
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: Add frontend API client and React Query hook for note history
+    description: |
+      Add `fetchNoteHistory(noteId)` to the API client and `useNoteHistory(noteId)`
+      React Query hook. Query is disabled when noteId is null.
+    acceptance_criteria:
+      - fetchNoteHistory function in API client
+      - useNoteHistory hook with proper query key and enabled logic
+    depends_on: [4]
+    effort: 1
+    status: scoped
+
+  - id: 6
+    milestone: 2
+    title: Create NoteHistoryModal component
+    description: |
+      Modal showing a scrollable list of note history entries (newest first).
+      Each entry shows timestamp, content preview (expandable), and Copy/Revert buttons.
+      Copy puts raw HTML on clipboard. Revert calls onRevert callback and closes.
+      Uses MUI Dialog, ~600px max width, 80vh max height.
+    acceptance_criteria:
+      - Displays history entries with timestamps and content previews
+      - Copy button copies content to clipboard
+      - Revert button calls onRevert with selected content and closes modal
+      - Empty state and loading spinner handled
+    depends_on: [5]
+    effort: 2
+    status: scoped
+
+  - id: 7
+    milestone: 2
+    title: Add history icon to NotesTab and wire up snapshot throttling + revert flow
+    description: |
+      Add History icon button to each note's action column in NotesTab list view.
+      Track which note's history modal is open. Add onRevertNote prop that
+      CanvasItemPanel wires to updateNote mutation.
+
+      **Snapshot throttling:** In CanvasItemPanel, maintain a `lastSnapshotAt` map (ref)
+      keyed by noteId. When the auto-save debounce fires, check if
+      `Date.now() - lastSnapshotAt[noteId] > SNAPSHOT_THRESHOLD` (e.g. 5 minutes).
+      If so, pass `snapshot: true` in the updateNote payload and update the timestamp.
+      Otherwise, save normally without the snapshot flag.
+
+      Handle edge case where reverted note is currently in edit mode (refresh editor content).
+    acceptance_criteria:
+      - History icon appears in each note's action buttons
+      - Clicking opens NoteHistoryModal for that note
+      - Auto-save only passes snapshot: true when threshold time has elapsed since last snapshot
+      - Revert updates note via existing mutation and refreshes UI
+    depends_on: [6]
+    effort: 2
+    status: scoped
