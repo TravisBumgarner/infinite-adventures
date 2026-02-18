@@ -10,6 +10,7 @@ import type {
   CreateTagInput,
   ImportCanvasResult,
   Note,
+  NoteHistoryEntry,
   PaginatedGallery,
   PaginatedTimeline,
   Photo,
@@ -225,6 +226,10 @@ export function updateNote(noteId: string, input: UpdateNoteInput): Promise<Note
 
 export function deleteNote(noteId: string): Promise<void> {
   return request<void>(`/notes/${noteId}`, { method: "DELETE" });
+}
+
+export function fetchNoteHistory(noteId: string): Promise<NoteHistoryEntry[]> {
+  return request<NoteHistoryEntry[]>(`/notes/${noteId}/history`);
 }
 
 // --- Link functions ---

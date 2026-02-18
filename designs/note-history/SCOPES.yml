@@ -97,7 +97,7 @@ tasks:
       - useNoteHistory hook with proper query key and enabled logic
     depends_on: [4]
     effort: 1
-    status: scoped
+    status: completed
 
   - id: 6
     milestone: 2
