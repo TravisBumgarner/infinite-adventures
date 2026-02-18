@@ -10,6 +10,7 @@ import PasswordReset from "../pages/PasswordReset/PasswordReset.js";
 import Sessions from "../pages/Sessions";
 import Signup from "../pages/Signup/Signup.js";
 import Timeline from "../pages/Timeline";
+import TreeView from "../pages/TreeView";
 import { useAppStore } from "../stores/appStore";
 import MemberLayout from "./MemberLayout";
 
@@ -120,6 +121,18 @@ export default function Router() {
           <MemberRoute>
             <MemberLayout>
               <Gallery />
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/tree"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <ReactFlowProvider>
+                <TreeView />
+              </ReactFlowProvider>
             </MemberLayout>
           </MemberRoute>
         }

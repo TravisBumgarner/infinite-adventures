@@ -9,23 +9,22 @@ import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { GalleryEntry, Photo } from "shared";
-import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../constants";
-import { useCreateCanvas, useDeleteCanvas, useUpdateCanvas } from "../../hooks/mutations";
+import { CANVAS_ITEM_TYPES } from "../../constants";
+
 import { useCanvases, useGallery } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
-import CanvasPicker from "../Canvas/components/CanvasPicker";
 
 export default function Gallery() {
   const theme = useTheme();
   const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
+
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
@@ -51,44 +50,6 @@ export default function Gallery() {
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
 
   // Canvas mutations
-  const createCanvasMutation = useCreateCanvas();
-  const updateCanvasMutation = useUpdateCanvas();
-  const deleteCanvasMutation = useDeleteCanvas();
-
-  // Canvas picker handlers
-  const handleSwitchCanvas = useCallback(
-    (canvasId: string) => setActiveCanvasId(canvasId),
-    [setActiveCanvasId],
-  );
-
-  const handleCreateCanvas = useCallback(
-    async (name: string) => {
-      const canvas = await createCanvasMutation.mutateAsync({ name });
-      setActiveCanvasId(canvas.id);
-    },
-    [createCanvasMutation, setActiveCanvasId],
-  );
-
-  const handleRenameCanvas = useCallback(
-    async (canvasId: string, newName: string) => {
-      await updateCanvasMutation.mutateAsync({ id: canvasId, input: { name: newName } });
-    },
-    [updateCanvasMutation],
-  );
-
-  const handleDeleteCanvas = useCallback(
-    async (canvasId: string) => {
-      await deleteCanvasMutation.mutateAsync(canvasId);
-      if (activeCanvasId === canvasId) {
-        const remaining = canvases.filter((c) => c.id !== canvasId);
-        if (remaining.length > 0) {
-          setActiveCanvasId(remaining[0].id);
-        }
-      }
-    },
-    [deleteCanvasMutation, activeCanvasId, canvases, setActiveCanvasId],
-  );
-
   // Open lightbox
   function handleOpenLightbox(_entry: GalleryEntry, index: number) {
     // Build Photo[] from all entries for lightbox navigation
@@ -96,6 +57,7 @@ export default function Gallery() {
       id: e.id,
       url: e.url,
       originalName: e.originalName,
+      caption: e.caption,
       aspectRatio: e.aspectRatio,
       blurhash: e.blurhash,
       isMainPhoto: e.isMainPhoto,
@@ -134,36 +96,6 @@ export default function Gallery() {
 
   return (
     <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
-      {/* Canvas picker */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          left: showSettings ? SIDEBAR_WIDTH + 16 : 16,
-          zIndex: 50,
-          pointerEvents: "auto",
-          transition: "left 0.2s",
-        }}
-      >
-        <Box
-          sx={{
-            bgcolor: "var(--color-chrome-bg)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid var(--color-surface1)",
-            borderRadius: 2,
-          }}
-        >
-          <CanvasPicker
-            canvases={canvases}
-            activeCanvasId={activeCanvasId}
-            onSwitch={handleSwitchCanvas}
-            onCreate={handleCreateCanvas}
-            onRename={handleRenameCanvas}
-            onDelete={handleDeleteCanvas}
-          />
-        </Box>
-      </Box>
-
       {/* Main content */}
       <Box
         sx={{
@@ -292,58 +224,42 @@ export default function Gallery() {
                       opacity: 0,
                       transition: "opacity 0.15s",
                       display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
+                      flexDirection: "column",
+                      gap: 0.25,
                     }}
                   >
-                    <Chip
-                      label={typeLabel}
-                      size="small"
-                      sx={{
-                        bgcolor: typeColors.light,
-                        color: getContrastText(typeColors.light),
-                        fontSize: 9,
-                        fontWeight: 600,
-                        height: 18,
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "white",
-                        fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        flex: 1,
-                      }}
-                    >
-                      {entry.parentItemTitle}
-                    </Typography>
-                    <Tooltip title="Open in Canvas">
-                      <IconButton
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Chip
+                        label={typeLabel}
                         size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingItemId(entry.parentItemId);
-                          navigate("/canvas");
+                        sx={{
+                          bgcolor: typeColors.light,
+                          color: getContrastText(typeColors.light),
+                          fontSize: 9,
+                          fontWeight: 600,
+                          height: 18,
                         }}
+                      />
+                      <Typography
+                        variant="caption"
                         sx={{
                           color: "white",
-                          "&:hover": { color: "var(--color-text)" },
-                          p: 0.5,
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          flex: 1,
                         }}
                       >
-                        <MapIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Tooltip>
-                    {entry.parentItemType === "session" && (
-                      <Tooltip title="Open in Session Viewer">
+                        {entry.parentItemTitle}
+                      </Typography>
+                      <Tooltip title="Open in Canvas">
                         <IconButton
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/sessions/${entry.parentItemId}`);
+                            setEditingItemId(entry.parentItemId);
+                            navigate("/canvas");
                           }}
                           sx={{
                             color: "white",
@@ -351,9 +267,41 @@ export default function Gallery() {
                             p: 0.5,
                           }}
                         >
-                          <CalendarMonthIcon sx={{ fontSize: 14 }} />
+                          <MapIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                       </Tooltip>
+                      {entry.parentItemType === "session" && (
+                        <Tooltip title="Open in Session Viewer">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/sessions/${entry.parentItemId}`);
+                            }}
+                            sx={{
+                              color: "white",
+                              "&:hover": { color: "var(--color-text)" },
+                              p: 0.5,
+                            }}
+                          >
+                            <CalendarMonthIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                    {entry.caption && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "rgba(255,255,255,0.8)",
+                          fontSize: 10,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {entry.caption}
+                      </Typography>
                     )}
                   </Box>
                 </Box>

@@ -196,7 +196,11 @@ export default function PhotosTab({
                 gridTemplateColumns: `repeat(${columns}, 1fr)`,
                 gap: 1,
               }
-            : { display: "flex", flexWrap: "wrap", gap: 1 }
+            : {
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 1,
+              }
         }
       >
         {sortedPhotos.length === 0 ? (
@@ -207,7 +211,7 @@ export default function PhotosTab({
               textAlign: "center",
               py: 3,
               width: "100%",
-              gridColumn: columns != null ? "1 / -1" : undefined,
+              gridColumn: "1 / -1",
             }}
           >
             No photos yet
@@ -220,9 +224,8 @@ export default function PhotosTab({
                 <Box
                   sx={{
                     position: "relative",
-                    width: columns != null ? "100%" : 100,
-                    aspectRatio: columns != null ? "1" : undefined,
-                    height: columns != null ? undefined : 100,
+                    width: "100%",
+                    aspectRatio: "1",
                     border: photo.isMainPhoto
                       ? "2px solid var(--color-blue)"
                       : "1px solid var(--color-surface1)",

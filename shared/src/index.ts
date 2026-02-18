@@ -214,6 +214,7 @@ export const GalleryEntrySchema = z.object({
   id: z.string(),
   url: z.string(),
   originalName: z.string(),
+  caption: z.string(),
   aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
   isMainPhoto: z.boolean(),

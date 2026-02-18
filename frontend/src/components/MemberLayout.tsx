@@ -43,7 +43,9 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       ? "timeline"
       : location.pathname.startsWith("/gallery")
         ? "gallery"
-        : "canvas";
+        : location.pathname.startsWith("/tree")
+          ? "tree"
+          : "canvas";
 
   return (
     <>

@@ -355,7 +355,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   const notePreview = useCallback(
-    (content: string) => getNotePreview(content, itemsCache),
+    (content: string) => getNotePreview(content, itemsCache, 0),
     [itemsCache],
   );
 

@@ -1,3 +1,4 @@
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
@@ -7,7 +8,7 @@ import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 
 interface PageToggleProps {
-  activePage: "canvas" | "sessions" | "timeline" | "gallery";
+  activePage: "canvas" | "sessions" | "timeline" | "gallery" | "tree";
 }
 
 export default function PageToggle({ activePage }: PageToggleProps) {
@@ -108,6 +109,28 @@ export default function PageToggle({ activePage }: PageToggleProps) {
       >
         <PhotoLibraryIcon sx={{ fontSize: 16 }} />
         Gallery
+      </Button>
+      <Button
+        size="small"
+        onClick={() => navigate("/tree")}
+        sx={{
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: 13,
+          px: 1.5,
+          py: 0.25,
+          borderRadius: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          minWidth: "auto",
+          color: activePage === "tree" ? "var(--color-text)" : "var(--color-subtext0)",
+          bgcolor: activePage === "tree" ? "var(--color-surface0)" : "transparent",
+          "&:hover": { bgcolor: "var(--color-surface0)" },
+        }}
+      >
+        <AccountTreeIcon sx={{ fontSize: 16 }} />
+        Tree
       </Button>
     </Box>
   );

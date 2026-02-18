@@ -4,6 +4,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -65,6 +67,19 @@ export default function NotesTab({
   const notesListRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
   const [flashingNoteId, setFlashingNoteId] = useState<string | null>(null);
+  const [expandedNoteIds, setExpandedNoteIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (noteId: string) => {
+    setExpandedNoteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(noteId)) {
+        next.delete(noteId);
+      } else {
+        next.add(noteId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!highlightNoteId || notes.length === 0) return;
@@ -210,8 +225,13 @@ export default function NotesTab({
                     fontSize: 13,
                     color: "var(--color-text)",
                     bgcolor: "var(--color-surface0)",
-                    overflow: "hidden",
                     wordBreak: "break-word",
+                    ...(!expandedNoteIds.has(note.id) && {
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical" as const,
+                      overflow: "hidden",
+                    }),
                   }}
                 >
                   <Typography
@@ -227,6 +247,19 @@ export default function NotesTab({
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
+                    <IconButton
+                      size="small"
+                      onClick={() => toggleExpanded(note.id)}
+                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                    >
+                      {expandedNoteIds.has(note.id) ? (
+                        <UnfoldLessIcon sx={{ fontSize: 14 }} />
+                      ) : (
+                        <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+                      )}
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Edit">
                     <IconButton
                       size="small"
