@@ -114,7 +114,7 @@ tasks:
       - Empty state and loading spinner handled
     depends_on: [5]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 7
     milestone: 2
