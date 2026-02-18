@@ -19,6 +19,7 @@ export type CanvasItemNodeData = {
   summary: string;
   content: string;
   selectedPhotoUrl?: string;
+  selectedPhotoAspectRatio?: number;
   mentionLabels: Record<string, string>;
   onMentionClick: (sourceItemId: string, targetItemId: string) => void;
   notesCount: number;
@@ -28,6 +29,14 @@ export type CanvasItemNodeData = {
   tagIds: string[];
 };
 
+/** Compute card dimensions based on the selected photo's aspect ratio. */
+function getNodeSize(aspectRatio?: number): { minWidth: number; maxWidth: number } {
+  if (!aspectRatio) return { minWidth: 210, maxWidth: 270 };
+  if (aspectRatio >= 1.4) return { minWidth: 480, maxWidth: 560 }; // 3x2 landscape
+  if (aspectRatio <= 0.7) return { minWidth: 320, maxWidth: 400 }; // 2x3 portrait
+  return { minWidth: 210, maxWidth: 270 }; // ~square, keep default
+}
+
 type CanvasItemNodeType = Node<CanvasItemNodeData, "canvasItem">;
 
 function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
@@ -35,6 +44,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const color = theme.palette.canvasItemTypes[data.type].light;
   const label = CANVAS_ITEM_TYPE_LABELS[data.type];
   const tagsById = useTagStore((s) => s.tags);
+  const nodeSize = getNodeSize(data.selectedPhotoUrl ? data.selectedPhotoAspectRatio : undefined);
 
   const tags = useMemo(
     () => data.tagIds.map((id) => tagsById[id]).filter(Boolean),
@@ -62,8 +72,8 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           border: `${data.isFocused ? 3 : 2}px solid ${color}`,
           borderRadius: 2,
           p: 1.5,
-          minWidth: 210,
-          maxWidth: 270,
+          minWidth: nodeSize.minWidth,
+          maxWidth: nodeSize.maxWidth,
           color: "var(--color-text)",
           boxShadow: data.isFocused ? `0 0 12px 2px ${color}` : "none",
           transform: data.isFocused ? "scale(1.02)" : "none",
@@ -132,7 +142,6 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           <Box
             sx={{
               width: "100%",
-              maxHeight: 280,
               overflow: "hidden",
               display: "flex",
               alignItems: "center",

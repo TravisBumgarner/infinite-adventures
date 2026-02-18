@@ -16,14 +16,13 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItemType } from "shared";
-import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../constants";
-import { useCreateCanvas, useDeleteCanvas, useUpdateCanvas } from "../../hooks/mutations";
+import { CANVAS_ITEM_TYPES } from "../../constants";
+
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
 import { getNotePreview } from "../../utils/getNotePreview";
-import CanvasPicker from "../Canvas/components/CanvasPicker";
 import TimelineCalendar, { getCalendarRange } from "./TimelineCalendar";
 
 function formatTimestamp(isoString: string): string {
@@ -59,7 +58,6 @@ export default function Timeline() {
   const theme = useTheme();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const setActiveCanvasId = useCanvasStore((s) => s.setActiveCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
@@ -117,45 +115,6 @@ export default function Timeline() {
     setCalEndYear((y) => y + delta);
   }, []);
 
-  // Canvas mutations
-  const createCanvasMutation = useCreateCanvas();
-  const updateCanvasMutation = useUpdateCanvas();
-  const deleteCanvasMutation = useDeleteCanvas();
-
-  // Canvas picker handlers
-  const handleSwitchCanvas = useCallback(
-    (canvasId: string) => setActiveCanvasId(canvasId),
-    [setActiveCanvasId],
-  );
-
-  const handleCreateCanvas = useCallback(
-    async (name: string) => {
-      const canvas = await createCanvasMutation.mutateAsync({ name });
-      setActiveCanvasId(canvas.id);
-    },
-    [createCanvasMutation, setActiveCanvasId],
-  );
-
-  const handleRenameCanvas = useCallback(
-    async (canvasId: string, newName: string) => {
-      await updateCanvasMutation.mutateAsync({ id: canvasId, input: { name: newName } });
-    },
-    [updateCanvasMutation],
-  );
-
-  const handleDeleteCanvas = useCallback(
-    async (canvasId: string) => {
-      await deleteCanvasMutation.mutateAsync(canvasId);
-      if (activeCanvasId === canvasId) {
-        const remaining = canvases.filter((c) => c.id !== canvasId);
-        if (remaining.length > 0) {
-          setActiveCanvasId(remaining[0].id);
-        }
-      }
-    },
-    [deleteCanvasMutation, activeCanvasId, canvases, setActiveCanvasId],
-  );
-
   const toggleFilter = (type: CanvasItemType) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
@@ -207,36 +166,6 @@ export default function Timeline() {
 
   return (
     <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
-      {/* Canvas picker */}
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: 16,
-          left: showSettings ? SIDEBAR_WIDTH + 16 : 16,
-          zIndex: 50,
-          pointerEvents: "auto",
-          transition: "left 0.2s",
-        }}
-      >
-        <Box
-          sx={{
-            bgcolor: "var(--color-chrome-bg)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid var(--color-surface1)",
-            borderRadius: 2,
-          }}
-        >
-          <CanvasPicker
-            canvases={canvases}
-            activeCanvasId={activeCanvasId}
-            onSwitch={handleSwitchCanvas}
-            onCreate={handleCreateCanvas}
-            onRename={handleRenameCanvas}
-            onDelete={handleDeleteCanvas}
-          />
-        </Box>
-      </Box>
-
       {/* Main content: two-column layout */}
       <Box
         sx={{
@@ -506,7 +435,7 @@ export default function Timeline() {
                           blurhash={entry.blurhash}
                           sx={{
                             width: "100%",
-                            maxHeight: 300,
+                            maxHeight: "80vh",
                             borderRadius: 1,
                           }}
                         />
@@ -532,7 +461,7 @@ export default function Timeline() {
           )}
 
           {/* Infinite scroll sentinel */}
-          <Box ref={sentinelRef} sx={{ height: 1 }} />
+          <Box ref={sentinelRef} sx={{ height: "1px" }} />
 
           {/* Loading indicator for next page */}
           {isFetchingNextPage && (

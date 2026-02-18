@@ -4,6 +4,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -54,6 +56,7 @@ function QuickNoteItem({
   const toggleImportantMutation = useToggleQuickNoteImportant(canvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const localContentRef = useRef(content);
 
   const { status: saveStatus, markDirty } = useAutoSave({
@@ -73,7 +76,10 @@ function QuickNoteItem({
   // Preserve line breaks: convert block/br tags to newlines before getNotePreview strips them,
   // then convert back to <br> for rendering
   const preprocessed = content.replace(/<\/p>/gi, "\n").replace(/<br\s*\/?>/gi, "\n");
-  const previewHtml = getNotePreview(preprocessed, itemsCache, 120).replace(/\n/g, "<br>");
+  const previewHtml = getNotePreview(preprocessed, itemsCache, expanded ? 0 : 120).replace(
+    /\n/g,
+    "<br>",
+  );
 
   return (
     <>
@@ -125,16 +131,17 @@ function QuickNoteItem({
               flex: 1,
               minWidth: 0,
               minHeight: 66,
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
-              alignItems: "center",
+              ...(!expanded && {
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }),
               py: 0.5,
               px: 1,
               fontSize: 13,
               color: "var(--color-text)",
               bgcolor: "var(--color-surface0)",
-              overflow: "hidden",
               wordBreak: "break-word",
             }}
             dangerouslySetInnerHTML={{ __html: previewHtml }}
@@ -152,15 +159,30 @@ function QuickNoteItem({
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={onStartEdit}
-                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-              >
-                <EditIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
+            <>
+              <Tooltip title={expanded ? "Collapse" : "Expand"}>
+                <IconButton
+                  size="small"
+                  onClick={() => setExpanded((v) => !v)}
+                  sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                >
+                  {expanded ? (
+                    <UnfoldLessIcon sx={{ fontSize: 14 }} />
+                  ) : (
+                    <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={onStartEdit}
+                  sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                >
+                  <EditIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            </>
           )}
           <Tooltip title={isImportant ? "Unpin" : "Pin"}>
             <IconButton

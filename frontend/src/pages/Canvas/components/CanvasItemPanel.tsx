@@ -451,7 +451,7 @@ export default function CanvasItemPanel({
   }
 
   const notePreview = useCallback(
-    (content: string) => getNotePreview(content, itemsCache),
+    (content: string) => getNotePreview(content, itemsCache, 0),
     [itemsCache],
   );
 
