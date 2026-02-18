@@ -32,7 +32,7 @@ tasks:
       - Migration file generated and applies cleanly
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 2
     milestone: 1
