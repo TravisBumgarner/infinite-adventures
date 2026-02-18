@@ -4,6 +4,7 @@ import {
   fetchGallery,
   fetchItem,
   fetchItems,
+  fetchNoteHistory,
   fetchQuickNotes,
   fetchSessions,
   fetchTaggedItems,
@@ -108,5 +109,13 @@ export function useTaggedItems(itemId: string | undefined) {
     queryKey: queryKeys.taggedItems.list(itemId!),
     queryFn: () => fetchTaggedItems(itemId!),
     enabled: !!itemId,
+  });
+}
+
+export function useNoteHistory(noteId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.noteHistory.list(noteId!),
+    queryFn: () => fetchNoteHistory(noteId!),
+    enabled: noteId !== null,
   });
 }
