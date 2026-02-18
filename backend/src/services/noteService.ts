@@ -5,6 +5,7 @@ import { getDb } from "../db/connection.js";
 import { canvasItems, notes } from "../db/schema.js";
 import { stripHtml } from "../utils/stripHtml.js";
 import { resolveCanvasItemLinks } from "./canvasItemLinkService.js";
+import { createSnapshot } from "./noteHistoryService.js";
 
 const MENTION_ID_REGEX = /@\{([^}]+)\}/g;
 
@@ -99,6 +100,11 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
   // Get the note to find the canvasItemId
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
   if (!existing) return null;
+
+  // Snapshot old content if requested, content is changing, and content differs
+  if (input.snapshot && input.content !== undefined && input.content !== existing.content) {
+    await createSnapshot(noteId, existing.content);
+  }
 
   const updates: Record<string, unknown> = { updatedAt: now };
   let newPlainContent: string | undefined;

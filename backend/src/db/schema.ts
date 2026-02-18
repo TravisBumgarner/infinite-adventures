@@ -7,6 +7,7 @@ import {
   pgTable,
   primaryKey,
   text,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 const tsvector = customType<{ data: string }>({
@@ -101,6 +102,23 @@ export const notes = pgTable(
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
   },
   (table) => [index("notes_canvas_item_id_idx").on(table.canvasItemId)],
+);
+
+// ============================================
+// Note History (snapshots of note content)
+// ============================================
+
+export const noteHistory = pgTable(
+  "note_history",
+  {
+    id: text("id").primaryKey(),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    snapshotAt: timestamp("snapshot_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("note_history_note_id_idx").on(table.noteId)],
 );
 
 // ============================================
@@ -265,3 +283,5 @@ export type Tag = typeof tags.$inferSelect;
 export type InsertTag = typeof tags.$inferInsert;
 export type CanvasItemTag = typeof canvasItemTags.$inferSelect;
 export type InsertCanvasItemTag = typeof canvasItemTags.$inferInsert;
+export type NoteHistory = typeof noteHistory.$inferSelect;
+export type InsertNoteHistory = typeof noteHistory.$inferInsert;
