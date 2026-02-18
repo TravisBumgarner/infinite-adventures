@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import HistoryIcon from "@mui/icons-material/History";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
@@ -43,6 +44,7 @@ interface NotesTabProps {
   onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
   onMentionClick?: (itemId: string) => void;
+  onHistoryNote?: (noteId: string) => void;
 }
 
 export default function NotesTab({
@@ -63,6 +65,7 @@ export default function NotesTab({
   onCreateMentionItem,
   getNotePreview,
   onMentionClick,
+  onHistoryNote,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -285,6 +288,17 @@ export default function NotesTab({
                       )}
                     </IconButton>
                   </Tooltip>
+                  {onHistoryNote && (
+                    <Tooltip title="History">
+                      <IconButton
+                        size="small"
+                        onClick={() => onHistoryNote(note.id)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        <HistoryIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Delete">
                     <IconButton
                       size="small"

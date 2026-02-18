@@ -11,5 +11,6 @@ export function shouldSnapshot(
   now: number = Date.now(),
   threshold: number = SNAPSHOT_THRESHOLD_MS,
 ): boolean {
-  throw new Error("Not implemented");
+  if (lastSnapshotAt === undefined) return true;
+  return now - lastSnapshotAt > threshold;
 }
