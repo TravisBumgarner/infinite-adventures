@@ -3,6 +3,7 @@ import { requireAuth } from "../../middleware/auth.js";
 import { handler as createHandler } from "./create.js";
 import { handler as deleteHandler } from "./delete.js";
 import { handler as getHandler } from "./get.js";
+import { handler as historyHandler } from "./history.js";
 import { handler as listHandler } from "./list.js";
 import { handler as updateHandler } from "./update.js";
 
@@ -18,5 +19,6 @@ notesRouter.use(requireAuth);
 notesRouter.get("/:noteId", getHandler);
 notesRouter.put("/:noteId", updateHandler);
 notesRouter.delete("/:noteId", deleteHandler);
+notesRouter.get("/:noteId/history", historyHandler);
 
 export { itemNotesRouter, notesRouter };
