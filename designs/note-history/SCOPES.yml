@@ -138,4 +138,4 @@ tasks:
       - Revert updates note via existing mutation and refreshes UI
     depends_on: [6]
     effort: 2
-    status: scoped
+    status: testing
