@@ -84,7 +84,7 @@ tasks:
       - Route tests cover authenticated list, empty history, unauthorized access
     depends_on: [3]
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 5
     milestone: 2
