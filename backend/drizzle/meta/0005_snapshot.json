@@ -1,5 +1,5 @@
 {
-  "id": "1ce7ece1-02d1-4da3-b8d7-1134912d6374",
+  "id": "f7453c1e-bd6f-49b6-a65f-3468c7f6219f",
   "prevId": "58de9514-b0fd-4340-8d9b-695727513d20",
   "version": "7",
   "dialect": "postgresql",
@@ -475,9 +475,10 @@
         },
         "snapshot_at": {
           "name": "snapshot_at",
-          "type": "text",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {

@@ -7,6 +7,7 @@ import {
   pgTable,
   primaryKey,
   text,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 const tsvector = customType<{ data: string }>({
@@ -115,7 +116,7 @@ export const noteHistory = pgTable(
       .notNull()
       .references(() => notes.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    snapshotAt: text("snapshot_at").notNull(),
+    snapshotAt: timestamp("snapshot_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("note_history_note_id_idx").on(table.noteId)],
 );
