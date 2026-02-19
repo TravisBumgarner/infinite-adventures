@@ -31,8 +31,8 @@ export async function getGalleryEntries(
 
   const cursorCondition = parsed
     ? or(
-        lt(photos.createdAt, parsed.timestamp),
-        and(eq(photos.createdAt, parsed.timestamp), lt(photos.id, parsed.id)),
+        lt(photos.createdAt, new Date(parsed.timestamp)),
+        and(eq(photos.createdAt, new Date(parsed.timestamp)), lt(photos.id, parsed.id)),
       )
     : undefined;
 
@@ -74,7 +74,7 @@ export async function getGalleryEntries(
     blurhash: row.blurhash ?? undefined,
     isMainPhoto: row.isMainPhoto,
     isImportant: row.isImportant,
-    createdAt: row.createdAt,
+    createdAt: row.createdAt.toISOString(),
     parentItemId: row.parentItemId,
     parentItemType: row.parentItemType,
     parentItemTitle: row.parentItemTitle,

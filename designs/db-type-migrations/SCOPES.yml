@@ -119,7 +119,7 @@ tasks:
       - All existing tests pass (update mocks if needed to return Date objects)
     depends_on: []
     effort: 3
-    status: scoped
+    status: implementing
 
   - id: 3
     milestone: 2
