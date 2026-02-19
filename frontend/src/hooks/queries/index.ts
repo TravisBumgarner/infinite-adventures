@@ -5,6 +5,7 @@ import {
   fetchItem,
   fetchItems,
   fetchNoteHistory,
+  fetchQuickNoteHistory,
   fetchQuickNotes,
   fetchSessions,
   fetchTaggedItems,
@@ -117,5 +118,17 @@ export function useNoteHistory(noteId: string | null) {
     queryKey: queryKeys.noteHistory.list(noteId!),
     queryFn: () => fetchNoteHistory(noteId!),
     enabled: noteId !== null,
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+export function useQuickNoteHistory(canvasId: string | undefined, quickNoteId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.quickNoteHistory.list(canvasId!, quickNoteId!),
+    queryFn: () => fetchQuickNoteHistory(canvasId!, quickNoteId!),
+    enabled: !!canvasId && quickNoteId !== null,
+    staleTime: 0,
+    gcTime: 0,
   });
 }

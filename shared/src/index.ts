@@ -18,6 +18,7 @@ export const CanvasItemSummarySchema = z.object({
 
 export const NoteSchema = z.object({
   id: z.string(),
+  title: z.string().nullable(),
   content: z.string(),
   plainContent: z.string(),
   isImportant: z.boolean(),
@@ -39,6 +40,7 @@ export const PhotoSchema = z.object({
 export const QuickNoteSchema = z.object({
   id: z.string(),
   canvasId: z.string(),
+  title: z.string().nullable(),
   content: z.string(),
   isImportant: z.boolean(),
   createdAt: z.string(),
@@ -114,19 +116,27 @@ export const UpdateCanvasItemInputSchema = z.object({
 
 export const CreateNoteInputSchema = z.object({
   content: z.string().optional(),
+  title: z.string().optional(),
 });
 
 export const UpdateNoteInputSchema = z.object({
   content: z.string().optional(),
+  title: z.string().optional(),
   isImportant: z.boolean().optional(),
   snapshot: z.boolean().optional(),
 });
 
-export const NoteHistoryEntrySchema = z.object({
+export const ContentHistoryEntrySchema = z.object({
   id: z.string(),
-  noteId: z.string(),
+  sourceId: z.string(),
   content: z.string(),
   snapshotAt: z.string(),
+});
+
+export const UpdateQuickNoteInputSchema = z.object({
+  content: z.string(),
+  title: z.string().optional(),
+  snapshot: z.boolean().optional(),
 });
 
 export const CanvasItemSearchResultSchema = z.object({
@@ -282,7 +292,8 @@ export type QuickNote = z.infer<typeof QuickNoteSchema>;
 export type Tag = z.infer<typeof TagSchema>;
 export type CreateTagInput = z.infer<typeof CreateTagInputSchema>;
 export type UpdateTagInput = z.infer<typeof UpdateTagInputSchema>;
-export type NoteHistoryEntry = z.infer<typeof NoteHistoryEntrySchema>;
+export type ContentHistoryEntry = z.infer<typeof ContentHistoryEntrySchema>;
+export type UpdateQuickNoteInput = z.infer<typeof UpdateQuickNoteInputSchema>;
 
 // --- Inferred types (Other) ---
 

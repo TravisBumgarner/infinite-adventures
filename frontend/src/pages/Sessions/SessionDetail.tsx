@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
+import NoteHistoryModal from "../../components/NoteHistoryModal";
 import {
   useCreateItem,
   useCreateNote,
@@ -21,7 +22,7 @@ import {
   useUpdatePhotoCaption,
   useUploadPhoto,
 } from "../../hooks/mutations";
-import { useItem } from "../../hooks/queries";
+import { useItem, useNoteHistory } from "../../hooks/queries";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
@@ -29,6 +30,7 @@ import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
 
 import { getNotePreview } from "../../utils/getNotePreview";
+import { shouldSnapshot } from "../../utils/shouldSnapshot";
 import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
 
 const MIN_LEFT_WIDTH = 400;
@@ -57,9 +59,14 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("notes");
+
+  // Note history state
+  const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
+  const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
   const [photoColumns, setPhotoColumns] = useState(4);
 
   // Resizable divider
@@ -86,6 +93,8 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   sessionDateRef.current = sessionDate;
   const noteContentRef = useRef(noteContent);
   noteContentRef.current = noteContent;
+  const noteTitleRef = useRef(noteTitle);
+  noteTitleRef.current = noteTitle;
   const editingNoteIdRef = useRef(editingNoteId);
   editingNoteIdRef.current = editingNoteId;
   const sessionIdRef = useRef(sessionId);
@@ -107,13 +116,18 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     });
   }, [updateItemMutation]);
 
-  // Save function for note content
+  // Save function for note content (with snapshot throttling)
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
+    const noteId = editingNoteIdRef.current;
+    const snapshot = shouldSnapshot(lastSnapshotAtRef.current.get(noteId));
     await updateNoteMutation.mutateAsync({
-      noteId: editingNoteIdRef.current,
-      input: { content: noteContentRef.current },
+      noteId,
+      input: { content: noteContentRef.current, title: noteTitleRef.current, snapshot },
     });
+    if (snapshot) {
+      lastSnapshotAtRef.current.set(noteId, Date.now());
+    }
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
@@ -162,6 +176,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         prevSessionIdRef.current = sessionId;
         setEditingNoteId(null);
         setNoteContent("");
+        setNoteTitle("");
       }
     }
   }, [sessionId, queryItem]);
@@ -231,16 +246,17 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
     setEditingNoteId(newNote.id);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   function handleSelectNote(note: Note) {
     flushNote();
     setEditingNoteId(note.id);
     setNoteContent(note.content);
+    setNoteTitle(note.title ?? "");
   }
 
   async function handleDeleteNote(noteId: string) {
-    if (!confirm("Delete this note?")) return;
     await deleteNoteMutation.mutateAsync(noteId);
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -250,6 +266,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
       setNoteContent("");
+      setNoteTitle("");
     }
   }
 
@@ -269,6 +286,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     flushNote();
     setEditingNoteId(null);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   // Photo handlers
@@ -358,6 +376,26 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     (content: string) => getNotePreview(content, itemsCache, 0),
     [itemsCache],
   );
+
+  // Note history
+  const { data: historyEntries = [], isLoading: historyLoading } = useNoteHistory(historyNoteId);
+
+  async function handleRevertNote(content: string) {
+    if (!historyNoteId) return;
+    await updateNoteMutation.mutateAsync({
+      noteId: historyNoteId,
+      input: { content },
+    });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      if (editingNoteId === historyNoteId) {
+        setNoteContent(content);
+      }
+    }
+    setHistoryNoteId(null);
+  }
 
   const handleMentionClick = useCallback((itemId: string) => {
     taggedPanelRef.current?.highlightItem(itemId);
@@ -490,6 +528,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             notes={notes}
             editingNoteId={editingNoteId}
             noteContent={noteContent}
+            noteTitle={noteTitle}
             noteStatus={noteStatus}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
@@ -501,12 +540,25 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
               setNoteContent(val);
               markNoteDirty();
             }}
+            onNoteTitleChange={(val) => {
+              setNoteTitle(val);
+              markNoteDirty();
+            }}
             onToggleImportant={handleToggleImportant}
             onCreateMentionItem={handleCreateMentionItem}
             getNotePreview={notePreview}
             onMentionClick={handleMentionClick}
+            onHistoryNote={setHistoryNoteId}
           />
         )}
+
+        <NoteHistoryModal
+          open={historyNoteId !== null}
+          onClose={() => setHistoryNoteId(null)}
+          entries={historyEntries}
+          loading={historyLoading}
+          onRevert={handleRevertNote}
+        />
 
         {activeTab === "photos" && (
           <PhotosTab

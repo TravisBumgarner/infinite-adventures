@@ -83,6 +83,7 @@ export default function CanvasItemPanel({
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   // Note history state
@@ -121,6 +122,8 @@ export default function CanvasItemPanel({
   sessionDateRef.current = sessionDate;
   const noteContentRef = useRef(noteContent);
   noteContentRef.current = noteContent;
+  const noteTitleRef = useRef(noteTitle);
+  noteTitleRef.current = noteTitle;
   const editingNoteIdRef = useRef(editingNoteId);
   editingNoteIdRef.current = editingNoteId;
   const itemIdRef = useRef(itemId);
@@ -160,13 +163,13 @@ export default function CanvasItemPanel({
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
     const snapshot = shouldSnapshot(lastSnapshotAtRef.current.get(noteId));
+    await updateNoteMutation.mutateAsync({
+      noteId,
+      input: { content: noteContentRef.current, title: noteTitleRef.current, snapshot },
+    });
     if (snapshot) {
       lastSnapshotAtRef.current.set(noteId, Date.now());
     }
-    await updateNoteMutation.mutateAsync({
-      noteId,
-      input: { content: noteContentRef.current, snapshot },
-    });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
@@ -226,6 +229,7 @@ export default function CanvasItemPanel({
         prevItemIdRef.current = itemId;
         setEditingNoteId(null);
         setNoteContent("");
+        setNoteTitle("");
       }
     }
   }, [itemId, queryItem]);
@@ -414,16 +418,17 @@ export default function CanvasItemPanel({
     }
     setEditingNoteId(newNote.id);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   function handleSelectNote(note: Note) {
     flushNote();
     setEditingNoteId(note.id);
     setNoteContent(note.content);
+    setNoteTitle(note.title ?? "");
   }
 
   async function handleDeleteNote(noteId: string) {
-    if (!confirm("Delete this note?")) return;
     await deleteNoteMutation.mutateAsync(noteId);
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -434,6 +439,7 @@ export default function CanvasItemPanel({
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
       setNoteContent("");
+      setNoteTitle("");
     }
   }
 
@@ -441,6 +447,7 @@ export default function CanvasItemPanel({
     flushNote();
     setEditingNoteId(null);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   async function handleCreateMentionItem(
@@ -727,6 +734,7 @@ export default function CanvasItemPanel({
           notes={notes}
           editingNoteId={editingNoteId}
           noteContent={noteContent}
+          noteTitle={noteTitle}
           noteStatus={noteStatus}
           itemsCache={itemsCache}
           canvasId={activeCanvasId ?? ""}
@@ -738,6 +746,10 @@ export default function CanvasItemPanel({
           onBackToList={handleBackToNoteList}
           onNoteContentChange={(val) => {
             setNoteContent(val);
+            markNoteDirty();
+          }}
+          onNoteTitleChange={(val) => {
+            setNoteTitle(val);
             markNoteDirty();
           }}
           onToggleImportant={handleToggleImportant}

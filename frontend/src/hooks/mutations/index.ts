@@ -272,8 +272,17 @@ export function useCreateQuickNote(canvasId: string) {
 export function useUpdateQuickNote(canvasId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) =>
-      updateQuickNote(canvasId, id, content),
+    mutationFn: ({
+      id,
+      content,
+      snapshot,
+      title,
+    }: {
+      id: string;
+      content: string;
+      snapshot?: boolean;
+      title?: string;
+    }) => updateQuickNote(canvasId, id, content, snapshot, title),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
     },

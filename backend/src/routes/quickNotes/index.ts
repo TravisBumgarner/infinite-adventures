@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { userOwnsCanvas } from "../../services/authorizationService.js";
+import { listHistory } from "../../services/contentHistoryService.js";
 import {
   createQuickNote,
   deleteQuickNote,
@@ -33,7 +34,7 @@ quickNotesRouter.get("/", async (req: Request<{ canvasId: string }>, res: Respon
   sendSuccess(res, notes);
 });
 
-const CreateBody = z.object({ content: z.string().optional() });
+const CreateBody = z.object({ content: z.string().optional(), title: z.string().optional() });
 
 // POST /api/canvases/:canvasId/quick-notes
 quickNotesRouter.post("/", async (req: Request<{ canvasId: string }>, res: Response) => {
@@ -45,11 +46,19 @@ quickNotesRouter.post("/", async (req: Request<{ canvasId: string }>, res: Respo
     sendForbidden(res);
     return;
   }
-  const note = await createQuickNote(parsed.params.canvasId, parsed.body.content ?? "");
+  const note = await createQuickNote(
+    parsed.params.canvasId,
+    parsed.body.content ?? "",
+    parsed.body.title,
+  );
   sendSuccess(res, note, 201);
 });
 
-const UpdateBody = z.object({ content: z.string() });
+const UpdateBody = z.object({
+  content: z.string(),
+  title: z.string().optional(),
+  snapshot: z.boolean().optional(),
+});
 const IdParams = z.object({ canvasId: z.string().uuid(), id: z.string().uuid() });
 
 // PUT /api/canvases/:canvasId/quick-notes/:id
@@ -64,7 +73,12 @@ quickNotesRouter.put(
       sendForbidden(res);
       return;
     }
-    const note = await updateQuickNote(parsed.params.id, parsed.body.content);
+    const note = await updateQuickNote(
+      parsed.params.id,
+      parsed.body.content,
+      parsed.body.snapshot,
+      parsed.body.title,
+    );
     if (!note) {
       sendNotFound(res);
       return;
@@ -116,6 +130,23 @@ quickNotesRouter.delete(
       return;
     }
     sendSuccess(res, { deleted: true });
+  },
+);
+
+// GET /api/canvases/:canvasId/quick-notes/:id/history
+quickNotesRouter.get(
+  "/:id/history",
+  async (req: Request<{ canvasId: string; id: string }>, res: Response) => {
+    const auth = requireUserId(req as AuthenticatedRequest, res);
+    if (!auth) return;
+    const parsed = parseRoute(req, res, { params: IdParams });
+    if (!parsed) return;
+    if (!(await userOwnsCanvas(auth.userId, parsed.params.canvasId))) {
+      sendForbidden(res);
+      return;
+    }
+    const history = await listHistory(parsed.params.id);
+    sendSuccess(res, history);
   },
 );
 

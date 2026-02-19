@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import HistoryIcon from "@mui/icons-material/History";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
@@ -15,41 +16,48 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
+import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import NoteHistoryModal from "../../../components/NoteHistoryModal";
 import {
   useCreateQuickNote,
   useDeleteQuickNote,
   useToggleQuickNoteImportant,
   useUpdateQuickNote,
 } from "../../../hooks/mutations";
-import { useQuickNotes } from "../../../hooks/queries";
+import { useQuickNoteHistory, useQuickNotes } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { useDraggable } from "../../../hooks/useDraggable";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useQuickNotesStore } from "../../../stores/quickNotesStore";
 import { getNotePreview } from "../../../utils/getNotePreview";
+import { shouldSnapshot } from "../../../utils/shouldSnapshot";
 import { statusLabel } from "../../../utils/statusLabel";
 import MentionEditor from "./MentionEditor";
 
 function QuickNoteItem({
   id,
+  title,
   content,
   isImportant,
   canvasId,
   isEditing,
   onStartEdit,
   onStopEdit,
+  onHistoryNote,
 }: {
   id: string;
+  title: string | null;
   content: string;
   isImportant: boolean;
   canvasId: string;
   isEditing: boolean;
   onStartEdit: () => void;
   onStopEdit: () => void;
+  onHistoryNote: (noteId: string) => void;
 }) {
   const updateMutation = useUpdateQuickNote(canvasId);
   const deleteMutation = useDeleteQuickNote(canvasId);
@@ -58,16 +66,35 @@ function QuickNoteItem({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const localContentRef = useRef(content);
+  const localTitleRef = useRef(title ?? "");
+  const lastSnapshotAtRef = useRef<number | undefined>(undefined);
 
   const { status: saveStatus, markDirty } = useAutoSave({
     saveFn: async () => {
-      await updateMutation.mutateAsync({ id, content: localContentRef.current });
+      const snapshot = shouldSnapshot(lastSnapshotAtRef.current);
+      await updateMutation.mutateAsync({
+        id,
+        content: localContentRef.current,
+        title: localTitleRef.current,
+        snapshot,
+      });
+      if (snapshot) {
+        lastSnapshotAtRef.current = Date.now();
+      }
     },
   });
 
   const handleChange = useCallback(
     (newContent: string) => {
       localContentRef.current = newContent;
+      markDirty();
+    },
+    [markDirty],
+  );
+
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      localTitleRef.current = newTitle;
       markDirty();
     },
     [markDirty],
@@ -96,6 +123,23 @@ function QuickNoteItem({
       >
         {isEditing ? (
           <Box sx={{ flex: 1, minWidth: 0 }}>
+            <InputBase
+              placeholder="Title (optional)"
+              defaultValue={title ?? ""}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              sx={{
+                mb: 0.5,
+                px: 1,
+                py: 0.25,
+                fontSize: 13,
+                fontWeight: 600,
+                background: "var(--color-mantle)",
+                border: "1px solid var(--color-surface1)",
+                color: "var(--color-text)",
+                width: "100%",
+              }}
+              fullWidth
+            />
             <MentionEditor
               value={content}
               onChange={handleChange}
@@ -131,12 +175,13 @@ function QuickNoteItem({
               flex: 1,
               minWidth: 0,
               minHeight: 66,
-              ...(!expanded && {
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }),
+              ...(!expanded &&
+                !title && {
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }),
               py: 0.5,
               px: 1,
               fontSize: 13,
@@ -144,8 +189,14 @@ function QuickNoteItem({
               bgcolor: "var(--color-surface0)",
               wordBreak: "break-word",
             }}
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
-          />
+          >
+            {title && (
+              <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
+                {title}
+              </Typography>
+            )}
+            {(expanded || !title) && <Box dangerouslySetInnerHTML={{ __html: previewHtml }} />}
+          </Box>
         )}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {isEditing ? (
@@ -180,6 +231,15 @@ function QuickNoteItem({
                   sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                 >
                   <EditIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="History">
+                <IconButton
+                  size="small"
+                  onClick={() => onHistoryNote(id)}
+                  sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                >
+                  <HistoryIcon sx={{ fontSize: 14 }} />
                 </IconButton>
               </Tooltip>
             </>
@@ -244,7 +304,23 @@ export default function QuickNotes() {
 
   const { data: notes = [] } = useQuickNotes(activeCanvasId ?? undefined);
   const createMutation = useCreateQuickNote(activeCanvasId ?? "");
+  const updateMutation = useUpdateQuickNote(activeCanvasId ?? "");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
+
+  const { data: historyEntries = [], isLoading: historyLoading } = useQuickNoteHistory(
+    activeCanvasId ?? undefined,
+    historyNoteId,
+  );
+
+  const handleRevertQuickNote = useCallback(
+    async (content: string) => {
+      if (!historyNoteId || !activeCanvasId) return;
+      await updateMutation.mutateAsync({ id: historyNoteId, content });
+      setHistoryNoteId(null);
+    },
+    [historyNoteId, activeCanvasId, updateMutation],
+  );
 
   const handleCreate = useCallback(() => {
     createMutation.mutate(undefined, {
@@ -341,16 +417,26 @@ export default function QuickNotes() {
             <QuickNoteItem
               key={note.id}
               id={note.id}
+              title={note.title}
               content={note.content}
               isImportant={note.isImportant}
               canvasId={activeCanvasId}
               isEditing={editingNoteId === note.id}
               onStartEdit={() => setEditingNoteId(note.id)}
               onStopEdit={() => setEditingNoteId(null)}
+              onHistoryNote={setHistoryNoteId}
             />
           ))
         )}
       </Box>
+
+      <NoteHistoryModal
+        open={historyNoteId !== null}
+        onClose={() => setHistoryNoteId(null)}
+        entries={historyEntries}
+        loading={historyLoading}
+        onRevert={handleRevertQuickNote}
+      />
     </Paper>
   );
 }
