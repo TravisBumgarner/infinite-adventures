@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { handler as historyHandler } from "../routes/notes/history.js";
 import { createItem, DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
-import { createSnapshot } from "../services/noteHistoryService.js";
+import { createSnapshot } from "../services/contentHistoryService.js";
 import { createNote } from "../services/noteService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
@@ -36,9 +36,9 @@ describe("note history route", () => {
   async function createTestNoteWithHistory() {
     const item = await createItem({ type: "person", title: "Test Person" }, DEFAULT_CANVAS_ID);
     const note = await createNote(item.id, { content: "<p>original</p>" });
-    await createSnapshot(note.id, "version 1");
+    await createSnapshot(note.id, "note", "version 1");
     await new Promise((r) => setTimeout(r, 10));
-    await createSnapshot(note.id, "version 2");
+    await createSnapshot(note.id, "note", "version 2");
     return { item, note };
   }
 

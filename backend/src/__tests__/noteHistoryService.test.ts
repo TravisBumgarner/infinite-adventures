@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createItem, DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
-import { createSnapshot, listHistory } from "../services/noteHistoryService.js";
+import { createSnapshot, listHistory } from "../services/contentHistoryService.js";
 import { createNote, updateNote } from "../services/noteService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-describe("noteHistoryService", () => {
+describe("contentHistoryService", () => {
   beforeAll(async () => {
     await setupTestDb();
   });
@@ -24,9 +24,9 @@ describe("noteHistoryService", () => {
   describe("createSnapshot", () => {
     it("stores a snapshot and returns it", async () => {
       const { note } = await createTestNote();
-      const snapshot = await createSnapshot(note.id, note.content);
+      const snapshot = await createSnapshot(note.id, "note", note.content);
 
-      expect(snapshot.noteId).toBe(note.id);
+      expect(snapshot.sourceId).toBe(note.id);
       expect(snapshot.content).toBe(note.content);
       expect(snapshot.id).toBeDefined();
       expect(snapshot.snapshotAt).toBeDefined();
@@ -36,10 +36,10 @@ describe("noteHistoryService", () => {
   describe("listHistory", () => {
     it("returns snapshots newest first", async () => {
       const { note } = await createTestNote();
-      await createSnapshot(note.id, "version 1");
+      await createSnapshot(note.id, "note", "version 1");
       // Small delay to ensure different timestamps
       await new Promise((r) => setTimeout(r, 10));
-      await createSnapshot(note.id, "version 2");
+      await createSnapshot(note.id, "note", "version 2");
 
       const history = await listHistory(note.id);
       expect(history).toHaveLength(2);

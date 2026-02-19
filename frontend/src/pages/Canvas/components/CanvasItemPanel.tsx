@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo, Tag } from "shared";
+import NoteHistoryModal from "../../../components/NoteHistoryModal";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import {
   useAddTagToItem,
@@ -28,7 +29,7 @@ import {
   useUpdatePhotoCaption,
   useUploadPhoto,
 } from "../../../hooks/mutations";
-import { useItem } from "../../../hooks/queries";
+import { useItem, useNoteHistory } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import NotesTab from "../../../sharedComponents/NotesTab";
@@ -39,6 +40,7 @@ import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { formatItemMarkdown } from "../../../utils/noteExport";
+import { shouldSnapshot } from "../../../utils/shouldSnapshot";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
@@ -81,7 +83,12 @@ export default function CanvasItemPanel({
   const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
+
+  // Note history state
+  const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
+  const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
 
   // Summary state
   const [summary, setSummary] = useState("");
@@ -115,6 +122,8 @@ export default function CanvasItemPanel({
   sessionDateRef.current = sessionDate;
   const noteContentRef = useRef(noteContent);
   noteContentRef.current = noteContent;
+  const noteTitleRef = useRef(noteTitle);
+  noteTitleRef.current = noteTitle;
   const editingNoteIdRef = useRef(editingNoteId);
   editingNoteIdRef.current = editingNoteId;
   const itemIdRef = useRef(itemId);
@@ -149,13 +158,18 @@ export default function CanvasItemPanel({
     if (refreshed) onSaved(refreshed);
   }, [onSaved, updateItemMutation, refetchItem]);
 
-  // Save function for note content
+  // Save function for note content (with snapshot throttling)
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
+    const noteId = editingNoteIdRef.current;
+    const snapshot = shouldSnapshot(lastSnapshotAtRef.current.get(noteId));
     await updateNoteMutation.mutateAsync({
-      noteId: editingNoteIdRef.current,
-      input: { content: noteContentRef.current },
+      noteId,
+      input: { content: noteContentRef.current, title: noteTitleRef.current, snapshot },
     });
+    if (snapshot) {
+      lastSnapshotAtRef.current.set(noteId, Date.now());
+    }
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
@@ -215,6 +229,7 @@ export default function CanvasItemPanel({
         prevItemIdRef.current = itemId;
         setEditingNoteId(null);
         setNoteContent("");
+        setNoteTitle("");
       }
     }
   }, [itemId, queryItem]);
@@ -403,16 +418,17 @@ export default function CanvasItemPanel({
     }
     setEditingNoteId(newNote.id);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   function handleSelectNote(note: Note) {
     flushNote();
     setEditingNoteId(note.id);
     setNoteContent(note.content);
+    setNoteTitle(note.title ?? "");
   }
 
   async function handleDeleteNote(noteId: string) {
-    if (!confirm("Delete this note?")) return;
     await deleteNoteMutation.mutateAsync(noteId);
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -423,6 +439,7 @@ export default function CanvasItemPanel({
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
       setNoteContent("");
+      setNoteTitle("");
     }
   }
 
@@ -430,6 +447,7 @@ export default function CanvasItemPanel({
     flushNote();
     setEditingNoteId(null);
     setNoteContent("");
+    setNoteTitle("");
   }
 
   async function handleCreateMentionItem(
@@ -466,6 +484,28 @@ export default function CanvasItemPanel({
       setNotes(refreshed.notes);
       onSaved(refreshed);
     }
+  }
+
+  // Note history
+  const { data: historyEntries = [], isLoading: historyLoading } = useNoteHistory(historyNoteId);
+
+  async function handleRevertNote(content: string) {
+    if (!historyNoteId) return;
+    await updateNoteMutation.mutateAsync({
+      noteId: historyNoteId,
+      input: { content },
+    });
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setItem(refreshed);
+      setNotes(refreshed.notes);
+      onSaved(refreshed);
+      // If the reverted note is currently being edited, refresh editor content
+      if (editingNoteId === historyNoteId) {
+        setNoteContent(content);
+      }
+    }
+    setHistoryNoteId(null);
   }
 
   function handleTitleChange(value: string) {
@@ -694,6 +734,7 @@ export default function CanvasItemPanel({
           notes={notes}
           editingNoteId={editingNoteId}
           noteContent={noteContent}
+          noteTitle={noteTitle}
           noteStatus={noteStatus}
           itemsCache={itemsCache}
           canvasId={activeCanvasId ?? ""}
@@ -707,11 +748,24 @@ export default function CanvasItemPanel({
             setNoteContent(val);
             markNoteDirty();
           }}
+          onNoteTitleChange={(val) => {
+            setNoteTitle(val);
+            markNoteDirty();
+          }}
           onToggleImportant={handleToggleImportant}
           onCreateMentionItem={handleCreateMentionItem}
           getNotePreview={notePreview}
+          onHistoryNote={setHistoryNoteId}
         />
       )}
+
+      <NoteHistoryModal
+        open={historyNoteId !== null}
+        onClose={() => setHistoryNoteId(null)}
+        entries={historyEntries}
+        loading={historyLoading}
+        onRevert={handleRevertNote}
+      />
 
       {panelTab === "photos" && (
         <PhotosTab

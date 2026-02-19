@@ -95,6 +95,7 @@ export const notes = pgTable(
     canvasItemId: text("canvas_item_id")
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
+    title: text("title"),
     content: text("content").notNull().default(""),
     plainContent: text("plain_content").notNull().default(""),
     isImportant: boolean("is_important").notNull().default(false),
@@ -105,20 +106,22 @@ export const notes = pgTable(
 );
 
 // ============================================
-// Note History (snapshots of note content)
+// Content History (snapshots of note/quick-note content)
 // ============================================
 
-export const noteHistory = pgTable(
-  "note_history",
+export const contentHistorySourceTypes = ["note", "quick_note"] as const;
+export type ContentHistorySourceType = (typeof contentHistorySourceTypes)[number];
+
+export const contentHistory = pgTable(
+  "content_history",
   {
     id: text("id").primaryKey(),
-    noteId: text("note_id")
-      .notNull()
-      .references(() => notes.id, { onDelete: "cascade" }),
+    sourceId: text("source_id").notNull(),
+    sourceType: text("source_type", { enum: contentHistorySourceTypes }).notNull(),
     content: text("content").notNull(),
     snapshotAt: timestamp("snapshot_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("note_history_note_id_idx").on(table.noteId)],
+  (table) => [index("content_history_source_id_idx").on(table.sourceId)],
 );
 
 // ============================================
@@ -191,6 +194,7 @@ export const quickNotes = pgTable(
     canvasId: text("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
+    title: text("title"),
     content: text("content").notNull().default(""),
     isImportant: boolean("is_important").notNull().default(false),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -283,5 +287,5 @@ export type Tag = typeof tags.$inferSelect;
 export type InsertTag = typeof tags.$inferInsert;
 export type CanvasItemTag = typeof canvasItemTags.$inferSelect;
 export type InsertCanvasItemTag = typeof canvasItemTags.$inferInsert;
-export type NoteHistory = typeof noteHistory.$inferSelect;
-export type InsertNoteHistory = typeof noteHistory.$inferInsert;
+export type ContentHistory = typeof contentHistory.$inferSelect;
+export type InsertContentHistory = typeof contentHistory.$inferInsert;

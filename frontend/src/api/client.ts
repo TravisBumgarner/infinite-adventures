@@ -4,13 +4,13 @@ import type {
   CanvasItemSearchResult,
   CanvasItemSummary,
   CanvasSummary,
+  ContentHistoryEntry,
   CreateCanvasInput,
   CreateCanvasItemInput,
   CreateNoteInput,
   CreateTagInput,
   ImportCanvasResult,
   Note,
-  NoteHistoryEntry,
   PaginatedGallery,
   PaginatedTimeline,
   Photo,
@@ -228,8 +228,8 @@ export function deleteNote(noteId: string): Promise<void> {
   return request<void>(`/notes/${noteId}`, { method: "DELETE" });
 }
 
-export function fetchNoteHistory(noteId: string): Promise<NoteHistoryEntry[]> {
-  return request<NoteHistoryEntry[]>(`/notes/${noteId}/history`);
+export function fetchNoteHistory(noteId: string): Promise<ContentHistoryEntry[]> {
+  return request<ContentHistoryEntry[]>(`/notes/${noteId}/history`);
 }
 
 // --- Link functions ---
@@ -293,10 +293,16 @@ export function createQuickNote(canvasId: string, content?: string): Promise<Qui
   });
 }
 
-export function updateQuickNote(canvasId: string, id: string, content: string): Promise<QuickNote> {
+export function updateQuickNote(
+  canvasId: string,
+  id: string,
+  content: string,
+  snapshot?: boolean,
+  title?: string,
+): Promise<QuickNote> {
   return request<QuickNote>(`/canvases/${canvasId}/quick-notes/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, snapshot, title }),
   });
 }
 
@@ -310,6 +316,13 @@ export function toggleQuickNoteImportant(canvasId: string, id: string): Promise<
   return request<QuickNote>(`/canvases/${canvasId}/quick-notes/${id}/toggle-important`, {
     method: "PATCH",
   });
+}
+
+export function fetchQuickNoteHistory(
+  canvasId: string,
+  id: string,
+): Promise<ContentHistoryEntry[]> {
+  return request<ContentHistoryEntry[]>(`/canvases/${canvasId}/quick-notes/${id}/history`);
 }
 
 // --- Backup functions ---

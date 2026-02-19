@@ -5,7 +5,7 @@ import { getDb } from "../db/connection.js";
 import { canvasItems, notes } from "../db/schema.js";
 import { stripHtml } from "../utils/stripHtml.js";
 import { resolveCanvasItemLinks } from "./canvasItemLinkService.js";
-import { createSnapshot } from "./noteHistoryService.js";
+import { createSnapshot, deleteHistoryForSource } from "./contentHistoryService.js";
 
 const MENTION_ID_REGEX = /@\{([^}]+)\}/g;
 
@@ -37,6 +37,7 @@ export async function listNotes(canvasItemId: string): Promise<Note[]> {
 
   return rows.map((row) => ({
     id: row.id,
+    title: row.title,
     content: row.content,
     plainContent: row.plainContent,
     isImportant: row.isImportant,
@@ -53,6 +54,7 @@ export async function getNote(noteId: string): Promise<Note | null> {
 
   return {
     id: row.id,
+    title: row.title,
     content: row.content,
     plainContent: row.plainContent,
     isImportant: row.isImportant,
@@ -72,6 +74,7 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
   await db.insert(notes).values({
     id,
     canvasItemId: canvasItemId,
+    title: input.title ?? null,
     content,
     plainContent,
     createdAt: now,
@@ -85,6 +88,7 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
 
   return {
     id,
+    title: input.title ?? null,
     content,
     plainContent,
     isImportant: false,
@@ -101,9 +105,14 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
   if (!existing) return null;
 
-  // Snapshot old content if requested, content is changing, and content differs
-  if (input.snapshot && input.content !== undefined && input.content !== existing.content) {
-    await createSnapshot(noteId, existing.content);
+  // Snapshot old content if requested, content is changing, content differs, and old content is non-empty
+  if (
+    input.snapshot &&
+    input.content !== undefined &&
+    input.content !== existing.content &&
+    existing.content.trim()
+  ) {
+    await createSnapshot(noteId, "note", existing.content);
   }
 
   const updates: Record<string, unknown> = { updatedAt: now };
@@ -114,6 +123,7 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
     updates.content = input.content;
     updates.plainContent = newPlainContent;
   }
+  if (input.title !== undefined) updates.title = input.title;
   if (input.isImportant !== undefined) updates.isImportant = input.isImportant;
 
   await db.update(notes).set(updates).where(eq(notes.id, noteId));
@@ -125,6 +135,7 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
 
   return {
     id: noteId,
+    title: input.title !== undefined ? input.title : existing.title,
     content: input.content ?? existing.content,
     plainContent: newPlainContent ?? existing.plainContent,
     isImportant: input.isImportant ?? existing.isImportant,
@@ -140,6 +151,7 @@ export async function deleteNote(noteId: string): Promise<boolean> {
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
   if (!existing) return false;
 
+  await deleteHistoryForSource(noteId);
   const result = await db.delete(notes).where(eq(notes.id, noteId));
 
   if (result.rowCount === 0) return false;

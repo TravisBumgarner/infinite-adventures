@@ -43,6 +43,34 @@
       "when": 1771445465909,
       "tag": "0005_heavy_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771449263567,
+      "tag": "0006_serious_penance",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1771500000000,
+      "tag": "0007_consolidate_content_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771470086886,
+      "tag": "0008_eager_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1771470971457,
+      "tag": "0009_hard_lockheed",
+      "breakpoints": true
     }
   ]
 }

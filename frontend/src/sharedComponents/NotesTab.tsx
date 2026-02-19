@@ -2,13 +2,20 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import HistoryIcon from "@mui/icons-material/History";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
+import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
 import { keyframes } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
@@ -29,6 +36,7 @@ interface NotesTabProps {
   notes: Note[];
   editingNoteId: string | null;
   noteContent: string;
+  noteTitle: string;
   noteStatus: SaveStatus;
   itemsCache: Map<string, CanvasItem>;
   canvasId: string;
@@ -39,16 +47,19 @@ interface NotesTabProps {
   onDeleteNote: (noteId: string) => void;
   onBackToList: () => void;
   onNoteContentChange: (value: string) => void;
+  onNoteTitleChange: (value: string) => void;
   onToggleImportant: (noteId: string, isImportant: boolean) => void;
   onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
   onMentionClick?: (itemId: string) => void;
+  onHistoryNote?: (noteId: string) => void;
 }
 
 export default function NotesTab({
   notes,
   editingNoteId,
   noteContent,
+  noteTitle,
   noteStatus,
   itemsCache,
   canvasId,
@@ -59,15 +70,18 @@ export default function NotesTab({
   onDeleteNote,
   onBackToList,
   onNoteContentChange,
+  onNoteTitleChange,
   onToggleImportant,
   onCreateMentionItem,
   getNotePreview,
   onMentionClick,
+  onHistoryNote,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
   const [flashingNoteId, setFlashingNoteId] = useState<string | null>(null);
   const [expandedNoteIds, setExpandedNoteIds] = useState<Set<string>>(new Set());
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
 
   const toggleExpanded = (noteId: string) => {
     setExpandedNoteIds((prev) => {
@@ -125,6 +139,22 @@ export default function NotesTab({
         >
           {statusLabel(noteStatus) || "\u00A0"}
         </Typography>
+        <InputBase
+          placeholder="Title (optional)"
+          value={noteTitle}
+          onChange={(e) => onNoteTitleChange(e.target.value)}
+          sx={{
+            mb: 1,
+            px: 1,
+            py: 0.5,
+            fontSize: 14,
+            fontWeight: 600,
+            background: "var(--color-mantle)",
+            border: "1px solid var(--color-surface1)",
+            color: "var(--color-text)",
+          }}
+          fullWidth
+        />
         <MentionEditor
           value={noteContent}
           onChange={onNoteContentChange}
@@ -148,7 +178,7 @@ export default function NotesTab({
             variant="outlined"
             color="error"
             size="small"
-            onClick={() => onDeleteNote(editingNoteId)}
+            onClick={() => setDeleteNoteId(editingNoteId)}
           >
             Delete Note
           </Button>
@@ -226,22 +256,36 @@ export default function NotesTab({
                     color: "var(--color-text)",
                     bgcolor: "var(--color-surface0)",
                     wordBreak: "break-word",
-                    ...(!expandedNoteIds.has(note.id) && {
-                      display: "-webkit-box",
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: "vertical" as const,
-                      overflow: "hidden",
-                    }),
+                    ...(!expandedNoteIds.has(note.id) &&
+                      !note.title && {
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical" as const,
+                        overflow: "hidden",
+                      }),
                   }}
                 >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                    dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
-                  />
+                  {note.title && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {note.title}
+                    </Typography>
+                  )}
+                  {(expandedNoteIds.has(note.id) || !note.title) && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
+                    />
+                  )}
                   <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
                     Last edited on {new Date(note.updatedAt).toLocaleDateString()}
                   </Typography>
@@ -285,10 +329,21 @@ export default function NotesTab({
                       )}
                     </IconButton>
                   </Tooltip>
+                  {onHistoryNote && (
+                    <Tooltip title="History">
+                      <IconButton
+                        size="small"
+                        onClick={() => onHistoryNote(note.id)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        <HistoryIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title="Delete">
                     <IconButton
                       size="small"
-                      onClick={() => onDeleteNote(note.id)}
+                      onClick={() => setDeleteNoteId(note.id)}
                       sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                     >
                       <DeleteIcon sx={{ fontSize: 14 }} />
@@ -300,6 +355,27 @@ export default function NotesTab({
           </List>
         )}
       </Box>
+
+      <Dialog open={deleteNoteId !== null} onClose={() => setDeleteNoteId(null)}>
+        <DialogTitle>Delete Note</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this note? This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteNoteId(null)}>Cancel</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              onDeleteNote(deleteNoteId!);
+              setDeleteNoteId(null);
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
