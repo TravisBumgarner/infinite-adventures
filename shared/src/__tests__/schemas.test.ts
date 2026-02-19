@@ -23,21 +23,21 @@ describe("CanvasSchema", () => {
   const valid = {
     id: "canvas-1",
     name: "My Canvas",
-    created_at: "2025-01-01T00:00:00Z",
-    updated_at: "2025-01-01T00:00:00Z",
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2025-01-01T00:00:00Z",
   };
 
   it("accepts a valid Canvas", () => {
     expect(CanvasSchema.parse(valid)).toEqual(valid);
   });
 
-  it("rejects when created_at is missing", () => {
-    const { created_at: _, ...rest } = valid;
+  it("rejects when createdAt is missing", () => {
+    const { createdAt: _, ...rest } = valid;
     expect(() => CanvasSchema.parse(rest)).toThrow();
   });
 
-  it("rejects when updated_at is missing", () => {
-    const { updated_at: _, ...rest } = valid;
+  it("rejects when updatedAt is missing", () => {
+    const { updatedAt: _, ...rest } = valid;
     expect(() => CanvasSchema.parse(rest)).toThrow();
   });
 });
