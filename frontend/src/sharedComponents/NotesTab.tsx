@@ -233,28 +233,99 @@ export default function NotesTab({
                 }}
                 sx={{
                   display: "flex",
-                  gap: 0.5,
-                  alignItems: "flex-start",
+                  flexDirection: "column",
                   mb: 1,
-                  bgcolor: note.isImportant ? "var(--color-surface1)" : "transparent",
                   border: note.isImportant
                     ? "1px solid var(--color-yellow)"
-                    : "1px solid transparent",
-                  p: note.isImportant ? 0.5 : 0,
+                    : "1px solid var(--color-surface1)",
                   ...(flashingNoteId === note.id && {
                     animation: `${flashNote} 0.6s ease-in-out 2`,
                   }),
                 }}
               >
+                <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
+                  {note.title && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        flex: 1,
+                        fontWeight: 600,
+                        wordBreak: "break-word",
+                        py: 0.5,
+                        px: 0.5,
+                      }}
+                    >
+                      {note.title}
+                    </Typography>
+                  )}
+                  {!note.title && <Box sx={{ flex: 1 }} />}
+                  <Box sx={{ display: "flex", flexShrink: 0 }}>
+                    <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleExpanded(note.id)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        {expandedNoteIds.has(note.id) ? (
+                          <UnfoldLessIcon sx={{ fontSize: 14 }} />
+                        ) : (
+                          <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        size="small"
+                        onClick={() => onSelectNote(note)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        <EditIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                        sx={{
+                          color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
+                          p: 0.25,
+                        }}
+                      >
+                        {note.isImportant ? (
+                          <StarIcon sx={{ fontSize: 14 }} />
+                        ) : (
+                          <StarOutlineIcon sx={{ fontSize: 14 }} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    {onHistoryNote && (
+                      <Tooltip title="History">
+                        <IconButton
+                          size="small"
+                          onClick={() => onHistoryNote(note.id)}
+                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                        >
+                          <HistoryIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        onClick={() => setDeleteNoteId(note.id)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
                 <Box
                   sx={{
-                    flex: 1,
-                    minWidth: 0,
                     py: 0.5,
                     px: 1,
                     fontSize: 13,
                     color: "var(--color-text)",
-                    bgcolor: "var(--color-surface0)",
                     wordBreak: "break-word",
                     ...(!expandedNoteIds.has(note.id) &&
                       !note.title && {
@@ -265,17 +336,6 @@ export default function NotesTab({
                       }),
                   }}
                 >
-                  {note.title && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: 600,
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {note.title}
-                    </Typography>
-                  )}
                   {(expandedNoteIds.has(note.id) || !note.title) && (
                     <Typography
                       variant="body2"
@@ -289,66 +349,6 @@ export default function NotesTab({
                   <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
                     Last edited on {new Date(note.updatedAt).toLocaleDateString()}
                   </Typography>
-                </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
-                    <IconButton
-                      size="small"
-                      onClick={() => toggleExpanded(note.id)}
-                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                    >
-                      {expandedNoteIds.has(note.id) ? (
-                        <UnfoldLessIcon sx={{ fontSize: 14 }} />
-                      ) : (
-                        <UnfoldMoreIcon sx={{ fontSize: 14 }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Edit">
-                    <IconButton
-                      size="small"
-                      onClick={() => onSelectNote(note)}
-                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                    >
-                      <EditIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
-                    <IconButton
-                      size="small"
-                      onClick={() => onToggleImportant(note.id, !note.isImportant)}
-                      sx={{
-                        color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
-                        p: 0.25,
-                      }}
-                    >
-                      {note.isImportant ? (
-                        <StarIcon sx={{ fontSize: 14 }} />
-                      ) : (
-                        <StarOutlineIcon sx={{ fontSize: 14 }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  {onHistoryNote && (
-                    <Tooltip title="History">
-                      <IconButton
-                        size="small"
-                        onClick={() => onHistoryNote(note.id)}
-                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                      >
-                        <HistoryIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  <Tooltip title="Delete">
-                    <IconButton
-                      size="small"
-                      onClick={() => setDeleteNoteId(note.id)}
-                      sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                    >
-                      <DeleteIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Tooltip>
                 </Box>
               </Box>
             ))}

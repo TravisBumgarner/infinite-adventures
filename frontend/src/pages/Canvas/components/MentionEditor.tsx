@@ -336,7 +336,6 @@ const FormattingToolbar = forwardRef<
           }}
           title="Bold"
           sx={{
-            borderRadius: 1,
             fontSize: 13,
             fontWeight: 700,
             color: editor.isActive("bold") ? "var(--color-text)" : "var(--color-subtext0)",
@@ -353,7 +352,6 @@ const FormattingToolbar = forwardRef<
           }}
           title="Italic"
           sx={{
-            borderRadius: 1,
             fontSize: 13,
             fontWeight: 700,
             fontStyle: "italic",
@@ -371,7 +369,6 @@ const FormattingToolbar = forwardRef<
           }}
           title="Bullet List"
           sx={{
-            borderRadius: 1,
             fontSize: 13,
             fontWeight: 700,
             color: editor.isActive("bulletList") ? "var(--color-text)" : "var(--color-subtext0)",
@@ -388,7 +385,6 @@ const FormattingToolbar = forwardRef<
           }}
           title="Ordered List"
           sx={{
-            borderRadius: 1,
             fontSize: 13,
             fontWeight: 700,
             color: editor.isActive("orderedList") ? "var(--color-text)" : "var(--color-subtext0)",
@@ -405,7 +401,6 @@ const FormattingToolbar = forwardRef<
           }}
           title="Task List"
           sx={{
-            borderRadius: 1,
             fontSize: 17,
             fontWeight: 700,
             color: editor.isActive("taskList") ? "var(--color-text)" : "var(--color-subtext0)",
@@ -422,7 +417,6 @@ const FormattingToolbar = forwardRef<
           }}
           title={editor.isActive("link") ? "Remove Link" : "Add Link"}
           sx={{
-            borderRadius: 1,
             color: editor.isActive("link") ? "var(--color-text)" : "var(--color-subtext0)",
             bgcolor: editor.isActive("link") ? "var(--color-surface1)" : "transparent",
           }}

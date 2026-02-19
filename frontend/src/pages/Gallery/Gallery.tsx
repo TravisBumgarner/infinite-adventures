@@ -166,7 +166,6 @@ export default function Gallery() {
                   sx={{
                     position: "relative",
                     zIndex: 1,
-                    borderRadius: 2,
                     overflow: "hidden",
                     bgcolor: "var(--color-base)",
                     border: "1px solid var(--color-surface1)",

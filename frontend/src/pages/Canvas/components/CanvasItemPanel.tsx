@@ -660,7 +660,6 @@ export default function CanvasItemPanel({
               gap: 0.5,
               height: 26,
               px: 1,
-              borderRadius: "4px",
               border: "1px dashed var(--color-overlay0)",
               color: "var(--color-overlay0)",
               fontSize: 13,

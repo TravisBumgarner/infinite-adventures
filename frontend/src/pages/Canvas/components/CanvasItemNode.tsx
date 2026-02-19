@@ -70,7 +70,6 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
         sx={{
           bgcolor: "var(--color-base)",
           border: `${data.isFocused ? 3 : 2}px solid ${color}`,
-          borderRadius: 2,
           p: 1.5,
           minWidth: nodeSize.minWidth,
           maxWidth: nodeSize.maxWidth,
@@ -145,7 +144,6 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
               overflow: "hidden",
               display: "flex",
               alignItems: "center",
-              borderRadius: 1,
               mt: 1,
             }}
           >
@@ -164,8 +162,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
         {/* Row 5: Metadata */}
         <Box
           sx={{
-            bgcolor: "var(--color-surface0)",
-            borderRadius: 1,
+            borderTop: "1px solid var(--color-surface1)",
             px: 1,
             py: 0.5,
             mt: 1,

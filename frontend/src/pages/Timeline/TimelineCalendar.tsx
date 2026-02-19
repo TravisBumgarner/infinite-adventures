@@ -109,7 +109,6 @@ function MonthGrid({
                 alignItems: "center",
                 justifyContent: "center",
                 position: "relative",
-                borderRadius: 1,
                 cursor: "pointer",
                 border: isSelected
                   ? "2px solid var(--color-blue)"

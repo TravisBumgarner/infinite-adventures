@@ -78,7 +78,6 @@ export default function CanvasSettingsModal({
             <Box
               sx={{
                 border: "1px solid var(--color-red)",
-                borderRadius: 1,
                 p: 2,
                 bgcolor: "rgba(255,0,0,0.05)",
               }}

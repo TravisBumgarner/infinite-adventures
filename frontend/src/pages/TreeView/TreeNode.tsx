@@ -34,7 +34,6 @@ function TreeNode({ data }: NodeProps<TreeNodeType>) {
         sx={{
           bgcolor: "var(--color-base)",
           border: `2px solid ${color}`,
-          borderRadius: 2,
           p: 1.5,
           width: 200,
           color: "var(--color-text)",

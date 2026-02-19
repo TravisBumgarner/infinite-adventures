@@ -121,9 +121,7 @@ export default function Sessions() {
               sx={{
                 mb: 3,
                 p: 2,
-                bgcolor: "var(--color-surface0)",
                 border: "1px solid var(--color-surface1)",
-                borderRadius: 2,
                 display: "flex",
                 flexDirection: "column",
                 gap: 2,
@@ -198,7 +196,6 @@ export default function Sessions() {
                   key={session.id}
                   onClick={() => navigate(`/sessions/${session.id}`)}
                   sx={{
-                    borderRadius: 2,
                     border: "1px solid var(--color-surface1)",
                     bgcolor: "var(--color-base)",
                     "&:hover": session.selectedPhotoUrl

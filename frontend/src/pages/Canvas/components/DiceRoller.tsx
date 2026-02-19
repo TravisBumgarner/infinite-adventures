@@ -95,7 +95,6 @@ function RollerTab() {
               px: 1,
               fontSize: 12,
               fontWeight: 600,
-              borderRadius: "6px",
               bgcolor: getDieColor(sides),
               color: PALETTE_MOCHA.base,
               "&:hover": { bgcolor: getDieColor(sides), filter: "brightness(1.15)" },
@@ -141,7 +140,6 @@ function RollerTab() {
                   onDelete={() => removeDie(ids[ids.length - 1])}
                   sx={{
                     fontSize: 12,
-                    borderRadius: "4px",
                     bgcolor: getDieColor(sides),
                     color: PALETTE_MOCHA.base,
                     "& .MuiChip-deleteIcon": { color: PALETTE_MOCHA.base },
@@ -284,7 +282,6 @@ export default function DiceRoller() {
         bgcolor: "var(--color-chrome-bg)",
         backdropFilter: "blur(8px)",
         border: "1px solid var(--color-surface1)",
-        borderRadius: 2,
         overflow: "hidden",
       }}
     >

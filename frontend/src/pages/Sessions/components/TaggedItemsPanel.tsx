@@ -200,7 +200,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                         sx={{
                           width: 40,
                           height: 40,
-                          borderRadius: 1,
                           objectFit: "cover",
                           flexShrink: 0,
                         }}
@@ -237,8 +236,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       sx={{
                         border: "1px solid var(--color-surface1)",
                         borderTop: "none",
-                        borderRadius: 0,
-                        bgcolor: "var(--color-surface0)",
                         p: 2,
                       }}
                     >
@@ -256,7 +253,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                               sx={{
                                 width: 120,
                                 height: 120,
-                                borderRadius: 1,
                                 objectFit: "cover",
                                 mb: 1.5,
                               }}

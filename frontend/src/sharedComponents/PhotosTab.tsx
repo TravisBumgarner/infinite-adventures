@@ -229,7 +229,6 @@ export default function PhotosTab({
                     border: photo.isMainPhoto
                       ? "2px solid var(--color-blue)"
                       : "1px solid var(--color-surface1)",
-                    borderRadius: 1,
                     overflow: "hidden",
                     backgroundImage: photo.blurhash
                       ? `url(${blurhashToDataURL(photo.blurhash)})`
