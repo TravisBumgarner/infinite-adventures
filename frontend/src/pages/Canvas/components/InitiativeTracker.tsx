@@ -88,7 +88,6 @@ export default function InitiativeTracker() {
           bgcolor: "var(--color-chrome-bg)",
           backdropFilter: "blur(8px)",
           border: "1px solid var(--color-surface1)",
-          borderRadius: 2,
           overflow: "hidden",
         }}
       >

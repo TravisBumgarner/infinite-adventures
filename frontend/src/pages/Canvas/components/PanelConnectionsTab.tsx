@@ -110,7 +110,6 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                 key={`${entry.direction}-${entry.link.id}`}
                 onClick={() => onNavigate(entry.link.id)}
                 sx={{
-                  borderRadius: 1.5,
                   gap: 1,
                   py: 1,
                   flexDirection: "column",

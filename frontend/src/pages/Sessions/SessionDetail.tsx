@@ -595,7 +595,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             width: 2,
             height: 40,
             bgcolor: "var(--color-surface1)",
-            borderRadius: 1,
           }}
         />
       </Box>

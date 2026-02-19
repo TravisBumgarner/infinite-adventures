@@ -243,7 +243,6 @@ export function ManageTags() {
                       alignItems: "center",
                       justifyContent: "center",
                       border: selected ? "2px solid var(--color-blue)" : "2px solid transparent",
-                      borderRadius: "4px",
                       color: "var(--color-text)",
                       cursor: "pointer",
                       "&:hover": { opacity: 0.8 },
@@ -288,7 +287,6 @@ export function ManageTags() {
                   sx={{
                     aspectRatio: "1",
                     bgcolor: color,
-                    borderRadius: "4px",
                     cursor: "pointer",
                     border:
                       form.color === color

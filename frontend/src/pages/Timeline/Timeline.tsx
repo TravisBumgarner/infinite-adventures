@@ -357,7 +357,6 @@ export default function Timeline() {
                     <Box
                       sx={{
                         mb: 1,
-                        borderRadius: 2,
                         border: "1px solid var(--color-surface1)",
                         bgcolor: "var(--color-base)",
                         display: "flex",
@@ -441,7 +440,6 @@ export default function Timeline() {
                           sx={{
                             width: "100%",
                             maxHeight: "80vh",
-                            borderRadius: 1,
                           }}
                         />
                       ) : (

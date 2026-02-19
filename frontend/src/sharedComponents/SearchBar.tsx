@@ -169,7 +169,6 @@ export default function SearchBar() {
           maxHeight: "70vh",
           bgcolor: "var(--color-base)",
           border: "1px solid var(--color-surface1)",
-          borderRadius: 3,
           overflow: "hidden",
         },
       }}
@@ -398,9 +397,7 @@ export default function SearchBar() {
                 py: 0.25,
                 fontSize: 10,
                 fontFamily: "inherit",
-                bgcolor: "var(--color-surface0)",
                 border: "1px solid var(--color-surface1)",
-                borderRadius: 0.5,
                 color: "var(--color-subtext0)",
               }}
             >

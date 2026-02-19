@@ -89,7 +89,6 @@ export default function DiceRoller3d() {
         bgcolor: "var(--color-chrome-bg)",
         backdropFilter: "blur(8px)",
         border: "1px solid var(--color-surface1)",
-        borderRadius: 2,
         overflow: "hidden",
       }}
     >
@@ -128,7 +127,6 @@ export default function DiceRoller3d() {
                 px: 1,
                 fontSize: 12,
                 fontWeight: 600,
-                borderRadius: "6px",
                 bgcolor: DIE_COLORS[type],
                 color: PALETTE_MOCHA.base,
                 "&:hover": { bgcolor: DIE_COLORS[type], filter: "brightness(1.15)" },
@@ -154,7 +152,6 @@ export default function DiceRoller3d() {
                     onDelete={() => removeDie(type)}
                     sx={{
                       fontSize: 12,
-                      borderRadius: "4px",
                       bgcolor: DIE_COLORS[type],
                       color: PALETTE_MOCHA.base,
                       "& .MuiChip-deleteIcon": { color: PALETTE_MOCHA.base },
@@ -183,7 +180,6 @@ export default function DiceRoller3d() {
         {/* Canvas viewport */}
         <Box
           sx={{
-            borderRadius: 1,
             overflow: "hidden",
             border: "1px solid var(--color-surface1)",
             lineHeight: 0,

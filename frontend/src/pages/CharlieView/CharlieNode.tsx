@@ -52,7 +52,6 @@ function CharlieNode({ id, data }: NodeProps<CharlieNodeType>) {
           transform: `rotate(${rotation}deg)`,
           width: cardWidth,
           bgcolor: "#f5f0e1",
-          borderRadius: 0.5,
           boxShadow: "2px 3px 8px rgba(0,0,0,0.3)",
           overflow: "hidden",
           position: "relative",

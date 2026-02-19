@@ -85,7 +85,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
           bgcolor: "var(--color-chrome-bg)",
           backdropFilter: "blur(8px)",
           border: "1px solid var(--color-surface1)",
-          borderRadius: 3,
           pointerEvents: "auto",
         }}
       >
@@ -101,7 +100,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
               sx={{
                 bgcolor: "var(--color-base)",
                 border: `2px solid ${color}`,
-                borderRadius: 1.5,
                 p: 1,
                 width: 90,
                 cursor: "pointer",
@@ -122,7 +120,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                     width: 32,
                     height: 8,
                     bgcolor: "var(--color-surface1)",
-                    borderRadius: 0.5,
                   }}
                 />
                 <Chip
@@ -145,7 +142,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                     width: "100%",
                     height: 6,
                     bgcolor: "var(--color-surface0)",
-                    borderRadius: 0.5,
                   }}
                 />
                 <Box
@@ -153,7 +149,6 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                     width: "70%",
                     height: 6,
                     bgcolor: "var(--color-surface0)",
-                    borderRadius: 0.5,
                   }}
                 />
               </Box>

@@ -25,7 +25,6 @@ export function TagPill({ tag, compact, onDelete }: TagPillProps) {
         gap: 0.5,
         bgcolor: tag.color,
         color: textColor,
-        borderRadius: "4px",
         px: 0.75,
         height,
         fontSize,

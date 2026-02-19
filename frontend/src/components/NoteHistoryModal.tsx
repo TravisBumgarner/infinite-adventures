@@ -62,7 +62,6 @@ function HistoryEntry({
     <Box
       sx={{
         border: "1px solid var(--color-surface1)",
-        borderRadius: 1,
         p: 1.5,
         mb: 1,
       }}
@@ -101,8 +100,6 @@ function HistoryEntry({
           sx={{
             mt: 1,
             p: 1,
-            bgcolor: "var(--color-surface0)",
-            borderRadius: 1,
             maxHeight: 200,
             overflow: "auto",
             fontSize: "0.85rem",

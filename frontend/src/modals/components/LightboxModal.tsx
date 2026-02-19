@@ -104,7 +104,6 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
             sx={{
               maxWidth: "100%",
               maxHeight: "calc(80vh - 60px)",
-              borderRadius: 1,
             }}
           />
         </Box>
@@ -148,7 +147,6 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
                 bgcolor: "rgba(0,0,0,0.5)",
                 px: 2,
                 py: 0.5,
-                borderRadius: 1,
                 maxWidth: "60vw",
                 textAlign: "center",
               }}
@@ -163,7 +161,6 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
               bgcolor: "rgba(0,0,0,0.5)",
               px: 1.5,
               py: 0.5,
-              borderRadius: 1,
             }}
           >
             {currentIndex + 1} / {photos.length}

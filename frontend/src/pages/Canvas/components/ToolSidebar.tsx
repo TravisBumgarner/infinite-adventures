@@ -43,7 +43,6 @@ export default function ToolSidebar() {
           bgcolor: "var(--color-chrome-bg)",
           backdropFilter: "blur(8px)",
           border: "1px solid var(--color-surface1)",
-          borderRadius: 2,
         }}
       >
         <Tooltip title="Dice Roller" placement="right">

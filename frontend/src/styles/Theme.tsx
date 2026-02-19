@@ -64,6 +64,13 @@ function buildTheme(mode: EffectiveMode) {
           },
         },
       },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            borderRadius: 0,
+          },
+        },
+      },
       MuiPaper: {
         styleOverrides: {
           root: {
