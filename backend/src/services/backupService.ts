@@ -192,24 +192,64 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
           )
       : [];
 
+  const toISO = (d: Date) => d.toISOString();
+
   const data: BackupData = {
     canvas: {
       id: canvas.id,
       name: canvas.name,
-      createdAt: canvas.createdAt,
-      updatedAt: canvas.updatedAt,
+      createdAt: toISO(canvas.createdAt),
+      updatedAt: toISO(canvas.updatedAt),
     },
-    canvasItems: itemRows,
-    people: peopleRows,
-    places: placesRows,
-    things: thingsRows,
-    sessions: sessionsRows,
-    events: eventsRows,
-    notes: noteRows,
-    photos: photoData,
-    tags: tagRows,
+    canvasItems: itemRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    people: peopleRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    places: placesRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    things: thingsRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    sessions: sessionsRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    events: eventsRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    notes: noteRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    photos: photoData.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+    })),
+    tags: tagRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
     canvasItemTags: canvasItemTagRows,
-    canvasItemLinks: linkRows,
+    canvasItemLinks: linkRows.map((r) => ({
+      ...r,
+      createdAt: toISO(r.createdAt),
+    })),
   };
 
   const manifest: BackupManifest = {
@@ -301,7 +341,7 @@ export async function importCanvas(
   const writtenPhotoPaths: string[] = [];
 
   const db = getDb();
-  const now = new Date().toISOString();
+  const now = new Date();
 
   try {
     await db.transaction(async (tx) => {
@@ -323,37 +363,37 @@ export async function importCanvas(
       for (const p of data.people) {
         await tx.insert(people).values({
           id: contentIdMap.get(p.id)!,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
+          createdAt: new Date(p.createdAt),
+          updatedAt: new Date(p.updatedAt),
         });
       }
       for (const p of data.places) {
         await tx.insert(places).values({
           id: contentIdMap.get(p.id)!,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
+          createdAt: new Date(p.createdAt),
+          updatedAt: new Date(p.updatedAt),
         });
       }
       for (const t of data.things) {
         await tx.insert(things).values({
           id: contentIdMap.get(t.id)!,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
+          createdAt: new Date(t.createdAt),
+          updatedAt: new Date(t.updatedAt),
         });
       }
       for (const s of data.sessions) {
         await tx.insert(sessions).values({
           id: contentIdMap.get(s.id)!,
           sessionDate: s.sessionDate,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt,
+          createdAt: new Date(s.createdAt),
+          updatedAt: new Date(s.updatedAt),
         });
       }
       for (const e of data.events) {
         await tx.insert(events).values({
           id: contentIdMap.get(e.id)!,
-          createdAt: e.createdAt,
-          updatedAt: e.updatedAt,
+          createdAt: new Date(e.createdAt),
+          updatedAt: new Date(e.updatedAt),
         });
       }
 
@@ -369,8 +409,8 @@ export async function importCanvas(
           canvasId: newCanvasId,
           userId: null,
           contentId: contentIdMap.get(ci.contentId)!,
-          createdAt: ci.createdAt,
-          updatedAt: ci.updatedAt,
+          createdAt: new Date(ci.createdAt),
+          updatedAt: new Date(ci.updatedAt),
         });
       }
 
@@ -381,8 +421,8 @@ export async function importCanvas(
           canvasItemId: canvasItemIdMap.get(n.canvasItemId)!,
           content: n.content,
           isImportant: n.isImportant,
-          createdAt: n.createdAt,
-          updatedAt: n.updatedAt,
+          createdAt: new Date(n.createdAt),
+          updatedAt: new Date(n.updatedAt),
         });
       }
 
@@ -415,7 +455,7 @@ export async function importCanvas(
           isImportant: p.isImportant,
           aspectRatio: p.aspectRatio,
           blurhash: p.blurhash,
-          createdAt: p.createdAt,
+          createdAt: new Date(p.createdAt),
         });
       }
 
@@ -427,8 +467,8 @@ export async function importCanvas(
           icon: t.icon,
           color: t.color,
           canvasId: newCanvasId,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
+          createdAt: new Date(t.createdAt),
+          updatedAt: new Date(t.updatedAt),
         });
       }
 
@@ -446,7 +486,7 @@ export async function importCanvas(
           sourceItemId: canvasItemIdMap.get(link.sourceItemId)!,
           targetItemId: canvasItemIdMap.get(link.targetItemId)!,
           snippet: link.snippet,
-          createdAt: link.createdAt,
+          createdAt: new Date(link.createdAt),
         });
       }
     });

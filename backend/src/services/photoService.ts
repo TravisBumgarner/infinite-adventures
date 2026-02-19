@@ -59,7 +59,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const id = uuidv4();
   const ext = getExtension(input.originalName);
   const filename = `${id}${ext}`;
-  const now = new Date().toISOString();
+  const now = new Date();
 
   // Ensure uploads directory exists
   ensureUploadsDir();
@@ -116,7 +116,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     caption: "",
     aspectRatio,
     blurhash,
-    createdAt: now,
+    createdAt: now.toISOString(),
   };
 }
 
@@ -127,7 +127,7 @@ export async function getPhoto(id: string): Promise<PhotoInfo | null> {
   const db = getDb();
   const [photo] = await db.select().from(photos).where(eq(photos.id, id));
   if (!photo) return null;
-  return photo as PhotoInfo;
+  return { ...photo, createdAt: photo.createdAt.toISOString() } as PhotoInfo;
 }
 
 /**
@@ -142,7 +142,7 @@ export async function listPhotos(
     .select()
     .from(photos)
     .where(and(eq(photos.contentType, contentType), eq(photos.contentId, contentId)));
-  return result as PhotoInfo[];
+  return result.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })) as PhotoInfo[];
 }
 
 /**

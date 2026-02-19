@@ -160,7 +160,7 @@ describe("canvasService", () => {
       const db = getDb();
       const itemId = uuidv4();
       const contentId = uuidv4();
-      const now = new Date().toISOString();
+      const now = new Date();
 
       // First insert the content record
       await db.insert(people).values({

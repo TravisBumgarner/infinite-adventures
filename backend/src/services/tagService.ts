@@ -7,7 +7,7 @@ import { canvasItemTags, tags } from "../db/schema.js";
 export async function createTag(input: CreateTagInput, canvasId: string): Promise<Tag> {
   const db = getDb();
   const id = uuidv4();
-  const now = new Date().toISOString();
+  const now = new Date();
 
   await db.insert(tags).values({
     id,
@@ -40,7 +40,7 @@ export async function updateTag(id: string, input: UpdateTagInput): Promise<Tag 
   const [existing] = await db.select().from(tags).where(eq(tags.id, id));
   if (!existing) return null;
 
-  const now = new Date().toISOString();
+  const now = new Date();
   await db
     .update(tags)
     .set({

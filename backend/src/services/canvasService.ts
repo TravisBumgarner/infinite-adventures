@@ -41,7 +41,7 @@ export async function getCanvas(id: string, userId: string): Promise<CanvasRow |
 export async function createCanvas(name: string, userId: string): Promise<CanvasRow> {
   const db = getDb();
   const id = uuidv4();
-  const now = new Date().toISOString();
+  const now = new Date();
 
   await db.insert(canvases).values({
     id,
@@ -76,10 +76,7 @@ export async function updateCanvas(
   const [existing] = await db.select().from(canvases).where(eq(canvases.id, id));
   if (!existing) return null;
 
-  await db
-    .update(canvases)
-    .set({ name, updatedAt: new Date().toISOString() })
-    .where(eq(canvases.id, id));
+  await db.update(canvases).set({ name, updatedAt: new Date() }).where(eq(canvases.id, id));
 
   const [updated] = await db.select().from(canvases).where(eq(canvases.id, id));
   return updated!;

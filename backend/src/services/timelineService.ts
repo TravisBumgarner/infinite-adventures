@@ -36,8 +36,8 @@ export async function getTimeline(
   const noteSortCol = sort === "updatedAt" ? notes.updatedAt : notes.createdAt;
   const noteCursorCondition = parsed
     ? or(
-        lt(noteSortCol, parsed.timestamp),
-        and(eq(noteSortCol, parsed.timestamp), lt(notes.id, parsed.id)),
+        lt(noteSortCol, new Date(parsed.timestamp)),
+        and(eq(noteSortCol, new Date(parsed.timestamp)), lt(notes.id, parsed.id)),
       )
     : undefined;
 
@@ -64,8 +64,8 @@ export async function getTimeline(
   const noteEntries: TimelineEntry[] = noteRows.map((row) => ({
     id: row.id,
     kind: "note" as const,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
     isImportant: row.isImportant,
     content: row.content,
     parentItemId: row.parentItemId,
@@ -77,8 +77,8 @@ export async function getTimeline(
   // Photos only have createdAt, so sort field is always createdAt
   const photoCursorCondition = parsed
     ? or(
-        lt(photos.createdAt, parsed.timestamp),
-        and(eq(photos.createdAt, parsed.timestamp), lt(photos.id, parsed.id)),
+        lt(photos.createdAt, new Date(parsed.timestamp)),
+        and(eq(photos.createdAt, new Date(parsed.timestamp)), lt(photos.id, parsed.id)),
       )
     : undefined;
 
@@ -109,8 +109,8 @@ export async function getTimeline(
   const photoEntries: TimelineEntry[] = photoRows.map((row) => ({
     id: row.id,
     kind: "photo" as const,
-    createdAt: row.createdAt,
-    updatedAt: row.createdAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.createdAt.toISOString(),
     isImportant: row.isImportant,
     photoUrl: `/api/photos/${row.id}`,
     originalName: row.originalName,

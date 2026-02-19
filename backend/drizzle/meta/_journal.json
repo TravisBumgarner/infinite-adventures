@@ -78,6 +78,13 @@
       "when": 1771476101283,
       "tag": "0010_fixed_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1771476571550,
+      "tag": "0011_jazzy_nightcrawler",
+      "breakpoints": true
     }
   ]
 }

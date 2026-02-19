@@ -20,7 +20,7 @@ export async function createQuickNote(
 ): Promise<QuickNote> {
   const db = getDb();
   const id = uuidv4();
-  const now = new Date().toISOString();
+  const now = new Date();
   const [note] = await db
     .insert(quickNotes)
     .values({ id, canvasId, title: title ?? null, content, createdAt: now, updatedAt: now })
@@ -43,7 +43,7 @@ export async function updateQuickNote(
     }
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const updates: Record<string, unknown> = { content, updatedAt: now };
   if (title !== undefined) updates.title = title;
   const [updated] = await db
@@ -70,7 +70,7 @@ export async function toggleQuickNoteImportant(id: string): Promise<QuickNote | 
   if (!existing) return null;
   const [updated] = await db
     .update(quickNotes)
-    .set({ isImportant: !existing.isImportant, updatedAt: new Date().toISOString() })
+    .set({ isImportant: !existing.isImportant, updatedAt: new Date() })
     .where(eq(quickNotes.id, id))
     .returning();
   return updated ?? null;
