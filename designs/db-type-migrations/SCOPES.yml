@@ -1,0 +1,156 @@
+project: Database Column Type Migrations
+design_file: N/A # User request — migrate text columns to proper PostgreSQL types
+scoping_date: 2026-02-18
+
+milestones:
+  - number: 1
+    title: "1. Migrate UUID columns from text to uuid"
+    description: |
+      Change all id and foreign-key columns from text to PostgreSQL native uuid type.
+      This is the safest migration — Drizzle's uuid() returns JS strings just like text(),
+      so no application code changes are required beyond the schema and migration file.
+    branch:
+      working: task-1-migrate-uuid-columns
+      base: main
+
+  - number: 2
+    title: "2. Migrate timestamp and date columns"
+    description: |
+      Change all created_at/updated_at columns from text to timestamptz and
+      session_date from text to date. This requires updating backend services
+      because Drizzle returns Date objects for timestamp columns instead of strings.
+    branch:
+      working: task-2-migrate-timestamp-columns
+      base: main
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Migrate all id and FK columns from text to uuid
+    description: |
+      All 13 tables use `text("id")` for primary keys and `text("column_name")` for
+      foreign key references, but every value is a v4 UUID. Change these to
+      `uuid("id")` / `uuid("column_name")` using Drizzle's built-in uuid column type.
+
+      **Schema changes** (`backend/src/db/schema.ts`):
+      - Import `uuid` from `drizzle-orm/pg-core`
+      - Replace `text("id")` → `uuid("id")` on all 13 tables
+      - Replace `text("column_name")` → `uuid("column_name")` for every FK column:
+        canvas_users.canvas_id, canvas_users.user_id, notes.canvas_item_id,
+        canvas_items.canvas_id, canvas_items.user_id, canvas_items.content_id,
+        photos.content_id, quick_notes.canvas_id, tags.canvas_id,
+        canvas_item_tags.canvas_item_id, canvas_item_tags.tag_id,
+        canvas_item_links.source_item_id, canvas_item_links.target_item_id,
+        content_history.source_id
+
+      **Migration**: Run `drizzle-kit generate` then review the generated SQL.
+      Drizzle-kit may not include the `USING column::uuid` cast automatically.
+      If not, manually edit the migration to use:
+      ```sql
+      ALTER TABLE "table" ALTER COLUMN "col" SET DATA TYPE uuid USING "col"::uuid;
+      ```
+      for every altered column.
+
+      **No application code changes needed** — Drizzle's `uuid()` returns JS strings
+      just like `text()`, so services, routes, and frontend are unaffected.
+
+      **Seed file** (`backend/src/db/seed.ts`): No changes needed — `crypto.randomUUID()`
+      returns valid UUID strings compatible with the uuid column type.
+    acceptance_criteria:
+      - All id columns use `uuid()` instead of `text()` in schema.ts
+      - All FK columns use `uuid()` instead of `text()` in schema.ts
+      - A working Drizzle migration exists with proper `USING col::uuid` casts
+      - All existing tests pass without modification
+    depends_on: []
+    effort: 2
+    status: completed
+
+  - id: 2
+    milestone: 2
+    title: Migrate created_at/updated_at columns from text to timestamptz
+    description: |
+      25 timestamp columns across 13 tables currently use `text` with
+      `default(sql\`now()::text\`)`. Change them to `timestamp("col", { withTimezone: true })`
+      with `.defaultNow()`, matching the pattern already used by `content_history.snapshot_at`.
+
+      **Schema changes** (`backend/src/db/schema.ts`):
+      - Replace every `text("created_at").notNull().default(sql\`now()::text\`)`
+        with `timestamp("created_at", { withTimezone: true }).notNull().defaultNow()`
+      - Same for `updated_at` columns
+      - The `sql` import may become unused if no other usages remain — remove if so
+      - Tables affected: canvases, users, people, places, things, sessions, events,
+        canvas_items, notes, photos, quick_notes, tags, canvas_item_links
+
+      **Migration**: Run `drizzle-kit generate`, then verify/edit the SQL to include:
+      ```sql
+      ALTER TABLE "table" ALTER COLUMN "created_at" SET DATA TYPE timestamptz
+        USING "created_at"::timestamptz;
+      ALTER TABLE "table" ALTER COLUMN "created_at" SET DEFAULT now();
+      ```
+
+      **Backend service changes**: Drizzle returns `Date` objects for timestamp columns.
+      Every service that reads timestamp fields and passes them to the API must call
+      `.toISOString()` on them. Follow the existing pattern in `contentHistoryService.ts`
+      where `row!.snapshotAt.toISOString()` is already used.
+
+      Files to update (anywhere created_at/updated_at is read from a query result
+      and returned in a response):
+      - `backend/src/services/noteService.ts`
+      - `backend/src/services/quickNoteService.ts`
+      - `backend/src/services/canvasService.ts`
+      - `backend/src/services/canvasItemService.ts`
+      - `backend/src/services/photoService.ts`
+      - `backend/src/services/tagService.ts`
+      - `backend/src/services/canvasItemLinkService.ts`
+      - `backend/src/services/backupService.ts`
+
+      For writes, replace `new Date().toISOString()` with `new Date()` since
+      Drizzle accepts Date objects for timestamp columns.
+
+      **Shared types** (`shared/src/index.ts`): No changes — Zod schemas already
+      declare these as `z.string()` and the services will serialize to ISO strings.
+
+      **Frontend**: No changes — it already receives ISO strings via the API.
+    acceptance_criteria:
+      - All created_at and updated_at columns use `timestamp({ withTimezone: true })` in schema.ts
+      - Services serialize Date objects to ISO strings before returning API responses
+      - Services pass `new Date()` (not `.toISOString()`) when writing timestamps
+      - A working Drizzle migration exists with proper USING casts
+      - All existing tests pass (update mocks if needed to return Date objects)
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 3
+    milestone: 2
+    title: Migrate session_date from text to date type
+    description: |
+      The `sessions.session_date` column stores dates as "YYYY-MM-DD" text strings.
+      Change it to PostgreSQL's native `date` type.
+
+      **Schema change** (`backend/src/db/schema.ts`):
+      - Replace `sessionDate: text("session_date").notNull()`
+        with `sessionDate: date("session_date").notNull()`
+      - Import `date` from `drizzle-orm/pg-core`
+
+      **Migration**: `ALTER TABLE "sessions" ALTER COLUMN "session_date"
+        SET DATA TYPE date USING "session_date"::date;`
+
+      **Backend**: Drizzle's `date()` column returns a string in "YYYY-MM-DD" format
+      by default (mode: "string"), so no service code changes should be needed.
+      Verify that `canvasItemService.ts` and `backupService.ts` still work correctly
+      with the date column.
+
+      **Frontend** (`frontend/src/pages/Sessions/Sessions.tsx`): The `formatDate`
+      function manually splits "YYYY-MM-DD" strings. This should continue to work
+      since Drizzle returns date columns as strings. No frontend changes expected.
+
+      **Seed file**: Values like `"2025-01-15"` are valid for PostgreSQL date type.
+    acceptance_criteria:
+      - session_date column uses `date()` type in schema.ts
+      - A working Drizzle migration exists with proper USING cast
+      - Sessions can still be created and read with correct date values
+      - All existing tests pass
+    depends_on: []
+    effort: 1
+    status: scoped
