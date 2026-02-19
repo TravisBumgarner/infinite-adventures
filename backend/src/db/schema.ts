@@ -8,6 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 const tsvector = customType<{ data: string }>({
@@ -21,14 +22,14 @@ export const canvasItemTypes = ["person", "place", "thing", "session", "event"] 
 export type CanvasItemType = (typeof canvasItemTypes)[number];
 
 export const canvases = pgTable("canvases", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   authId: text("auth_id").unique().notNull(),
   email: text("email").unique().notNull(),
   displayName: text("display_name").notNull(),
@@ -39,10 +40,10 @@ export const users = pgTable("users", {
 export const canvasUsers = pgTable(
   "canvas_users",
   {
-    canvasId: text("canvas_id")
+    canvasId: uuid("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
   },
@@ -54,32 +55,32 @@ export const canvasUsers = pgTable(
 // ============================================
 
 export const people = pgTable("people", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const places = pgTable("places", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const things = pgTable("things", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   sessionDate: text("session_date").notNull(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
 
 export const events = pgTable("events", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   createdAt: text("created_at").notNull().default(sql`now()::text`),
   updatedAt: text("updated_at").notNull().default(sql`now()::text`),
 });
@@ -91,8 +92,8 @@ export const events = pgTable("events", {
 export const notes = pgTable(
   "notes",
   {
-    id: text("id").primaryKey(),
-    canvasItemId: text("canvas_item_id")
+    id: uuid("id").primaryKey(),
+    canvasItemId: uuid("canvas_item_id")
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     title: text("title"),
@@ -115,8 +116,8 @@ export type ContentHistorySourceType = (typeof contentHistorySourceTypes)[number
 export const contentHistory = pgTable(
   "content_history",
   {
-    id: text("id").primaryKey(),
-    sourceId: text("source_id").notNull(),
+    id: uuid("id").primaryKey(),
+    sourceId: uuid("source_id").notNull(),
     sourceType: text("source_type", { enum: contentHistorySourceTypes }).notNull(),
     content: text("content").notNull(),
     snapshotAt: timestamp("snapshot_at", { withTimezone: true }).notNull().defaultNow(),
@@ -131,7 +132,7 @@ export const contentHistory = pgTable(
 export const canvasItems = pgTable(
   "canvas_items",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey(),
     type: text("type", {
       enum: canvasItemTypes,
     }).notNull(),
@@ -139,11 +140,11 @@ export const canvasItems = pgTable(
     summary: text("summary").notNull().default(""),
     canvasX: doublePrecision("canvas_x").notNull().default(0),
     canvasY: doublePrecision("canvas_y").notNull().default(0),
-    canvasId: text("canvas_id")
+    canvasId: uuid("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
-    userId: text("user_id").references(() => users.id),
-    contentId: text("content_id").notNull(),
+    userId: uuid("user_id").references(() => users.id),
+    contentId: uuid("content_id").notNull(),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
     updatedAt: text("updated_at").notNull().default(sql`now()::text`),
     searchVector: tsvector("search_vector").generatedAlwaysAs(
@@ -165,11 +166,11 @@ export const canvasItems = pgTable(
 export const photos = pgTable(
   "photos",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey(),
     contentType: text("content_type", {
       enum: canvasItemTypes,
     }).notNull(),
-    contentId: text("content_id").notNull(),
+    contentId: uuid("content_id").notNull(),
     filename: text("filename").notNull(),
     originalName: text("original_name").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -190,8 +191,8 @@ export const photos = pgTable(
 export const quickNotes = pgTable(
   "quick_notes",
   {
-    id: text("id").primaryKey(),
-    canvasId: text("canvas_id")
+    id: uuid("id").primaryKey(),
+    canvasId: uuid("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
     title: text("title"),
@@ -213,11 +214,11 @@ export type InsertQuickNote = typeof quickNotes.$inferInsert;
 export const tags = pgTable(
   "tags",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey(),
     name: text("name").notNull(),
     icon: text("icon").notNull(),
     color: text("color").notNull(),
-    canvasId: text("canvas_id")
+    canvasId: uuid("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
     createdAt: text("created_at").notNull().default(sql`now()::text`),
@@ -229,10 +230,10 @@ export const tags = pgTable(
 export const canvasItemTags = pgTable(
   "canvas_item_tags",
   {
-    canvasItemId: text("canvas_item_id")
+    canvasItemId: uuid("canvas_item_id")
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
-    tagId: text("tag_id")
+    tagId: uuid("tag_id")
       .notNull()
       .references(() => tags.id, { onDelete: "cascade" }),
   },
@@ -246,10 +247,10 @@ export const canvasItemTags = pgTable(
 export const canvasItemLinks = pgTable(
   "canvas_item_links",
   {
-    sourceItemId: text("source_item_id")
+    sourceItemId: uuid("source_item_id")
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
-    targetItemId: text("target_item_id")
+    targetItemId: uuid("target_item_id")
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     snippet: text("snippet"),

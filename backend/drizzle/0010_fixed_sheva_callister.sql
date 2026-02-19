@@ -1,0 +1,27 @@
+ALTER TABLE "canvas_item_links" ALTER COLUMN "source_item_id" SET DATA TYPE uuid USING "source_item_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_item_links" ALTER COLUMN "target_item_id" SET DATA TYPE uuid USING "target_item_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_item_tags" ALTER COLUMN "canvas_item_id" SET DATA TYPE uuid USING "canvas_item_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_item_tags" ALTER COLUMN "tag_id" SET DATA TYPE uuid USING "tag_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_items" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_items" ALTER COLUMN "canvas_id" SET DATA TYPE uuid USING "canvas_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_items" ALTER COLUMN "user_id" SET DATA TYPE uuid USING "user_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_items" ALTER COLUMN "content_id" SET DATA TYPE uuid USING "content_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_users" ALTER COLUMN "canvas_id" SET DATA TYPE uuid USING "canvas_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvas_users" ALTER COLUMN "user_id" SET DATA TYPE uuid USING "user_id"::uuid;--> statement-breakpoint
+ALTER TABLE "canvases" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "content_history" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "content_history" ALTER COLUMN "source_id" SET DATA TYPE uuid USING "source_id"::uuid;--> statement-breakpoint
+ALTER TABLE "events" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "notes" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "notes" ALTER COLUMN "canvas_item_id" SET DATA TYPE uuid USING "canvas_item_id"::uuid;--> statement-breakpoint
+ALTER TABLE "people" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "photos" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "photos" ALTER COLUMN "content_id" SET DATA TYPE uuid USING "content_id"::uuid;--> statement-breakpoint
+ALTER TABLE "places" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "quick_notes" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "quick_notes" ALTER COLUMN "canvas_id" SET DATA TYPE uuid USING "canvas_id"::uuid;--> statement-breakpoint
+ALTER TABLE "sessions" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "tags" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "tags" ALTER COLUMN "canvas_id" SET DATA TYPE uuid USING "canvas_id"::uuid;--> statement-breakpoint
+ALTER TABLE "things" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;--> statement-breakpoint
+ALTER TABLE "users" ALTER COLUMN "id" SET DATA TYPE uuid USING "id"::uuid;

@@ -71,6 +71,13 @@
       "when": 1771470971457,
       "tag": "0009_hard_lockheed",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1771476101283,
+      "tag": "0010_fixed_sheva_callister",
+      "breakpoints": true
     }
   ]
 }
