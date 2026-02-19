@@ -1,13 +1,12 @@
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import type { DragEvent } from "react";
 import { useRef } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
-import { getContrastText } from "../../../utils/getContrastText";
 
 interface ToolbarProps {
   onCreate: (type: CanvasItemType) => void;
@@ -122,17 +121,13 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                     bgcolor: "var(--color-surface1)",
                   }}
                 />
-                <Chip
+                <LabelBadge
                   label={CANVAS_ITEM_TYPE_LABELS[t.value]}
-                  size="small"
-                  sx={{
-                    bgcolor: color,
-                    color: getContrastText(color),
-                    fontSize: 9,
-                    fontWeight: 600,
-                    height: 16,
-                    "& .MuiChip-label": { px: 0.75 },
-                  }}
+                  accentColor={color}
+                  icon={canvasItemTypeIcon(t.value)}
+                  height={16}
+                  fontSize={9}
+                  sx={{ "& .MuiChip-label": { px: 0.75 } }}
                 />
               </Box>
               {/* Placeholder lines for content */}

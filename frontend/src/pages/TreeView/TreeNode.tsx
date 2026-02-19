@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
@@ -8,7 +7,7 @@ import { Handle, Position } from "@xyflow/react";
 import { memo } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS } from "../../constants";
-import { getContrastText } from "../../utils/getContrastText";
+import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 
 export type TreeNodeData = {
   type: CanvasItemType;
@@ -54,17 +53,11 @@ function TreeNode({ data }: NodeProps<TreeNodeType>) {
           >
             {data.title}
           </Typography>
-          <Chip
+          <LabelBadge
             label={label}
-            size="small"
-            sx={{
-              bgcolor: color,
-              color: getContrastText(color),
-              fontSize: 11,
-              fontWeight: 600,
-              height: 20,
-              flexShrink: 0,
-            }}
+            accentColor={color}
+            icon={canvasItemTypeIcon(data.type)}
+            sx={{ flexShrink: 0 }}
           />
         </Box>
       </Paper>

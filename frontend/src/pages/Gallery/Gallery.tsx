@@ -17,8 +17,8 @@ import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useCanvases, useGallery } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
+import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../stores/canvasStore";
-import { getContrastText } from "../../utils/getContrastText";
 
 export default function Gallery() {
   const theme = useTheme();
@@ -228,16 +228,13 @@ export default function Gallery() {
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Chip
+                      <LabelBadge
                         label={typeLabel}
-                        size="small"
-                        sx={{
-                          bgcolor: typeColors.light,
-                          color: getContrastText(typeColors.light),
-                          fontSize: 9,
-                          fontWeight: 600,
-                          height: 18,
-                        }}
+                        accentColor={typeColors.light}
+                        icon={canvasItemTypeIcon(entry.parentItemType)}
+                        height={18}
+                        fontSize={9}
+                        sx={{ color: "white" }}
                       />
                       <Typography
                         variant="caption"

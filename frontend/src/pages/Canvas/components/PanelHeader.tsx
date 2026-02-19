@@ -6,7 +6,6 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
@@ -16,7 +15,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem } from "shared";
-import { getContrastText } from "../../../utils/getContrastText";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 
 interface PanelHeaderProps {
   item: CanvasItem;
@@ -110,16 +109,12 @@ export default function PanelHeader({
           {title || "Untitled"}
         </Typography>
       )}
-      <Chip
+      <LabelBadge
         label={typeLabel}
-        size="small"
-        sx={{
-          bgcolor: typeBgColor,
-          color: getContrastText(typeBgColor),
-          fontSize: 10,
-          fontWeight: 600,
-          height: 22,
-        }}
+        accentColor={typeBgColor}
+        icon={canvasItemTypeIcon(item.type)}
+        height={22}
+        fontSize={10}
       />
       <IconButton
         data-tour="panel-menu"

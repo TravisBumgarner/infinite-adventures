@@ -13,6 +13,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
+import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useDiceStore } from "../../../stores/diceStore";
 import { PALETTE_MOCHA } from "../../../styles/styleConsts";
 
@@ -174,15 +175,11 @@ function RollerTab() {
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1 }}>
               {lastRoll.map((r, i) => (
-                <Chip
+                <LabelBadge
                   key={`${i}-${r.sides}-${r.result}`}
                   label={`D${r.sides}: ${r.result}`}
-                  size="small"
-                  sx={{
-                    fontSize: 12,
-                    bgcolor: getDieColor(r.sides),
-                    color: PALETTE_MOCHA.base,
-                  }}
+                  accentColor={getDieColor(r.sides)}
+                  fontSize={12}
                 />
               ))}
             </Box>
@@ -225,16 +222,10 @@ function HistoryTab() {
             </Box>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
               {entry.dice.map((r, i) => (
-                <Chip
+                <LabelBadge
                   key={`${i}-${r.sides}-${r.result}`}
                   label={`D${r.sides}: ${r.result}`}
-                  size="small"
-                  sx={{
-                    fontSize: 11,
-                    height: 20,
-                    bgcolor: getDieColor(r.sides),
-                    color: PALETTE_MOCHA.base,
-                  }}
+                  accentColor={getDieColor(r.sides)}
                 />
               ))}
             </Box>

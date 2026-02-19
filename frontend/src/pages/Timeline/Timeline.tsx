@@ -20,6 +20,7 @@ import { CANVAS_ITEM_TYPES } from "../../constants";
 
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
+import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { getContrastText } from "../../utils/getContrastText";
 import { getNotePreview } from "../../utils/getNotePreview";
@@ -369,17 +370,13 @@ export default function Timeline() {
                     >
                       {/* Row 1: type chip + title + date + action buttons */}
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Chip
+                        <LabelBadge
                           label={typeLabel}
-                          size="small"
-                          sx={{
-                            bgcolor: colors.light,
-                            color: getContrastText(colors.light),
-                            fontSize: 10,
-                            fontWeight: 600,
-                            height: 22,
-                            minWidth: 60,
-                          }}
+                          accentColor={colors.light}
+                          icon={canvasItemTypeIcon(entry.parentItemType)}
+                          height={22}
+                          fontSize={10}
+                          sx={{ minWidth: 60 }}
                         />
                         <Typography
                           sx={{

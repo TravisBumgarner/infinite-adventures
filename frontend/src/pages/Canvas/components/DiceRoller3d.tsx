@@ -9,6 +9,7 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
+import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useDice3dStore } from "../../../stores/dice3dStore";
 import { PALETTE_MOCHA } from "../../../styles/styleConsts";
 import { createEngine } from "./dice3dEngine";
@@ -202,15 +203,11 @@ export default function DiceRoller3d() {
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1 }}>
                 {results.map((r, i) => (
-                  <Chip
+                  <LabelBadge
                     key={`${i}-${r.type}-${r.value}`}
                     label={`${r.type.toUpperCase()}: ${r.value}`}
-                    size="small"
-                    sx={{
-                      fontSize: 12,
-                      bgcolor: DIE_COLORS[r.type],
-                      color: PALETTE_MOCHA.base,
-                    }}
+                    accentColor={DIE_COLORS[r.type]}
+                    fontSize={12}
                   />
                 ))}
               </Box>

@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import type { CanvasItem, CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
 import { getNotePreview } from "../../../utils/getNotePreview";
@@ -131,16 +132,11 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                       minWidth: 28,
                     }}
                   />
-                  <Chip
+                  <LabelBadge
                     label={entry.link.type.toUpperCase()}
-                    size="small"
-                    sx={{
-                      bgcolor: entryTypeBgColor,
-                      color: getContrastText(entryTypeBgColor),
-                      fontSize: 10,
-                      fontWeight: 600,
-                      height: 20,
-                    }}
+                    accentColor={entryTypeBgColor}
+                    icon={canvasItemTypeIcon(entry.link.type)}
+                    fontSize={10}
                   />
                   <Typography
                     variant="body2"

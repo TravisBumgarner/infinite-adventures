@@ -32,9 +32,9 @@ import {
 import { useItem, useNoteHistory } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { MODAL_ID, useModalStore } from "../../../modals";
+import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
-import { TagPill } from "../../../sharedComponents/TagPill";
 import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
@@ -600,7 +600,7 @@ export default function CanvasItemPanel({
       <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
         <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
           {item.tags.map((tag) => (
-            <TagPill key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
+            <TagBadge key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
           ))}
           {availableTags.length > 0 && (
             <Autocomplete
@@ -613,7 +613,7 @@ export default function CanvasItemPanel({
               value={null}
               renderOption={(props, option) => (
                 <li {...props} key={option.id}>
-                  <TagPill tag={option} />
+                  <TagBadge tag={option} />
                 </li>
               )}
               renderInput={(params) => (
