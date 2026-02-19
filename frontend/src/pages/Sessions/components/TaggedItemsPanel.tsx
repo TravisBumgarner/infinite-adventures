@@ -1,6 +1,5 @@
 import MapIcon from "@mui/icons-material/Map";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
@@ -16,9 +15,9 @@ import type { CanvasItem, Note } from "shared";
 import { fetchItem } from "../../../api/client";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { queryKeys, useTaggedItems } from "../../../hooks/queries";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { useCanvasStore } from "../../../stores/canvasStore";
-import { getContrastText } from "../../../utils/getContrastText";
 import { getNotePreview } from "../../../utils/getNotePreview";
 
 export interface TaggedItemsPanelRef {
@@ -218,17 +217,12 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                         {tagged.title}
                       </Typography>
                     </Box>
-                    <Chip
+                    <LabelBadge
                       label={typeInfo?.label ?? tagged.type}
-                      size="small"
-                      sx={{
-                        bgcolor: bgColor,
-                        color: getContrastText(bgColor),
-                        fontSize: 10,
-                        fontWeight: 600,
-                        height: 20,
-                        flexShrink: 0,
-                      }}
+                      accentColor={bgColor}
+                      icon={canvasItemTypeIcon(tagged.type)}
+                      fontSize={10}
+                      sx={{ flexShrink: 0 }}
                     />
                   </ListItemButton>
                   <Collapse in={isExpanded}>

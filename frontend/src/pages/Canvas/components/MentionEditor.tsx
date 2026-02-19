@@ -2,7 +2,6 @@ import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -22,9 +21,9 @@ import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CanvasItem, CanvasItemType } from "shared";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
-import { getContrastText } from "../../../utils/getContrastText";
 
 interface MentionEditorProps {
   value: string;
@@ -87,16 +86,12 @@ function SuggestionPopup({
             }}
             sx={{ gap: 1, fontSize: 13 }}
           >
-            <Chip
+            <LabelBadge
               label={item.type.toUpperCase()}
-              size="small"
-              sx={{
-                bgcolor: bgColor,
-                color: getContrastText(bgColor),
-                fontSize: 10,
-                fontWeight: 600,
-                height: 18,
-              }}
+              accentColor={bgColor}
+              icon={canvasItemTypeIcon(item.type as CanvasItemType)}
+              height={18}
+              fontSize={10}
             />
             {item.title}
           </MenuItem>

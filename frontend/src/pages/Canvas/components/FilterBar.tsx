@@ -9,7 +9,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
-import { TagPill } from "../../../sharedComponents/TagPill";
+import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
 import { getContrastText } from "../../../utils/getContrastText";
@@ -183,7 +183,7 @@ export default function FilterBar() {
                           "&:hover": { opacity: active ? 0.85 : 0.75 },
                         }}
                       >
-                        <TagPill tag={tag} compact />
+                        <TagBadge tag={tag} compact />
                       </Box>
                     );
                   })}

@@ -8,7 +8,6 @@ import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -21,6 +20,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo, useState } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
+import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useInitiativeStore } from "../../../stores/initiativeStore";
 import { PALETTE_MOCHA } from "../../../styles/styleConsts";
@@ -241,16 +241,10 @@ export default function InitiativeTracker() {
                       >
                         {combatant.name}
                       </Typography>
-                      <Chip
+                      <LabelBadge
                         label={combatant.initiative}
-                        size="small"
-                        sx={{
-                          fontSize: 11,
-                          height: 20,
-                          bgcolor: PALETTE_MOCHA.lavender,
-                          color: PALETTE_MOCHA.base,
-                          mr: 0.5,
-                        }}
+                        accentColor={PALETTE_MOCHA.lavender}
+                        sx={{ mr: 0.5 }}
                       />
                       <IconButton
                         size="small"

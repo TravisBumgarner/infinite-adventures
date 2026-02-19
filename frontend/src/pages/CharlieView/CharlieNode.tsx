@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type { Node, NodeProps } from "@xyflow/react";
@@ -7,7 +6,7 @@ import { Handle, Position } from "@xyflow/react";
 import { memo } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS } from "../../constants";
-import { getContrastText } from "../../utils/getContrastText";
+import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 
 export type CharlieNodeData = {
   type: CanvasItemType;
@@ -101,17 +100,13 @@ function CharlieNode({ id, data }: NodeProps<CharlieNodeType>) {
           >
             {data.title}
           </Typography>
-          <Chip
+          <LabelBadge
             label={label}
-            size="small"
-            sx={{
-              bgcolor: color,
-              color: getContrastText(color),
-              fontSize: 10,
-              fontWeight: 600,
-              height: 18,
-              mt: 0.5,
-            }}
+            accentColor={color}
+            icon={canvasItemTypeIcon(data.type)}
+            height={18}
+            fontSize={10}
+            sx={{ mt: 0.5 }}
           />
         </Box>
       </Box>

@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import type { CanvasItemSearchResult, CanvasItemType } from "shared";
 import { useSearchItems } from "../hooks/queries";
 import { useCanvasStore } from "../stores/canvasStore";
-import { getContrastText } from "../utils/getContrastText";
+import { canvasItemTypeIcon, LabelBadge } from "./LabelBadge";
 
 type Destination = "Canvas" | "Sessions" | "Timeline" | "Gallery";
 
@@ -265,29 +265,21 @@ export default function SearchBar() {
                   <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
                     {result.title}
                   </Typography>
-                  <Chip
+                  <LabelBadge
                     label={result.type}
-                    size="small"
-                    sx={{
-                      height: 18,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      bgcolor: bgColor,
-                      color: getContrastText(bgColor),
-                      textTransform: "capitalize",
-                    }}
+                    accentColor={bgColor}
+                    icon={canvasItemTypeIcon(result.type)}
+                    height={18}
+                    fontSize={10}
+                    sx={{ textTransform: "capitalize" }}
                   />
                   {result.noteId && (
-                    <Chip
+                    <LabelBadge
                       label="Note"
-                      size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        bgcolor: "var(--color-surface2)",
-                        color: "var(--color-subtext0)",
-                      }}
+                      accentColor="var(--color-surface2)"
+                      height={18}
+                      fontSize={10}
+                      sx={{ color: "var(--color-subtext0)" }}
                     />
                   )}
                 </Box>

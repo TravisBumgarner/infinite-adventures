@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
@@ -8,9 +7,8 @@ import { Handle, Position } from "@xyflow/react";
 import { memo, useMemo } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS } from "../../../constants";
-import { TagPill } from "../../../sharedComponents/TagPill";
+import { canvasItemTypeIcon, LabelBadge, TagBadge } from "../../../sharedComponents/LabelBadge";
 import { useTagStore } from "../../../stores/tagStore";
-import { getContrastText } from "../../../utils/getContrastText";
 
 export type CanvasItemNodeData = {
   itemId: string;
@@ -95,17 +93,11 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           >
             {data.title}
           </Typography>
-          <Chip
+          <LabelBadge
             label={label}
-            size="small"
-            sx={{
-              bgcolor: color,
-              color: getContrastText(color),
-              fontSize: 11,
-              fontWeight: 600,
-              height: 20,
-              flexShrink: 0,
-            }}
+            accentColor={color}
+            icon={canvasItemTypeIcon(data.type)}
+            sx={{ flexShrink: 0 }}
           />
         </Box>
 
@@ -131,7 +123,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
         {tags.length > 0 && (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
             {tags.map((tag) => (
-              <TagPill key={tag.id} tag={tag} compact />
+              <TagBadge key={tag.id} tag={tag} compact />
             ))}
           </Box>
         )}

@@ -13,7 +13,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Tag } from "shared";
 import { useCreateTag, useDeleteTag, useUpdateTag } from "../hooks/mutations";
-import { TagPill } from "../sharedComponents/TagPill";
+import { TagBadge } from "../sharedComponents/LabelBadge";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import { useTagStore } from "../stores/tagStore";
@@ -170,7 +170,7 @@ export function ManageTags() {
               gap: 1,
             }}
           >
-            <TagPill tag={tag} />
+            <TagBadge tag={tag} />
             <Box sx={{ display: "flex", gap: 0.25 }}>
               <IconButton
                 size="small"
@@ -316,7 +316,7 @@ export function ManageTags() {
               Preview
             </Typography>
             <Box>
-              <TagPill
+              <TagBadge
                 tag={{
                   id: "preview",
                   name: form.name.trim() || "Tag Name",

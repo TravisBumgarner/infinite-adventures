@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { Tag } from "shared";
 import { MODAL_ID, useModalStore } from "../../../modals";
-import { TagPill } from "../../../sharedComponents/TagPill";
+import { TagBadge } from "../../../sharedComponents/LabelBadge";
 
 interface NodeContextMenuProps {
   x: number;
@@ -134,7 +134,7 @@ export default function NodeContextMenu({
                 onClose();
               }}
             >
-              <TagPill tag={tag} compact />
+              <TagBadge tag={tag} compact />
             </MenuItem>
           ))
         )}
