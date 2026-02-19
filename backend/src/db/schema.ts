@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   customType,
+  date,
   doublePrecision,
   index,
   pgTable,
@@ -74,7 +75,7 @@ export const things = pgTable("things", {
 
 export const sessions = pgTable("sessions", {
   id: uuid("id").primaryKey(),
-  sessionDate: text("session_date").notNull(),
+  sessionDate: date("session_date").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

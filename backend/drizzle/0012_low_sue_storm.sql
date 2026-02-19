@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ALTER COLUMN "session_date" SET DATA TYPE date USING "session_date"::date;
