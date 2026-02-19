@@ -41,8 +41,8 @@ export async function listNotes(canvasItemId: string): Promise<Note[]> {
     content: row.content,
     plainContent: row.plainContent,
     isImportant: row.isImportant,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
   }));
 }
 
@@ -58,15 +58,15 @@ export async function getNote(noteId: string): Promise<Note | null> {
     content: row.content,
     plainContent: row.plainContent,
     isImportant: row.isImportant,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
   };
 }
 
 export async function createNote(canvasItemId: string, input: CreateNoteInput): Promise<Note> {
   const db = getDb();
   const id = uuidv4();
-  const now = new Date().toISOString();
+  const now = new Date();
   const content = input.content ?? "";
   const mentionNames = await resolveMentionNames(content);
   const plainContent = stripHtml(content, mentionNames);
@@ -92,14 +92,14 @@ export async function createNote(canvasItemId: string, input: CreateNoteInput): 
     content,
     plainContent,
     isImportant: false,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
   };
 }
 
 export async function updateNote(noteId: string, input: UpdateNoteInput): Promise<Note | null> {
   const db = getDb();
-  const now = new Date().toISOString();
+  const now = new Date();
 
   // Get the note to find the canvasItemId
   const [existing] = await db.select().from(notes).where(eq(notes.id, noteId));
@@ -139,8 +139,8 @@ export async function updateNote(noteId: string, input: UpdateNoteInput): Promis
     content: input.content ?? existing.content,
     plainContent: newPlainContent ?? existing.plainContent,
     isImportant: input.isImportant ?? existing.isImportant,
-    createdAt: existing.createdAt,
-    updatedAt: now,
+    createdAt: existing.createdAt.toISOString(),
+    updatedAt: now.toISOString(),
   };
 }
 

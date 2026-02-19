@@ -33,7 +33,7 @@ export async function createLink(sourceItemId: string, targetItemId: string): Pr
     sourceItemId: sourceItemId,
     targetItemId: targetItemId,
     snippet: null,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(),
   });
 
   return true;
@@ -285,7 +285,7 @@ export async function resolveCanvasItemLinks(
           sourceItemId: sourceItemId,
           targetItemId: targetItem.id,
           snippet,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(),
         })
         .onConflictDoUpdate({
           target: [canvasItemLinks.sourceItemId, canvasItemLinks.targetItemId],

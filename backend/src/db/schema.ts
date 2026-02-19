@@ -24,8 +24,8 @@ export type CanvasItemType = (typeof canvasItemTypes)[number];
 export const canvases = pgTable("canvases", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const users = pgTable("users", {
@@ -33,8 +33,8 @@ export const users = pgTable("users", {
   authId: text("auth_id").unique().notNull(),
   email: text("email").unique().notNull(),
   displayName: text("display_name").notNull(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const canvasUsers = pgTable(
@@ -56,33 +56,33 @@ export const canvasUsers = pgTable(
 
 export const people = pgTable("people", {
   id: uuid("id").primaryKey(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const places = pgTable("places", {
   id: uuid("id").primaryKey(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const things = pgTable("things", {
   id: uuid("id").primaryKey(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const sessions = pgTable("sessions", {
   id: uuid("id").primaryKey(),
   sessionDate: text("session_date").notNull(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const events = pgTable("events", {
   id: uuid("id").primaryKey(),
-  createdAt: text("created_at").notNull().default(sql`now()::text`),
-  updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================
@@ -100,8 +100,8 @@ export const notes = pgTable(
     content: text("content").notNull().default(""),
     plainContent: text("plain_content").notNull().default(""),
     isImportant: boolean("is_important").notNull().default(false),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("notes_canvas_item_id_idx").on(table.canvasItemId)],
 );
@@ -145,8 +145,8 @@ export const canvasItems = pgTable(
       .references(() => canvases.id, { onDelete: "cascade" }),
     userId: uuid("user_id").references(() => users.id),
     contentId: uuid("content_id").notNull(),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     searchVector: tsvector("search_vector").generatedAlwaysAs(
       sql`to_tsvector('english', coalesce("title", '') || ' ' || coalesce("summary", ''))`,
     ),
@@ -179,7 +179,7 @@ export const photos = pgTable(
     caption: text("caption").notNull().default(""),
     aspectRatio: doublePrecision("aspect_ratio"),
     blurhash: text("blurhash"),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("photos_content_idx").on(table.contentType, table.contentId)],
 );
@@ -198,8 +198,8 @@ export const quickNotes = pgTable(
     title: text("title"),
     content: text("content").notNull().default(""),
     isImportant: boolean("is_important").notNull().default(false),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("quick_notes_canvas_id_idx").on(table.canvasId)],
 );
@@ -221,8 +221,8 @@ export const tags = pgTable(
     canvasId: uuid("canvas_id")
       .notNull()
       .references(() => canvases.id, { onDelete: "cascade" }),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
-    updatedAt: text("updated_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("tags_canvas_id_idx").on(table.canvasId)],
 );
@@ -254,7 +254,7 @@ export const canvasItemLinks = pgTable(
       .notNull()
       .references(() => canvasItems.id, { onDelete: "cascade" }),
     snippet: text("snippet"),
-    createdAt: text("created_at").notNull().default(sql`now()::text`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.sourceItemId, table.targetItemId] })],
 );

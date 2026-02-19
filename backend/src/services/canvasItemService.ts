@@ -108,7 +108,7 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       summary: item.summary,
       canvasX: item.canvasX,
       canvasY: item.canvasY,
-      createdAt: item.createdAt,
+      createdAt: item.createdAt.toISOString(),
       selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
     });
@@ -187,8 +187,8 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     summary: item.summary,
     canvasX: item.canvasX,
     canvasY: item.canvasY,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
     sessionDate,
     notes: noteList,
     photos: photoList,
@@ -223,7 +223,7 @@ export async function createItem(
 
   const itemId = uuidv4();
   const contentId = uuidv4();
-  const now = new Date().toISOString();
+  const now = new Date();
   const type = input.type as CanvasItemType;
   const contentTable = getContentTable(type);
 
@@ -231,7 +231,7 @@ export async function createItem(
   if (type === "session") {
     await db.insert(sessions).values({
       id: contentId,
-      sessionDate: input.sessionDate ?? now.split("T")[0]!,
+      sessionDate: input.sessionDate ?? now.toISOString().split("T")[0]!,
       createdAt: now,
       updatedAt: now,
     });
@@ -263,7 +263,7 @@ export async function createItem(
     summary: "",
     canvasX: input.canvasX ?? 0,
     canvasY: input.canvasY ?? 0,
-    createdAt: now,
+    createdAt: now.toISOString(),
   };
 }
 
@@ -279,7 +279,7 @@ export async function updateItem(
   const [existing] = await db.select().from(canvasItems).where(eq(canvasItems.id, id));
   if (!existing) return null;
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const type = existing.type as CanvasItemType;
 
   // Update canvas item fields if provided
@@ -324,7 +324,7 @@ export async function updateItem(
     summary: updated!.summary,
     canvasX: updated!.canvasX,
     canvasY: updated!.canvasY,
-    createdAt: updated!.createdAt,
+    createdAt: updated!.createdAt.toISOString(),
   };
 }
 
@@ -469,7 +469,7 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
       id: item.id,
       title: item.title,
       sessionDate: item.sessionDate,
-      createdAt: item.createdAt,
+      createdAt: item.createdAt.toISOString(),
       selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
     });
   }
