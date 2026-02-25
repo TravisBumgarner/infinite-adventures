@@ -38,12 +38,18 @@ export async function getOrCreateUserByAuth(input: {
   const id = uuidv4();
   const displayName = input.displayName || input.email.split("@")[0];
 
-  await db.insert(users).values({
-    id,
-    authId: input.authId,
-    email: input.email,
-    displayName: displayName,
-  });
+  await db
+    .insert(users)
+    .values({
+      id,
+      authId: input.authId,
+      email: input.email,
+      displayName: displayName,
+    })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { authId: input.authId },
+    });
 
   return (await getUserByAuthId(input.authId)) as UserRow;
 }
