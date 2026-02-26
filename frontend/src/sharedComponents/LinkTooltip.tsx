@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import Popper from "@mui/material/Popper";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FONT_SIZES } from "../styles/styleConsts";
 
 interface LinkTooltipProps {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -122,9 +123,9 @@ export default function LinkTooltip({ containerRef, onEdit }: LinkTooltipProps) 
             window.open(href, "_blank", "noopener,noreferrer");
             setAnchorEl(null);
           }}
-          sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+          sx={{ p: 0.5 }}
         >
-          <OpenInNewIcon sx={{ fontSize: 14 }} />
+          <OpenInNewIcon sx={{ fontSize: FONT_SIZES.md }} />
         </IconButton>
         {onEdit && (
           <IconButton
@@ -136,9 +137,9 @@ export default function LinkTooltip({ containerRef, onEdit }: LinkTooltipProps) 
               }
               setAnchorEl(null);
             }}
-            sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+            sx={{ p: 0.5 }}
           >
-            <EditIcon sx={{ fontSize: 14 }} />
+            <EditIcon sx={{ fontSize: FONT_SIZES.md }} />
           </IconButton>
         )}
       </Paper>

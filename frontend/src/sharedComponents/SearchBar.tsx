@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import type { CanvasItemSearchResult, CanvasItemType } from "shared";
 import { useSearchItems } from "../hooks/queries";
 import { useCanvasStore } from "../stores/canvasStore";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { canvasItemTypeIcon, LabelBadge } from "./LabelBadge";
 
 type Destination = "Canvas" | "Sessions" | "Timeline" | "Gallery";
@@ -167,7 +168,6 @@ export default function SearchBar() {
           m: 0,
           width: 560,
           maxHeight: "70vh",
-          bgcolor: "var(--color-base)",
           border: "1px solid var(--color-surface1)",
           overflow: "hidden",
         },
@@ -191,7 +191,7 @@ export default function SearchBar() {
       >
         <SearchIcon
           sx={{
-            fontSize: 20,
+            fontSize: FONT_SIZES.xl,
             color: "var(--color-overlay0)",
             flexShrink: 0,
           }}
@@ -204,7 +204,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           sx={{
-            fontSize: 15,
+            fontSize: FONT_SIZES.md,
             color: "var(--color-text)",
             "& input::placeholder": {
               color: "var(--color-overlay0)",
@@ -270,7 +270,7 @@ export default function SearchBar() {
                     accentColor={bgColor}
                     icon={canvasItemTypeIcon(result.type)}
                     height={18}
-                    fontSize={10}
+                    fontSize={FONT_SIZES.xs}
                     sx={{ textTransform: "capitalize" }}
                   />
                   {result.noteId && (
@@ -278,7 +278,7 @@ export default function SearchBar() {
                       label="Note"
                       accentColor="var(--color-surface2)"
                       height={18}
-                      fontSize={10}
+                      fontSize={FONT_SIZES.xs}
                       sx={{ color: "var(--color-subtext0)" }}
                     />
                   )}
@@ -317,7 +317,7 @@ export default function SearchBar() {
                         }}
                         sx={{
                           height: 22,
-                          fontSize: 11,
+                          fontSize: FONT_SIZES.xs,
                           fontWeight: 500,
                           bgcolor:
                             di === selectedPillIndex
@@ -387,7 +387,7 @@ export default function SearchBar() {
               sx={{
                 px: 0.5,
                 py: 0.25,
-                fontSize: 10,
+                fontSize: FONT_SIZES.xs,
                 fontFamily: "inherit",
                 border: "1px solid var(--color-surface1)",
                 color: "var(--color-subtext0)",
@@ -398,7 +398,7 @@ export default function SearchBar() {
             <Typography
               variant="caption"
               sx={{
-                fontSize: 10,
+                fontSize: FONT_SIZES.xs,
                 color: "var(--color-overlay0)",
               }}
             >
