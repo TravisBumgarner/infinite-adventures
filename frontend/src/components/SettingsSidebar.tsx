@@ -12,7 +12,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { exportCanvas } from "../api/client";
+import { exportCanvas } from "../api/index";
 import { logout } from "../auth/service";
 import { SIDEBAR_WIDTH } from "../constants";
 import { useImportCanvas } from "../hooks/mutations";
