@@ -26,6 +26,7 @@ import { useQuickNoteHistory, useQuickNotes } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { useDraggable } from "../../../hooks/useDraggable";
 import ConfirmDeleteDialog from "../../../sharedComponents/ConfirmDeleteDialog";
+import QueryErrorDisplay from "../../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useQuickNotesStore } from "../../../stores/quickNotesStore";
 import { FONT_SIZES } from "../../../styles/styleConsts";
@@ -284,7 +285,11 @@ export default function QuickNotes() {
   const toggle = useQuickNotesStore((s) => s.toggle);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
 
-  const { data: notes = [] } = useQuickNotes(activeCanvasId ?? undefined);
+  const {
+    data: notes = [],
+    error: notesError,
+    refetch: refetchNotes,
+  } = useQuickNotes(activeCanvasId ?? undefined);
   const createMutation = useCreateQuickNote(activeCanvasId ?? "");
   const updateMutation = useUpdateQuickNote(activeCanvasId ?? "");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -387,7 +392,9 @@ export default function QuickNotes() {
 
       {/* Notes list */}
       <Box sx={{ p: 1.5, overflowY: "auto", display: "flex", flexDirection: "column", gap: 0.5 }}>
-        {notes.length === 0 ? (
+        {notesError ? (
+          <QueryErrorDisplay error={notesError} onRetry={refetchNotes} />
+        ) : notes.length === 0 ? (
           <Typography
             variant="body2"
             sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 2 }}

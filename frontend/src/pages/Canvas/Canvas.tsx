@@ -11,6 +11,7 @@ import { useDeleteItem } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
 import { logger } from "../../lib/logger";
 import { MODAL_ID, useModalStore } from "../../modals";
+import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { useTagStore } from "../../stores/tagStore";
 import type { CanvasItemNodeData } from "./components/CanvasItemNode";
@@ -55,7 +56,7 @@ export default function Canvas() {
   }, [setEditingItemId]);
 
   // Fetch canvases via React Query and initialize the active canvas
-  const { data: canvases = [] } = useCanvases();
+  const { data: canvases = [], error: canvasesError, refetch: refetchCanvases } = useCanvases();
   useEffect(() => {
     if (canvases.length > 0) {
       initActiveCanvas(canvases);
@@ -182,6 +183,7 @@ export default function Canvas() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [openModal]);
 
+  if (canvasesError) return <QueryErrorDisplay error={canvasesError} onRetry={refetchCanvases} />;
   // Don't render until we have an active canvas
   if (!activeCanvasId) return null;
 

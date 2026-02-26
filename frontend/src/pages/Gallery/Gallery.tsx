@@ -18,6 +18,7 @@ import { useCanvases, useGallery } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
 
@@ -42,10 +43,8 @@ export default function Gallery() {
   }, [canvases, initActiveCanvas]);
 
   // Fetch gallery data (infinite query)
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useGallery(
-    activeCanvasId ?? undefined,
-    importantOnly,
-  );
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
+    useGallery(activeCanvasId ?? undefined, importantOnly);
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
@@ -135,7 +134,9 @@ export default function Gallery() {
         </Box>
 
         {/* Gallery grid */}
-        {isLoading ? (
+        {error ? (
+          <QueryErrorDisplay error={error} onRetry={refetch} />
+        ) : isLoading ? (
           <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
             Loading gallery...
           </Typography>

@@ -21,6 +21,7 @@ import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
 import { getContrastText } from "../../utils/getContrastText";
@@ -88,10 +89,8 @@ export default function Timeline() {
   }, [canvases, initActiveCanvas]);
 
   // Fetch timeline data (infinite query)
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useTimeline(
-    activeCanvasId ?? undefined,
-    sort,
-  );
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
+    useTimeline(activeCanvasId ?? undefined, sort);
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
@@ -298,7 +297,9 @@ export default function Timeline() {
           </Box>
 
           {/* Timeline list */}
-          {isLoading ? (
+          {error ? (
+            <QueryErrorDisplay error={error} onRetry={refetch} />
+          ) : isLoading ? (
             <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
               Loading timeline...
             </Typography>
