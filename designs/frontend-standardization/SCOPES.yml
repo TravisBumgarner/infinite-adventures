@@ -1,0 +1,406 @@
+project: frontend-standardization
+design_file: designs/frontend-standardization/DESIGN.md
+scoping_date: 2026-02-25
+
+milestones:
+  - number: 1
+    title: "1. Theme foundation and design tokens"
+    description: Expand Theme.tsx with MUI component overrides and verify design tokens are importable
+    branch:
+      working: task-1-theme-foundation
+      base: main
+
+  - number: 2
+    title: "2. Shared components standardization"
+    description: Standardize sharedComponents/ — these are imported everywhere so doing them first propagates consistency
+    branch:
+      working: task-2-shared-components
+      base: task-1-theme-foundation
+
+  - number: 3
+    title: "3. Canvas panel and editor standardization"
+    description: Standardize the heaviest files — CanvasItemPanel, MentionEditor, PanelHeader, PanelConnectionsTab
+    branch:
+      working: task-3-canvas-panel
+      base: task-2-shared-components
+
+  - number: 4
+    title: "4. Canvas page components standardization"
+    description: Standardize Canvas page components — Toolbar, FilterBar, ContextMenus, DiceRoller, QuickNotes, etc.
+    branch:
+      working: task-4-canvas-components
+      base: task-3-canvas-panel
+
+  - number: 5
+    title: "5. Sessions and Timeline standardization"
+    description: Standardize Sessions, SessionDetail, TaggedItemsPanel, Timeline, TimelineCalendar
+    branch:
+      working: task-5-sessions-timeline
+      base: task-4-canvas-components
+
+  - number: 6
+    title: "6. Remaining pages standardization"
+    description: Standardize Gallery, Marketing, Login, Signup, PasswordReset, NotFound, TreeView, modals, layout components
+    branch:
+      working: task-6-remaining-pages
+      base: task-5-sessions-timeline
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Expand Theme.tsx with MUI component overrides and typography scale
+    description: |
+      Add comprehensive MUI theme overrides to `Theme.tsx` so that components render with standard styling out of the box, reducing the need for inline `sx` props.
+
+      **Typography overrides** — configure all used variants with FONT_SIZES tokens:
+      - `h1`: FONT_SIZES.xl (20px), fontWeight 700
+      - `h3`: FONT_SIZES.xl (20px), fontWeight 700
+      - `h4`: FONT_SIZES.xl (20px), fontWeight 600
+      - `h5`: FONT_SIZES.lg (16px), fontWeight 600
+      - `h6`: FONT_SIZES.lg (16px), fontWeight 600
+      - `body1`: FONT_SIZES.md (14px)
+      - `body2`: FONT_SIZES.sm (13px)
+      - `subtitle2`: FONT_SIZES.sm (13px), fontWeight 600
+      - `caption`: FONT_SIZES.xs (11px)
+
+      **Component overrides** to add (in addition to existing Button, Chip, Paper, CssBaseline, ButtonBase):
+      - `MuiTab`: textTransform none, minWidth 0, minHeight 40, px 16, py 8
+      - `MuiTabs`: minHeight 40
+      - `MuiDrawer` paper: bgcolor var(--color-base), border color var(--color-surface0)
+      - `MuiDialog`: paper bgcolor var(--color-base)
+      - `MuiDialogTitle`: fontSize FONT_SIZES.lg, fontWeight 600
+      - `MuiIconButton`: color var(--color-subtext0)
+      - `MuiListItemButton`: py 8, gap 12, hover bgcolor var(--color-surface0)
+      - `MuiTooltip`: fontSize FONT_SIZES.xs
+      - `MuiAutocomplete`: standard sizing
+      - `MuiToggleButton`: textTransform none
+
+      Import `FONT_SIZES` and `SPACING` from styleConsts in Theme.tsx.
+    acceptance_criteria:
+      - All typography variants configured with FONT_SIZES tokens
+      - Tab, Drawer, Dialog, IconButton, ListItemButton, Tooltip, ToggleButton overrides added
+      - Existing component overrides (Button, Chip, Paper, CssBaseline, ButtonBase) preserved
+      - App renders identically — no visual regressions
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 2
+    milestone: 2
+    title: Standardize TopBar, PageToggle, and SearchBarButton
+    description: |
+      Replace hard-coded sx values in the top navigation components.
+
+      **TopBar.tsx** (43 lines):
+      - Replace hard-coded px/py with SPACING tokens where raw px values are needed
+      - bgcolor and border already use CSS vars — keep those
+
+      **PageToggle.tsx** (132 lines):
+      - Replace `fontSize: 13` with `FONT_SIZES.sm`
+      - Replace `fontSize: 16` (icon size) with `FONT_SIZES.lg`
+      - Replace spacing values (px: 1.5, py: 0.25, gap: 0.5) — keep MUI multipliers as-is since they map to the 8px grid already
+      - The 5 nav buttons share identical sx — extract a shared `navButtonSx` function that takes `isActive: boolean`
+
+      **SearchBarButton.tsx** (23 lines):
+      - Replace any hard-coded font sizes with FONT_SIZES tokens
+    acceptance_criteria:
+      - No hard-coded fontSize values remain — all use FONT_SIZES tokens
+      - PageToggle nav buttons use a shared sx builder function
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 1
+    status: scoped
+
+  - id: 3
+    milestone: 2
+    title: Standardize SearchBar component
+    description: |
+      **SearchBar.tsx** (412 lines) — the search overlay component.
+
+      - Replace all `fontSize: 20`, `15`, `11`, `10` with nearest FONT_SIZES token (xl, md, xs, xs)
+      - Replace hard-coded spacing values with SPACING tokens where raw px are used
+      - Keep MUI spacing multipliers (p: 2, gap: 1 etc.) as-is — they're already on the 8px grid
+      - Remove sx that duplicates theme overrides added in task 1 (e.g., IconButton colors, Dialog paper styling)
+    acceptance_criteria:
+      - No hard-coded fontSize values in SearchBar.tsx
+      - Redundant sx removed where theme overrides now handle it
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 1
+    status: scoped
+
+  - id: 4
+    milestone: 2
+    title: Standardize NotesTab and PhotosTab
+    description: |
+      **NotesTab.tsx** (381 lines):
+      - Replace `fontSize: 14` with FONT_SIZES.md, `fontSize: 13` with FONT_SIZES.sm
+      - Remove redundant sx on IconButton (color should come from theme override)
+      - Remove redundant sx on Tooltip
+      - Keep MUI spacing multipliers as-is
+
+      **PhotosTab.tsx** (332 lines):
+      - Replace `fontSize: 11` with FONT_SIZES.xs
+      - Remove redundant IconButton and Tooltip sx
+      - Keep MUI spacing multipliers as-is
+    acceptance_criteria:
+      - No hard-coded fontSize values in either file
+      - IconButton/Tooltip colors come from theme, not inline sx
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: Standardize LabelBadge, LinkTooltip, FeedbackForm, BlurImage, Toast
+    description: |
+      **LabelBadge.tsx** (110 lines):
+      - Replace hard-coded fontSize values with FONT_SIZES tokens
+      - The component accepts a `fontSize` prop — keep it but default to a FONT_SIZES token
+
+      **LinkTooltip.tsx** (147 lines):
+      - Replace `fontSize: 14` with FONT_SIZES.md
+      - Remove redundant sx that matches theme overrides
+
+      **FeedbackForm.tsx** (77 lines):
+      - Replace hard-coded spacing with SPACING tokens where needed
+      - Remove sx that duplicates theme overrides
+
+      **BlurImage.tsx** (41 lines) and **Toast.tsx** (24 lines):
+      - Replace any hard-coded values with tokens
+    acceptance_criteria:
+      - No hard-coded fontSize values in any of these files
+      - Redundant sx removed where theme handles it
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 1
+    status: scoped
+
+  - id: 6
+    milestone: 3
+    title: Standardize CanvasItemPanel
+    description: |
+      **CanvasItemPanel.tsx** (867 lines) — the heaviest file.
+
+      - Replace all hard-coded fontSize values with FONT_SIZES tokens
+      - Remove sx from Tabs/Tab that now matches theme overrides (textTransform, minWidth, minHeight, padding)
+      - Remove sx from Drawer paper that now matches theme overrides (bgcolor, border)
+      - Remove sx from IconButton that now matches theme overrides (color)
+      - Remove sx from Autocomplete/TextField that now matches theme overrides
+      - Replace hard-coded spacing where raw px are used with SPACING tokens
+      - Keep MUI spacing multipliers as-is
+      - Keep layout-specific sx (flex, width, overflow) — these are structural, not stylistic
+    acceptance_criteria:
+      - No hard-coded fontSize values
+      - Drawer, Tab, IconButton sx reduced to only non-default overrides
+      - Visual output unchanged
+    depends_on: [1, 4]
+    effort: 3
+    status: scoped
+
+  - id: 7
+    milestone: 3
+    title: Standardize PanelHeader, PanelConnectionsTab, and MentionEditor
+    description: |
+      **PanelHeader.tsx** (237 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Remove redundant IconButton sx
+
+      **PanelConnectionsTab.tsx** (177 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Remove redundant ListItemButton sx that matches theme override
+
+      **MentionEditor.tsx** (640 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace hard-coded spacing in editor styling with SPACING tokens
+      - The inline `style` prop (not sx) for the editor container should also use FONT_SIZES/SPACING
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values in these files
+      - ListItemButton hover/padding comes from theme
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 8
+    milestone: 4
+    title: Standardize Toolbar, FilterBar, and ContextMenus
+    description: |
+      **Toolbar.tsx** (156 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace hard-coded height/width for placeholder elements with SPACING tokens
+
+      **FilterBar.tsx** (226 lines):
+      - Replace `fontSize: 18`, `12`, `13`, `10` with FONT_SIZES tokens (lg, sm, sm, xs)
+      - Extract repeated section label sx into a shared const
+      - Remove redundant IconButton sx
+
+      **ContextMenu.tsx** (188 lines), **NodeContextMenu.tsx** (144 lines), **SelectionContextMenu.tsx** (128 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Standardize menu item padding with MUI spacing
+    acceptance_criteria:
+      - No hard-coded fontSize values in any of these files
+      - FilterBar section labels use a shared sx const
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 9
+    milestone: 4
+    title: Standardize DiceRoller, DiceRoller3d, InitiativeTracker, QuickNotes, ToolSidebar
+    description: |
+      **DiceRoller.tsx** (316 lines) and **DiceRoller3d.tsx** (223 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace hard-coded spacing px values with SPACING tokens
+      - Remove redundant IconButton/Button sx
+
+      **InitiativeTracker.tsx** (287 lines):
+      - Same token replacements
+
+      **QuickNotes.tsx** (438 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Remove redundant Tabs/Tab sx that matches theme overrides
+      - Replace hard-coded spacing
+
+      **ToolSidebar.tsx** (71 lines):
+      - Replace hard-coded spacing
+      - Remove redundant IconButton sx
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values in these files
+      - Tabs/Tab in QuickNotes uses theme defaults
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 10
+    milestone: 4
+    title: Standardize CanvasItemNode, CanvasPicker, CountEdge, Canvas.tsx
+    description: |
+      **CanvasItemNode.tsx** (184 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace spacing px values with SPACING tokens
+
+      **CanvasPicker.tsx** (130 lines):
+      - Replace hard-coded fontSize and spacing with tokens
+
+      **CountEdge.tsx** (64 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+
+      **Canvas.tsx** (301 lines):
+      - Replace any hard-coded fontSize/spacing values with tokens
+      - Keep layout-specific sx (width calc, position) as-is
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 11
+    milestone: 5
+    title: Standardize SessionDetail and TaggedItemsPanel
+    description: |
+      **SessionDetail.tsx** (639 lines):
+      - Replace `fontSize: "1.25rem"` with FONT_SIZES.xl
+      - Remove redundant Tabs/Tab sx that matches theme overrides
+      - Remove redundant IconButton sx
+      - Replace hard-coded spacing with tokens where raw px are used
+
+      **TaggedItemsPanel.tsx** (187 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Remove redundant ListItemButton sx
+    acceptance_criteria:
+      - No hard-coded fontSize values
+      - Tabs and ListItemButton use theme defaults where possible
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 12
+    milestone: 5
+    title: Standardize Sessions list, Timeline, and TimelineCalendar
+    description: |
+      **Sessions.tsx** (280 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace hard-coded spacing with tokens
+
+      **Timeline.tsx** (476 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace spacing px values
+
+      **TimelineCalendar.tsx** (249 lines):
+      - Replace hard-coded fontSize and spacing with tokens
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values in these files
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 13
+    milestone: 6
+    title: Standardize Gallery, Marketing, and TreeView
+    description: |
+      **Gallery.tsx** (321 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace spacing with tokens
+
+      **Marketing.tsx** (452 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace spacing with tokens
+      - This page has the most custom styling for marketing layout — keep structural sx, just tokenize values
+
+      **TreeNode.tsx** (74 lines):
+      - Replace hard-coded fontSize and spacing with tokens
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 14
+    milestone: 6
+    title: Standardize auth pages — Login, Signup, PasswordReset, NotFound
+    description: |
+      **Login.tsx** (85 lines), **Signup.tsx** (113 lines), **PasswordReset.tsx** (159 lines), **NotFound.tsx** (36 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Replace spacing with tokens
+      - Remove redundant Button/TextField sx that matches theme overrides
+      - These are small, simple pages so changes should be minimal
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 1
+    status: scoped
+
+  - id: 15
+    milestone: 6
+    title: Standardize modals, ManageTags, SettingsSidebar, layout components
+    description: |
+      **Modals** (BaseModal, BulkDeleteModal, DeleteItemModal, CanvasSettingsModal, LightboxModal):
+      - Remove redundant Dialog/DialogTitle sx that matches theme overrides
+      - Replace hard-coded fontSize and spacing with tokens
+
+      **ManageTags.tsx** (361 lines):
+      - Replace hard-coded fontSize with FONT_SIZES tokens
+      - Remove redundant IconButton/Button sx
+
+      **SettingsSidebar.tsx** (232 lines):
+      - Remove redundant Drawer sx that matches theme overrides
+      - Replace hard-coded spacing with tokens
+
+      **MemberLayout.tsx** (91 lines), **ErrorBoundary.tsx** (62 lines), **NoteHistoryModal.tsx** (211 lines), **OnboardingTour.tsx** (163 lines):
+      - Replace any hard-coded values with tokens
+    acceptance_criteria:
+      - No hard-coded fontSize or spacing pixel values in any of these files
+      - Dialog/Drawer sx reduced to only non-default overrides
+      - Visual output unchanged
+    depends_on: [1]
+    effort: 3
+    status: scoped

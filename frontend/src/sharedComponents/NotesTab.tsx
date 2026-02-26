@@ -9,11 +9,6 @@ import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import List from "@mui/material/List";
@@ -25,6 +20,7 @@ import type { CanvasItem, Note } from "shared";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { statusLabel } from "../utils/statusLabel";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import LinkTooltip from "./LinkTooltip";
 
 const flashNote = keyframes`
@@ -356,26 +352,16 @@ export default function NotesTab({
         )}
       </Box>
 
-      <Dialog open={deleteNoteId !== null} onClose={() => setDeleteNoteId(null)}>
-        <DialogTitle>Delete Note</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this note? This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteNoteId(null)}>Cancel</Button>
-          <Button
-            color="error"
-            onClick={() => {
-              onDeleteNote(deleteNoteId!);
-              setDeleteNoteId(null);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={deleteNoteId !== null}
+        onClose={() => setDeleteNoteId(null)}
+        onConfirm={() => {
+          onDeleteNote(deleteNoteId!);
+          setDeleteNoteId(null);
+        }}
+        title="Delete Note"
+        message="Are you sure you want to delete this note? This cannot be undone."
+      />
     </Box>
   );
 }
