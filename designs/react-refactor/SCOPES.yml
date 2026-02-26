@@ -26,7 +26,7 @@ tasks:
       - No duplicate definitions remain
     depends_on: []
     effort: 1
-    status: implementing
+    status: completed
 
   - id: 2
     milestone: 1
