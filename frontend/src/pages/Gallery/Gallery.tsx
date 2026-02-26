@@ -19,6 +19,7 @@ import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../stores/canvasStore";
+import { FONT_SIZES } from "../../styles/styleConsts";
 
 export default function Gallery() {
   const theme = useTheme();
@@ -118,7 +119,7 @@ export default function Gallery() {
         >
           <Chip
             label="Pinned only"
-            icon={<StarIcon sx={{ fontSize: 14 }} />}
+            icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
             size="small"
             onClick={() => setImportantOnly(!importantOnly)}
             sx={{
@@ -126,7 +127,7 @@ export default function Gallery() {
               color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
               border: importantOnly ? "none" : "1px solid var(--color-surface1)",
               fontWeight: 600,
-              fontSize: 11,
+              fontSize: FONT_SIZES.xs,
               cursor: "pointer",
               "&:hover": { opacity: 0.8 },
             }}
@@ -205,7 +206,7 @@ export default function Gallery() {
                         justifyContent: "center",
                       }}
                     >
-                      <StarIcon sx={{ fontSize: 14, color: "var(--color-yellow)" }} />
+                      <StarIcon sx={{ fontSize: FONT_SIZES.md, color: "var(--color-yellow)" }} />
                     </Box>
                   )}
 
@@ -233,7 +234,7 @@ export default function Gallery() {
                         accentColor={typeColors.light}
                         icon={canvasItemTypeIcon(entry.parentItemType)}
                         height={18}
-                        fontSize={9}
+                        fontSize={FONT_SIZES.xs}
                         sx={{ color: "white" }}
                       />
                       <Typography
@@ -263,7 +264,7 @@ export default function Gallery() {
                             p: 0.5,
                           }}
                         >
-                          <MapIcon sx={{ fontSize: 14 }} />
+                          <MapIcon sx={{ fontSize: FONT_SIZES.md }} />
                         </IconButton>
                       </Tooltip>
                       {entry.parentItemType === "session" && (
@@ -280,7 +281,7 @@ export default function Gallery() {
                               p: 0.5,
                             }}
                           >
-                            <CalendarMonthIcon sx={{ fontSize: 14 }} />
+                            <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.md }} />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -290,7 +291,7 @@ export default function Gallery() {
                         variant="caption"
                         sx={{
                           color: "rgba(255,255,255,0.8)",
-                          fontSize: 10,
+                          fontSize: FONT_SIZES.xs,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",

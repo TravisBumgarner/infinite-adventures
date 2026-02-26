@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CallBackProps, Step } from "react-joyride";
 import { ACTIONS, EVENTS, Joyride, STATUS } from "react-joyride";
 import { useCanvasStore } from "../stores/canvasStore";
+import { FONT_SIZES } from "../styles/styleConsts";
 
 const STEP_CREATE = 1;
 const STEP_PANEL = 2;
@@ -140,21 +141,21 @@ export default function OnboardingTour() {
           arrowColor: "var(--color-surface0)",
         },
         tooltipTitle: {
-          fontSize: 16,
+          fontSize: FONT_SIZES.lg,
           fontWeight: 600,
         },
         tooltipContent: {
-          fontSize: 14,
+          fontSize: FONT_SIZES.md,
         },
         buttonNext: {
-          fontSize: 13,
+          fontSize: FONT_SIZES.sm,
         },
         buttonBack: {
-          fontSize: 13,
+          fontSize: FONT_SIZES.sm,
           color: "var(--color-subtext0)",
         },
         buttonSkip: {
-          fontSize: 13,
+          fontSize: FONT_SIZES.sm,
           color: "var(--color-subtext0)",
         },
       }}
