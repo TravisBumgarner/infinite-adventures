@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
+import { FONT_SIZES } from "../../styles/styleConsts";
 
 const DAY_LABELS = [
   { key: "sun", label: "S" },
@@ -63,7 +64,7 @@ function MonthGrid({
           color: "var(--color-text)",
           display: "block",
           mb: 0.5,
-          fontSize: 12,
+          fontSize: FONT_SIZES.sm,
         }}
       >
         {monthName} {year}
@@ -78,7 +79,7 @@ function MonthGrid({
             sx={{
               textAlign: "center",
               color: "var(--color-overlay0)",
-              fontSize: 10,
+              fontSize: FONT_SIZES.xs,
               fontWeight: 600,
               lineHeight: "20px",
             }}
@@ -123,7 +124,7 @@ function MonthGrid({
             >
               <Typography
                 sx={{
-                  fontSize: 11,
+                  fontSize: FONT_SIZES.xs,
                   fontWeight: count > 0 ? 700 : 400,
                   color: count > 0 ? "var(--color-text)" : "var(--color-overlay0)",
                   lineHeight: 1,
@@ -205,28 +206,32 @@ export default function TimelineCalendar({
       >
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <IconButton size="small" onClick={() => onShiftYear(-1)} title="Previous year">
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-subtext0)" }}>
+            <Typography
+              sx={{ fontSize: FONT_SIZES.xs, fontWeight: 700, color: "var(--color-subtext0)" }}
+            >
               {"<<"}
             </Typography>
           </IconButton>
           <IconButton size="small" onClick={() => onShiftMonth(-1)} title="Previous month">
-            <ChevronLeftIcon sx={{ fontSize: 18, color: "var(--color-subtext0)" }} />
+            <ChevronLeftIcon sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-subtext0)" }} />
           </IconButton>
         </Box>
 
         <Typography
           variant="caption"
-          sx={{ fontWeight: 700, color: "var(--color-text)", fontSize: 12 }}
+          sx={{ fontWeight: 700, color: "var(--color-text)", fontSize: FONT_SIZES.sm }}
         >
           {endYear}
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <IconButton size="small" onClick={() => onShiftMonth(1)} title="Next month">
-            <ChevronRightIcon sx={{ fontSize: 18, color: "var(--color-subtext0)" }} />
+            <ChevronRightIcon sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-subtext0)" }} />
           </IconButton>
           <IconButton size="small" onClick={() => onShiftYear(1)} title="Next year">
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-subtext0)" }}>
+            <Typography
+              sx={{ fontSize: FONT_SIZES.xs, fontWeight: 700, color: "var(--color-subtext0)" }}
+            >
               {">>"}
             </Typography>
           </IconButton>
