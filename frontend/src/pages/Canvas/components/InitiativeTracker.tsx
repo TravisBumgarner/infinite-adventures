@@ -23,7 +23,7 @@ import { useDraggable } from "../../../hooks/useDraggable";
 import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useInitiativeStore } from "../../../stores/initiativeStore";
-import { PALETTE_MOCHA } from "../../../styles/styleConsts";
+import { FONT_SIZES, PALETTE_MOCHA } from "../../../styles/styleConsts";
 
 export default function InitiativeTracker() {
   const isOpen = useInitiativeStore((s) => s.isOpen);
@@ -111,16 +111,16 @@ export default function InitiativeTracker() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
             <Tooltip title={showAddForm ? "Hide add form" : "Add combatant"}>
               <IconButton size="small" onClick={() => setShowAddForm((v) => !v)} sx={{ p: 0.25 }}>
-                <EditIcon sx={{ fontSize: 16 }} />
+                <EditIcon sx={{ fontSize: FONT_SIZES.lg }} />
               </IconButton>
             </Tooltip>
             {sorted.length > 0 && (
               <Tooltip title={expanded ? "Show current only" : "Show all"}>
                 <IconButton size="small" onClick={() => setExpanded((v) => !v)} sx={{ p: 0.25 }}>
                   {expanded ? (
-                    <UnfoldLessIcon sx={{ fontSize: 16 }} />
+                    <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.lg }} />
                   ) : (
-                    <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+                    <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.lg }} />
                   )}
                 </IconButton>
               </Tooltip>
@@ -132,7 +132,7 @@ export default function InitiativeTracker() {
                   onClick={() => setConfirmOpen(true)}
                   sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                 >
-                  <DeleteIcon sx={{ fontSize: 16 }} />
+                  <DeleteIcon sx={{ fontSize: FONT_SIZES.lg }} />
                 </IconButton>
               </Tooltip>
             )}
@@ -159,7 +159,7 @@ export default function InitiativeTracker() {
                     {...params}
                     placeholder="Name"
                     onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                    sx={{ height: "100%", "& input": { fontSize: 12 } }}
+                    sx={{ height: "100%", "& input": { fontSize: FONT_SIZES.sm } }}
                   />
                 )}
               />
@@ -169,13 +169,13 @@ export default function InitiativeTracker() {
                 value={initiative}
                 onChange={(e) => setInitiative(e.target.value.replace(/[^0-9-]/g, ""))}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                sx={{ width: 56, "& input": { fontSize: 12 } }}
+                sx={{ width: 56, "& input": { fontSize: FONT_SIZES.sm } }}
               />
               <Button
                 variant="outlined"
                 size="small"
                 onClick={handleAdd}
-                sx={{ fontSize: 12, minWidth: 0 }}
+                sx={{ fontSize: FONT_SIZES.sm, minWidth: 0 }}
               >
                 +
               </Button>
@@ -237,7 +237,7 @@ export default function InitiativeTracker() {
                       <Typography
                         variant="body2"
                         fontWeight={isActive ? 700 : 400}
-                        sx={{ flex: 1, fontSize: 13 }}
+                        sx={{ flex: 1, fontSize: FONT_SIZES.sm }}
                       >
                         {combatant.name}
                       </Typography>
@@ -251,7 +251,7 @@ export default function InitiativeTracker() {
                         onClick={() => removeCombatant(combatant.id)}
                         sx={{ p: 0.25 }}
                       >
-                        <CloseIcon sx={{ fontSize: 14 }} />
+                        <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
                       </IconButton>
                     </Paper>
                   );

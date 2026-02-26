@@ -12,7 +12,17 @@ import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getContrastText } from "../../../utils/getContrastText";
+
+const sectionLabelSx = {
+  color: "var(--color-subtext0)",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+  display: "block",
+  mb: 1,
+} as const;
 
 export default function FilterBar() {
   const theme = useTheme();
@@ -48,7 +58,7 @@ export default function FilterBar() {
             },
           }}
         >
-          <TuneIcon sx={{ fontSize: 18 }} />
+          <TuneIcon sx={{ fontSize: FONT_SIZES.lg }} />
           {filterCount > 0 && (
             <Box
               sx={{
@@ -60,7 +70,7 @@ export default function FilterBar() {
                 borderRadius: 8,
                 bgcolor: hasFilters ? "white" : "var(--color-blue)",
                 color: hasFilters ? "var(--color-blue)" : "white",
-                fontSize: 10,
+                fontSize: FONT_SIZES.xs,
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
@@ -87,17 +97,7 @@ export default function FilterBar() {
               zIndex: 100,
             }}
           >
-            <Typography
-              variant="caption"
-              sx={{
-                color: "var(--color-subtext0)",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-                display: "block",
-                mb: 1,
-              }}
-            >
+            <Typography variant="caption" sx={sectionLabelSx}>
               Filter by text
             </Typography>
             <InputBase
@@ -109,22 +109,12 @@ export default function FilterBar() {
                 px: 1.5,
                 py: 0.75,
                 border: "1px solid var(--color-surface1)",
-                fontSize: 13,
+                fontSize: FONT_SIZES.sm,
                 mb: 2,
               }}
             />
 
-            <Typography
-              variant="caption"
-              sx={{
-                color: "var(--color-subtext0)",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-                display: "block",
-                mb: 1,
-              }}
-            >
+            <Typography variant="caption" sx={sectionLabelSx}>
               Filter by type
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
@@ -142,7 +132,7 @@ export default function FilterBar() {
                       border: "none",
                       color: active ? getContrastText(bgColor) : "var(--color-text)",
                       fontWeight: 500,
-                      fontSize: 12,
+                      fontSize: FONT_SIZES.sm,
                       transition: "all 0.15s",
                       "&:hover": {
                         bgcolor: active ? bgColor : "var(--color-surface1)",
@@ -155,18 +145,7 @@ export default function FilterBar() {
 
             {allTags.length > 0 && (
               <>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "var(--color-subtext0)",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                    display: "block",
-                    mt: 2,
-                    mb: 1,
-                  }}
-                >
+                <Typography variant="caption" sx={{ ...sectionLabelSx, mt: 2 }}>
                   Filter by tag
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
@@ -206,7 +185,7 @@ export default function FilterBar() {
                   bgcolor: "transparent",
                   border: "1px solid var(--color-surface1)",
                   color: "var(--color-subtext0)",
-                  fontSize: 12,
+                  fontSize: FONT_SIZES.sm,
                   cursor: "pointer",
                   transition: "all 0.15s",
                   "&:hover": {

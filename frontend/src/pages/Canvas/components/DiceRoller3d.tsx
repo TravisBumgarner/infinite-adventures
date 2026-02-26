@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
 import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useDice3dStore } from "../../../stores/dice3dStore";
-import { PALETTE_MOCHA } from "../../../styles/styleConsts";
+import { FONT_SIZES, PALETTE_MOCHA } from "../../../styles/styleConsts";
 import { createEngine } from "./dice3dEngine";
 
 const DIE_TYPES = ["d4", "d6", "d8", "d10", "d12", "d20"] as const;
@@ -126,7 +126,7 @@ export default function DiceRoller3d() {
               sx={{
                 minWidth: 0,
                 px: 1,
-                fontSize: 12,
+                fontSize: FONT_SIZES.sm,
                 fontWeight: 600,
                 bgcolor: DIE_COLORS[type],
                 color: PALETTE_MOCHA.base,
@@ -152,7 +152,7 @@ export default function DiceRoller3d() {
                     size="small"
                     onDelete={() => removeDie(type)}
                     sx={{
-                      fontSize: 12,
+                      fontSize: FONT_SIZES.sm,
                       bgcolor: DIE_COLORS[type],
                       color: PALETTE_MOCHA.base,
                       "& .MuiChip-deleteIcon": { color: PALETTE_MOCHA.base },
@@ -167,11 +167,16 @@ export default function DiceRoller3d() {
                 startIcon={<CasinoIcon />}
                 onClick={handleRoll}
                 disabled={rolling}
-                sx={{ flex: 1, fontSize: 12 }}
+                sx={{ flex: 1, fontSize: FONT_SIZES.sm }}
               >
                 {rolling ? "Rolling..." : "Roll"}
               </Button>
-              <Button variant="outlined" size="small" onClick={handleClear} sx={{ fontSize: 12 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleClear}
+                sx={{ fontSize: FONT_SIZES.sm }}
+              >
                 Clear
               </Button>
             </Box>
@@ -207,7 +212,7 @@ export default function DiceRoller3d() {
                     key={`${i}-${r.type}-${r.value}`}
                     label={`${r.type.toUpperCase()}: ${r.value}`}
                     accentColor={DIE_COLORS[r.type]}
-                    fontSize={12}
+                    fontSize={FONT_SIZES.sm}
                   />
                 ))}
               </Box>

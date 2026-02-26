@@ -7,6 +7,7 @@ import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface ToolbarProps {
   onCreate: (type: CanvasItemType) => void;
@@ -126,7 +127,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                   accentColor={color}
                   icon={canvasItemTypeIcon(t.value)}
                   height={16}
-                  fontSize={9}
+                  fontSize={FONT_SIZES.xs}
                   sx={{ "& .MuiChip-label": { px: 0.75 } }}
                 />
               </Box>

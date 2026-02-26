@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useDraggable } from "../../../hooks/useDraggable";
 import { LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { useDiceStore } from "../../../stores/diceStore";
-import { PALETTE_MOCHA } from "../../../styles/styleConsts";
+import { FONT_SIZES, PALETTE_MOCHA } from "../../../styles/styleConsts";
 
 const STANDARD_DICE = [2, 4, 6, 8, 10, 12, 20, 100];
 
@@ -94,7 +94,7 @@ function RollerTab() {
             sx={{
               minWidth: 0,
               px: 1,
-              fontSize: 12,
+              fontSize: FONT_SIZES.sm,
               fontWeight: 600,
               bgcolor: getDieColor(sides),
               color: PALETTE_MOCHA.base,
@@ -114,13 +114,13 @@ function RollerTab() {
           value={customSides}
           onChange={(e) => setCustomSides(e.target.value.replace(/\D/g, ""))}
           onKeyDown={(e) => e.key === "Enter" && handleAddCustom()}
-          sx={{ width: 64, "& input": { fontSize: 12, py: 0.5, px: 1 } }}
+          sx={{ width: 64, "& input": { fontSize: FONT_SIZES.sm, py: 0.5, px: 1 } }}
         />
         <Button
           variant="outlined"
           size="small"
           onClick={handleAddCustom}
-          sx={{ fontSize: 12, minWidth: 0 }}
+          sx={{ fontSize: FONT_SIZES.sm, minWidth: 0 }}
         >
           +
         </Button>
@@ -140,7 +140,7 @@ function RollerTab() {
                   size="small"
                   onDelete={() => removeDie(ids[ids.length - 1])}
                   sx={{
-                    fontSize: 12,
+                    fontSize: FONT_SIZES.sm,
                     bgcolor: getDieColor(sides),
                     color: PALETTE_MOCHA.base,
                     "& .MuiChip-deleteIcon": { color: PALETTE_MOCHA.base },
@@ -154,11 +154,16 @@ function RollerTab() {
               size="small"
               startIcon={<CasinoIcon />}
               onClick={roll}
-              sx={{ flex: 1, fontSize: 12 }}
+              sx={{ flex: 1, fontSize: FONT_SIZES.sm }}
             >
               Roll
             </Button>
-            <Button variant="outlined" size="small" onClick={clearDice} sx={{ fontSize: 12 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={clearDice}
+              sx={{ fontSize: FONT_SIZES.sm }}
+            >
               Clear
             </Button>
           </Box>
@@ -179,7 +184,7 @@ function RollerTab() {
                   key={`${i}-${r.sides}-${r.result}`}
                   label={`D${r.sides}: ${r.result}`}
                   accentColor={getDieColor(r.sides)}
-                  fontSize={12}
+                  fontSize={FONT_SIZES.sm}
                 />
               ))}
             </Box>
@@ -241,7 +246,7 @@ function HistoryTab() {
         color="error"
         startIcon={<DeleteIcon />}
         onClick={clearHistory}
-        sx={{ fontSize: 12 }}
+        sx={{ fontSize: FONT_SIZES.sm }}
       >
         Clear History
       </Button>
@@ -303,7 +308,7 @@ export default function DiceRoller() {
         value={activeTab}
         onChange={(_, v) => setActiveTab(v)}
         variant="fullWidth"
-        sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36, fontSize: 12, py: 0 } }}
+        sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36, py: 0 } }}
       >
         <Tab label="Roller" value="roller" />
         <Tab label="History" value="history" />
