@@ -5,7 +5,7 @@ import type { CanvasItemType } from "shared";
 import { STORAGE_KEY_THEME } from "../constants";
 import { applyCssVars } from "./cssVars";
 import type { EffectiveMode, ThemePreference } from "./styleConsts";
-import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
+import { BORDER_RADIUS, FONT_SIZES, getPalette, resolveThemeMode, SPACING } from "./styleConsts";
 
 // Augment MUI theme types with canvasItemTypes palette
 declare module "@mui/material/styles" {
@@ -49,6 +49,17 @@ function buildTheme(mode: EffectiveMode) {
       divider: p.surface1,
       canvasItemTypes: CANVAS_ITEM_TYPES_PALETTE,
     },
+    typography: {
+      h1: { fontSize: FONT_SIZES.xl, fontWeight: 700 },
+      h3: { fontSize: FONT_SIZES.xl, fontWeight: 700 },
+      h4: { fontSize: FONT_SIZES.xl, fontWeight: 600 },
+      h5: { fontSize: FONT_SIZES.lg, fontWeight: 600 },
+      h6: { fontSize: FONT_SIZES.lg, fontWeight: 600 },
+      body1: { fontSize: FONT_SIZES.md },
+      body2: { fontSize: FONT_SIZES.sm },
+      subtitle2: { fontSize: FONT_SIZES.sm, fontWeight: 600 },
+      caption: { fontSize: FONT_SIZES.xs },
+    },
     shape: {
       borderRadius: BORDER_RADIUS.none,
     },
@@ -82,6 +93,97 @@ function buildTheme(mode: EffectiveMode) {
           root: {
             boxShadow: "none",
             backgroundImage: "none",
+          },
+        },
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: {
+            textTransform: "none",
+            minWidth: 0,
+            minHeight: 40,
+            paddingLeft: SPACING.md,
+            paddingRight: SPACING.md,
+            paddingTop: SPACING.sm,
+            paddingBottom: SPACING.sm,
+          },
+        },
+      },
+      MuiTabs: {
+        styleOverrides: {
+          root: {
+            minHeight: 40,
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: "var(--color-base)",
+            borderColor: "var(--color-surface0)",
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: "var(--color-base)",
+          },
+        },
+      },
+      MuiDialogTitle: {
+        styleOverrides: {
+          root: {
+            fontSize: FONT_SIZES.lg,
+            fontWeight: 600,
+          },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: {
+            color: "var(--color-subtext0)",
+          },
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            paddingTop: SPACING.sm,
+            paddingBottom: SPACING.sm,
+            gap: 12,
+            "&:hover": {
+              backgroundColor: "var(--color-surface0)",
+            },
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            fontSize: FONT_SIZES.xs,
+          },
+        },
+      },
+      MuiAutocomplete: {
+        styleOverrides: {
+          inputRoot: {
+            paddingTop: 0,
+            paddingBottom: 0,
+            fontSize: FONT_SIZES.sm,
+          },
+          option: {
+            paddingLeft: SPACING.sm,
+            paddingRight: SPACING.sm,
+            paddingTop: SPACING.xs,
+            paddingBottom: SPACING.xs,
+          },
+        },
+      },
+      MuiToggleButton: {
+        styleOverrides: {
+          root: {
+            textTransform: "none",
           },
         },
       },
