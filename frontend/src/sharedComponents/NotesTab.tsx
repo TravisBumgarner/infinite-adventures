@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, Note } from "shared";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { statusLabel } from "../utils/statusLabel";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import LinkTooltip from "./LinkTooltip";
@@ -143,7 +144,7 @@ export default function NotesTab({
             mb: 1,
             px: 1,
             py: 0.5,
-            fontSize: 14,
+            fontSize: FONT_SIZES.md,
             fontWeight: 600,
             background: "var(--color-mantle)",
             border: "1px solid var(--color-surface1)",
@@ -165,7 +166,7 @@ export default function NotesTab({
             borderRadius: 0,
             padding: "8px 10px",
             color: "var(--color-text)",
-            fontSize: 14,
+            fontSize: FONT_SIZES.md,
             overflow: "auto",
           }}
         />
@@ -263,9 +264,9 @@ export default function NotesTab({
                         sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                       >
                         {expandedNoteIds.has(note.id) ? (
-                          <UnfoldLessIcon sx={{ fontSize: 14 }} />
+                          <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
                         ) : (
-                          <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+                          <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
                         )}
                       </IconButton>
                     </Tooltip>
@@ -275,7 +276,7 @@ export default function NotesTab({
                         onClick={() => onSelectNote(note)}
                         sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                       >
-                        <EditIcon sx={{ fontSize: 14 }} />
+                        <EditIcon sx={{ fontSize: FONT_SIZES.md }} />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
@@ -288,9 +289,9 @@ export default function NotesTab({
                         }}
                       >
                         {note.isImportant ? (
-                          <StarIcon sx={{ fontSize: 14 }} />
+                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
                         ) : (
-                          <StarOutlineIcon sx={{ fontSize: 14 }} />
+                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
                         )}
                       </IconButton>
                     </Tooltip>
@@ -301,7 +302,7 @@ export default function NotesTab({
                           onClick={() => onHistoryNote(note.id)}
                           sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                         >
-                          <HistoryIcon sx={{ fontSize: 14 }} />
+                          <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -311,7 +312,7 @@ export default function NotesTab({
                         onClick={() => setDeleteNoteId(note.id)}
                         sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                       >
-                        <DeleteIcon sx={{ fontSize: 14 }} />
+                        <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -320,7 +321,7 @@ export default function NotesTab({
                   sx={{
                     py: 0.5,
                     px: 1,
-                    fontSize: 13,
+                    fontSize: FONT_SIZES.sm,
                     color: "var(--color-text)",
                     wordBreak: "break-word",
                     ...(!expandedNoteIds.has(note.id) &&

@@ -6,9 +6,26 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
+import { FONT_SIZES } from "../styles/styleConsts";
 
 interface PageToggleProps {
   activePage: "canvas" | "sessions" | "timeline" | "gallery" | "tree";
+}
+
+function navButtonSx(isActive: boolean) {
+  return {
+    fontWeight: 600,
+    fontSize: FONT_SIZES.sm,
+    px: 1.5,
+    py: 0.25,
+    display: "flex",
+    alignItems: "center",
+    gap: 0.5,
+    minWidth: "auto",
+    color: isActive ? "var(--color-text)" : "var(--color-subtext0)",
+    bgcolor: isActive ? "var(--color-surface0)" : "transparent",
+    "&:hover": { bgcolor: "var(--color-surface0)" },
+  } as const;
 }
 
 export default function PageToggle({ activePage }: PageToggleProps) {
@@ -25,106 +42,41 @@ export default function PageToggle({ activePage }: PageToggleProps) {
       <Button
         size="small"
         onClick={() => navigate("/canvas")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "canvas" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "canvas" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
+        sx={navButtonSx(activePage === "canvas")}
       >
-        <MapIcon sx={{ fontSize: 16 }} />
+        <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Canvas
       </Button>
       <Button
         size="small"
         onClick={() => navigate("/sessions")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "sessions" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "sessions" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
+        sx={navButtonSx(activePage === "sessions")}
       >
-        <CalendarMonthIcon sx={{ fontSize: 16 }} />
+        <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Sessions
       </Button>
       <Button
         size="small"
         onClick={() => navigate("/timeline")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "timeline" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "timeline" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
+        sx={navButtonSx(activePage === "timeline")}
       >
-        <TimelineIcon sx={{ fontSize: 16 }} />
+        <TimelineIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Timeline
       </Button>
       <Button
         size="small"
         onClick={() => navigate("/gallery")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "gallery" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "gallery" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
+        sx={navButtonSx(activePage === "gallery")}
       >
-        <PhotoLibraryIcon sx={{ fontSize: 16 }} />
+        <PhotoLibraryIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Gallery
       </Button>
       <Button
         size="small"
         onClick={() => navigate("/tree")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "tree" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "tree" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
+        sx={navButtonSx(activePage === "tree")}
       >
-        <AccountTreeIcon sx={{ fontSize: 16 }} />
+        <AccountTreeIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Tree
       </Button>
     </Box>

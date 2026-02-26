@@ -13,6 +13,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Photo } from "shared";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { blurhashToDataURL } from "../utils/blurhashToDataURL";
 
 interface PhotosTabProps {
@@ -61,7 +62,7 @@ function CaptionEditor({
       onClick={(e) => e.stopPropagation()}
       sx={{
         width: "100%",
-        fontSize: 11,
+        fontSize: FONT_SIZES.xs,
         color: "var(--color-subtext0)",
         "& input": { padding: "2px 0", textAlign: "center" },
       }}
@@ -145,11 +146,11 @@ export default function PhotosTab({
         onDrop={handleDrop}
       >
         {isDragging ? (
-          <Typography sx={{ color: "var(--color-blue)", fontWeight: 600, fontSize: 13 }}>
+          <Typography sx={{ color: "var(--color-blue)", fontWeight: 600, fontSize: FONT_SIZES.sm }}>
             Drop image here
           </Typography>
         ) : (
-          <Typography sx={{ color: "var(--color-subtext0)", fontSize: 13 }}>
+          <Typography sx={{ color: "var(--color-subtext0)", fontSize: FONT_SIZES.sm }}>
             Click to select or drop photo here
           </Typography>
         )}
@@ -166,7 +167,7 @@ export default function PhotosTab({
                 disabled={columns <= 2}
                 onClick={() => onColumnsChange(columns - 1)}
               >
-                <RemoveCircleOutlineIcon sx={{ fontSize: 18 }} />
+                <RemoveCircleOutlineIcon sx={{ fontSize: FONT_SIZES.lg }} />
               </IconButton>
             </span>
           </Tooltip>
@@ -180,7 +181,7 @@ export default function PhotosTab({
                 disabled={columns >= 8}
                 onClick={() => onColumnsChange(columns + 1)}
               >
-                <AddCircleOutlineIcon sx={{ fontSize: 18 }} />
+                <AddCircleOutlineIcon sx={{ fontSize: FONT_SIZES.lg }} />
               </IconButton>
             </span>
           </Tooltip>
@@ -266,9 +267,9 @@ export default function PhotosTab({
                       }}
                     >
                       {photo.isMainPhoto ? (
-                        <PhotoSizeSelectActualIcon sx={{ fontSize: 14 }} />
+                        <PhotoSizeSelectActualIcon sx={{ fontSize: FONT_SIZES.md }} />
                       ) : (
-                        <PhotoSizeSelectActualOutlinedIcon sx={{ fontSize: 14 }} />
+                        <PhotoSizeSelectActualOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
                       )}
                     </IconButton>
                   </Tooltip>
@@ -289,9 +290,9 @@ export default function PhotosTab({
                       }}
                     >
                       {photo.isImportant ? (
-                        <StarIcon sx={{ fontSize: 14 }} />
+                        <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
                       ) : (
-                        <StarOutlineIcon sx={{ fontSize: 14 }} />
+                        <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
                       )}
                     </IconButton>
                   </Tooltip>
@@ -311,7 +312,7 @@ export default function PhotosTab({
                         zIndex: 2,
                       }}
                     >
-                      <DeleteIcon sx={{ fontSize: 14 }} />
+                      <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
                     </IconButton>
                   </Tooltip>
                 </Box>

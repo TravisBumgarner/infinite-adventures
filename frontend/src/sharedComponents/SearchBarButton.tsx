@@ -13,7 +13,6 @@ export default function SearchBarButton({ onClick }: SearchBarButtonProps) {
       data-tour="search-button"
       size="small"
       sx={{
-        color: "var(--color-subtext0)",
         "&:hover": { bgcolor: "var(--color-surface0)", color: "var(--color-text)" },
       }}
     >

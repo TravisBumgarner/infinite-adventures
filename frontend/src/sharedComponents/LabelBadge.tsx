@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import type { SxProps, Theme } from "@mui/material/styles";
 import type { ComponentType } from "react";
 import type { CanvasItemType, Tag } from "shared";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { ICON_MAP } from "../utils/iconMap";
 
 const CANVAS_ITEM_TYPE_ICONS: Record<CanvasItemType, ComponentType<{ sx?: SxProps<Theme> }>> = {
@@ -33,7 +34,7 @@ export function LabelBadge({
   accentColor,
   icon: Icon,
   height = 20,
-  fontSize = 11,
+  fontSize = FONT_SIZES.xs,
   onDelete,
   sx,
 }: LabelBadgeProps) {
@@ -99,7 +100,7 @@ export function TagBadge({ tag, compact, onDelete }: TagBadgeProps) {
       accentColor={tag.color}
       icon={Icon}
       height={compact ? 18 : 26}
-      fontSize={compact ? 10 : 13}
+      fontSize={compact ? FONT_SIZES.xs : FONT_SIZES.sm}
       onDelete={onDelete}
     />
   );
