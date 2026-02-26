@@ -60,7 +60,7 @@ tasks:
       - All existing tests pass
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 3
     milestone: 1
@@ -90,7 +90,7 @@ tasks:
       - All existing tests pass
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 4
     milestone: 1
@@ -118,7 +118,7 @@ tasks:
       - All existing tests pass
     depends_on: []
     effort: 1
-    status: scoped
+    status: completed
 
   - id: 5
     milestone: 1
@@ -148,4 +148,4 @@ tasks:
       - All existing tests pass
     depends_on: []
     effort: 1
-    status: scoped
+    status: completed

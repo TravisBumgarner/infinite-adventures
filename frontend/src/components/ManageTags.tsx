@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useMemo, useState } from "react";
 import type { Tag } from "shared";
 import { useCreateTag, useDeleteTag, useUpdateTag } from "../hooks/mutations";
+import ConfirmDeleteDialog from "../sharedComponents/ConfirmDeleteDialog";
 import { TagBadge } from "../sharedComponents/LabelBadge";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
@@ -335,27 +336,13 @@ export function ManageTags() {
         </DialogActions>
       </Dialog>
 
-      {/* Delete confirmation dialog */}
-      <Dialog
+      <ConfirmDeleteDialog
         open={deleteConfirmId !== null}
         onClose={() => setDeleteConfirmId(null)}
-        maxWidth="xs"
-      >
-        <DialogTitle>Delete Tag</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure? This will remove the tag from all items.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
-          <Button
-            onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+        title="Delete Tag"
+        message="Are you sure? This will remove the tag from all items."
+      />
     </Box>
   );
 }

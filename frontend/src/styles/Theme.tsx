@@ -2,6 +2,7 @@ import { CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { CanvasItemType } from "shared";
+import { STORAGE_KEY_THEME } from "../constants";
 import { applyCssVars } from "./cssVars";
 import type { EffectiveMode, ThemePreference } from "./styleConsts";
 import { BORDER_RADIUS, getPalette, resolveThemeMode } from "./styleConsts";
@@ -16,7 +17,7 @@ declare module "@mui/material/styles" {
   }
 }
 
-const STORAGE_KEY = "infinite-adventures-theme";
+const STORAGE_KEY = STORAGE_KEY_THEME;
 
 const CANVAS_ITEM_TYPES_PALETTE: Record<CanvasItemType, { light: string; dark: string }> = {
   person: { light: "#4a90d9", dark: "#2a5a8a" }, // Blue - for people (PCs, NPCs)

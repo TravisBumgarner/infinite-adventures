@@ -1,5 +1,6 @@
 import type { CanvasItem, CanvasItemType, CanvasSummary } from "shared";
 import { create } from "zustand";
+import { STORAGE_KEY_ACTIVE_CANVAS, STORAGE_KEY_ONBOARDING_COMPLETE } from "../constants";
 
 interface ContextMenuState {
   x: number;
@@ -20,8 +21,8 @@ interface SelectionContextMenuState {
   nodeIds: string[];
 }
 
-const ACTIVE_CANVAS_KEY = "infinite-adventures-active-canvas";
-export const ONBOARDING_COMPLETE_KEY = "infinite-adventures-onboarding-complete";
+const ACTIVE_CANVAS_KEY = STORAGE_KEY_ACTIVE_CANVAS;
+export const ONBOARDING_COMPLETE_KEY = STORAGE_KEY_ONBOARDING_COMPLETE;
 
 export function getViewportKey(canvasId: string): string {
   return `infinite-adventures-viewport-${canvasId}`;

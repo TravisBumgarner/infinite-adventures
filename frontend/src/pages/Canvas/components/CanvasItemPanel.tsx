@@ -24,18 +24,14 @@ import {
   useCreateItem,
   useCreateNote,
   useDeleteItem,
-  useDeleteNote,
-  useDeletePhoto,
   useRemoveTagFromItem,
-  useSelectPhoto,
-  useTogglePhotoImportant,
   useUpdateItem,
   useUpdateNote,
-  useUpdatePhotoCaption,
-  useUploadPhoto,
 } from "../../../hooks/mutations";
 import { useItem, useNoteHistory } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
+import { useNoteHandlers } from "../../../hooks/useNoteHandlers";
+import { usePhotoHandlers } from "../../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
@@ -98,10 +94,10 @@ export default function CanvasItemPanel({
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
   const [title, setTitle] = useState("");
-  const [notes, setNotes] = useState<Note[]>([]);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
 
   // Note history state
@@ -117,17 +113,11 @@ export default function CanvasItemPanel({
   // Modal store
   const openModal = useModalStore((s) => s.openModal);
 
-  // Mutation hooks
+  // Mutation hooks (only those not covered by extracted hooks)
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
   const createNoteMutation = useCreateNote(itemId);
   const updateNoteMutation = useUpdateNote(itemId);
-  const deleteNoteMutation = useDeleteNote(itemId);
-  const uploadPhotoMutation = useUploadPhoto(itemId, activeCanvasId ?? "");
-  const deletePhotoMutation = useDeletePhoto(itemId, activeCanvasId ?? "");
-  const selectPhotoMutation = useSelectPhoto(itemId, activeCanvasId ?? "");
-  const togglePhotoImportantMutation = useTogglePhotoImportant(itemId, activeCanvasId ?? "");
-  const updatePhotoCaptionMutation = useUpdatePhotoCaption(itemId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
   const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
   const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
@@ -248,6 +238,41 @@ export default function CanvasItemPanel({
     };
   }, [flushTitle, flushSummary, flushDate, flushNote]);
 
+  // Extracted note handlers
+  const { handleAddNote, handleSelectNote, handleDeleteNote, handleBackToNoteList } =
+    useNoteHandlers({
+      itemId,
+      getEditingNoteId: () => editingNoteIdRef.current,
+      setEditingNoteId,
+      setNoteContent,
+      setNoteTitle,
+      setNotes,
+      flushNote,
+      refetchItem,
+      onItemUpdated: (refreshed) => {
+        setItem(refreshed);
+        handleSaved(refreshed);
+      },
+    });
+
+  // Extracted photo handlers
+  const {
+    handlePhotoUpload,
+    handlePhotoDelete,
+    handlePhotoSelect,
+    handleTogglePhotoImportant,
+    handleUpdateCaption,
+  } = usePhotoHandlers({
+    itemId,
+    canvasId: activeCanvasId ?? "",
+    setPhotos,
+    refetchItem,
+    onItemUpdated: (updated) => {
+      setItem(updated);
+      handleSaved(updated);
+    },
+  });
+
   // Sync local state from React Query data
   const prevItemIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -273,62 +298,6 @@ export default function CanvasItemPanel({
   async function handleDeleteItem() {
     await deleteItemMutation.mutateAsync(itemId);
     handleDeleted(itemId);
-  }
-
-  async function handleFileUpload(file: File) {
-    await uploadPhotoMutation.mutateAsync(file);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-      handleSaved(updated);
-    }
-  }
-
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    handleFileUpload(file);
-  }
-
-  async function handlePhotoDelete(photoId: string) {
-    await deletePhotoMutation.mutateAsync(photoId);
-    setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      handleSaved(updated);
-    }
-  }
-
-  async function handlePhotoSelect(photoId: string) {
-    await selectPhotoMutation.mutateAsync(photoId);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-      handleSaved(updated);
-    }
-  }
-
-  async function handleTogglePhotoImportant(photoId: string) {
-    await togglePhotoImportantMutation.mutateAsync(photoId);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-      handleSaved(updated);
-    }
-  }
-
-  async function handleUpdateCaption(photoId: string, caption: string) {
-    await updatePhotoCaptionMutation.mutateAsync({ photoId, caption });
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-      handleSaved(updated);
-    }
   }
 
   function handleOpenLightbox(index: number) {
@@ -442,49 +411,6 @@ export default function CanvasItemPanel({
     a.download = `${item.title || "untitled"}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }
-
-  function handleAddNote() {
-    setEditingNoteId(DRAFT_NOTE_ID);
-    setNoteContent("");
-    setNoteTitle("");
-  }
-
-  function handleSelectNote(note: Note) {
-    flushNote();
-    setEditingNoteId(note.id);
-    setNoteContent(note.content);
-    setNoteTitle(note.title ?? "");
-  }
-
-  async function handleDeleteNote(noteId: string) {
-    if (noteId === DRAFT_NOTE_ID) {
-      setEditingNoteId(null);
-      setNoteContent("");
-      setNoteTitle("");
-      return;
-    }
-    await deleteNoteMutation.mutateAsync(noteId);
-    const { data: refreshed } = await refetchItem();
-    if (refreshed) {
-      setItem(refreshed);
-      setNotes(refreshed.notes);
-      handleSaved(refreshed);
-    }
-    if (editingNoteId === noteId) {
-      setEditingNoteId(null);
-      setNoteContent("");
-      setNoteTitle("");
-    }
-  }
-
-  function handleBackToNoteList() {
-    if (editingNoteId !== DRAFT_NOTE_ID) {
-      flushNote();
-    }
-    setEditingNoteId(null);
-    setNoteContent("");
-    setNoteTitle("");
   }
 
   async function handleCreateMentionItem(

@@ -8,13 +8,7 @@ import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import Paper from "@mui/material/Paper";
@@ -31,6 +25,7 @@ import {
 import { useQuickNoteHistory, useQuickNotes } from "../../../hooks/queries";
 import { useAutoSave } from "../../../hooks/useAutoSave";
 import { useDraggable } from "../../../hooks/useDraggable";
+import ConfirmDeleteDialog from "../../../sharedComponents/ConfirmDeleteDialog";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useQuickNotesStore } from "../../../stores/quickNotesStore";
 import { getNotePreview } from "../../../utils/getNotePreview";
@@ -267,26 +262,16 @@ function QuickNoteItem({
           </Box>
         )}
       </Box>
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
-        <DialogTitle>Delete Quick Note</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this quick note? This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
-          <Button
-            color="error"
-            onClick={() => {
-              deleteMutation.mutate(id);
-              setConfirmDeleteOpen(false);
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          deleteMutation.mutate(id);
+          setConfirmDeleteOpen(false);
+        }}
+        title="Delete Quick Note"
+        message="Are you sure you want to delete this quick note? This cannot be undone."
+      />
     </>
   );
 }

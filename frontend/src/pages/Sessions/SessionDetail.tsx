@@ -11,20 +11,11 @@ import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
 import NoteHistoryModal from "../../components/NoteHistoryModal";
 import { DRAFT_NOTE_ID } from "../../constants";
-import {
-  useCreateItem,
-  useCreateNote,
-  useDeleteNote,
-  useDeletePhoto,
-  useSelectPhoto,
-  useTogglePhotoImportant,
-  useUpdateItem,
-  useUpdateNote,
-  useUpdatePhotoCaption,
-  useUploadPhoto,
-} from "../../hooks/mutations";
+import { useCreateItem, useCreateNote, useUpdateItem, useUpdateNote } from "../../hooks/mutations";
 import { useItem, useNoteHistory } from "../../hooks/queries";
 import { useAutoSave } from "../../hooks/useAutoSave";
+import { useNoteHandlers } from "../../hooks/useNoteHandlers";
+import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
@@ -79,12 +70,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
   const createNoteMutation = useCreateNote(sessionId);
   const updateNoteMutation = useUpdateNote(sessionId);
-  const deleteNoteMutation = useDeleteNote(sessionId);
-  const uploadPhotoMutation = useUploadPhoto(sessionId, activeCanvasId ?? "");
-  const deletePhotoMutation = useDeletePhoto(sessionId, activeCanvasId ?? "");
-  const selectPhotoMutation = useSelectPhoto(sessionId, activeCanvasId ?? "");
-  const togglePhotoImportantMutation = useTogglePhotoImportant(sessionId, activeCanvasId ?? "");
-  const updatePhotoCaptionMutation = useUpdatePhotoCaption(sessionId, activeCanvasId ?? "");
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
 
   // Refs for auto-save
@@ -178,6 +163,40 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     };
   }, [flushTitle, flushDate, flushNote]);
 
+  // Extracted note handlers
+  const { handleAddNote, handleSelectNote, handleDeleteNote, handleBackToNoteList } =
+    useNoteHandlers({
+      itemId: sessionId,
+      getEditingNoteId: () => editingNoteIdRef.current,
+      setEditingNoteId,
+      setNoteContent,
+      setNoteTitle,
+      setNotes,
+      flushNote,
+      refetchItem,
+      onItemUpdated: (refreshed) => {
+        setItem(refreshed);
+      },
+    });
+
+  // Extracted photo handlers
+  const {
+    handlePhotoUpload,
+    handlePhotoDelete,
+    handlePhotoSelect,
+    handleTogglePhotoImportant,
+    handleFileDrop,
+    handleUpdateCaption,
+  } = usePhotoHandlers({
+    itemId: sessionId,
+    canvasId: activeCanvasId ?? "",
+    setPhotos,
+    refetchItem,
+    onItemUpdated: (updated) => {
+      setItem(updated);
+    },
+  });
+
   // Sync local state from React Query data
   const prevSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -254,40 +273,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }, [isEditingTitle]);
 
-  // Note handlers
-  function handleAddNote() {
-    setEditingNoteId(DRAFT_NOTE_ID);
-    setNoteContent("");
-    setNoteTitle("");
-  }
-
-  function handleSelectNote(note: Note) {
-    flushNote();
-    setEditingNoteId(note.id);
-    setNoteContent(note.content);
-    setNoteTitle(note.title ?? "");
-  }
-
-  async function handleDeleteNote(noteId: string) {
-    if (noteId === DRAFT_NOTE_ID) {
-      setEditingNoteId(null);
-      setNoteContent("");
-      setNoteTitle("");
-      return;
-    }
-    await deleteNoteMutation.mutateAsync(noteId);
-    const { data: refreshed } = await refetchItem();
-    if (refreshed) {
-      setItem(refreshed);
-      setNotes(refreshed.notes);
-    }
-    if (editingNoteId === noteId) {
-      setEditingNoteId(null);
-      setNoteContent("");
-      setNoteTitle("");
-    }
-  }
-
   async function handleToggleImportant(noteId: string, isImportant: boolean) {
     await updateNoteMutation.mutateAsync({
       noteId,
@@ -297,72 +282,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
-    }
-  }
-
-  function handleBackToNoteList() {
-    if (editingNoteId !== DRAFT_NOTE_ID) {
-      flushNote();
-    }
-    setEditingNoteId(null);
-    setNoteContent("");
-    setNoteTitle("");
-  }
-
-  // Photo handlers
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await uploadPhotoMutation.mutateAsync(file);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-    }
-  }
-
-  async function handlePhotoDelete(photoId: string) {
-    await deletePhotoMutation.mutateAsync(photoId);
-    setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-    }
-  }
-
-  async function handlePhotoSelect(photoId: string) {
-    await selectPhotoMutation.mutateAsync(photoId);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-    }
-  }
-
-  async function handleTogglePhotoImportant(photoId: string) {
-    await togglePhotoImportantMutation.mutateAsync(photoId);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-    }
-  }
-
-  async function handleFileDrop(file: File) {
-    await uploadPhotoMutation.mutateAsync(file);
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
-    }
-  }
-
-  async function handleUpdateCaption(photoId: string, caption: string) {
-    await updatePhotoCaptionMutation.mutateAsync({ photoId, caption });
-    const { data: updated } = await refetchItem();
-    if (updated) {
-      setItem(updated);
-      setPhotos(updated.photos);
     }
   }
 

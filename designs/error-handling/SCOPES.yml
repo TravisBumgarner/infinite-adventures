@@ -1,0 +1,125 @@
+project: error-handling
+design_file: designs/error-handling/DESIGN.md
+scoping_date: 2026-02-25
+
+milestones:
+  - number: 1
+    title: "1. Standardize error handling across React Query"
+    description: Add global mutation error toast, query error UI, and clean up inconsistent patterns
+    branch:
+      working: feat-error-handling
+      base: main
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Add global mutation error toast and QueryErrorDisplay component
+    description: |
+      **Global mutation error handler:**
+      In `frontend/src/lib/queryClient.ts`, add `defaultOptions.mutations.onError` that calls `useAppStore.getState().showToast("Something went wrong. Please try again.")`.
+
+      Since `queryClient.ts` is outside React, access the store directly via `useAppStore.getState()` (zustand supports this).
+
+      **QueryErrorDisplay component:**
+      Create `frontend/src/sharedComponents/QueryErrorDisplay.tsx` — a simple component for inline query error states.
+
+      Props:
+      - `error: Error | null` — the error object from React Query
+      - `onRetry: () => void` — calls refetch
+
+      Renders: centered Box with Typography ("Something went wrong") and a Button ("Try again") that calls onRetry. Uses existing design tokens (SPACING, FONT_SIZES) and CSS vars for colors.
+
+      Keep it under 40 lines — this is intentionally simple.
+    acceptance_criteria:
+      - queryClient has global mutations.onError that shows a toast
+      - QueryErrorDisplay component created at frontend/src/sharedComponents/QueryErrorDisplay.tsx
+      - Component renders error message and retry button
+      - All existing tests pass
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 2
+    milestone: 1
+    title: Add query error handling to page components
+    description: |
+      Update page components to destructure `.error` and `.refetch` from their query hooks and render `QueryErrorDisplay` when queries fail.
+
+      **Files to update:**
+
+      `frontend/src/pages/Canvas/Canvas.tsx` — `useCanvases()` and `useItems()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay when either query errors
+
+      `frontend/src/pages/Sessions/Sessions.tsx` — `useSessions()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay on error
+
+      `frontend/src/pages/Sessions/SessionDetail.tsx` — `useItem()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay on error
+
+      `frontend/src/pages/Timeline/Timeline.tsx` — `useTimeline()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay on error
+
+      `frontend/src/pages/Gallery/Gallery.tsx` — `useGallery()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay on error
+
+      `frontend/src/pages/Canvas/components/QuickNotes.tsx` — `useQuickNotes()`:
+      - Destructure `error` and `refetch`
+      - Show QueryErrorDisplay on error
+
+      Pattern for each file:
+      ```tsx
+      const { data, isLoading, error, refetch } = useWhatever(...);
+      if (error) return <QueryErrorDisplay error={error} onRetry={refetch} />;
+      if (isLoading) return <CircularProgress />;
+      ```
+
+      For infinite queries (useTimeline, useGallery), the pattern is the same — destructure error from the infinite query hook.
+    acceptance_criteria:
+      - All 6 page components show QueryErrorDisplay on query failure
+      - Users can click "Try again" to refetch
+      - Loading states still work correctly
+      - All existing tests pass
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Clean up redundant mutation error handling
+    description: |
+      Now that the global mutation onError toast exists, remove redundant try/catch blocks that only show generic error toasts. Keep try/catch only where the component needs to react to the error beyond showing a toast.
+
+      **Files to update:**
+
+      `frontend/src/components/ManageTags.tsx` (lines 92-118):
+      - `handleCreateTag` and `handleUpdateTag` have try-catch that shows toast on error
+      - Remove try-catch — global handler covers generic toast
+      - Keep `handleDeleteTag` try-catch if it needs to reset UI state on failure
+
+      `frontend/src/components/SettingsSidebar.tsx` (lines 77-105):
+      - Export has try-catch → remove, global handler covers it
+      - Import uses `onError` callback → remove, global handler covers it
+
+      `frontend/src/pages/Canvas/components/CanvasItemPanel.tsx` (multiple locations):
+      - Tag add/remove have try-catch with toast → remove, global handler covers it
+
+      `frontend/src/sharedComponents/FeedbackForm.tsx` (lines 24-49):
+      - This uses direct `fetch()` not React Query — **leave as-is**, global handler doesn't apply
+
+      For each removal, verify the mutation call pattern:
+      - If using `mutateAsync` in try-catch with only a toast in catch → switch to `mutate()` (fire-and-forget, global handler catches errors)
+      - If using `mutateAsync` in try-catch with UI state changes in catch → keep the try-catch but remove the toast (global handler shows it)
+    acceptance_criteria:
+      - Redundant try-catch + toast patterns removed from ManageTags, SettingsSidebar, CanvasItemPanel
+      - FeedbackForm left unchanged (uses direct fetch, not React Query)
+      - Mutation errors still show toast via global handler
+      - UI state cleanup preserved where needed
+      - All existing tests pass
+    depends_on: [1]
+    effort: 2
+    status: scoped
