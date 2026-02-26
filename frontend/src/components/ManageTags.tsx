@@ -18,6 +18,7 @@ import { TagBadge } from "../sharedComponents/LabelBadge";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import { useTagStore } from "../stores/tagStore";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { getContrastText } from "../utils/getContrastText";
 import { ICON_MAP, searchIcons } from "../utils/iconMap";
 
@@ -178,14 +179,14 @@ export function ManageTags() {
                 onClick={() => openEdit(tag)}
                 sx={{ color: "var(--color-overlay0)", p: 0.5 }}
               >
-                <EditIcon sx={{ fontSize: 16 }} />
+                <EditIcon sx={{ fontSize: FONT_SIZES.lg }} />
               </IconButton>
               <IconButton
                 size="small"
                 onClick={() => setDeleteConfirmId(tag.id)}
                 sx={{ color: "var(--color-overlay0)", p: 0.5 }}
               >
-                <DeleteIcon sx={{ fontSize: 16 }} />
+                <DeleteIcon sx={{ fontSize: FONT_SIZES.lg }} />
               </IconButton>
             </Box>
           </Box>
@@ -249,7 +250,7 @@ export function ManageTags() {
                       "&:hover": { opacity: 0.8 },
                     }}
                   >
-                    <Icon sx={{ fontSize: 18 }} />
+                    <Icon sx={{ fontSize: FONT_SIZES.lg }} />
                   </Box>
                 );
               })}
@@ -301,7 +302,11 @@ export function ManageTags() {
                 >
                   {form.color === color && (
                     <Typography
-                      sx={{ fontSize: 14, color: getContrastText(color), fontWeight: 700 }}
+                      sx={{
+                        fontSize: FONT_SIZES.md,
+                        color: getContrastText(color),
+                        fontWeight: 700,
+                      }}
                     >
                       ✓
                     </Typography>
