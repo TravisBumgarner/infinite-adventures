@@ -13,7 +13,7 @@ import {
   fetchTimeline,
   fetchTimelineCounts,
   searchItems,
-} from "../../api/client.js";
+} from "../../api/index.js";
 import { queryKeys } from "./queryKeys.js";
 
 export { queryKeys } from "./queryKeys.js";

@@ -3,7 +3,7 @@ import type { Edge, Node } from "@xyflow/react";
 import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
-import { addTagToItem, fetchItem, fetchItems, fetchTags } from "../../../api/client";
+import { addTagToItem, fetchItem, fetchItems, fetchTags } from "../../../api/index";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../../hooks/mutations";
 import { queryKeys } from "../../../hooks/queries";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";

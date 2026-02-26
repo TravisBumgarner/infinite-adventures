@@ -20,7 +20,7 @@ import {
   updateCanvas,
   updateItem,
   uploadPhoto,
-} from "../api/client";
+} from "../api/index";
 import { getToken } from "../auth/service.js";
 
 const mockFetch = vi.fn();

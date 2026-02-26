@@ -1,7 +1,7 @@
 import type { Edge, Node } from "@xyflow/react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import { useCallback, useEffect, useState } from "react";
-import { fetchItem, fetchItems } from "../../api/client";
+import { fetchItem, fetchItems } from "../../api/index";
 import { buildEdges } from "../../utils/buildEdges";
 import type { TreeNodeData } from "./TreeNode";
 

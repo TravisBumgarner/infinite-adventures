@@ -34,7 +34,7 @@ import {
   updateQuickNote,
   updateTag,
   uploadPhoto,
-} from "../../api/client.js";
+} from "../../api/index.js";
 import { queryKeys } from "../queries/queryKeys.js";
 
 // --- Canvas mutations ---
