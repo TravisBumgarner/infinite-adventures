@@ -1,6 +1,6 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -33,6 +33,7 @@ import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
 import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
 
+const DRAFT_NOTE_ID = "__draft__";
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
 
@@ -120,6 +121,23 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
+
+    // Draft note — create on server for the first time
+    if (noteId === DRAFT_NOTE_ID) {
+      const newNote = await createNoteMutation.mutateAsync({
+        content: noteContentRef.current,
+        title: noteTitleRef.current,
+      });
+      editingNoteIdRef.current = newNote.id;
+      setEditingNoteId(newNote.id);
+      const { data: refreshed } = await refetchItem();
+      if (refreshed) {
+        setItem(refreshed);
+        setNotes(refreshed.notes);
+      }
+      return;
+    }
+
     const snapshot = shouldSnapshot(lastSnapshotAtRef.current.get(noteId));
     await updateNoteMutation.mutateAsync({
       noteId,
@@ -133,7 +151,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       setItem(refreshed);
       setNotes(refreshed.notes);
     }
-  }, [updateNoteMutation, refetchItem]);
+  }, [createNoteMutation, updateNoteMutation, refetchItem]);
 
   const {
     status: titleStatus,
@@ -237,14 +255,8 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }, [isEditingTitle]);
 
   // Note handlers
-  async function handleAddNote() {
-    const newNote = await createNoteMutation.mutateAsync({ content: "" });
-    const { data: refreshed } = await refetchItem();
-    if (refreshed) {
-      setItem(refreshed);
-      setNotes(refreshed.notes);
-    }
-    setEditingNoteId(newNote.id);
+  function handleAddNote() {
+    setEditingNoteId(DRAFT_NOTE_ID);
     setNoteContent("");
     setNoteTitle("");
   }
@@ -257,6 +269,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   async function handleDeleteNote(noteId: string) {
+    if (noteId === DRAFT_NOTE_ID) {
+      setEditingNoteId(null);
+      setNoteContent("");
+      setNoteTitle("");
+      return;
+    }
     await deleteNoteMutation.mutateAsync(noteId);
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
@@ -283,7 +301,9 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   function handleBackToNoteList() {
-    flushNote();
+    if (editingNoteId !== DRAFT_NOTE_ID) {
+      flushNote();
+    }
     setEditingNoteId(null);
     setNoteContent("");
     setNoteTitle("");
@@ -418,194 +438,202 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   return (
-    <Box
-      ref={containerRef}
-      sx={{
-        display: "flex",
-        height: "calc(100vh - 100px)",
-        gap: 0,
-      }}
-    >
-      {/* Left column - Session content */}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)", pl: 7 }}>
+      {/* Header row — back + title | date */}
       <Box
         sx={{
-          width: leftWidth ?? "60%",
-          minWidth: MIN_LEFT_WIDTH,
           display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 2,
+          py: 1.5,
+          borderBottom: "1px solid var(--color-surface0)",
+          flexShrink: 0,
         }}
       >
-        {/* Back button and title */}
-        <Box sx={{ p: 2, pb: 0 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flex: 1 }}>
+          <IconButton
+            size="small"
             onClick={() => {
               flushTitle();
               flushDate();
               flushNote();
               navigate("/sessions");
             }}
-            sx={{ textTransform: "none", mb: 1.5, color: "var(--color-subtext0)" }}
+            sx={{ color: "var(--color-subtext0)", flexShrink: 0 }}
           >
-            Back to Sessions
-          </Button>
+            <ArrowBackIcon />
+          </IconButton>
+          {isEditingTitle ? (
+            <InputBase
+              inputRef={titleInputRef}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                markTitleDirty();
+              }}
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={handleTitleKeyDown}
+              sx={{
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                flex: 1,
+                "& input": { padding: 0 },
+              }}
+            />
+          ) : (
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                cursor: "pointer",
+                color: "var(--color-text)",
+                "&:hover": { color: "var(--color-subtext0)" },
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              onClick={() => setIsEditingTitle(true)}
+            >
+              {title}
+            </Typography>
+          )}
+        </Box>
+        <TextField
+          label="Session Date"
+          type="date"
+          value={sessionDate}
+          onChange={(e) => {
+            setSessionDate(e.target.value);
+            markDateDirty();
+          }}
+          size="small"
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ width: 200, flexShrink: 0 }}
+        />
+      </Box>
 
-          {/* Editable title */}
-          <Box sx={{ mb: 1.5 }}>
-            {isEditingTitle ? (
-              <InputBase
-                inputRef={titleInputRef}
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  markTitleDirty();
-                }}
-                onBlur={() => setIsEditingTitle(false)}
-                onKeyDown={handleTitleKeyDown}
-                sx={{
-                  fontSize: "1.5rem",
-                  fontWeight: 600,
-                  width: "100%",
-                  "& input": { padding: 0 },
-                }}
-              />
-            ) : (
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  color: "var(--color-text)",
-                  "&:hover": { color: "var(--color-subtext0)" },
-                }}
-                onClick={() => setIsEditingTitle(true)}
-              >
-                {title}
-              </Typography>
-            )}
-          </Box>
-
-          {/* Date picker */}
-          <TextField
-            label="Session Date"
-            type="date"
-            value={sessionDate}
-            onChange={(e) => {
-              setSessionDate(e.target.value);
-              markDateDirty();
+      {/* Content area — left column + divider + right column */}
+      <Box
+        ref={containerRef}
+        sx={{
+          display: "flex",
+          flex: 1,
+          overflow: "hidden",
+          gap: 0,
+        }}
+      >
+        {/* Left column - Session content */}
+        <Box
+          sx={{
+            width: leftWidth ?? "60%",
+            minWidth: MIN_LEFT_WIDTH,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {/* Tabs */}
+          <Tabs
+            value={activeTab}
+            onChange={(_, newValue) => setActiveTab(newValue)}
+            sx={{
+              borderBottom: "1px solid var(--color-surface0)",
+              px: 2,
+              minHeight: 40,
+              "& .MuiTab-root": {
+                textTransform: "none",
+                minWidth: 0,
+                minHeight: 40,
+                px: 2,
+                py: 1,
+              },
             }}
-            size="small"
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ mb: 2, width: 200 }}
+          >
+            <Tab label="Notes" value="notes" />
+            <Tab label="Photos" value="photos" />
+          </Tabs>
+
+          {/* Tab content */}
+          {activeTab === "notes" && (
+            <NotesTab
+              notes={notes}
+              editingNoteId={editingNoteId}
+              noteContent={noteContent}
+              noteTitle={noteTitle}
+              noteStatus={noteStatus}
+              itemsCache={itemsCache}
+              canvasId={activeCanvasId ?? ""}
+              onAddNote={handleAddNote}
+              onSelectNote={handleSelectNote}
+              onDeleteNote={handleDeleteNote}
+              onBackToList={handleBackToNoteList}
+              onNoteContentChange={(val) => {
+                setNoteContent(val);
+                markNoteDirty();
+              }}
+              onNoteTitleChange={(val) => {
+                setNoteTitle(val);
+                markNoteDirty();
+              }}
+              onToggleImportant={handleToggleImportant}
+              onCreateMentionItem={handleCreateMentionItem}
+              getNotePreview={notePreview}
+              onMentionClick={handleMentionClick}
+              onHistoryNote={setHistoryNoteId}
+            />
+          )}
+
+          <NoteHistoryModal
+            open={historyNoteId !== null}
+            onClose={() => setHistoryNoteId(null)}
+            entries={historyEntries}
+            loading={historyLoading}
+            onRevert={handleRevertNote}
+          />
+
+          {activeTab === "photos" && (
+            <PhotosTab
+              photos={photos}
+              onUpload={handlePhotoUpload}
+              onDelete={handlePhotoDelete}
+              onSelect={handlePhotoSelect}
+              onToggleImportant={handleTogglePhotoImportant}
+              onOpenLightbox={handleOpenLightbox}
+              onFileDrop={handleFileDrop}
+              onUpdateCaption={handleUpdateCaption}
+              columns={photoColumns}
+              onColumnsChange={setPhotoColumns}
+            />
+          )}
+        </Box>
+
+        {/* Draggable divider */}
+        <Box
+          onMouseDown={handleMouseDown}
+          sx={{
+            width: 8,
+            cursor: "col-resize",
+            bgcolor: "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            "&:hover": { bgcolor: "var(--color-surface0)" },
+          }}
+        >
+          <Box
+            sx={{
+              width: 2,
+              height: 40,
+              bgcolor: "var(--color-surface1)",
+            }}
           />
         </Box>
 
-        {/* Tabs */}
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          sx={{
-            borderBottom: "1px solid var(--color-surface0)",
-            px: 2,
-            minHeight: 40,
-            "& .MuiTab-root": {
-              textTransform: "none",
-              minWidth: 0,
-              minHeight: 40,
-              px: 2,
-              py: 1,
-            },
-          }}
-        >
-          <Tab label="Notes" value="notes" />
-          <Tab label="Photos" value="photos" />
-        </Tabs>
-
-        {/* Tab content */}
-        {activeTab === "notes" && (
-          <NotesTab
-            notes={notes}
-            editingNoteId={editingNoteId}
-            noteContent={noteContent}
-            noteTitle={noteTitle}
-            noteStatus={noteStatus}
-            itemsCache={itemsCache}
-            canvasId={activeCanvasId ?? ""}
-            onAddNote={handleAddNote}
-            onSelectNote={handleSelectNote}
-            onDeleteNote={handleDeleteNote}
-            onBackToList={handleBackToNoteList}
-            onNoteContentChange={(val) => {
-              setNoteContent(val);
-              markNoteDirty();
-            }}
-            onNoteTitleChange={(val) => {
-              setNoteTitle(val);
-              markNoteDirty();
-            }}
-            onToggleImportant={handleToggleImportant}
-            onCreateMentionItem={handleCreateMentionItem}
-            getNotePreview={notePreview}
-            onMentionClick={handleMentionClick}
-            onHistoryNote={setHistoryNoteId}
-          />
-        )}
-
-        <NoteHistoryModal
-          open={historyNoteId !== null}
-          onClose={() => setHistoryNoteId(null)}
-          entries={historyEntries}
-          loading={historyLoading}
-          onRevert={handleRevertNote}
-        />
-
-        {activeTab === "photos" && (
-          <PhotosTab
-            photos={photos}
-            onUpload={handlePhotoUpload}
-            onDelete={handlePhotoDelete}
-            onSelect={handlePhotoSelect}
-            onToggleImportant={handleTogglePhotoImportant}
-            onOpenLightbox={handleOpenLightbox}
-            onFileDrop={handleFileDrop}
-            onUpdateCaption={handleUpdateCaption}
-            columns={photoColumns}
-            onColumnsChange={setPhotoColumns}
-          />
-        )}
+        {/* Right column - Tagged items */}
+        <TaggedItemsPanel ref={taggedPanelRef} sessionId={sessionId} notes={notes} />
       </Box>
-
-      {/* Draggable divider */}
-      <Box
-        onMouseDown={handleMouseDown}
-        sx={{
-          width: 8,
-          cursor: "col-resize",
-          bgcolor: "transparent",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
-      >
-        <Box
-          sx={{
-            width: 2,
-            height: 40,
-            bgcolor: "var(--color-surface1)",
-          }}
-        />
-      </Box>
-
-      {/* Right column - Tagged items */}
-      <TaggedItemsPanel
-        ref={taggedPanelRef}
-        sessionId={sessionId}
-        notes={notes}
-        itemsCache={itemsCache}
-      />
     </Box>
   );
 }

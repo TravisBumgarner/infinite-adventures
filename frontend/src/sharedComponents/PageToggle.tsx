@@ -2,14 +2,13 @@ import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
-import PsychologyAltIcon from "@mui/icons-material/PsychologyAlt";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 
 interface PageToggleProps {
-  activePage: "canvas" | "sessions" | "timeline" | "gallery" | "tree" | "charlie";
+  activePage: "canvas" | "sessions" | "timeline" | "gallery" | "tree";
 }
 
 export default function PageToggle({ activePage }: PageToggleProps) {
@@ -63,7 +62,7 @@ export default function PageToggle({ activePage }: PageToggleProps) {
         }}
       >
         <CalendarMonthIcon sx={{ fontSize: 16 }} />
-        Session Viewer
+        Sessions
       </Button>
       <Button
         size="small"
@@ -127,27 +126,6 @@ export default function PageToggle({ activePage }: PageToggleProps) {
       >
         <AccountTreeIcon sx={{ fontSize: 16 }} />
         Tree
-      </Button>
-      <Button
-        size="small"
-        onClick={() => navigate("/charlie")}
-        sx={{
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: 13,
-          px: 1.5,
-          py: 0.25,
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-          minWidth: "auto",
-          color: activePage === "charlie" ? "var(--color-text)" : "var(--color-subtext0)",
-          bgcolor: activePage === "charlie" ? "var(--color-surface0)" : "transparent",
-          "&:hover": { bgcolor: "var(--color-surface0)" },
-        }}
-      >
-        <PsychologyAltIcon sx={{ fontSize: 16 }} />
-        Charlie
       </Button>
     </Box>
   );

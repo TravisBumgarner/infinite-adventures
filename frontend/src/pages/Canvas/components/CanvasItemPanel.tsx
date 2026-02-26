@@ -45,13 +45,15 @@ import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
 
+const DRAFT_NOTE_ID = "__draft__";
+
 interface CanvasItemPanelProps {
   itemId: string;
   onClose: () => void;
-  onSaved: (item: CanvasItem) => void;
-  onDeleted: (itemId: string) => void;
-  onNavigate: (itemId: string) => void;
-  itemsCache: Map<string, CanvasItem>;
+  onSaved?: (item: CanvasItem) => void;
+  onDeleted?: (itemId: string) => void;
+  onNavigate?: (itemId: string) => void;
+  itemsCache?: Map<string, CanvasItem>;
 }
 
 export default function CanvasItemPanel({
@@ -60,7 +62,7 @@ export default function CanvasItemPanel({
   onSaved,
   onDeleted,
   onNavigate,
-  itemsCache,
+  itemsCache: itemsCacheProp,
 }: CanvasItemPanelProps) {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -70,9 +72,22 @@ export default function CanvasItemPanel({
   const highlightNoteId = useCanvasStore((s) => s.highlightNoteId);
   const setHighlightNoteId = useCanvasStore((s) => s.setHighlightNoteId);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
+  const storeItemsCache = useCanvasStore((s) => s.itemsCache);
+  const itemsCache = itemsCacheProp ?? storeItemsCache;
   const tagsById = useTagStore((s) => s.tags);
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
   const showToast = useAppStore((s) => s.showToast);
+
+  const handleSaved = useMemo(() => onSaved ?? (() => {}), [onSaved]);
+  const handleDeleted = useMemo(
+    () => onDeleted ?? (() => setEditingItemId(null)),
+    [onDeleted, setEditingItemId],
+  );
+  const handleNavigate = useMemo(
+    () => onNavigate ?? ((targetId: string) => setEditingItemId(targetId)),
+    [onNavigate, setEditingItemId],
+  );
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem } = useItem(itemId);
@@ -135,8 +150,8 @@ export default function CanvasItemPanel({
       input: { title: titleRef.current },
     });
     const { data: refreshed } = await refetchItem();
-    if (refreshed) onSaved(refreshed);
-  }, [onSaved, updateItemMutation, refetchItem]);
+    if (refreshed) handleSaved(refreshed);
+  }, [handleSaved, updateItemMutation, refetchItem]);
 
   // Save function for summary
   const saveSummaryFn = useCallback(async () => {
@@ -145,8 +160,8 @@ export default function CanvasItemPanel({
       input: { summary: summaryRef.current },
     });
     const { data: refreshed } = await refetchItem();
-    if (refreshed) onSaved(refreshed);
-  }, [onSaved, updateItemMutation, refetchItem]);
+    if (refreshed) handleSaved(refreshed);
+  }, [handleSaved, updateItemMutation, refetchItem]);
 
   // Save function for session date
   const saveDateFn = useCallback(async () => {
@@ -155,13 +170,31 @@ export default function CanvasItemPanel({
       input: { sessionDate: sessionDateRef.current },
     });
     const { data: refreshed } = await refetchItem();
-    if (refreshed) onSaved(refreshed);
-  }, [onSaved, updateItemMutation, refetchItem]);
+    if (refreshed) handleSaved(refreshed);
+  }, [handleSaved, updateItemMutation, refetchItem]);
 
   // Save function for note content (with snapshot throttling)
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
+
+    // Draft note — create on server for the first time
+    if (noteId === DRAFT_NOTE_ID) {
+      const newNote = await createNoteMutation.mutateAsync({
+        content: noteContentRef.current,
+        title: noteTitleRef.current,
+      });
+      editingNoteIdRef.current = newNote.id;
+      setEditingNoteId(newNote.id);
+      const { data: refreshed } = await refetchItem();
+      if (refreshed) {
+        setItem(refreshed);
+        setNotes(refreshed.notes);
+        handleSaved(refreshed);
+      }
+      return;
+    }
+
     const snapshot = shouldSnapshot(lastSnapshotAtRef.current.get(noteId));
     await updateNoteMutation.mutateAsync({
       noteId,
@@ -174,9 +207,9 @@ export default function CanvasItemPanel({
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
-      onSaved(refreshed);
+      handleSaved(refreshed);
     }
-  }, [onSaved, updateNoteMutation, refetchItem]);
+  }, [handleSaved, createNoteMutation, updateNoteMutation, refetchItem]);
 
   const {
     status: titleStatus,
@@ -236,7 +269,7 @@ export default function CanvasItemPanel({
 
   async function handleDeleteItem() {
     await deleteItemMutation.mutateAsync(itemId);
-    onDeleted(itemId);
+    handleDeleted(itemId);
   }
 
   async function handleFileUpload(file: File) {
@@ -245,7 +278,7 @@ export default function CanvasItemPanel({
     if (updated) {
       setItem(updated);
       setPhotos(updated.photos);
-      onSaved(updated);
+      handleSaved(updated);
     }
   }
 
@@ -261,7 +294,7 @@ export default function CanvasItemPanel({
     const { data: updated } = await refetchItem();
     if (updated) {
       setItem(updated);
-      onSaved(updated);
+      handleSaved(updated);
     }
   }
 
@@ -271,7 +304,7 @@ export default function CanvasItemPanel({
     if (updated) {
       setItem(updated);
       setPhotos(updated.photos);
-      onSaved(updated);
+      handleSaved(updated);
     }
   }
 
@@ -281,7 +314,7 @@ export default function CanvasItemPanel({
     if (updated) {
       setItem(updated);
       setPhotos(updated.photos);
-      onSaved(updated);
+      handleSaved(updated);
     }
   }
 
@@ -291,7 +324,7 @@ export default function CanvasItemPanel({
     if (updated) {
       setItem(updated);
       setPhotos(updated.photos);
-      onSaved(updated);
+      handleSaved(updated);
     }
   }
 
@@ -408,15 +441,8 @@ export default function CanvasItemPanel({
     URL.revokeObjectURL(url);
   }
 
-  async function handleAddNote() {
-    const newNote = await createNoteMutation.mutateAsync({ content: "" });
-    const { data: refreshed } = await refetchItem();
-    if (refreshed) {
-      setItem(refreshed);
-      setNotes(refreshed.notes);
-      onSaved(refreshed);
-    }
-    setEditingNoteId(newNote.id);
+  function handleAddNote() {
+    setEditingNoteId(DRAFT_NOTE_ID);
     setNoteContent("");
     setNoteTitle("");
   }
@@ -429,12 +455,18 @@ export default function CanvasItemPanel({
   }
 
   async function handleDeleteNote(noteId: string) {
+    if (noteId === DRAFT_NOTE_ID) {
+      setEditingNoteId(null);
+      setNoteContent("");
+      setNoteTitle("");
+      return;
+    }
     await deleteNoteMutation.mutateAsync(noteId);
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
-      onSaved(refreshed);
+      handleSaved(refreshed);
     }
     if (editingNoteId === noteId) {
       setEditingNoteId(null);
@@ -444,7 +476,9 @@ export default function CanvasItemPanel({
   }
 
   function handleBackToNoteList() {
-    flushNote();
+    if (editingNoteId !== DRAFT_NOTE_ID) {
+      flushNote();
+    }
     setEditingNoteId(null);
     setNoteContent("");
     setNoteTitle("");
@@ -461,7 +495,7 @@ export default function CanvasItemPanel({
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,
       });
-      onSaved(newItem);
+      handleSaved(newItem);
       return { id: newItem.id, title: newItem.title };
     } catch {
       return null;
@@ -482,7 +516,7 @@ export default function CanvasItemPanel({
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
-      onSaved(refreshed);
+      handleSaved(refreshed);
     }
   }
 
@@ -499,7 +533,7 @@ export default function CanvasItemPanel({
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
-      onSaved(refreshed);
+      handleSaved(refreshed);
       // If the reverted note is currently being edited, refresh editor content
       if (editingNoteId === historyNoteId) {
         setNoteContent(content);
@@ -526,7 +560,7 @@ export default function CanvasItemPanel({
       await addTagMutation.mutateAsync(tag.id);
       const updated = { ...item, tags: [...item.tags, tag] };
       setItem(updated);
-      onSaved(updated);
+      handleSaved(updated);
     } catch {
       showToast("Failed to add tag");
     }
@@ -538,7 +572,7 @@ export default function CanvasItemPanel({
       await removeTagMutation.mutateAsync(tagId);
       const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
       setItem(updated);
-      onSaved(updated);
+      handleSaved(updated);
     } catch {
       showToast("Failed to remove tag");
     }
@@ -779,7 +813,9 @@ export default function CanvasItemPanel({
         />
       )}
 
-      {panelTab === "connections" && <PanelConnectionsTab item={item} onNavigate={onNavigate} />}
+      {panelTab === "connections" && (
+        <PanelConnectionsTab item={item} onNavigate={handleNavigate} />
+      )}
 
       {panelTab === "details" && (
         <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>

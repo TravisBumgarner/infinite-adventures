@@ -109,9 +109,10 @@ export function SettingsSidebar() {
 
   return (
     <Drawer
-      variant="persistent"
+      variant="temporary"
       anchor="left"
       open
+      onClose={onClose}
       sx={{
         "& .MuiDrawer-paper": {
           width: SIDEBAR_WIDTH,

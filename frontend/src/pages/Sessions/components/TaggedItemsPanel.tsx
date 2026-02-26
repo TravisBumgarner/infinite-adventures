@@ -1,24 +1,16 @@
-import MapIcon from "@mui/icons-material/Map";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
-import Collapse from "@mui/material/Collapse";
-import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useQueryClient } from "@tanstack/react-query";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note } from "shared";
-import { fetchItem } from "../../../api/client";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import type { Note } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { queryKeys, useTaggedItems } from "../../../hooks/queries";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { useCanvasStore } from "../../../stores/canvasStore";
-import { getNotePreview } from "../../../utils/getNotePreview";
 
 export interface TaggedItemsPanelRef {
   highlightItem: (itemId: string) => void;
@@ -27,20 +19,16 @@ export interface TaggedItemsPanelRef {
 interface TaggedItemsPanelProps {
   sessionId: string;
   notes: Note[];
-  itemsCache: Map<string, CanvasItem>;
 }
 
 export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function TaggedItemsPanel(
-  { sessionId, notes, itemsCache },
+  { sessionId, notes },
   ref,
 ) {
   const theme = useTheme();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
 
-  const [expandedTaggedId, setExpandedTaggedId] = useState<string | null>(null);
-  const [expandedItem, setExpandedItem] = useState<CanvasItem | null>(null);
-  const [loadingExpand, setLoadingExpand] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const taggedListRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -64,51 +52,16 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
     return () => clearTimeout(timer);
   }, [highlightedId]);
 
-  const handleTaggedItemToggle = useCallback(
-    async (itemId: string) => {
-      if (expandedTaggedId === itemId) {
-        setExpandedTaggedId(null);
-        setExpandedItem(null);
-        return;
-      }
-      setExpandedTaggedId(itemId);
-      setExpandedItem(null);
-      setLoadingExpand(true);
-      try {
-        const full = await queryClient.fetchQuery({
-          queryKey: queryKeys.items.detail(itemId),
-          queryFn: () => fetchItem(itemId),
-        });
-        setExpandedItem(full);
-      } finally {
-        setLoadingExpand(false);
-      }
-    },
-    [expandedTaggedId, queryClient],
-  );
-
   useImperativeHandle(ref, () => ({
     highlightItem(itemId: string) {
       setHighlightedId(itemId);
-      // Expand it
-      handleTaggedItemToggle(itemId);
-      // Scroll into view
+      setEditingItemId(itemId);
       requestAnimationFrame(() => {
         const el = itemRefs.current.get(itemId);
         el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       });
     },
   }));
-
-  function handleViewOnCanvas(itemId: string) {
-    navigate("/canvas");
-    useCanvasStore.getState().setEditingItemId(itemId);
-  }
-
-  const notePreview = useCallback(
-    (content: string) => getNotePreview(content, itemsCache),
-    [itemsCache],
-  );
 
   return (
     <Box
@@ -139,7 +92,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
             const itemId = target.dataset.itemId;
             if (itemId) {
               setHighlightedId(itemId);
-              handleTaggedItemToggle(itemId);
+              setEditingItemId(itemId);
               requestAnimationFrame(() => {
                 const el = itemRefs.current.get(itemId);
                 el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -161,7 +114,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
             {taggedItems.map((tagged) => {
               const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === tagged.type);
               const bgColor = theme.palette.canvasItemTypes[tagged.type]?.light ?? "#585b70";
-              const isExpanded = expandedTaggedId === tagged.id;
               const isHighlighted = highlightedId === tagged.id;
               return (
                 <Box
@@ -180,11 +132,10 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                   }}
                 >
                   <ListItemButton
-                    onClick={() => handleTaggedItemToggle(tagged.id)}
+                    onClick={() => setEditingItemId(tagged.id)}
                     sx={{
                       borderRadius: 0,
                       border: "1px solid var(--color-surface1)",
-                      borderBottom: isExpanded ? "none" : undefined,
                       bgcolor: "var(--color-base)",
                       "&:hover": { bgcolor: "var(--color-surface0)" },
                       gap: 1.5,
@@ -225,78 +176,6 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       sx={{ flexShrink: 0 }}
                     />
                   </ListItemButton>
-                  <Collapse in={isExpanded}>
-                    <Box
-                      sx={{
-                        border: "1px solid var(--color-surface1)",
-                        borderTop: "none",
-                        p: 2,
-                      }}
-                    >
-                      {loadingExpand && !expandedItem ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                          <CircularProgress size={20} />
-                        </Box>
-                      ) : expandedItem ? (
-                        <>
-                          {expandedItem.photos.find((p) => p.isMainPhoto) && (
-                            <Box
-                              component="img"
-                              src={expandedItem.photos.find((p) => p.isMainPhoto)!.url}
-                              alt={expandedItem.title}
-                              sx={{
-                                width: 120,
-                                height: 120,
-                                objectFit: "cover",
-                                mb: 1.5,
-                              }}
-                            />
-                          )}
-                          {expandedItem.notes.length > 0 ? (
-                            expandedItem.notes.map((note) => (
-                              <Box key={note.id} sx={{ mb: 1 }}>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: "var(--color-text)",
-                                    whiteSpace: "pre-wrap",
-                                    wordBreak: "break-word",
-                                  }}
-                                  dangerouslySetInnerHTML={{
-                                    __html: notePreview(note.content),
-                                  }}
-                                />
-                                <Typography
-                                  variant="caption"
-                                  sx={{ color: "var(--color-subtext0)" }}
-                                >
-                                  {new Date(note.updatedAt).toLocaleDateString()}
-                                </Typography>
-                              </Box>
-                            ))
-                          ) : !expandedItem.photos.find((p) => p.isMainPhoto) ? (
-                            <Typography variant="body2" sx={{ color: "var(--color-overlay0)" }}>
-                              No additional details
-                            </Typography>
-                          ) : null}
-                          <Tooltip title="View on Canvas">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewOnCanvas(tagged.id)}
-                              sx={{
-                                mt: 1,
-                                color: "var(--color-subtext0)",
-                                "&:hover": { color: "var(--color-text)" },
-                                p: 0.5,
-                              }}
-                            >
-                              <MapIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      ) : null}
-                    </Box>
-                  </Collapse>
                 </Box>
               );
             })}

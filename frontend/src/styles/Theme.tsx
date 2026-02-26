@@ -52,6 +52,11 @@ function buildTheme(mode: EffectiveMode) {
       borderRadius: BORDER_RADIUS.none,
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: { colorScheme: mode },
+        },
+      },
       MuiButtonBase: {
         defaultProps: { disableRipple: true },
       },
