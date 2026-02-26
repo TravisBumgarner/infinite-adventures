@@ -11,6 +11,7 @@ import { queryKeys, useTaggedItems } from "../../../hooks/queries";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 
 export interface TaggedItemsPanelRef {
   highlightItem: (itemId: string) => void;
@@ -172,7 +173,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       label={typeInfo?.label ?? tagged.type}
                       accentColor={bgColor}
                       icon={canvasItemTypeIcon(tagged.type)}
-                      fontSize={10}
+                      fontSize={FONT_SIZES.xs}
                       sx={{ flexShrink: 0 }}
                     />
                   </ListItemButton>

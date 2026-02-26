@@ -22,6 +22,7 @@ import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../stores/canvasStore";
+import { FONT_SIZES } from "../../styles/styleConsts";
 import { getContrastText } from "../../utils/getContrastText";
 import { getNotePreview } from "../../utils/getNotePreview";
 import TimelineCalendar, { getCalendarRange } from "./TimelineCalendar";
@@ -243,11 +244,11 @@ export default function Timeline() {
               }}
               size="small"
             >
-              <ToggleButton value="createdAt" sx={{ textTransform: "none", gap: 0.5 }}>
+              <ToggleButton value="createdAt" sx={{ gap: 0.5 }}>
                 <SortIcon fontSize="small" />
                 Created
               </ToggleButton>
-              <ToggleButton value="updatedAt" sx={{ textTransform: "none", gap: 0.5 }}>
+              <ToggleButton value="updatedAt" sx={{ gap: 0.5 }}>
                 <SortIcon fontSize="small" />
                 Last Updated
               </ToggleButton>
@@ -256,7 +257,7 @@ export default function Timeline() {
             {/* Pinned only filter */}
             <Chip
               label="Pinned only"
-              icon={<StarIcon sx={{ fontSize: 14 }} />}
+              icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
               size="small"
               onClick={() => setImportantOnly(!importantOnly)}
               sx={{
@@ -264,7 +265,7 @@ export default function Timeline() {
                 color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
                 border: importantOnly ? "none" : "1px solid var(--color-surface1)",
                 fontWeight: 600,
-                fontSize: 11,
+                fontSize: FONT_SIZES.xs,
                 cursor: "pointer",
                 "&:hover": { opacity: 0.8 },
               }}
@@ -286,7 +287,7 @@ export default function Timeline() {
                       color: isActive ? getContrastText(colors.light) : "var(--color-subtext0)",
                       border: isActive ? "none" : "1px solid var(--color-surface1)",
                       fontWeight: 600,
-                      fontSize: 11,
+                      fontSize: FONT_SIZES.xs,
                       cursor: "pointer",
                       "&:hover": { opacity: 0.8 },
                     }}
@@ -375,7 +376,7 @@ export default function Timeline() {
                           accentColor={colors.light}
                           icon={canvasItemTypeIcon(entry.parentItemType)}
                           height={22}
-                          fontSize={10}
+                          fontSize={FONT_SIZES.xs}
                           sx={{ minWidth: 60 }}
                         />
                         <Typography
@@ -403,7 +404,7 @@ export default function Timeline() {
                               p: 0.5,
                             }}
                           >
-                            <MapIcon sx={{ fontSize: 16 }} />
+                            <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
                           </IconButton>
                         </Tooltip>
                         {entry.parentItemType === "session" && (
@@ -417,7 +418,7 @@ export default function Timeline() {
                                 p: 0.5,
                               }}
                             >
-                              <CalendarMonthIcon sx={{ fontSize: 16 }} />
+                              <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.lg }} />
                             </IconButton>
                           </Tooltip>
                         )}

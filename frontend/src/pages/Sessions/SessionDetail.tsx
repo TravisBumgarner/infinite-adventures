@@ -21,6 +21,7 @@ import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../stores/canvasStore";
 
+import { FONT_SIZES } from "../../styles/styleConsts";
 import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
 import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
@@ -394,7 +395,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
               onBlur={() => setIsEditingTitle(false)}
               onKeyDown={handleTitleKeyDown}
               sx={{
-                fontSize: "1.25rem",
+                fontSize: FONT_SIZES.xl,
                 fontWeight: 600,
                 flex: 1,
                 "& input": { padding: 0 },
@@ -459,14 +460,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             sx={{
               borderBottom: "1px solid var(--color-surface0)",
               px: 2,
-              minHeight: 40,
-              "& .MuiTab-root": {
-                textTransform: "none",
-                minWidth: 0,
-                minHeight: 40,
-                px: 2,
-                py: 1,
-              },
             }}
           >
             <Tab label="Notes" value="notes" />
