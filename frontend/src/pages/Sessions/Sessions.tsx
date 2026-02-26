@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { useCreateItem } from "../../hooks/mutations";
 import { useCanvases, useSessions } from "../../hooks/queries";
+import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
 
@@ -49,7 +50,12 @@ export default function Sessions() {
   }, [canvases, initActiveCanvas]);
 
   // Fetch sessions via React Query
-  const { data: sessions = [], isLoading: loading } = useSessions(activeCanvasId ?? undefined);
+  const {
+    data: sessions = [],
+    isLoading: loading,
+    error: sessionsError,
+    refetch: refetchSessions,
+  } = useSessions(activeCanvasId ?? undefined);
 
   // Session creation mutation
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
@@ -169,7 +175,9 @@ export default function Sessions() {
           )}
 
           {/* Session list */}
-          {loading ? (
+          {sessionsError ? (
+            <QueryErrorDisplay error={sessionsError} onRetry={refetchSessions} />
+          ) : loading ? (
             <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
               Loading sessions...
             </Typography>

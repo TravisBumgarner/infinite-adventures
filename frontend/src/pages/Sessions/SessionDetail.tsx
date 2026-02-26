@@ -19,6 +19,7 @@ import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../modals";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
+import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 
 import { FONT_SIZES } from "../../styles/styleConsts";
@@ -43,7 +44,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
-  const { data: queryItem, refetch: refetchItem } = useItem(sessionId);
+  const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(sessionId);
 
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -341,6 +342,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     taggedPanelRef.current?.highlightItem(itemId);
   }, []);
 
+  if (itemError) return <QueryErrorDisplay error={itemError} onRetry={refetchItem} />;
   if (!item) {
     return (
       <Box
