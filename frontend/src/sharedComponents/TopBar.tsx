@@ -11,16 +11,14 @@ interface TopBarProps {
 
 export default function TopBar({ left, center, right }: TopBarProps) {
   const editingItemId = useCanvasStore((s) => s.editingItemId);
-  const showSettings = useCanvasStore((s) => s.showSettings);
   const rightSidebarOpen = Boolean(editingItemId);
-  const leftSidebarOpen = showSettings;
 
   return (
     <Box
       sx={{
         position: "fixed",
         top: 0,
-        left: leftSidebarOpen ? SIDEBAR_WIDTH : 0,
+        left: 0,
         right: rightSidebarOpen ? SIDEBAR_WIDTH : 0,
         zIndex: 50,
         display: "flex",
@@ -32,11 +30,13 @@ export default function TopBar({ left, center, right }: TopBarProps) {
         backdropFilter: "blur(8px)",
         borderBottom: "1px solid var(--color-surface1)",
         pointerEvents: "auto",
-        transition: "left 0.2s, right 0.2s",
+        transition: "right 0.2s",
       }}
     >
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>{left}</Box>
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", gap: 0.5 }}>{center}</Box>
+      <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5, whiteSpace: "nowrap" }}>
+        {center}
+      </Box>
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>{right}</Box>
     </Box>
   );

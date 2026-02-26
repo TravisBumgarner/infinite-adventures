@@ -1,5 +1,8 @@
+import Box from "@mui/material/Box";
 import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { SIDEBAR_WIDTH } from "../constants";
+import CanvasItemPanel from "../pages/Canvas/components/CanvasItemPanel";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
 import InitiativeTracker from "../pages/Canvas/components/InitiativeTracker";
@@ -20,6 +23,8 @@ interface MemberLayoutProps {
 
 export default function MemberLayout({ children }: MemberLayoutProps) {
   const location = useLocation();
+  const editingItemId = useCanvasStore((s) => s.editingItemId);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const setShowSearchBar = useCanvasStore((s) => s.setShowSearchBar);
@@ -45,9 +50,10 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         ? "gallery"
         : location.pathname.startsWith("/tree")
           ? "tree"
-          : location.pathname.startsWith("/charlie")
-            ? "charlie"
-            : "canvas";
+          : "canvas";
+
+  const isCanvasPage = activePage === "canvas";
+  const showRightPanel = Boolean(editingItemId) && !isCanvasPage;
 
   return (
     <>
@@ -61,7 +67,14 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         }
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
-      {children}
+      <Box
+        sx={{
+          marginRight: showRightPanel ? `${SIDEBAR_WIDTH}px` : 0,
+          transition: "margin-right 0.2s",
+        }}
+      >
+        {children}
+      </Box>
       <SearchBar />
       <ToolSidebar />
       <DiceRoller />
@@ -70,6 +83,9 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       <QuickNotes />
       {showSettings && <SettingsSidebar />}
       {showOnboarding && <OnboardingTour />}
+      {showRightPanel && (
+        <CanvasItemPanel itemId={editingItemId!} onClose={() => setEditingItemId(null)} />
+      )}
     </>
   );
 }
