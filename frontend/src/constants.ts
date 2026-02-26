@@ -2,6 +2,8 @@ import type { CanvasItemType } from "shared";
 
 export const SIDEBAR_WIDTH = 360;
 
+export const DRAFT_NOTE_ID = "__draft__";
+
 export const CANVAS_ITEM_TYPE_LABELS: Record<CanvasItemType, string> = {
   person: "Person",
   place: "Place",

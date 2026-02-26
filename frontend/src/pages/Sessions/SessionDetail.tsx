@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo } from "shared";
 import NoteHistoryModal from "../../components/NoteHistoryModal";
+import { DRAFT_NOTE_ID } from "../../constants";
 import {
   useCreateItem,
   useCreateNote,
@@ -33,7 +34,6 @@ import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
 import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
 
-const DRAFT_NOTE_ID = "__draft__";
 const MIN_LEFT_WIDTH = 400;
 const MIN_RIGHT_WIDTH = 280;
 

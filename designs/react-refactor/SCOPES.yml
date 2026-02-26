@@ -1,0 +1,151 @@
+project: react-refactor
+design_file: designs/react-refactor/DESIGN.md
+scoping_date: 2026-02-25
+
+milestones:
+  - number: 1
+    title: "1. Extract shared hooks and components"
+    description: Extract duplicated note handlers, photo handlers, and delete confirmation dialog into shared hooks/components
+    branch:
+      working: refactor-extract-shared-hooks
+      base: main
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Move DRAFT_NOTE_ID to shared constants
+    description: |
+      `DRAFT_NOTE_ID = "__draft__"` is defined identically in both `CanvasItemPanel.tsx` (line 48) and `SessionDetail.tsx` (line 36).
+
+      - Add `export const DRAFT_NOTE_ID = "__draft__"` to `frontend/src/constants.ts`
+      - Update both files to import from constants
+      - Delete the local definitions
+    acceptance_criteria:
+      - DRAFT_NOTE_ID exported from frontend/src/constants.ts
+      - Both CanvasItemPanel and SessionDetail import from constants
+      - No duplicate definitions remain
+    depends_on: []
+    effort: 1
+    status: implementing
+
+  - id: 2
+    milestone: 1
+    title: Extract useNoteHandlers hook
+    description: |
+      Extract the note list management logic duplicated between `CanvasItemPanel.tsx` (lines 444-485) and `SessionDetail.tsx` (lines 258-310) into a shared hook at `frontend/src/hooks/useNoteHandlers.ts`.
+
+      The hook consolidates:
+      - `handleAddNote` — sets DRAFT_NOTE_ID, initializes empty content in refs
+      - `handleSelectNote` — sets editing note ID, loads note content/title into refs
+      - `handleDeleteNote` — handles draft (no server call) vs persisted (delete mutation + refetch)
+      - `handleBackToNoteList` — flushes auto-save if not draft, clears editing state
+
+      Parameters:
+      - `itemId: string`
+      - `noteContentRef`, `noteTitleRef`, `editingNoteIdRef` — mutable refs for auto-save integration
+      - `flushNote: () => void` — triggers auto-save flush before navigating away
+      - `refetchItem: () => Promise<Item>` — refetch after mutations
+      - `onItemUpdated?: (item: Item) => void` — optional callback after refetch
+
+      Returns:
+      - All four handler functions
+      - `editingNoteId` state and `setEditingNoteId` setter
+
+      Update both `CanvasItemPanel.tsx` and `SessionDetail.tsx` to use the new hook.
+    acceptance_criteria:
+      - useNoteHandlers hook created at frontend/src/hooks/useNoteHandlers.ts
+      - CanvasItemPanel uses the hook — local note handler functions removed
+      - SessionDetail uses the hook — local note handler functions removed
+      - Draft note behavior preserved (no server call until typing starts)
+      - All existing tests pass
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Extract usePhotoHandlers hook
+    description: |
+      Extract the photo CRUD logic duplicated between `CanvasItemPanel.tsx` (lines 285-329) and `SessionDetail.tsx` (lines 313-367) into a shared hook at `frontend/src/hooks/usePhotoHandlers.ts`.
+
+      The hook consolidates:
+      - `handlePhotoUpload` — upload mutation + refetch + optional callback
+      - `handlePhotoDelete` — delete mutation + refetch + optional callback
+      - `handleUpdateCaption` — update caption mutation + refetch + optional callback
+      - `handleTogglePhotoImportant` — toggle importance mutation + refetch (used by SessionDetail)
+      - `handleFileDrop` — drag-and-drop file upload (used by SessionDetail)
+
+      Parameters:
+      - `itemId: string`
+      - `refetchItem: () => Promise<Item>` — refetch after mutations
+      - `onItemUpdated?: (item: Item) => void` — optional callback after refetch
+
+      Returns all handler functions. Handlers not relevant to a consumer are still returned but simply unused.
+
+      Update both `CanvasItemPanel.tsx` and `SessionDetail.tsx` to use the new hook.
+    acceptance_criteria:
+      - usePhotoHandlers hook created at frontend/src/hooks/usePhotoHandlers.ts
+      - CanvasItemPanel uses the hook — local photo handler functions removed
+      - SessionDetail uses the hook — local photo handler functions removed
+      - All existing tests pass
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 1
+    title: Extract ConfirmDeleteDialog shared component
+    description: |
+      Three files use identical inline `Dialog` patterns for delete confirmation:
+      - `QuickNotes.tsx` (lines 270-289, state at line 66)
+      - `NotesTab.tsx` (lines 359-378, state at line 84)
+      - `ManageTags.tsx` (lines 339-358, state at line 61)
+
+      Create `frontend/src/sharedComponents/ConfirmDeleteDialog.tsx` with props:
+      - `open: boolean`
+      - `onClose: () => void`
+      - `onConfirm: () => void`
+      - `title?: string` (default: "Confirm Delete")
+      - `message?: string` (default: "This action cannot be undone.")
+
+      Update all three files to use the shared component instead of inline Dialog markup.
+      Each file keeps its own `useState` for open/close — only the Dialog JSX is extracted.
+    acceptance_criteria:
+      - ConfirmDeleteDialog component created at frontend/src/sharedComponents/ConfirmDeleteDialog.tsx
+      - QuickNotes, NotesTab, and ManageTags all use ConfirmDeleteDialog
+      - Inline Dialog JSX removed from all three files
+      - Delete behavior unchanged in all three contexts
+      - All existing tests pass
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 5
+    milestone: 1
+    title: Add missing barrel exports and centralize localStorage keys
+    description: |
+      **Missing barrel exports** — 5 pages lack `index.ts` when 4 others have them:
+      - `frontend/src/pages/Canvas/` — add `export { default } from './Canvas'`
+      - `frontend/src/pages/Login/` — add `export { default } from './Login'`
+      - `frontend/src/pages/Marketing/` — add `export { default } from './Marketing'`
+      - `frontend/src/pages/Signup/` — add `export { default } from './Signup'`
+      - `frontend/src/pages/PasswordReset/` — add `export { default } from './PasswordReset'`
+
+      Update `Router.tsx` imports to use the barrel paths (e.g., `from '../pages/Canvas'` instead of `from '../pages/Canvas/Canvas'`).
+
+      **localStorage key centralization** — `main.tsx` duplicates the `"infinite-adventures-theme"` key from `Theme.tsx`:
+      - Add all localStorage keys to `frontend/src/constants.ts`:
+        - `STORAGE_KEY_THEME = "infinite-adventures-theme"`
+        - `STORAGE_KEY_ACTIVE_CANVAS = "infinite-adventures-active-canvas"`
+        - `STORAGE_KEY_ONBOARDING_COMPLETE = "infinite-adventures-onboarding-complete"`
+      - Update `Theme.tsx`, `main.tsx`, and `canvasStore.ts` to import from constants
+      - Delete the local constant definitions
+    acceptance_criteria:
+      - All 10 page directories have index.ts barrel exports
+      - Router.tsx uses barrel import paths
+      - All 3 localStorage keys defined in constants.ts
+      - No duplicate key definitions remain
+      - All existing tests pass
+    depends_on: []
+    effort: 1
+    status: scoped

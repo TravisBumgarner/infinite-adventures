@@ -13,7 +13,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, Note, Photo, Tag } from "shared";
 import NoteHistoryModal from "../../../components/NoteHistoryModal";
-import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
+import {
+  CANVAS_ITEM_TYPE_LABELS,
+  CANVAS_ITEM_TYPES,
+  DRAFT_NOTE_ID,
+  SIDEBAR_WIDTH,
+} from "../../../constants";
 import {
   useAddTagToItem,
   useCreateItem,
@@ -44,8 +49,6 @@ import { shouldSnapshot } from "../../../utils/shouldSnapshot";
 import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
-
-const DRAFT_NOTE_ID = "__draft__";
 
 interface CanvasItemPanelProps {
   itemId: string;
