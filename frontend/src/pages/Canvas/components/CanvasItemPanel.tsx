@@ -36,7 +36,6 @@ import { MODAL_ID, useModalStore } from "../../../modals";
 import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
-import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
 import { FONT_SIZES } from "../../../styles/styleConsts";
@@ -77,7 +76,6 @@ export default function CanvasItemPanel({
   const itemsCache = itemsCacheProp ?? storeItemsCache;
   const tagsById = useTagStore((s) => s.tags);
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
-  const showToast = useAppStore((s) => s.showToast);
 
   const handleSaved = useMemo(() => onSaved ?? (() => {}), [onSaved]);
   const handleDeleted = useMemo(
@@ -484,28 +482,26 @@ export default function CanvasItemPanel({
     [allTags, assignedTagIds],
   );
 
-  async function handleAddTag(tag: Tag) {
+  function handleAddTag(tag: Tag) {
     if (!item) return;
-    try {
-      await addTagMutation.mutateAsync(tag.id);
-      const updated = { ...item, tags: [...item.tags, tag] };
-      setItem(updated);
-      handleSaved(updated);
-    } catch {
-      showToast("Failed to add tag");
-    }
+    addTagMutation.mutate(tag.id, {
+      onSuccess: () => {
+        const updated = { ...item, tags: [...item.tags, tag] };
+        setItem(updated);
+        handleSaved(updated);
+      },
+    });
   }
 
-  async function handleRemoveTag(tagId: string) {
+  function handleRemoveTag(tagId: string) {
     if (!item) return;
-    try {
-      await removeTagMutation.mutateAsync(tagId);
-      const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
-      setItem(updated);
-      handleSaved(updated);
-    } catch {
-      showToast("Failed to remove tag");
-    }
+    removeTagMutation.mutate(tagId, {
+      onSuccess: () => {
+        const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
+        setItem(updated);
+        handleSaved(updated);
+      },
+    });
   }
 
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;

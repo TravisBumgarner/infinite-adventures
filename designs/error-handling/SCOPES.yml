@@ -122,4 +122,4 @@ tasks:
       - All existing tests pass
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed

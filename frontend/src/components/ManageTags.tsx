@@ -15,7 +15,6 @@ import type { Tag } from "shared";
 import { useCreateTag, useDeleteTag, useUpdateTag } from "../hooks/mutations";
 import ConfirmDeleteDialog from "../sharedComponents/ConfirmDeleteDialog";
 import { TagBadge } from "../sharedComponents/LabelBadge";
-import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import { useTagStore } from "../stores/tagStore";
 import { FONT_SIZES } from "../styles/styleConsts";
@@ -53,7 +52,6 @@ export function ManageTags() {
   const updateTagInStore = useTagStore((s) => s.updateTag);
   const removeTag = useTagStore((s) => s.removeTag);
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const showToast = useAppStore((s) => s.showToast);
 
   const tags = useMemo(() => Object.values(tagsById), [tagsById]);
 
@@ -91,31 +89,40 @@ export function ManageTags() {
 
   const isSaving = createTagMutation.isPending || updateTagMutation.isPending;
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!activeCanvasId || !form.name.trim() || isSaving) return;
 
-    try {
-      if (editingTag) {
-        const updated = await updateTagMutation.mutateAsync({
+    if (editingTag) {
+      updateTagMutation.mutate(
+        {
           tagId: editingTag.id,
           input: {
             name: form.name.trim(),
             icon: form.icon,
             color: form.color,
           },
-        });
-        updateTagInStore(updated);
-      } else {
-        const created = await createTagMutation.mutateAsync({
+        },
+        {
+          onSuccess: (updated) => {
+            updateTagInStore(updated);
+            handleClose();
+          },
+        },
+      );
+    } else {
+      createTagMutation.mutate(
+        {
           name: form.name.trim(),
           icon: form.icon,
           color: form.color,
-        });
-        addTag(created);
-      }
-      handleClose();
-    } catch {
-      showToast(editingTag ? "Failed to update tag" : "Failed to create tag");
+        },
+        {
+          onSuccess: (created) => {
+            addTag(created);
+            handleClose();
+          },
+        },
+      );
     }
   }, [
     activeCanvasId,
@@ -125,23 +132,21 @@ export function ManageTags() {
     addTag,
     updateTagInStore,
     handleClose,
-    showToast,
     createTagMutation,
     updateTagMutation,
   ]);
 
   const handleDelete = useCallback(
-    async (tagId: string) => {
+    (tagId: string) => {
       if (!activeCanvasId) return;
-      try {
-        await deleteTagMutation.mutateAsync(tagId);
-        removeTag(tagId);
-        setDeleteConfirmId(null);
-      } catch {
-        showToast("Failed to delete tag");
-      }
+      deleteTagMutation.mutate(tagId, {
+        onSuccess: () => {
+          removeTag(tagId);
+          setDeleteConfirmId(null);
+        },
+      });
     },
-    [activeCanvasId, removeTag, showToast, deleteTagMutation],
+    [activeCanvasId, removeTag, deleteTagMutation],
   );
 
   return (

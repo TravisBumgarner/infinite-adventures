@@ -100,9 +100,6 @@ export function SettingsSidebar() {
       onSuccess: () => {
         showToast("Canvas imported successfully");
       },
-      onError: () => {
-        showToast("Failed to import canvas");
-      },
     });
     e.target.value = "";
   };
