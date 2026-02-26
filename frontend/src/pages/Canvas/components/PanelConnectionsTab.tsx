@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import type { CanvasItem, CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 import { buildConnectionEntries, filterConnections } from "../../../utils/connectionFilter";
 import { getContrastText } from "../../../utils/getContrastText";
 import { getNotePreview } from "../../../utils/getNotePreview";
@@ -80,7 +81,7 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                 borderColor: bgColor,
                 color: active ? getContrastText(bgColor) : "var(--color-subtext0)",
                 fontWeight: 600,
-                fontSize: 11,
+                fontSize: FONT_SIZES.xs,
                 "&:hover": {
                   bgcolor: active ? bgColor : "transparent",
                 },
@@ -127,7 +128,7 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                           ? "var(--color-surface1)"
                           : "var(--color-surface0)",
                       color: "var(--color-subtext0)",
-                      fontSize: 12,
+                      fontSize: FONT_SIZES.sm,
                       height: 24,
                       minWidth: 28,
                     }}
@@ -136,7 +137,7 @@ export default function PanelConnectionsTab({ item, onNavigate }: PanelConnectio
                     label={entry.link.type.toUpperCase()}
                     accentColor={entryTypeBgColor}
                     icon={canvasItemTypeIcon(entry.link.type)}
-                    fontSize={10}
+                    fontSize={FONT_SIZES.xs}
                   />
                   <Typography
                     variant="body2"

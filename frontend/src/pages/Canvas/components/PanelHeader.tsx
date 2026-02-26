@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem } from "shared";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface PanelHeaderProps {
   item: CanvasItem;
@@ -86,7 +87,7 @@ export default function PanelHeader({
           onKeyDown={handleTitleKeyDown}
           sx={{
             flex: 1,
-            fontSize: "1.25rem",
+            fontSize: FONT_SIZES.xl,
             fontWeight: 500,
             "& input": {
               padding: 0,
@@ -114,15 +115,15 @@ export default function PanelHeader({
         accentColor={typeBgColor}
         icon={canvasItemTypeIcon(item.type)}
         height={22}
-        fontSize={10}
+        fontSize={FONT_SIZES.xs}
       />
       <IconButton
         data-tour="panel-menu"
         size="small"
         onClick={(e) => setMenuAnchor(e.currentTarget)}
-        sx={{ color: "var(--color-subtext0)", p: 0.5 }}
+        sx={{ p: 0.5 }}
       >
-        <MoreVertIcon sx={{ fontSize: 18 }} />
+        <MoreVertIcon sx={{ fontSize: FONT_SIZES.lg }} />
       </IconButton>
       <Menu
         anchorEl={menuAnchor}
