@@ -23,6 +23,7 @@ import { createPortal } from "react-dom";
 import type { CanvasItem, CanvasItemType } from "shared";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 import { contentToHtml, serializeToMentionText } from "../../../utils/editorSerializer";
 
 interface MentionEditorProps {
@@ -84,14 +85,14 @@ function SuggestionPopup({
               e.preventDefault();
               onSelect(item);
             }}
-            sx={{ gap: 1, fontSize: 13 }}
+            sx={{ gap: 1, fontSize: FONT_SIZES.sm }}
           >
             <LabelBadge
               label={item.type.toUpperCase()}
               accentColor={bgColor}
               icon={canvasItemTypeIcon(item.type as CanvasItemType)}
               height={18}
-              fontSize={10}
+              fontSize={FONT_SIZES.xs}
             />
             {item.title}
           </MenuItem>
@@ -107,7 +108,7 @@ function SuggestionPopup({
           sx={{
             fontStyle: "italic",
             color: "var(--color-subtext0)",
-            fontSize: 13,
+            fontSize: FONT_SIZES.sm,
           }}
         >
           Create &ldquo;{query}&rdquo;
@@ -331,7 +332,7 @@ const FormattingToolbar = forwardRef<
           }}
           title="Bold"
           sx={{
-            fontSize: 13,
+            fontSize: FONT_SIZES.sm,
             fontWeight: 700,
             color: editor.isActive("bold") ? "var(--color-text)" : "var(--color-subtext0)",
             bgcolor: editor.isActive("bold") ? "var(--color-surface1)" : "transparent",
@@ -347,7 +348,7 @@ const FormattingToolbar = forwardRef<
           }}
           title="Italic"
           sx={{
-            fontSize: 13,
+            fontSize: FONT_SIZES.sm,
             fontWeight: 700,
             fontStyle: "italic",
             color: editor.isActive("italic") ? "var(--color-text)" : "var(--color-subtext0)",
@@ -364,7 +365,7 @@ const FormattingToolbar = forwardRef<
           }}
           title="Bullet List"
           sx={{
-            fontSize: 13,
+            fontSize: FONT_SIZES.sm,
             fontWeight: 700,
             color: editor.isActive("bulletList") ? "var(--color-text)" : "var(--color-subtext0)",
             bgcolor: editor.isActive("bulletList") ? "var(--color-surface1)" : "transparent",
@@ -380,7 +381,7 @@ const FormattingToolbar = forwardRef<
           }}
           title="Ordered List"
           sx={{
-            fontSize: 13,
+            fontSize: FONT_SIZES.sm,
             fontWeight: 700,
             color: editor.isActive("orderedList") ? "var(--color-text)" : "var(--color-subtext0)",
             bgcolor: editor.isActive("orderedList") ? "var(--color-surface1)" : "transparent",
@@ -396,7 +397,7 @@ const FormattingToolbar = forwardRef<
           }}
           title="Task List"
           sx={{
-            fontSize: 17,
+            fontSize: FONT_SIZES.lg,
             fontWeight: 700,
             color: editor.isActive("taskList") ? "var(--color-text)" : "var(--color-subtext0)",
             bgcolor: editor.isActive("taskList") ? "var(--color-surface1)" : "transparent",
@@ -417,9 +418,9 @@ const FormattingToolbar = forwardRef<
           }}
         >
           {editor.isActive("link") ? (
-            <LinkOffIcon sx={{ fontSize: 16 }} />
+            <LinkOffIcon sx={{ fontSize: FONT_SIZES.lg }} />
           ) : (
-            <LinkIcon sx={{ fontSize: 16 }} />
+            <LinkIcon sx={{ fontSize: FONT_SIZES.lg }} />
           )}
         </IconButton>
       </Box>

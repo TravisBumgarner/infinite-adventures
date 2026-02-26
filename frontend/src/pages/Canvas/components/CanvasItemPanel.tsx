@@ -39,6 +39,7 @@ import PhotosTab from "../../../sharedComponents/PhotosTab";
 import { useAppStore } from "../../../stores/appStore";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useTagStore } from "../../../stores/tagStore";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { formatItemMarkdown } from "../../../utils/noteExport";
 import { shouldSnapshot } from "../../../utils/shouldSnapshot";
@@ -519,7 +520,6 @@ export default function CanvasItemPanel({
         sx={{
           "& .MuiDrawer-paper": {
             width: SIDEBAR_WIDTH,
-            bgcolor: "var(--color-base)",
             borderLeft: "1px solid var(--color-surface0)",
             p: 2.5,
           },
@@ -539,7 +539,6 @@ export default function CanvasItemPanel({
       sx={{
         "& .MuiDrawer-paper": {
           width: SIDEBAR_WIDTH,
-          bgcolor: "var(--color-base)",
           borderLeft: "1px solid var(--color-surface0)",
           display: "flex",
           flexDirection: "column",
@@ -588,26 +587,16 @@ export default function CanvasItemPanel({
                     ...params.InputProps,
                     disableUnderline: true,
                     startAdornment: (
-                      <AddIcon sx={{ fontSize: 16, color: "var(--color-overlay0)" }} />
+                      <AddIcon sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-overlay0)" }} />
                     ),
                   }}
                 />
               )}
-              slotProps={{
-                paper: {
-                  sx: {
-                    "& .MuiAutocomplete-option": {
-                      px: 1,
-                      py: 0.5,
-                    },
-                  },
-                },
-              }}
               sx={{
                 minWidth: 120,
                 "& .MuiInputBase-root": {
                   py: 0,
-                  fontSize: 13,
+                  fontSize: FONT_SIZES.sm,
                 },
               }}
               fullWidth
@@ -625,7 +614,7 @@ export default function CanvasItemPanel({
               px: 1,
               border: "1px dashed var(--color-overlay0)",
               color: "var(--color-overlay0)",
-              fontSize: 13,
+              fontSize: FONT_SIZES.sm,
               fontWeight: 600,
               cursor: "pointer",
               "&:hover": {
@@ -634,7 +623,7 @@ export default function CanvasItemPanel({
               },
             }}
           >
-            <AddIcon sx={{ fontSize: 16 }} />
+            <AddIcon sx={{ fontSize: FONT_SIZES.lg }} />
             New
           </Box>
         </Box>
@@ -660,7 +649,7 @@ export default function CanvasItemPanel({
           placeholder="Brief description..."
           sx={{
             "& .MuiInputBase-root": {
-              fontSize: 13,
+              fontSize: FONT_SIZES.sm,
               color: "var(--color-subtext0)",
             },
           }}
@@ -674,14 +663,6 @@ export default function CanvasItemPanel({
         sx={{
           borderBottom: "1px solid var(--color-surface0)",
           px: 2,
-          minHeight: 40,
-          "& .MuiTab-root": {
-            textTransform: "none",
-            minWidth: 0,
-            minHeight: 40,
-            px: 2,
-            py: 1,
-          },
         }}
       >
         <Tab label="Notes" value="notes" />
