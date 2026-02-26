@@ -245,7 +245,7 @@ tasks:
       - Visual output unchanged
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 9
     milestone: 4
@@ -273,7 +273,7 @@ tasks:
       - Visual output unchanged
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 10
     milestone: 4
@@ -297,7 +297,7 @@ tasks:
       - Visual output unchanged
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 11
     milestone: 5

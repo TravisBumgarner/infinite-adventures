@@ -28,6 +28,7 @@ import { useDraggable } from "../../../hooks/useDraggable";
 import ConfirmDeleteDialog from "../../../sharedComponents/ConfirmDeleteDialog";
 import { useCanvasStore } from "../../../stores/canvasStore";
 import { useQuickNotesStore } from "../../../stores/quickNotesStore";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { shouldSnapshot } from "../../../utils/shouldSnapshot";
 import { statusLabel } from "../../../utils/statusLabel";
@@ -130,7 +131,7 @@ function QuickNoteItem({
                   onClick={onStopEdit}
                   sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                 >
-                  <CloseIcon sx={{ fontSize: 14 }} />
+                  <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
                 </IconButton>
               </Tooltip>
             ) : (
@@ -142,9 +143,9 @@ function QuickNoteItem({
                     sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                   >
                     {expanded ? (
-                      <UnfoldLessIcon sx={{ fontSize: 14 }} />
+                      <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
                     ) : (
-                      <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+                      <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -154,7 +155,7 @@ function QuickNoteItem({
                     onClick={onStartEdit}
                     sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                   >
-                    <EditIcon sx={{ fontSize: 14 }} />
+                    <EditIcon sx={{ fontSize: FONT_SIZES.md }} />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="History">
@@ -163,7 +164,7 @@ function QuickNoteItem({
                     onClick={() => onHistoryNote(id)}
                     sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                   >
-                    <HistoryIcon sx={{ fontSize: 14 }} />
+                    <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
                   </IconButton>
                 </Tooltip>
               </>
@@ -178,9 +179,9 @@ function QuickNoteItem({
                 }}
               >
                 {isImportant ? (
-                  <StarIcon sx={{ fontSize: 14 }} />
+                  <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
                 ) : (
-                  <StarOutlineIcon sx={{ fontSize: 14 }} />
+                  <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
                 )}
               </IconButton>
             </Tooltip>
@@ -190,7 +191,7 @@ function QuickNoteItem({
                 onClick={() => setConfirmDeleteOpen(true)}
                 sx={{ color: "var(--color-overlay0)", p: 0.25 }}
               >
-                <DeleteIcon sx={{ fontSize: 14 }} />
+                <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -205,7 +206,7 @@ function QuickNoteItem({
                 mb: 0.5,
                 px: 1,
                 py: 0.25,
-                fontSize: 13,
+                fontSize: FONT_SIZES.sm,
                 fontWeight: 600,
                 border: "1px solid var(--color-surface1)",
                 color: "var(--color-text)",
@@ -224,7 +225,7 @@ function QuickNoteItem({
                 borderRadius: 0,
                 padding: "4px 8px",
                 color: "var(--color-text)",
-                fontSize: 13,
+                fontSize: FONT_SIZES.sm,
                 maxHeight: 120,
                 overflow: "auto",
               }}
@@ -253,7 +254,7 @@ function QuickNoteItem({
                 }),
               py: 0.5,
               px: 1,
-              fontSize: 13,
+              fontSize: FONT_SIZES.sm,
               color: "var(--color-text)",
               wordBreak: "break-word",
             }}

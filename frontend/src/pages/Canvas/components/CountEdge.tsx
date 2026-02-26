@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import type { Edge, EdgeProps } from "@xyflow/react";
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from "@xyflow/react";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface CountEdgeData extends Record<string, unknown> {
   count: number;
@@ -49,7 +50,7 @@ export default function CountEdge({
         >
           <Typography
             sx={{
-              fontSize: 10,
+              fontSize: FONT_SIZES.xs,
               fontWeight: 600,
               color: "var(--color-text)",
               lineHeight: 1,

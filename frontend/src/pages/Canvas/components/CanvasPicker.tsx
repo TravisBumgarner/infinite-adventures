@@ -11,6 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { useState } from "react";
 import type { CanvasSummary } from "shared";
 import { MODAL_ID, useModalStore } from "../../../modals";
+import { FONT_SIZES } from "../../../styles/styleConsts";
 
 export interface CanvasPickerProps {
   canvases: CanvasSummary[];
@@ -71,7 +72,7 @@ export default function CanvasPicker({
           color: "var(--color-text)",
           textTransform: "none",
           fontWeight: 600,
-          fontSize: 13,
+          fontSize: FONT_SIZES.sm,
           px: 1,
           "&:hover": {
             bgcolor: "var(--color-surface0)",
