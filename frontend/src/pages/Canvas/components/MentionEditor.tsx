@@ -504,6 +504,8 @@ export default function MentionEditor({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
   const isMentionActiveRef = useRef(false);
+  const itemsCacheRef = useRef(itemsCache);
+  itemsCacheRef.current = itemsCache;
 
   const handleRender = useCallback(
     (element: React.ReactNode | null, position: SuggestionPosition | null) => {
@@ -536,8 +538,8 @@ export default function MentionEditor({
         },
         suggestion: {
           items: ({ query }: { query: string }) => {
-            // Use the cached items instead of fetching from API
-            return Array.from(itemsCache.values())
+            // Read from ref so the extensions config stays stable across itemsCache changes
+            return Array.from(itemsCacheRef.current.values())
               .filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
               .map((item) => ({
                 id: item.id,

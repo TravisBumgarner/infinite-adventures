@@ -87,7 +87,7 @@ export default function CanvasItemPanel({
   );
 
   // Fetch item via React Query
-  const { data: queryItem, refetch: refetchItem } = useItem(itemId);
+  const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(itemId);
 
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -508,7 +508,7 @@ export default function CanvasItemPanel({
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
 
-  if (!item) {
+  if (itemError || !item) {
     return (
       <Box
         sx={{
@@ -516,9 +516,23 @@ export default function CanvasItemPanel({
           flexShrink: 0,
           borderLeft: "1px solid var(--color-surface0)",
           p: 2.5,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
+          pt: 4,
         }}
       >
-        <Typography>Loading...</Typography>
+        {itemError ? (
+          <>
+            <Typography sx={{ color: "var(--color-subtext0)" }}>Item not found</Typography>
+            <Button variant="outlined" size="small" onClick={onClose}>
+              Close
+            </Button>
+          </>
+        ) : (
+          <Typography sx={{ color: "var(--color-subtext0)" }}>Loading...</Typography>
+        )}
       </Box>
     );
   }

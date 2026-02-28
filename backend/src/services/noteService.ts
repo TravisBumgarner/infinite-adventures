@@ -182,6 +182,25 @@ export async function recomputePlainContentForMentionedItem(itemId: string): Pro
   }
 }
 
+/**
+ * Replace @{itemId} mentions with "Title (Item Deleted)" in all notes.
+ * Call this before deleting a canvas item so references become plain text.
+ */
+export async function replaceMentionsForDeletedItem(itemId: string, title: string): Promise<void> {
+  const db = getDb();
+  const rows = await db
+    .select({ id: notes.id, content: notes.content })
+    .from(notes)
+    .where(like(notes.content, `%@{${itemId}}%`));
+
+  for (const row of rows) {
+    const newContent = row.content.replaceAll(`@{${itemId}}`, `${title} (Item Deleted)`);
+    const mentionNames = await resolveMentionNames(newContent);
+    const plainContent = stripHtml(newContent, mentionNames);
+    await db.update(notes).set({ content: newContent, plainContent }).where(eq(notes.id, row.id));
+  }
+}
+
 export async function getNoteCanvasItemId(noteId: string): Promise<string | null> {
   const db = getDb();
   const [row] = await db
