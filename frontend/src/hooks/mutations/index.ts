@@ -99,9 +99,13 @@ export function useDeleteItem(canvasId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteItem(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      // Remove the deleted item's query before invalidating, so it doesn't refetch and 403
+      qc.removeQueries({ queryKey: queryKeys.items.detail(id) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
       qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
+      // Invalidate remaining item details — the backend rewrites mentions in other notes
+      qc.invalidateQueries({ queryKey: ["items"] });
     },
   });
 }
@@ -148,6 +152,7 @@ export function useUploadPhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }
@@ -159,6 +164,7 @@ export function useDeletePhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }
@@ -170,6 +176,7 @@ export function useSelectPhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }

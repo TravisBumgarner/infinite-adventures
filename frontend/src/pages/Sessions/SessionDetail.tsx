@@ -8,11 +8,12 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
+
 import NoteHistoryModal from "../../components/NoteHistoryModal";
 import { DRAFT_NOTE_ID } from "../../constants";
 import { useCreateItem, useCreateNote, useUpdateItem, useUpdateNote } from "../../hooks/mutations";
-import { useItem, useNoteHistory } from "../../hooks/queries";
+import { useItem, useItems, useNoteHistory } from "../../hooks/queries";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
@@ -25,10 +26,6 @@ import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
 import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
-import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
-
-const MIN_LEFT_WIDTH = 400;
-const MIN_RIGHT_WIDTH = 280;
 
 type DetailTab = "notes" | "photos";
 
@@ -40,11 +37,23 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
+  const setItemsCache = useCanvasStore((s) => s.setItemsCache);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const openModal = useModalStore((s) => s.openModal);
-  const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(sessionId);
+
+  // Populate itemsCache if empty (e.g. navigated directly to sessions page)
+  const { data: itemSummaries } = useItems(
+    itemsCache.size === 0 ? (activeCanvasId ?? undefined) : undefined,
+  );
+  useEffect(() => {
+    if (itemSummaries && itemsCache.size === 0) {
+      const cache = new Map(itemSummaries.map((s) => [s.id, s as unknown as CanvasItem]));
+      setItemsCache(cache);
+    }
+  }, [itemSummaries, itemsCache.size, setItemsCache]);
 
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -62,11 +71,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
   const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
   const [photoColumns, setPhotoColumns] = useState(4);
-
-  // Resizable divider
-  const [leftWidth, setLeftWidth] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
 
   // Mutation hooks
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
@@ -220,44 +224,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }, [sessionId, queryItem]);
 
-  // Drag handling for resizable divider
-  const handleMouseDown = useCallback(() => {
-    isDragging.current = true;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, []);
-
-  useEffect(() => {
-    function handleMouseMove(e: MouseEvent) {
-      if (!isDragging.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const totalWidth = rect.width;
-      let newLeftWidth = e.clientX - rect.left;
-
-      if (newLeftWidth < MIN_LEFT_WIDTH) newLeftWidth = MIN_LEFT_WIDTH;
-      if (totalWidth - newLeftWidth - 8 < MIN_RIGHT_WIDTH) {
-        newLeftWidth = totalWidth - MIN_RIGHT_WIDTH - 8;
-      }
-
-      setLeftWidth(newLeftWidth);
-    }
-
-    function handleMouseUp() {
-      if (isDragging.current) {
-        isDragging.current = false;
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-      }
-    }
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
-
   // Title editing
   function handleTitleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
@@ -298,15 +264,20 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   // Create mention item
   async function handleCreateMentionItem(
     mentionTitle: string,
+    type: CanvasItemType,
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
       const newItem = await createItemMutation.mutateAsync({
-        type: "person",
+        type,
         title: mentionTitle,
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,
       });
+      // Add to itemsCache so mention previews resolve instead of showing "@mention"
+      const nextCache = new Map(useCanvasStore.getState().itemsCache);
+      nextCache.set(newItem.id, newItem as unknown as CanvasItem);
+      setItemsCache(nextCache);
       return { id: newItem.id, title: newItem.title };
     } catch {
       return null;
@@ -338,9 +309,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     setHistoryNoteId(null);
   }
 
-  const handleMentionClick = useCallback((itemId: string) => {
-    taggedPanelRef.current?.highlightItem(itemId);
-  }, []);
+  const handleMentionClick = useCallback(
+    (itemId: string) => {
+      setEditingItemId(itemId);
+    },
+    [setEditingItemId],
+  );
 
   if (itemError) return <QueryErrorDisplay error={itemError} onRetry={refetchItem} />;
   if (!item) {
@@ -360,7 +334,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)", pl: 7 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", pl: 7 }}>
       {/* Header row — back + title | date */}
       <Box
         sx={{
@@ -435,118 +409,80 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         />
       </Box>
 
-      {/* Content area — left column + divider + right column */}
+      {/* Session content */}
       <Box
-        ref={containerRef}
         sx={{
-          display: "flex",
           flex: 1,
+          display: "flex",
+          flexDirection: "column",
           overflow: "hidden",
-          gap: 0,
         }}
       >
-        {/* Left column - Session content */}
-        <Box
+        {/* Tabs */}
+        <Tabs
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
           sx={{
-            width: leftWidth ?? "60%",
-            minWidth: MIN_LEFT_WIDTH,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
+            borderBottom: "1px solid var(--color-surface0)",
+            px: 2,
           }}
         >
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onChange={(_, newValue) => setActiveTab(newValue)}
-            sx={{
-              borderBottom: "1px solid var(--color-surface0)",
-              px: 2,
+          <Tab label="Notes" value="notes" />
+          <Tab label="Photos" value="photos" />
+        </Tabs>
+
+        {/* Tab content */}
+        {activeTab === "notes" && (
+          <NotesTab
+            notes={notes}
+            editingNoteId={editingNoteId}
+            noteContent={noteContent}
+            noteTitle={noteTitle}
+            noteStatus={noteStatus}
+            itemsCache={itemsCache}
+            canvasId={activeCanvasId ?? ""}
+            onAddNote={handleAddNote}
+            onSelectNote={handleSelectNote}
+            onDeleteNote={handleDeleteNote}
+            onBackToList={handleBackToNoteList}
+            onNoteContentChange={(val) => {
+              setNoteContent(val);
+              markNoteDirty();
             }}
-          >
-            <Tab label="Notes" value="notes" />
-            <Tab label="Photos" value="photos" />
-          </Tabs>
-
-          {/* Tab content */}
-          {activeTab === "notes" && (
-            <NotesTab
-              notes={notes}
-              editingNoteId={editingNoteId}
-              noteContent={noteContent}
-              noteTitle={noteTitle}
-              noteStatus={noteStatus}
-              itemsCache={itemsCache}
-              canvasId={activeCanvasId ?? ""}
-              onAddNote={handleAddNote}
-              onSelectNote={handleSelectNote}
-              onDeleteNote={handleDeleteNote}
-              onBackToList={handleBackToNoteList}
-              onNoteContentChange={(val) => {
-                setNoteContent(val);
-                markNoteDirty();
-              }}
-              onNoteTitleChange={(val) => {
-                setNoteTitle(val);
-                markNoteDirty();
-              }}
-              onToggleImportant={handleToggleImportant}
-              onCreateMentionItem={handleCreateMentionItem}
-              getNotePreview={notePreview}
-              onMentionClick={handleMentionClick}
-              onHistoryNote={setHistoryNoteId}
-            />
-          )}
-
-          <NoteHistoryModal
-            open={historyNoteId !== null}
-            onClose={() => setHistoryNoteId(null)}
-            entries={historyEntries}
-            loading={historyLoading}
-            onRevert={handleRevertNote}
-          />
-
-          {activeTab === "photos" && (
-            <PhotosTab
-              photos={photos}
-              onUpload={handlePhotoUpload}
-              onDelete={handlePhotoDelete}
-              onSelect={handlePhotoSelect}
-              onToggleImportant={handleTogglePhotoImportant}
-              onOpenLightbox={handleOpenLightbox}
-              onFileDrop={handleFileDrop}
-              onUpdateCaption={handleUpdateCaption}
-              columns={photoColumns}
-              onColumnsChange={setPhotoColumns}
-            />
-          )}
-        </Box>
-
-        {/* Draggable divider */}
-        <Box
-          onMouseDown={handleMouseDown}
-          sx={{
-            width: 8,
-            cursor: "col-resize",
-            bgcolor: "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            "&:hover": { bgcolor: "var(--color-surface0)" },
-          }}
-        >
-          <Box
-            sx={{
-              width: 2,
-              height: 40,
-              bgcolor: "var(--color-surface1)",
+            onNoteTitleChange={(val) => {
+              setNoteTitle(val);
+              markNoteDirty();
             }}
+            onToggleImportant={handleToggleImportant}
+            onCreateMentionItem={handleCreateMentionItem}
+            getNotePreview={notePreview}
+            onMentionClick={handleMentionClick}
+            onHistoryNote={setHistoryNoteId}
           />
-        </Box>
+        )}
 
-        {/* Right column - Tagged items */}
-        <TaggedItemsPanel ref={taggedPanelRef} sessionId={sessionId} notes={notes} />
+        <NoteHistoryModal
+          open={historyNoteId !== null}
+          onClose={() => setHistoryNoteId(null)}
+          entries={historyEntries}
+          loading={historyLoading}
+          onRevert={handleRevertNote}
+        />
+
+        {activeTab === "photos" && (
+          <PhotosTab
+            photos={photos}
+            onUpload={handlePhotoUpload}
+            onDelete={handlePhotoDelete}
+            onSelect={handlePhotoSelect}
+            onToggleImportant={handleTogglePhotoImportant}
+            onOpenLightbox={handleOpenLightbox}
+            onFileDrop={handleFileDrop}
+            onUpdateCaption={handleUpdateCaption}
+            columns={photoColumns}
+            onColumnsChange={setPhotoColumns}
+          />
+        )}
       </Box>
     </Box>
   );

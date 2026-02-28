@@ -17,7 +17,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
-
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
@@ -57,18 +56,15 @@ function toLocalDateString(isoString: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function timelineNotePreview(content: string): string {
-  return getNotePreview(content, undefined, 0);
-}
-
 export default function Timeline() {
   const navigate = useNavigate();
   const theme = useTheme();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
-  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
+  const itemsCache = useCanvasStore((s) => s.itemsCache);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
 
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(() => new Set());
@@ -171,7 +167,7 @@ export default function Timeline() {
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
+    <Box sx={{ height: "100%", overflow: "auto", bgcolor: "var(--color-base)" }}>
       {/* Main content: two-column layout */}
       <Box
         sx={{
@@ -179,8 +175,8 @@ export default function Timeline() {
           gap: 3,
           maxWidth: 1040,
           mx: "auto",
-          pt: 10,
           px: 3,
+          pt: 2,
           ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
           transition: "margin-left 0.2s",
         }}
@@ -314,7 +310,19 @@ export default function Timeline() {
               </Typography>
             </Box>
           ) : (
-            <List disablePadding>
+            <List
+              disablePadding
+              onClick={(e) => {
+                const target = (e.target as HTMLElement).closest(
+                  ".mention-link",
+                ) as HTMLElement | null;
+                if (target) {
+                  e.stopPropagation();
+                  const itemId = target.dataset.itemId;
+                  if (itemId) setEditingItemId(itemId);
+                }
+              }}
+            >
               {filtered.map((entry, idx) => {
                 const colors = theme.palette.canvasItemTypes[entry.parentItemType];
                 const typeLabel =
@@ -396,8 +404,7 @@ export default function Timeline() {
                           <IconButton
                             size="small"
                             onClick={() => {
-                              setEditingItemId(entry.parentItemId);
-                              navigate("/canvas");
+                              navigate(`/canvas?focus=${entry.parentItemId}`);
                             }}
                             sx={{
                               color: "var(--color-subtext0)",
@@ -451,7 +458,7 @@ export default function Timeline() {
                             wordBreak: "break-word",
                           }}
                           dangerouslySetInnerHTML={{
-                            __html: timelineNotePreview(entry.content || ""),
+                            __html: getNotePreview(entry.content || "", itemsCache, 0),
                           }}
                         />
                       )}

@@ -7,6 +7,7 @@ import Login from "../pages/Login";
 import Marketing from "../pages/Marketing";
 import NotFound from "../pages/NotFound";
 import PasswordReset from "../pages/PasswordReset";
+import ReleaseNotes from "../pages/ReleaseNotes";
 import Sessions from "../pages/Sessions";
 import Signup from "../pages/Signup";
 import Timeline from "../pages/Timeline";
@@ -138,6 +139,7 @@ export default function Router() {
         }
       />
       <Route path="/password-reset" element={<PasswordReset />} />
+      <Route path="/release-notes" element={<ReleaseNotes />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

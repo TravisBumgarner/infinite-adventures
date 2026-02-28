@@ -3,7 +3,6 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Drawer from "@mui/material/Drawer";
 import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -11,7 +10,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo, Tag } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo, Tag } from "shared";
 import NoteHistoryModal from "../../../components/NoteHistoryModal";
 import {
   CANVAS_ITEM_TYPE_LABELS,
@@ -88,7 +87,7 @@ export default function CanvasItemPanel({
   );
 
   // Fetch item via React Query
-  const { data: queryItem, refetch: refetchItem } = useItem(itemId);
+  const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(itemId);
 
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -260,6 +259,7 @@ export default function CanvasItemPanel({
     handlePhotoDelete,
     handlePhotoSelect,
     handleTogglePhotoImportant,
+    handleFileDrop,
     handleUpdateCaption,
   } = usePhotoHandlers({
     itemId,
@@ -414,11 +414,12 @@ export default function CanvasItemPanel({
 
   async function handleCreateMentionItem(
     mentionTitle: string,
+    type: CanvasItemType,
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
       const newItem = await createItemMutation.mutateAsync({
-        type: "person",
+        type,
         title: mentionTitle,
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,
@@ -507,39 +508,45 @@ export default function CanvasItemPanel({
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
 
-  if (!item) {
+  if (itemError || !item) {
     return (
-      <Drawer
-        variant="persistent"
-        anchor="right"
-        open
+      <Box
         sx={{
-          "& .MuiDrawer-paper": {
-            width: SIDEBAR_WIDTH,
-            borderLeft: "1px solid var(--color-surface0)",
-            p: 2.5,
-          },
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          borderLeft: "1px solid var(--color-surface0)",
+          p: 2.5,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
+          pt: 4,
         }}
       >
-        <Typography>Loading...</Typography>
-      </Drawer>
+        {itemError ? (
+          <>
+            <Typography sx={{ color: "var(--color-subtext0)" }}>Item not found</Typography>
+            <Button variant="outlined" size="small" onClick={onClose}>
+              Close
+            </Button>
+          </>
+        ) : (
+          <Typography sx={{ color: "var(--color-subtext0)" }}>Loading...</Typography>
+        )}
+      </Box>
     );
   }
 
   return (
-    <Drawer
-      variant="persistent"
-      anchor="right"
-      open
-      slotProps={{ paper: { "data-tour": "item-panel" } as Record<string, string> }}
+    <Box
+      data-tour="item-panel"
       sx={{
-        "& .MuiDrawer-paper": {
-          width: SIDEBAR_WIDTH,
-          borderLeft: "1px solid var(--color-surface0)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        },
+        width: SIDEBAR_WIDTH,
+        flexShrink: 0,
+        borderLeft: "1px solid var(--color-surface0)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       <PanelHeader
@@ -694,6 +701,7 @@ export default function CanvasItemPanel({
           onToggleImportant={handleToggleImportant}
           onCreateMentionItem={handleCreateMentionItem}
           getNotePreview={notePreview}
+          onMentionClick={handleNavigate}
           onHistoryNote={setHistoryNoteId}
         />
       )}
@@ -714,7 +722,7 @@ export default function CanvasItemPanel({
           onSelect={handlePhotoSelect}
           onToggleImportant={handleTogglePhotoImportant}
           onOpenLightbox={handleOpenLightbox}
-          onFileDrop={handleFileUpload}
+          onFileDrop={handleFileDrop}
           onUpdateCaption={handleUpdateCaption}
         />
       )}
@@ -768,6 +776,6 @@ export default function CanvasItemPanel({
           )}
         </Box>
       )}
-    </Drawer>
+    </Box>
   );
 }

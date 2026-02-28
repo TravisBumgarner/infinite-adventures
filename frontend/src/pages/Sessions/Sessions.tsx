@@ -79,12 +79,12 @@ export default function Sessions() {
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "var(--color-base)" }}>
+    <Box sx={{ height: "100%", bgcolor: "var(--color-base)" }}>
       {/* Main content */}
       {sessionId ? (
         <Box
           sx={{
-            pt: 10,
+            pt: 2,
             px: 3,
             ml: showSettings ? `${SIDEBAR_WIDTH + 16}px` : 0,
             transition: "margin-left 0.2s",
@@ -97,7 +97,7 @@ export default function Sessions() {
           sx={{
             maxWidth: 720,
             ...(showSettings ? { ml: `${SIDEBAR_WIDTH + 32}px` } : { mx: "auto" }),
-            pt: 10,
+            pt: 2,
             px: 3,
             transition: "margin-left 0.2s",
           }}
@@ -214,8 +214,8 @@ export default function Sessions() {
                         }
                       : { bgcolor: "var(--color-surface0)" },
                     position: "relative",
-                    aspectRatio: session.selectedPhotoUrl ? "1" : undefined,
-                    p: session.selectedPhotoUrl ? 0 : 2,
+                    aspectRatio: "1",
+                    p: 0,
                     overflow: "hidden",
                     transition: "transform 0.2s ease",
                     zIndex: 1,
@@ -249,7 +249,7 @@ export default function Sessions() {
                   )}
                   <Box
                     sx={{
-                      position: session.selectedPhotoUrl ? "absolute" : "relative",
+                      position: "absolute",
                       bottom: 0,
                       left: 0,
                       right: 0,

@@ -443,6 +443,14 @@ export default function Marketing() {
               >
                 Discord
               </Button>
+              <Button
+                component="a"
+                href="/release-notes"
+                size="small"
+                sx={{ color: "var(--color-subtext0)" }}
+              >
+                Release Notes
+              </Button>
             </Stack>
           </Stack>
         </Container>

@@ -4,6 +4,7 @@ import { useEdgesState, useNodesState, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CanvasItem, CanvasItemSummary, CanvasItemType, Tag } from "shared";
 import { addTagToItem, fetchItem, fetchItems, fetchTags } from "../../../api/index";
+import { SIDEBAR_WIDTH } from "../../../constants";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../../hooks/mutations";
 import { queryKeys } from "../../../hooks/queries";
 import { getViewportKey, useCanvasStore } from "../../../stores/canvasStore";
@@ -207,8 +208,13 @@ export function useCanvasActions() {
     (itemId: string) => {
       const item = useCanvasStore.getState().itemsCache.get(itemId);
       if (item) {
-        reactFlowInstance.setCenter(item.canvasX, item.canvasY, {
-          zoom: 1.2,
+        const zoom = 1.2;
+        // Offset to account for the right sidebar so the item appears centred
+        // in the visible area. setCenter uses flow coordinates, so convert
+        // the pixel offset by dividing by the zoom level.
+        const offsetX = SIDEBAR_WIDTH / 2 / zoom;
+        reactFlowInstance.setCenter(item.canvasX + offsetX, item.canvasY, {
+          zoom,
           duration: 500,
         });
         setEditingItemId(itemId);

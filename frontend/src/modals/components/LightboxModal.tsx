@@ -5,7 +5,7 @@ import Box from "@mui/material/Box";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { useModalStore } from "../store";
 import type { LightboxModalProps } from "../types";
@@ -14,13 +14,23 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
   const closeModal = useModalStore((s) => s.closeModal);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
-  const handlePrev = () => {
-    setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : photos.length - 1);
-  };
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((i) => (i > 0 ? i - 1 : photos.length - 1));
+  }, [photos.length]);
 
-  const handleNext = () => {
-    setCurrentIndex(currentIndex < photos.length - 1 ? currentIndex + 1 : 0);
-  };
+  const handleNext = useCallback(() => {
+    setCurrentIndex((i) => (i < photos.length - 1 ? i + 1 : 0));
+  }, [photos.length]);
+
+  // Arrow key navigation
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") handlePrev();
+      else if (e.key === "ArrowRight") handleNext();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handlePrev, handleNext]);
 
   const currentPhoto = photos[currentIndex];
   if (!currentPhoto) return null;

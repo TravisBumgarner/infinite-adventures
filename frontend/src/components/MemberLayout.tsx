@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { SIDEBAR_WIDTH } from "../constants";
 import CanvasItemPanel from "../pages/Canvas/components/CanvasItemPanel";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
@@ -56,7 +55,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const showRightPanel = Boolean(editingItemId) && !isCanvasPage;
 
   return (
-    <>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <TopBar
         left={<ConnectedCanvasPicker />}
         center={
@@ -67,13 +66,11 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         }
         right={<SettingsButton onClick={() => setShowSettings(true)} />}
       />
-      <Box
-        sx={{
-          marginRight: showRightPanel ? `${SIDEBAR_WIDTH}px` : 0,
-          transition: "margin-right 0.2s",
-        }}
-      >
-        {children}
+      <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>
+        {showRightPanel && (
+          <CanvasItemPanel itemId={editingItemId!} onClose={() => setEditingItemId(null)} />
+        )}
       </Box>
       <SearchBar />
       <ToolSidebar />
@@ -83,9 +80,6 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
       <QuickNotes />
       {showSettings && <SettingsSidebar />}
       {showOnboarding && <OnboardingTour />}
-      {showRightPanel && (
-        <CanvasItemPanel itemId={editingItemId!} onClose={() => setEditingItemId(null)} />
-      )}
-    </>
+    </Box>
   );
 }

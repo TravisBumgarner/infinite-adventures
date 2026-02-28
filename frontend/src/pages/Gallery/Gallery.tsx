@@ -27,7 +27,6 @@ export default function Gallery() {
   const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
 
-  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const openModal = useModalStore((s) => s.openModal);
@@ -95,14 +94,14 @@ export default function Gallery() {
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
+    <Box sx={{ height: "100%", overflow: "auto", bgcolor: "var(--color-base)" }}>
       {/* Main content */}
       <Box
         sx={{
           maxWidth: 1040,
           mx: "auto",
-          pt: 10,
           px: 3,
+          pt: 2,
           ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
           transition: "margin-left 0.2s",
         }}
@@ -256,8 +255,7 @@ export default function Gallery() {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingItemId(entry.parentItemId);
-                            navigate("/canvas");
+                            navigate(`/canvas?focus=${entry.parentItemId}`);
                           }}
                           sx={{
                             color: "white",

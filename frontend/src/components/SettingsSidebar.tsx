@@ -195,6 +195,15 @@ export function SettingsSidebar() {
         >
           Join us on Discord
         </Button>
+        <Button
+          variant="outlined"
+          component="a"
+          href="/release-notes"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Release Notes
+        </Button>
       </Box>
 
       {/* Restart Tour */}

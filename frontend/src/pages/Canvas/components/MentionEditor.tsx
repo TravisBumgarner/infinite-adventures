@@ -21,6 +21,7 @@ import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CanvasItem, CanvasItemType } from "shared";
+import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import LinkTooltip from "../../../sharedComponents/LinkTooltip";
 import { FONT_SIZES } from "../../../styles/styleConsts";
@@ -33,7 +34,7 @@ interface MentionEditorProps {
   canvasId: string;
   style?: React.CSSProperties;
   containerStyle?: React.CSSProperties;
-  onCreate?: (title: string) => Promise<{ id: string; title: string } | null>;
+  onCreate?: (title: string, type: CanvasItemType) => Promise<{ id: string; title: string } | null>;
   onMentionClick?: (itemId: string) => void;
 }
 
@@ -55,12 +56,15 @@ function SuggestionPopup({
   query: string;
   selectedIndex: number;
   onSelect: (item: SuggestionItem) => void;
-  onCreate?: (title: string) => void;
+  onCreate?: (title: string, type: CanvasItemType) => void;
   nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
 }) {
-  const hasCreateOption =
-    query.length > 0 && !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
-  const totalItems = items.length + (hasCreateOption ? 1 : 0);
+  const hasCreateOptions =
+    onCreate &&
+    query.length > 0 &&
+    !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
+  const createCount = hasCreateOptions ? CANVAS_ITEM_TYPES.length : 0;
+  const totalItems = items.length + createCount;
 
   if (totalItems === 0) {
     return null;
@@ -98,22 +102,35 @@ function SuggestionPopup({
           </MenuItem>
         );
       })}
-      {hasCreateOption && onCreate && (
-        <MenuItem
-          selected={selectedIndex === items.length}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onCreate(query);
-          }}
-          sx={{
-            fontStyle: "italic",
-            color: "var(--color-subtext0)",
-            fontSize: FONT_SIZES.sm,
-          }}
-        >
-          Create &ldquo;{query}&rdquo;
-        </MenuItem>
-      )}
+      {hasCreateOptions &&
+        CANVAS_ITEM_TYPES.map((t, i) => {
+          const bgColor = nodeTypes[t.value]?.light || "#585b70";
+          return (
+            <MenuItem
+              key={`create-${t.value}`}
+              selected={selectedIndex === items.length + i}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onCreate(query, t.value);
+              }}
+              sx={{
+                gap: 1,
+                fontSize: FONT_SIZES.sm,
+                fontStyle: "italic",
+                color: "var(--color-subtext0)",
+              }}
+            >
+              <LabelBadge
+                label={t.label.toUpperCase()}
+                accentColor={bgColor}
+                icon={canvasItemTypeIcon(t.value)}
+                height={18}
+                fontSize={FONT_SIZES.xs}
+              />
+              Create &ldquo;{query}&rdquo;
+            </MenuItem>
+          );
+        })}
     </Paper>
   );
 }
@@ -134,7 +151,10 @@ const SuggestionController = forwardRef<
   {
     onRender: (element: React.ReactNode | null, position: SuggestionPosition | null) => void;
     nodeTypes: Record<CanvasItemType, { light: string; dark: string }>;
-    onCreate?: (title: string) => Promise<{ id: string; title: string } | null>;
+    onCreate?: (
+      title: string,
+      type: CanvasItemType,
+    ) => Promise<{ id: string; title: string } | null>;
   }
 >(({ onRender, nodeTypes, onCreate }, ref) => {
   const [items, setItems] = useState<SuggestionItem[]>([]);
@@ -150,9 +170,9 @@ const SuggestionController = forwardRef<
   }, [onRender]);
 
   const handleCreate = useCallback(
-    async (title: string) => {
+    async (title: string, type: CanvasItemType) => {
       if (!onCreate) return;
-      const result = await onCreate(title);
+      const result = await onCreate(title, type);
       if (result) {
         commandRef.current?.({ id: result.id, label: result.title });
       }
@@ -173,11 +193,12 @@ const SuggestionController = forwardRef<
     onKeyDown(event: KeyboardEvent): boolean {
       if (!isActive) return false;
 
-      const hasCreateOption =
+      const hasCreateOptions =
         onCreate &&
         query.length > 0 &&
         !items.some((i) => i.title.toLowerCase() === query.toLowerCase());
-      const totalItems = items.length + (hasCreateOption ? 1 : 0);
+      const createCount = hasCreateOptions ? CANVAS_ITEM_TYPES.length : 0;
+      const totalItems = items.length + createCount;
 
       if (event.key === "ArrowDown") {
         setSelectedIndex((i) => (i < 0 ? 0 : (i + 1) % Math.max(totalItems, 1)));
@@ -196,8 +217,10 @@ const SuggestionController = forwardRef<
         if (selectedIndex < items.length) {
           const item = items[selectedIndex]!;
           handleSelect(item);
-        } else if (hasCreateOption) {
-          handleCreate(query);
+        } else if (hasCreateOptions) {
+          const createIndex = selectedIndex - items.length;
+          const type = CANVAS_ITEM_TYPES[createIndex]!.value;
+          handleCreate(query, type);
         }
         return true;
       }
@@ -480,6 +503,9 @@ export default function MentionEditor({
   const toolbarRef = useRef<FormattingToolbarRef>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
+  const isMentionActiveRef = useRef(false);
+  const itemsCacheRef = useRef(itemsCache);
+  itemsCacheRef.current = itemsCache;
 
   const handleRender = useCallback(
     (element: React.ReactNode | null, position: SuggestionPosition | null) => {
@@ -512,8 +538,8 @@ export default function MentionEditor({
         },
         suggestion: {
           items: ({ query }: { query: string }) => {
-            // Use the cached items instead of fetching from API
-            return Array.from(itemsCache.values())
+            // Read from ref so the extensions config stays stable across itemsCache changes
+            return Array.from(itemsCacheRef.current.values())
               .filter((item) => item.title.toLowerCase().includes(query.toLowerCase()))
               .map((item) => ({
                 id: item.id,
@@ -524,6 +550,7 @@ export default function MentionEditor({
           render: () => {
             return {
               onStart: (props: SuggestionProps<SuggestionItem>) => {
+                isMentionActiveRef.current = true;
                 suggestionRef.current?.updateProps(props);
               },
               onUpdate: (props: SuggestionProps<SuggestionItem>) => {
@@ -533,6 +560,7 @@ export default function MentionEditor({
                 return suggestionRef.current?.onKeyDown(props.event) ?? false;
               },
               onExit: () => {
+                isMentionActiveRef.current = false;
                 suggestionRef.current?.dismiss();
               },
             };
@@ -555,6 +583,9 @@ export default function MentionEditor({
     ],
     content: contentToHtml(value, itemsCache),
     onUpdate: ({ editor }) => {
+      // Don't save while a mention suggestion is being composed —
+      // the raw @query text would be serialized as plain text
+      if (isMentionActiveRef.current) return;
       isInternalChange.current = true;
       const json = editor.getJSON();
       const text = serializeToMentionText(json as Record<string, unknown>);
@@ -626,7 +657,7 @@ export default function MentionEditor({
             sx={{
               position: "fixed",
               top: suggestionPosition.top,
-              left: suggestionPosition.left,
+              left: Math.min(suggestionPosition.left, window.innerWidth - 320),
               transform: "translateY(-100%)",
               zIndex: 1300,
               mb: 0.5,

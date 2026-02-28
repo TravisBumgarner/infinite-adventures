@@ -26,7 +26,11 @@ import {
   things,
 } from "../db/schema.js";
 import { parseMentionsWithPositions } from "./canvasItemLinkService.js";
-import { listNotes, recomputePlainContentForMentionedItem } from "./noteService.js";
+import {
+  listNotes,
+  recomputePlainContentForMentionedItem,
+  replaceMentionsForDeletedItem,
+} from "./noteService.js";
 import { deletePhotosForContent, listPhotos } from "./photoService.js";
 import { listTagIdsForItem, listTagsForItem } from "./tagService.js";
 
@@ -343,7 +347,8 @@ export async function deleteItem(id: string): Promise<boolean> {
   // Delete photos for this content
   await deletePhotosForContent(type, existing.contentId);
 
-  // Notes will be deleted by cascade when canvas item is deleted
+  // Replace @mentions of this item in other notes with "Title (Item Deleted)"
+  await replaceMentionsForDeletedItem(id, existing.title);
 
   // Delete the canvas item (links and notes will cascade)
   await db.delete(canvasItems).where(eq(canvasItems.id, id));

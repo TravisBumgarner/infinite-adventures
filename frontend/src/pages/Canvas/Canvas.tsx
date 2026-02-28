@@ -5,7 +5,7 @@ import "@xyflow/react/dist/style.css";
 import { useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { useDeleteItem } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
@@ -36,6 +36,7 @@ const edgeTypes: EdgeTypes = {
 export default function Canvas() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
@@ -90,6 +91,14 @@ export default function Canvas() {
     onDrop,
     onDragOver,
   } = useCanvasActions();
+
+  // Navigate to a specific item when arriving via ?focus=<itemId>
+  const focusId = searchParams.get("focus");
+  useEffect(() => {
+    if (!focusId || filteredNodes.length === 0) return;
+    navigateToItem(focusId);
+    setSearchParams({}, { replace: true });
+  }, [focusId, filteredNodes.length, navigateToItem, setSearchParams]);
 
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
 
@@ -191,103 +200,105 @@ export default function Canvas() {
     <div
       role="application"
       style={{
-        width: editingItemId || showSettings ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
-        height: "100vh",
+        display: "flex",
+        width: showSettings ? `calc(100vw - ${SIDEBAR_WIDTH}px)` : "100vw",
+        height: "100%",
         marginLeft: showSettings ? SIDEBAR_WIDTH : 0,
       }}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
-      <ReactFlow
-        nodes={filteredNodes}
-        edges={filteredEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onPaneClick={onPaneClick}
-        onPaneContextMenu={onPaneContextMenu}
-        onNodeClick={onNodeClick}
-        onNodeContextMenu={onNodeContextMenu}
-        onSelectionContextMenu={onSelectionContextMenu}
-        onNodeDragStop={onNodeDragStop}
-        onMoveEnd={onMoveEnd}
-        selectionOnDrag
-        panOnDrag={[1, 2]}
-        deleteKeyCode={null}
-        selectionKeyCode={null}
-        multiSelectionKeyCode="Meta"
-        minZoom={0.1}
-        fitView={!localStorage.getItem(viewportKey)}
-        proOptions={{ hideAttribution: true }}
-      >
-        <SelectionSync />
-        <Background variant={BackgroundVariant.Dots} gap={20} color="var(--color-surface0)" />
-        <MiniMap
-          style={{ background: "var(--color-mantle)" }}
-          nodeColor={(node) =>
-            theme.palette.canvasItemTypes[(node.data as CanvasItemNodeData).type]?.light ||
-            "#4a90d9"
-          }
-          maskColor="var(--color-backdrop)"
-          pannable
-          zoomable
-        />
-      </ReactFlow>
+      <div style={{ flex: 1, position: "relative" }}>
+        <ReactFlow
+          nodes={filteredNodes}
+          edges={filteredEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onPaneClick={onPaneClick}
+          onPaneContextMenu={onPaneContextMenu}
+          onNodeClick={onNodeClick}
+          onNodeContextMenu={onNodeContextMenu}
+          onSelectionContextMenu={onSelectionContextMenu}
+          onNodeDragStop={onNodeDragStop}
+          onMoveEnd={onMoveEnd}
+          selectionOnDrag
+          panOnDrag={[1, 2]}
+          deleteKeyCode={null}
+          selectionKeyCode={null}
+          multiSelectionKeyCode="Meta"
+          minZoom={0.1}
+          fitView={!localStorage.getItem(viewportKey)}
+          proOptions={{ hideAttribution: true }}
+        >
+          <SelectionSync />
+          <Background variant={BackgroundVariant.Dots} gap={20} color="var(--color-surface0)" />
+          <MiniMap
+            style={{ background: "var(--color-mantle)" }}
+            nodeColor={(node) =>
+              theme.palette.canvasItemTypes[(node.data as CanvasItemNodeData).type]?.light ||
+              "#4a90d9"
+            }
+            maskColor="var(--color-backdrop)"
+            pannable
+            zoomable
+          />
+        </ReactFlow>
 
-      <Toolbar onCreate={handleToolbarCreate} />
+        <Toolbar onCreate={handleToolbarCreate} />
 
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onSelect={(type) => {
-            createItemAtPosition(type, contextMenu.flowX, contextMenu.flowY);
-            setContextMenu(null);
-          }}
-          onViewAll={handleViewAll}
-          onUnstack={handleUnstack}
-          onExportPdf={handleExportPdf}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onSelect={(type) => {
+              createItemAtPosition(type, contextMenu.flowX, contextMenu.flowY);
+              setContextMenu(null);
+            }}
+            onViewAll={handleViewAll}
+            onUnstack={handleUnstack}
+            onExportPdf={handleExportPdf}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
 
-      {nodeContextMenu && (
-        <NodeContextMenu
-          x={nodeContextMenu.x}
-          y={nodeContextMenu.y}
-          nodeId={nodeContextMenu.nodeId}
-          nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
-          nodeType={itemsCache.get(nodeContextMenu.nodeId)?.type}
-          tags={(() => {
-            const allTags = Object.values(useTagStore.getState().tags);
-            const nodeTagIds = new Set(
-              itemsCache.get(nodeContextMenu.nodeId)?.tags.map((t) => t.id) ?? [],
-            );
-            return allTags.filter((t) => !nodeTagIds.has(t.id));
-          })()}
-          onDelete={async () => {
-            await deleteItemMutation.mutateAsync(nodeContextMenu.nodeId);
-            handleDeleted(nodeContextMenu.nodeId);
-          }}
-          onAddTag={(tagId) => handleAddTag(nodeContextMenu.nodeId, tagId)}
-          onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
-          onClose={() => setNodeContextMenu(null)}
-        />
-      )}
+        {nodeContextMenu && (
+          <NodeContextMenu
+            x={nodeContextMenu.x}
+            y={nodeContextMenu.y}
+            nodeId={nodeContextMenu.nodeId}
+            nodeTitle={itemsCache.get(nodeContextMenu.nodeId)?.title ?? "this item"}
+            nodeType={itemsCache.get(nodeContextMenu.nodeId)?.type}
+            tags={(() => {
+              const allTags = Object.values(useTagStore.getState().tags);
+              const nodeTagIds = new Set(
+                itemsCache.get(nodeContextMenu.nodeId)?.tags.map((t) => t.id) ?? [],
+              );
+              return allTags.filter((t) => !nodeTagIds.has(t.id));
+            })()}
+            onDelete={async () => {
+              await deleteItemMutation.mutateAsync(nodeContextMenu.nodeId);
+              handleDeleted(nodeContextMenu.nodeId);
+            }}
+            onAddTag={(tagId) => handleAddTag(nodeContextMenu.nodeId, tagId)}
+            onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
+            onClose={() => setNodeContextMenu(null)}
+          />
+        )}
 
-      {selectionContextMenu && (
-        <SelectionContextMenu
-          x={selectionContextMenu.x}
-          y={selectionContextMenu.y}
-          nodeIds={selectionContextMenu.nodeIds}
-          tags={Object.values(useTagStore.getState().tags)}
-          onBulkDelete={() => handleBulkDelete(selectionContextMenu.nodeIds)}
-          onBulkAddTag={(tagId) => handleBulkAddTag(selectionContextMenu.nodeIds, tagId)}
-          onClose={() => setSelectionContextMenu(null)}
-        />
-      )}
-
+        {selectionContextMenu && (
+          <SelectionContextMenu
+            x={selectionContextMenu.x}
+            y={selectionContextMenu.y}
+            nodeIds={selectionContextMenu.nodeIds}
+            tags={Object.values(useTagStore.getState().tags)}
+            onBulkDelete={() => handleBulkDelete(selectionContextMenu.nodeIds)}
+            onBulkAddTag={(tagId) => handleBulkAddTag(selectionContextMenu.nodeIds, tagId)}
+            onClose={() => setSelectionContextMenu(null)}
+          />
+        )}
+      </div>
       {editingItemId && (
         <CanvasItemPanel
           itemId={editingItemId}
