@@ -1,7 +1,5 @@
 import Box from "@mui/material/Box";
 import type { ReactNode } from "react";
-import { SIDEBAR_WIDTH } from "../constants";
-import { useCanvasStore } from "../stores/canvasStore";
 
 interface TopBarProps {
   left?: ReactNode;
@@ -10,27 +8,18 @@ interface TopBarProps {
 }
 
 export default function TopBar({ left, center, right }: TopBarProps) {
-  const editingItemId = useCanvasStore((s) => s.editingItemId);
-  const rightSidebarOpen = Boolean(editingItemId);
-
   return (
     <Box
       sx={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: rightSidebarOpen ? SIDEBAR_WIDTH : 0,
-        zIndex: 50,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         px: 1,
         py: 0.5,
+        flexShrink: 0,
         bgcolor: "var(--color-chrome-bg)",
-        backdropFilter: "blur(8px)",
         borderBottom: "1px solid var(--color-surface1)",
-        pointerEvents: "auto",
-        transition: "right 0.2s",
+        zIndex: 50,
       }}
     >
       <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>{left}</Box>

@@ -12,7 +12,7 @@ import type { CanvasItem, Note, Photo } from "shared";
 import NoteHistoryModal from "../../components/NoteHistoryModal";
 import { DRAFT_NOTE_ID } from "../../constants";
 import { useCreateItem, useCreateNote, useUpdateItem, useUpdateNote } from "../../hooks/mutations";
-import { useItem, useNoteHistory } from "../../hooks/queries";
+import { useItem, useItems, useNoteHistory } from "../../hooks/queries";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
@@ -40,11 +40,23 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
+  const setItemsCache = useCanvasStore((s) => s.setItemsCache);
   const openModal = useModalStore((s) => s.openModal);
   const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(sessionId);
+
+  // Populate itemsCache if empty (e.g. navigated directly to sessions page)
+  const { data: itemSummaries } = useItems(
+    itemsCache.size === 0 ? (activeCanvasId ?? undefined) : undefined,
+  );
+  useEffect(() => {
+    if (itemSummaries && itemsCache.size === 0) {
+      const cache = new Map(itemSummaries.map((s) => [s.id, s as unknown as CanvasItem]));
+      setItemsCache(cache);
+    }
+  }, [itemSummaries, itemsCache.size, setItemsCache]);
 
   // Local editable state
   const [item, setItem] = useState<CanvasItem | null>(null);
@@ -360,7 +372,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)", pl: 7 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", pl: 7 }}>
       {/* Header row — back + title | date */}
       <Box
         sx={{

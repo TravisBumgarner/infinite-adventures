@@ -171,7 +171,7 @@ export default function Timeline() {
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ height: "100vh", overflow: "auto", bgcolor: "var(--color-base)" }}>
+    <Box sx={{ height: "100%", overflow: "auto", bgcolor: "var(--color-base)" }}>
       {/* Main content: two-column layout */}
       <Box
         sx={{
@@ -179,8 +179,8 @@ export default function Timeline() {
           gap: 3,
           maxWidth: 1040,
           mx: "auto",
-          pt: 10,
           px: 3,
+          pt: 2,
           ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
           transition: "margin-left 0.2s",
         }}

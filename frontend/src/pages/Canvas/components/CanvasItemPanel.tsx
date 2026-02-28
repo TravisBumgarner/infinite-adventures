@@ -3,7 +3,6 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Drawer from "@mui/material/Drawer";
 import { useTheme } from "@mui/material/styles";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
@@ -509,37 +508,29 @@ export default function CanvasItemPanel({
 
   if (!item) {
     return (
-      <Drawer
-        variant="persistent"
-        anchor="right"
-        open
+      <Box
         sx={{
-          "& .MuiDrawer-paper": {
-            width: SIDEBAR_WIDTH,
-            borderLeft: "1px solid var(--color-surface0)",
-            p: 2.5,
-          },
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          borderLeft: "1px solid var(--color-surface0)",
+          p: 2.5,
         }}
       >
         <Typography>Loading...</Typography>
-      </Drawer>
+      </Box>
     );
   }
 
   return (
-    <Drawer
-      variant="persistent"
-      anchor="right"
-      open
-      slotProps={{ paper: { "data-tour": "item-panel" } as Record<string, string> }}
+    <Box
+      data-tour="item-panel"
       sx={{
-        "& .MuiDrawer-paper": {
-          width: SIDEBAR_WIDTH,
-          borderLeft: "1px solid var(--color-surface0)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        },
+        width: SIDEBAR_WIDTH,
+        flexShrink: 0,
+        borderLeft: "1px solid var(--color-surface0)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       <PanelHeader
@@ -768,6 +759,6 @@ export default function CanvasItemPanel({
           )}
         </Box>
       )}
-    </Drawer>
+    </Box>
   );
 }

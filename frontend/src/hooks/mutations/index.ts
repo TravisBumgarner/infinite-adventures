@@ -148,6 +148,7 @@ export function useUploadPhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }
@@ -159,6 +160,7 @@ export function useDeletePhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }
@@ -170,6 +172,7 @@ export function useSelectPhoto(itemId: string, canvasId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });
+      qc.invalidateQueries({ queryKey: queryKeys.sessions.list(canvasId) });
     },
   });
 }

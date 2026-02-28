@@ -143,7 +143,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       py: 1.5,
                     }}
                   >
-                    {tagged.selectedPhotoUrl && (
+                    {tagged.selectedPhotoUrl ? (
                       <Box
                         component="img"
                         src={tagged.selectedPhotoUrl}
@@ -155,6 +155,23 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                           flexShrink: 0,
                         }}
                       />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          bgcolor: bgColor,
+                          color: "var(--color-base)",
+                          fontWeight: 700,
+                          fontSize: FONT_SIZES.sm,
+                        }}
+                      >
+                        {canvasItemTypeIcon(tagged.type)}
+                      </Box>
                     )}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
