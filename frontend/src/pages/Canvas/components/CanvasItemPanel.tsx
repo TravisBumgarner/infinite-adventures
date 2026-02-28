@@ -276,7 +276,11 @@ export default function CanvasItemPanel({
       setTitle(queryItem.title);
       setSummary(queryItem.summary);
       setSessionDate(queryItem.sessionDate ?? "");
-      setNotes(queryItem.notes);
+      // Skip notes sync while editing a draft — the draft card handles display,
+      // and the server-sorted list would cause a duplicate.
+      if (editingNoteId !== DRAFT_NOTE_ID) {
+        setNotes(queryItem.notes);
+      }
       setPhotos(queryItem.photos);
       // Only reset editing state when switching to a different item,
       // not on refetches (which happen after auto-save)
@@ -287,7 +291,7 @@ export default function CanvasItemPanel({
         setNoteTitle("");
       }
     }
-  }, [itemId, queryItem]);
+  }, [itemId, queryItem, editingNoteId]);
 
   async function handleDeleteItem() {
     await deleteItemMutation.mutateAsync(itemId);

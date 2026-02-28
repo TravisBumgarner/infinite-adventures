@@ -207,7 +207,11 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       setItem(queryItem);
       setTitle(queryItem.title);
       setSessionDate(queryItem.sessionDate ?? "");
-      setNotes(queryItem.notes);
+      // Skip notes sync while editing a draft — the draft card handles display,
+      // and the server-sorted list would cause a duplicate.
+      if (editingNoteId !== DRAFT_NOTE_ID) {
+        setNotes(queryItem.notes);
+      }
       setPhotos(queryItem.photos);
       // Only reset editing state when switching to a different session,
       // not on refetches (which happen after auto-save)
@@ -218,7 +222,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         setNoteTitle("");
       }
     }
-  }, [sessionId, queryItem]);
+  }, [sessionId, queryItem, editingNoteId]);
 
   // Title editing
   function handleTitleKeyDown(e: React.KeyboardEvent) {
