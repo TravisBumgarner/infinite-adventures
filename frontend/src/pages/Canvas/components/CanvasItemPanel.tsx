@@ -1,6 +1,4 @@
-import AddIcon from "@mui/icons-material/Add";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { useTheme } from "@mui/material/styles";
@@ -10,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, CanvasItemType, Note, Photo, Tag } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import NoteHistoryModal from "../../../components/NoteHistoryModal";
 import {
   CANVAS_ITEM_TYPE_LABELS,
@@ -19,11 +17,9 @@ import {
   SIDEBAR_WIDTH,
 } from "../../../constants";
 import {
-  useAddTagToItem,
   useCreateItem,
   useCreateNote,
   useDeleteItem,
-  useRemoveTagFromItem,
   useUpdateItem,
   useUpdateNote,
 } from "../../../hooks/mutations";
@@ -32,17 +28,16 @@ import { useAutoSave } from "../../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../../modals";
-import { TagBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../../stores/canvasStore";
-import { useTagStore } from "../../../stores/tagStore";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
-import { formatItemMarkdown } from "../../../utils/noteExport";
+import { formatItemMarkdown, printItemHtml } from "../../../utils/noteExport";
 import { shouldSnapshot } from "../../../utils/shouldSnapshot";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
+import PanelTagsSection from "./PanelTagsSection";
 
 interface CanvasItemPanelProps {
   itemId: string;
@@ -68,12 +63,9 @@ export default function CanvasItemPanel({
   const setPanelTab = useCanvasStore((s) => s.setPanelTab);
   const highlightNoteId = useCanvasStore((s) => s.highlightNoteId);
   const setHighlightNoteId = useCanvasStore((s) => s.setHighlightNoteId);
-  const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const storeItemsCache = useCanvasStore((s) => s.itemsCache);
   const itemsCache = itemsCacheProp ?? storeItemsCache;
-  const tagsById = useTagStore((s) => s.tags);
-  const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
 
   const handleSaved = useMemo(() => onSaved ?? (() => {}), [onSaved]);
   const handleDeleted = useMemo(
@@ -96,28 +88,22 @@ export default function CanvasItemPanel({
   const [noteTitle, setNoteTitle] = useState("");
   const [notes, setNotes] = useState<Note[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [summary, setSummary] = useState("");
+  const [sessionDate, setSessionDate] = useState("");
 
   // Note history state
   const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
   const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
 
-  // Summary state
-  const [summary, setSummary] = useState("");
-
-  // Details tab state
-  const [sessionDate, setSessionDate] = useState("");
-
   // Modal store
   const openModal = useModalStore((s) => s.openModal);
 
-  // Mutation hooks (only those not covered by extracted hooks)
+  // Mutation hooks
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
   const createNoteMutation = useCreateNote(itemId);
   const updateNoteMutation = useUpdateNote(itemId);
   const createItemMutation = useCreateItem(activeCanvasId ?? "");
-  const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
-  const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
 
   const titleRef = useRef(title);
   titleRef.current = title;
@@ -133,7 +119,7 @@ export default function CanvasItemPanel({
   editingNoteIdRef.current = editingNoteId;
   const itemIdRef = useRef(itemId);
 
-  // Save function for title
+  // Save functions
   const saveTitleFn = useCallback(async () => {
     await updateItemMutation.mutateAsync({
       id: itemIdRef.current,
@@ -143,7 +129,6 @@ export default function CanvasItemPanel({
     if (refreshed) handleSaved(refreshed);
   }, [handleSaved, updateItemMutation, refetchItem]);
 
-  // Save function for summary
   const saveSummaryFn = useCallback(async () => {
     await updateItemMutation.mutateAsync({
       id: itemIdRef.current,
@@ -153,7 +138,6 @@ export default function CanvasItemPanel({
     if (refreshed) handleSaved(refreshed);
   }, [handleSaved, updateItemMutation, refetchItem]);
 
-  // Save function for session date
   const saveDateFn = useCallback(async () => {
     await updateItemMutation.mutateAsync({
       id: itemIdRef.current,
@@ -163,14 +147,10 @@ export default function CanvasItemPanel({
     if (refreshed) handleSaved(refreshed);
   }, [handleSaved, updateItemMutation, refetchItem]);
 
-  // Save function for note content (with snapshot throttling)
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
 
-    // Draft note — create on server for the first time.
-    // Keep editingNoteId as DRAFT_NOTE_ID so the draft card stays in place;
-    // store the real ID in the ref so subsequent saves use updateNote.
     if (noteId === DRAFT_NOTE_ID) {
       const newNote = await createNoteMutation.mutateAsync({
         content: noteContentRef.current,
@@ -290,11 +270,7 @@ export default function CanvasItemPanel({
   }
 
   function handleOpenLightbox(index: number) {
-    openModal({
-      id: MODAL_ID.LIGHTBOX,
-      photos,
-      initialIndex: index,
-    });
+    openModal({ id: MODAL_ID.LIGHTBOX, photos, initialIndex: index });
   }
 
   function handleOpenDeleteModal() {
@@ -308,86 +284,7 @@ export default function CanvasItemPanel({
 
   function handleDownloadPdf() {
     if (!item) return;
-
-    const connections = [
-      ...(item.linksTo?.map((l) => ({ ...l, direction: "outgoing" as const })) ?? []),
-      ...(item.linkedFrom?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
-    ];
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${item.title}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #333; }
-          h1 { margin-bottom: 8px; }
-          .type-badge { display: inline-block; background: #666; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 24px; }
-          h2 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 32px; }
-          .note { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; white-space: pre-wrap; }
-          .note-date { font-size: 12px; color: #888; margin-top: 8px; }
-          .photos { display: flex; flex-wrap: wrap; gap: 12px; }
-          .photo { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
-          .connection { padding: 8px 0; border-bottom: 1px solid #eee; }
-          .connection:last-child { border-bottom: none; }
-          .direction { color: #888; font-size: 14px; }
-          @media print { body { padding: 20px; } }
-        </style>
-      </head>
-      <body>
-        <h1>${item.title}</h1>
-        <span class="type-badge">${item.type}</span>
-
-        <h2>Notes (${notes.length})</h2>
-        ${
-          notes.length === 0
-            ? '<p style="color: #888;">No notes</p>'
-            : notes
-                .map(
-                  (note) => `
-          <div class="note">
-            ${note.content.replace(/<[^>]*>/g, "").replace(/@\{([^}]+)\}/g, (_, id) => {
-              const linked = itemsCache.get(id);
-              return linked ? `@${linked.title}` : "@mention";
-            })}
-            <div class="note-date">Last edited: ${new Date(note.updatedAt).toLocaleDateString()}</div>
-          </div>
-        `,
-                )
-                .join("")
-        }
-
-        <h2>Photos (${photos.length})</h2>
-        ${photos.length === 0 ? '<p style="color: #888;">No photos</p>' : `<div class="photos">${photos.map((photo) => `<img class="photo" src="${photo.url}" alt="${photo.originalName}" />`).join("")}</div>`}
-
-        <h2>Connections (${connections.length})</h2>
-        ${
-          connections.length === 0
-            ? '<p style="color: #888;">No connections</p>'
-            : connections
-                .map(
-                  (c) => `
-          <div class="connection">
-            <span class="direction">${c.direction === "outgoing" ? "\u2192" : "\u2190"}</span>
-            <strong>${c.title}</strong>
-            <span style="color: #888; font-size: 12px; margin-left: 8px;">${c.type}</span>
-          </div>
-        `,
-                )
-                .join("")
-        }
-      </body>
-      </html>
-    `;
-
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.onload = () => {
-        printWindow.print();
-      };
-    }
+    printItemHtml(item, notes, photos, itemsCache);
   }
 
   function handleDownloadMarkdown() {
@@ -427,10 +324,7 @@ export default function CanvasItemPanel({
   );
 
   async function handleToggleImportant(noteId: string, isImportant: boolean) {
-    await updateNoteMutation.mutateAsync({
-      noteId,
-      input: { isImportant },
-    });
+    await updateNoteMutation.mutateAsync({ noteId, input: { isImportant } });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
@@ -444,16 +338,12 @@ export default function CanvasItemPanel({
 
   async function handleRevertNote(content: string) {
     if (!historyNoteId) return;
-    await updateNoteMutation.mutateAsync({
-      noteId: historyNoteId,
-      input: { content },
-    });
+    await updateNoteMutation.mutateAsync({ noteId: historyNoteId, input: { content } });
     const { data: refreshed } = await refetchItem();
     if (refreshed) {
       setItem(refreshed);
       setNotes(refreshed.notes);
       handleSaved(refreshed);
-      // If the reverted note is currently being edited, refresh editor content
       if (editingNoteId === historyNoteId) {
         setNoteContent(content);
       }
@@ -461,38 +351,9 @@ export default function CanvasItemPanel({
     setHistoryNoteId(null);
   }
 
-  function handleTitleChange(value: string) {
-    setTitle(value);
-    markTitleDirty();
-  }
-
-  // Tags
-  const assignedTagIds = useMemo(() => new Set(item?.tags.map((t) => t.id) ?? []), [item?.tags]);
-  const availableTags = useMemo(
-    () => allTags.filter((t) => !assignedTagIds.has(t.id)),
-    [allTags, assignedTagIds],
-  );
-
-  function handleAddTag(tag: Tag) {
-    if (!item) return;
-    addTagMutation.mutate(tag.id, {
-      onSuccess: () => {
-        const updated = { ...item, tags: [...item.tags, tag] };
-        setItem(updated);
-        handleSaved(updated);
-      },
-    });
-  }
-
-  function handleRemoveTag(tagId: string) {
-    if (!item) return;
-    removeTagMutation.mutate(tagId, {
-      onSuccess: () => {
-        const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
-        setItem(updated);
-        handleSaved(updated);
-      },
-    });
+  function handleItemUpdated(updated: CanvasItem) {
+    setItem(updated);
+    handleSaved(updated);
   }
 
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
@@ -544,83 +405,17 @@ export default function CanvasItemPanel({
         title={title}
         typeBgColor={typeBgColor}
         typeLabel={typeInfo?.label ?? item.type}
-        onTitleChange={handleTitleChange}
+        onTitleChange={(value) => {
+          setTitle(value);
+          markTitleDirty();
+        }}
         onClose={onClose}
         onDownloadPdf={handleDownloadPdf}
         onDownloadMarkdown={handleDownloadMarkdown}
         onDeleteItem={handleOpenDeleteModal}
       />
 
-      {/* Tags */}
-      <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
-        <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
-          {item.tags.map((tag) => (
-            <TagBadge key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
-          ))}
-          {availableTags.length > 0 && (
-            <Autocomplete
-              size="small"
-              options={availableTags}
-              getOptionLabel={(opt) => opt.name}
-              onChange={(_e, tag) => {
-                if (tag) handleAddTag(tag);
-              }}
-              value={null}
-              renderOption={(props, option) => (
-                <li {...props} key={option.id}>
-                  <TagBadge tag={option} />
-                </li>
-              )}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Add tag"
-                  variant="standard"
-                  InputProps={{
-                    ...params.InputProps,
-                    disableUnderline: true,
-                    startAdornment: (
-                      <AddIcon sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-overlay0)" }} />
-                    ),
-                  }}
-                />
-              )}
-              sx={{
-                minWidth: 120,
-                "& .MuiInputBase-root": {
-                  py: 0,
-                  fontSize: FONT_SIZES.sm,
-                },
-              }}
-              fullWidth
-              blurOnSelect
-              clearOnBlur
-            />
-          )}
-          <Box
-            onClick={() => setShowSettings(true)}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.5,
-              height: 26,
-              px: 1,
-              border: "1px dashed var(--color-overlay0)",
-              color: "var(--color-overlay0)",
-              fontSize: FONT_SIZES.sm,
-              fontWeight: 600,
-              cursor: "pointer",
-              "&:hover": {
-                borderColor: "var(--color-text)",
-                color: "var(--color-text)",
-              },
-            }}
-          >
-            <AddIcon sx={{ fontSize: FONT_SIZES.lg }} />
-            New
-          </Box>
-        </Box>
-      </Box>
+      <PanelTagsSection item={item} itemId={itemId} onItemUpdated={handleItemUpdated} />
 
       {/* Summary */}
       <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
@@ -653,10 +448,7 @@ export default function CanvasItemPanel({
       <Tabs
         value={panelTab}
         onChange={(_, newValue) => setPanelTab(newValue)}
-        sx={{
-          borderBottom: "1px solid var(--color-surface0)",
-          px: 2,
-        }}
+        sx={{ borderBottom: "1px solid var(--color-surface0)", px: 2 }}
       >
         <Tab label="Notes" value="notes" />
         <Tab label="Photos" value="photos" />
