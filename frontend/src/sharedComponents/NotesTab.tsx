@@ -16,6 +16,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, CanvasItemType, Note } from "shared";
+import { DRAFT_NOTE_ID } from "../constants";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { FONT_SIZES } from "../styles/styleConsts";
@@ -127,6 +128,87 @@ export default function NotesTab({
       >
         Add Note
       </Button>
+      {editingNoteId === DRAFT_NOTE_ID && (
+        <Box
+          sx={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            mb: 1,
+            border: "1px solid var(--color-surface1)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
+            <InputBase
+              placeholder="Title (optional)"
+              value={noteTitle}
+              onChange={(e) => onNoteTitleChange(e.target.value)}
+              sx={{
+                flex: 1,
+                px: 0.5,
+                py: 0.5,
+                fontSize: FONT_SIZES.md,
+                fontWeight: 600,
+                color: "var(--color-text)",
+              }}
+              fullWidth
+            />
+          </Box>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              display: "flex",
+              bgcolor: "var(--color-surface0)",
+              border: "1px solid var(--color-surface1)",
+              zIndex: 1,
+            }}
+          >
+            <Tooltip title="Done">
+              <IconButton
+                size="small"
+                onClick={onCloseNote}
+                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+              >
+                <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ px: 1, pb: 1 }}>
+            <MentionEditor
+              value={noteContent}
+              onChange={onNoteContentChange}
+              itemsCache={itemsCache}
+              canvasId={canvasId}
+              onCreate={onCreateMentionItem}
+              onMentionClick={onMentionClick}
+              containerStyle={{ minHeight: 120 }}
+              style={{
+                background: "var(--color-mantle)",
+                border: "1px solid var(--color-surface1)",
+                borderRadius: 0,
+                padding: "8px 10px",
+                color: "var(--color-text)",
+                fontSize: FONT_SIZES.md,
+                overflow: "auto",
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                color: "var(--color-subtext0)",
+                mt: 0.5,
+                minHeight: "1.2em",
+                display: "block",
+              }}
+            >
+              {statusLabel(noteStatus) || "\u00A0"}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <Box
         ref={notesListRef}
         sx={{ flex: 1, overflowY: "auto" }}
@@ -140,7 +222,7 @@ export default function NotesTab({
         }}
       >
         <LinkTooltip containerRef={notesListRef} />
-        {notes.length === 0 ? (
+        {notes.length === 0 && !editingNoteId ? (
           <Typography
             variant="body2"
             sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
