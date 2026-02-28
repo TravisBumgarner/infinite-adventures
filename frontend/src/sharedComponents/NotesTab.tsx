@@ -262,14 +262,11 @@ export default function NotesTab({
                     "&:hover .note-actions": {
                       opacity: 1,
                     },
-                    "&:hover .note-timestamp": {
-                      opacity: 1,
-                    },
                   }}
                   onClick={isEditing ? undefined : () => onSelectNote(note)}
                 >
                   {isEditing || hasTitle ? (
-                    <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", px: 1, ml: "1px" }}>
                       {isEditing ? (
                         <InputBase
                           placeholder="Title (optional)"
@@ -278,7 +275,6 @@ export default function NotesTab({
                           onClick={(e) => e.stopPropagation()}
                           sx={{
                             flex: 1,
-                            px: 0.5,
                             py: 0.5,
                             fontSize: FONT_SIZES.md,
                             fontWeight: 600,
@@ -294,7 +290,6 @@ export default function NotesTab({
                             fontWeight: 600,
                             wordBreak: "break-word",
                             py: 0.5,
-                            px: 0.5,
                           }}
                         >
                           {note.title}
@@ -310,76 +305,94 @@ export default function NotesTab({
                       top: 0,
                       right: 0,
                       display: "flex",
-                      flexShrink: 0,
-                      bgcolor: "var(--color-surface0)",
-                      border: "1px solid var(--color-surface1)",
+                      alignItems: "center",
                       opacity: isEditing ? 1 : 0,
                       transition: "opacity 0.15s",
                       zIndex: 1,
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {isEditing ? (
-                      <Tooltip title="Done">
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "var(--color-subtext0)",
+                        px: 0.5,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {new Date(note.updatedAt).toLocaleDateString()}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        bgcolor: "var(--color-surface0)",
+                        border: "1px solid var(--color-surface1)",
+                      }}
+                    >
+                      {isEditing ? (
+                        <Tooltip title="Done">
+                          <IconButton
+                            size="small"
+                            onClick={onCloseNote}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleExpanded(note.id)}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            {expandedNoteIds.has(note.id) ? (
+                              <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            ) : (
+                              <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
                         <IconButton
                           size="small"
-                          onClick={onCloseNote}
-                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                          sx={{
+                            color: note.isImportant
+                              ? "var(--color-yellow)"
+                              : "var(--color-overlay0)",
+                            p: 0.25,
+                          }}
                         >
-                          <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        </IconButton>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
-                        <IconButton
-                          size="small"
-                          onClick={() => toggleExpanded(note.id)}
-                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                        >
-                          {expandedNoteIds.has(note.id) ? (
-                            <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          {note.isImportant ? (
+                            <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
                           ) : (
-                            <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
                           )}
                         </IconButton>
                       </Tooltip>
-                    )}
-                    <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onToggleImportant(note.id, !note.isImportant)}
-                        sx={{
-                          color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
-                          p: 0.25,
-                        }}
-                      >
-                        {note.isImportant ? (
-                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        ) : (
-                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                    {onHistoryNote && (
-                      <Tooltip title="History">
+                      {onHistoryNote && (
+                        <Tooltip title="History">
+                          <IconButton
+                            size="small"
+                            onClick={() => onHistoryNote(note.id)}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Delete">
                         <IconButton
                           size="small"
-                          onClick={() => onHistoryNote(note.id)}
+                          onClick={() => setDeleteNoteId(note.id)}
                           sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                         >
-                          <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
                         </IconButton>
                       </Tooltip>
-                    )}
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => setDeleteNoteId(note.id)}
-                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                      >
-                        <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      </IconButton>
-                    </Tooltip>
+                    </Box>
                   </Box>
 
                   {isEditing ? (
@@ -411,39 +424,24 @@ export default function NotesTab({
                         fontSize: FONT_SIZES.sm,
                         color: "var(--color-text)",
                         wordBreak: "break-word",
-                        ...(!expandedNoteIds.has(note.id) &&
-                          !hasTitle && {
-                            display: "-webkit-box",
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: "vertical" as const,
-                            overflow: "hidden",
-                          }),
+                        ...(!expandedNoteIds.has(note.id) && {
+                          display: "-webkit-box",
+                          WebkitLineClamp: 5,
+                          WebkitBoxOrient: "vertical" as const,
+                          overflow: "hidden",
+                        }),
                       }}
                     >
-                      {(expandedNoteIds.has(note.id) || !hasTitle) && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html: getNotePreview(note.content),
-                          }}
-                        />
-                      )}
                       <Typography
-                        className="note-timestamp"
-                        variant="caption"
+                        variant="body2"
                         sx={{
-                          color: "var(--color-subtext0)",
-                          mt: 0.5,
-                          opacity: 0,
-                          transition: "opacity 0.15s",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
                         }}
-                      >
-                        Last edited on {new Date(note.updatedAt).toLocaleDateString()}
-                      </Typography>
+                        dangerouslySetInnerHTML={{
+                          __html: getNotePreview(note.content),
+                        }}
+                      />
                     </Box>
                   )}
                 </Box>

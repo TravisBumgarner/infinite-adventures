@@ -248,13 +248,12 @@ function QuickNoteItem({
         ) : (
           <Box
             sx={{
-              ...(!expanded &&
-                !hasTitle && {
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }),
+              ...(!expanded && {
+                display: "-webkit-box",
+                WebkitLineClamp: 5,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }),
               py: 0.5,
               px: 1,
               fontSize: FONT_SIZES.sm,
@@ -262,7 +261,7 @@ function QuickNoteItem({
               wordBreak: "break-word",
             }}
           >
-            {(expanded || !hasTitle) && <Box dangerouslySetInnerHTML={{ __html: previewHtml }} />}
+            <Box dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </Box>
         )}
       </Box>
