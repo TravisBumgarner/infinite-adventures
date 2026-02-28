@@ -225,5 +225,5 @@ function renderParagraph(
   const remaining = line.slice(lastIndex);
   result += formatInlineMarkdown(escapeHtml(remaining));
 
-  return `<p>${result || "<br>"}</p>`;
+  return `<p>${result}</p>`;
 }
