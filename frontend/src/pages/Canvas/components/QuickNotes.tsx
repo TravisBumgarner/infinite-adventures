@@ -1,7 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 import HistoryIcon from "@mui/icons-material/History";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
@@ -105,116 +104,131 @@ function QuickNoteItem({
     "<br>",
   );
 
+  const hasTitle = !!title;
+
   return (
     <>
       <Box
         sx={{
+          position: "relative",
           display: "flex",
           flexDirection: "column",
           border: isImportant ? "1px solid var(--color-yellow)" : "1px solid var(--color-surface1)",
+          ...(!isEditing && { cursor: "pointer" }),
+          "&:hover .qn-actions": {
+            opacity: 1,
+          },
         }}
+        onClick={isEditing ? undefined : onStartEdit}
       >
-        <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
-          {!isEditing && title && (
-            <Typography
-              variant="body2"
-              sx={{ flex: 1, fontWeight: 600, wordBreak: "break-word", py: 0.5, px: 0.5 }}
-            >
-              {title}
-            </Typography>
-          )}
-          {(isEditing || !title) && <Box sx={{ flex: 1 }} />}
-          <Box sx={{ display: "flex", flexShrink: 0 }}>
+        {isEditing || hasTitle ? (
+          <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
             {isEditing ? (
-              <Tooltip title="Close">
-                <IconButton
-                  size="small"
-                  onClick={onStopEdit}
-                  sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                >
-                  <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
-                </IconButton>
-              </Tooltip>
+              <InputBase
+                placeholder="Title (optional)"
+                defaultValue={title ?? ""}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  flex: 1,
+                  px: 0.5,
+                  py: 0.5,
+                  fontSize: FONT_SIZES.sm,
+                  fontWeight: 600,
+                  color: "var(--color-text)",
+                }}
+                fullWidth
+              />
             ) : (
-              <>
-                <Tooltip title={expanded ? "Collapse" : "Expand"}>
-                  <IconButton
-                    size="small"
-                    onClick={() => setExpanded((v) => !v)}
-                    sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                  >
-                    {expanded ? (
-                      <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
-                    ) : (
-                      <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
-                    )}
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Edit">
-                  <IconButton
-                    size="small"
-                    onClick={onStartEdit}
-                    sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                  >
-                    <EditIcon sx={{ fontSize: FONT_SIZES.md }} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="History">
-                  <IconButton
-                    size="small"
-                    onClick={() => onHistoryNote(id)}
-                    sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                  >
-                    <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
-                  </IconButton>
-                </Tooltip>
-              </>
+              <Typography
+                variant="body2"
+                sx={{ flex: 1, fontWeight: 600, wordBreak: "break-word", py: 0.5, px: 0.5 }}
+              >
+                {title}
+              </Typography>
             )}
-            <Tooltip title={isImportant ? "Unpin" : "Pin"}>
+          </Box>
+        ) : null}
+
+        <Box
+          className="qn-actions"
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            display: "flex",
+            flexShrink: 0,
+            bgcolor: "var(--color-surface0)",
+            border: "1px solid var(--color-surface1)",
+            opacity: isEditing ? 1 : 0,
+            transition: "opacity 0.15s",
+            zIndex: 1,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isEditing ? (
+            <Tooltip title="Close">
               <IconButton
                 size="small"
-                onClick={() => toggleImportantMutation.mutate(id)}
-                sx={{
-                  color: isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
-                  p: 0.25,
-                }}
+                onClick={onStopEdit}
+                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
               >
-                {isImportant ? (
-                  <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title={expanded ? "Collapse" : "Expand"}>
+              <IconButton
+                size="small"
+                onClick={() => setExpanded((v) => !v)}
+                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+              >
+                {expanded ? (
+                  <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
                 ) : (
-                  <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                  <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
                 )}
               </IconButton>
             </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton
-                size="small"
-                onClick={() => setConfirmDeleteOpen(true)}
-                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-              >
-                <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
-        {isEditing ? (
-          <Box sx={{ px: 0.5, pb: 0.5 }}>
-            <InputBase
-              placeholder="Title (optional)"
-              defaultValue={title ?? ""}
-              onChange={(e) => handleTitleChange(e.target.value)}
+          )}
+          <Tooltip title={isImportant ? "Unpin" : "Pin"}>
+            <IconButton
+              size="small"
+              onClick={() => toggleImportantMutation.mutate(id)}
               sx={{
-                mb: 0.5,
-                px: 1,
-                py: 0.25,
-                fontSize: FONT_SIZES.sm,
-                fontWeight: 600,
-                border: "1px solid var(--color-surface1)",
-                color: "var(--color-text)",
-                width: "100%",
+                color: isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
+                p: 0.25,
               }}
-              fullWidth
-            />
+            >
+              {isImportant ? (
+                <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+              ) : (
+                <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+              )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="History">
+            <IconButton
+              size="small"
+              onClick={() => onHistoryNote(id)}
+              sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+            >
+              <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              onClick={() => setConfirmDeleteOpen(true)}
+              sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+            >
+              <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        {isEditing ? (
+          <Box sx={{ px: 0.5, pb: 0.5 }} onClick={(e) => e.stopPropagation()}>
             <MentionEditor
               value={content}
               onChange={handleChange}
@@ -247,7 +261,7 @@ function QuickNoteItem({
           <Box
             sx={{
               ...(!expanded &&
-                !title && {
+                !hasTitle && {
                   display: "-webkit-box",
                   WebkitLineClamp: 3,
                   WebkitBoxOrient: "vertical",
@@ -260,7 +274,7 @@ function QuickNoteItem({
               wordBreak: "break-word",
             }}
           >
-            {(expanded || !title) && <Box dangerouslySetInnerHTML={{ __html: previewHtml }} />}
+            {(expanded || !hasTitle) && <Box dangerouslySetInnerHTML={{ __html: previewHtml }} />}
           </Box>
         )}
       </Box>

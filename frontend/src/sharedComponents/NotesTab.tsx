@@ -151,6 +151,7 @@ export default function NotesTab({
           <List sx={{ p: 0 }}>
             {notes.map((note) => {
               const isEditing = note.id === editingNoteId;
+              const hasTitle = !!note.title;
 
               return (
                 <Box
@@ -163,6 +164,7 @@ export default function NotesTab({
                     }
                   }}
                   sx={{
+                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
                     mb: 1,
@@ -173,133 +175,127 @@ export default function NotesTab({
                       animation: `${flashNote} 0.6s ease-in-out 2`,
                     }),
                     ...(!isEditing && { cursor: "pointer" }),
+                    "&:hover .note-actions": {
+                      opacity: 1,
+                    },
+                    "&:hover .note-timestamp": {
+                      opacity: 1,
+                    },
                   }}
                   onClick={isEditing ? undefined : () => onSelectNote(note)}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
-                    {isEditing ? (
-                      <InputBase
-                        placeholder="Title (optional)"
-                        value={noteTitle}
-                        onChange={(e) => onNoteTitleChange(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                          flex: 1,
-                          px: 0.5,
-                          py: 0.5,
-                          fontSize: FONT_SIZES.md,
-                          fontWeight: 600,
-                          color: "var(--color-text)",
-                        }}
-                        fullWidth
-                      />
-                    ) : (
-                      <>
-                        {note.title && (
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              flex: 1,
-                              fontWeight: 600,
-                              wordBreak: "break-word",
-                              py: 0.5,
-                              px: 0.5,
-                            }}
-                          >
-                            {note.title}
-                          </Typography>
-                        )}
-                        {!note.title && <Box sx={{ flex: 1 }} />}
-                      </>
-                    )}
-                    <Box
-                      sx={{ display: "flex", flexShrink: 0 }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                  {isEditing || hasTitle ? (
+                    <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
                       {isEditing ? (
-                        <Tooltip title="Done">
-                          <IconButton
-                            size="small"
-                            onClick={onCloseNote}
-                            sx={{
-                              color: "var(--color-overlay0)",
-                              p: 0.25,
-                            }}
-                          >
-                            <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
-                          </IconButton>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
-                          <IconButton
-                            size="small"
-                            onClick={() => toggleExpanded(note.id)}
-                            sx={{
-                              color: "var(--color-overlay0)",
-                              p: 0.25,
-                            }}
-                          >
-                            {expandedNoteIds.has(note.id) ? (
-                              <UnfoldLessIcon
-                                sx={{
-                                  fontSize: FONT_SIZES.md,
-                                }}
-                              />
-                            ) : (
-                              <UnfoldMoreIcon
-                                sx={{
-                                  fontSize: FONT_SIZES.md,
-                                }}
-                              />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
-                        <IconButton
-                          size="small"
-                          onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                        <InputBase
+                          placeholder="Title (optional)"
+                          value={noteTitle}
+                          onChange={(e) => onNoteTitleChange(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
                           sx={{
-                            color: note.isImportant
-                              ? "var(--color-yellow)"
-                              : "var(--color-overlay0)",
-                            p: 0.25,
+                            flex: 1,
+                            px: 0.5,
+                            py: 0.5,
+                            fontSize: FONT_SIZES.md,
+                            fontWeight: 600,
+                            color: "var(--color-text)",
+                          }}
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            flex: 1,
+                            fontWeight: 600,
+                            wordBreak: "break-word",
+                            py: 0.5,
+                            px: 0.5,
                           }}
                         >
-                          {note.isImportant ? (
-                            <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          {note.title}
+                        </Typography>
+                      )}
+                    </Box>
+                  ) : null}
+
+                  <Box
+                    className="note-actions"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      display: "flex",
+                      flexShrink: 0,
+                      bgcolor: "var(--color-surface0)",
+                      border: "1px solid var(--color-surface1)",
+                      opacity: isEditing ? 1 : 0,
+                      transition: "opacity 0.15s",
+                      zIndex: 1,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isEditing ? (
+                      <Tooltip title="Done">
+                        <IconButton
+                          size="small"
+                          onClick={onCloseNote}
+                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                        >
+                          <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        </IconButton>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleExpanded(note.id)}
+                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                        >
+                          {expandedNoteIds.has(note.id) ? (
+                            <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
                           ) : (
-                            <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
                           )}
                         </IconButton>
                       </Tooltip>
-                      {onHistoryNote && (
-                        <Tooltip title="History">
-                          <IconButton
-                            size="small"
-                            onClick={() => onHistoryNote(note.id)}
-                            sx={{
-                              color: "var(--color-overlay0)",
-                              p: 0.25,
-                            }}
-                          >
-                            <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Delete">
+                    )}
+                    <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                        sx={{
+                          color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
+                          p: 0.25,
+                        }}
+                      >
+                        {note.isImportant ? (
+                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        ) : (
+                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    {onHistoryNote && (
+                      <Tooltip title="History">
                         <IconButton
                           size="small"
-                          onClick={() => setDeleteNoteId(note.id)}
-                          sx={{
-                            color: "var(--color-overlay0)",
-                            p: 0.25,
-                          }}
+                          onClick={() => onHistoryNote(note.id)}
+                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
                         >
-                          <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
                         </IconButton>
                       </Tooltip>
-                    </Box>
+                    )}
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        onClick={() => setDeleteNoteId(note.id)}
+                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                      >
+                        <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
 
                   {isEditing ? (
@@ -343,7 +339,7 @@ export default function NotesTab({
                         color: "var(--color-text)",
                         wordBreak: "break-word",
                         ...(!expandedNoteIds.has(note.id) &&
-                          !note.title && {
+                          !hasTitle && {
                             display: "-webkit-box",
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: "vertical" as const,
@@ -351,7 +347,7 @@ export default function NotesTab({
                           }),
                       }}
                     >
-                      {(expandedNoteIds.has(note.id) || !note.title) && (
+                      {(expandedNoteIds.has(note.id) || !hasTitle) && (
                         <Typography
                           variant="body2"
                           sx={{
@@ -364,10 +360,13 @@ export default function NotesTab({
                         />
                       )}
                       <Typography
+                        className="note-timestamp"
                         variant="caption"
                         sx={{
                           color: "var(--color-subtext0)",
                           mt: 0.5,
+                          opacity: 0,
+                          transition: "opacity 0.15s",
                         }}
                       >
                         Last edited on {new Date(note.updatedAt).toLocaleDateString()}
