@@ -90,7 +90,16 @@ export default function Timeline() {
   }, [canvases, initActiveCanvas]);
 
   // Fetch items for filter autocomplete
-  const { data: items = [] } = useItems(activeCanvasId ?? undefined);
+  const { data: rawItems = [] } = useItems(activeCanvasId ?? undefined);
+  const items = useMemo(
+    () =>
+      [...rawItems].sort(
+        (a, b) =>
+          a.type.localeCompare(b.type) ||
+          a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
+      ),
+    [rawItems],
+  );
 
   // Fetch timeline data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
