@@ -274,6 +274,10 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,
       });
+      // Add to itemsCache so mention previews resolve instead of showing "@mention"
+      const nextCache = new Map(useCanvasStore.getState().itemsCache);
+      nextCache.set(newItem.id, newItem as unknown as CanvasItem);
+      setItemsCache(nextCache);
       return { id: newItem.id, title: newItem.title };
     } catch {
       return null;
