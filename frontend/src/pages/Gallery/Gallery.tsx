@@ -148,16 +148,29 @@ export default function Gallery() {
             renderOption={(props, option) => {
               const colors = theme.palette.canvasItemTypes[option.type];
               return (
-                <li {...props} key={option.id}>
+                <li
+                  {...props}
+                  key={option.id}
+                  style={{
+                    ...props.style,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   <LabelBadge
                     label={option.type}
                     accentColor={colors.light}
                     icon={canvasItemTypeIcon(option.type)}
                     height={18}
                     fontSize={FONT_SIZES.xs}
-                    sx={{ mr: 1, textTransform: "capitalize" }}
+                    sx={{ mr: 1, flexShrink: 0, textTransform: "capitalize" }}
                   />
-                  {option.title}
+                  <span
+                    style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    {option.title}
+                  </span>
                 </li>
               );
             }}
@@ -180,9 +193,14 @@ export default function Gallery() {
               />
             )}
             sx={{
-              minWidth: 200,
-              maxWidth: 300,
-              "& .MuiInputBase-root": { py: 0, fontSize: FONT_SIZES.sm },
+              minWidth: 250,
+              maxWidth: 350,
+              "& .MuiInputBase-root": {
+                py: 0,
+                height: 32,
+                fontSize: FONT_SIZES.xs,
+                "& input": { py: 0 },
+              },
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "var(--color-surface1)",
               },
@@ -194,9 +212,9 @@ export default function Gallery() {
           <Chip
             label="Pinned only"
             icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
-            size="small"
             onClick={() => setImportantOnly(!importantOnly)}
             sx={{
+              height: 32,
               bgcolor: importantOnly ? "var(--color-yellow)" : "transparent",
               color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
               border: importantOnly ? "none" : "1px solid var(--color-surface1)",
