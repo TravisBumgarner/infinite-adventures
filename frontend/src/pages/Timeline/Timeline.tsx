@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
-import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
+import { useCanvases, useItems, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
@@ -88,6 +88,9 @@ export default function Timeline() {
       initActiveCanvas(canvases);
     }
   }, [canvases, initActiveCanvas]);
+
+  // Fetch items for filter autocomplete
+  const { data: items = [] } = useItems(activeCanvasId ?? undefined);
 
   // Fetch timeline data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
@@ -262,9 +265,9 @@ export default function Timeline() {
             {/* Item filter */}
             <Autocomplete
               size="small"
-              options={Array.from(itemsCache.values())}
+              options={items}
               getOptionLabel={(opt) => opt.title}
-              value={parentItemId ? (itemsCache.get(parentItemId) ?? null) : null}
+              value={items.find((i) => i.id === parentItemId) ?? null}
               onChange={(_e, item) => {
                 if (item) {
                   searchParams.set("parentItemId", item.id);
@@ -292,7 +295,7 @@ export default function Timeline() {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  placeholder="Filter by item"
+                  placeholder="All items"
                   variant="outlined"
                   InputProps={{
                     ...params.InputProps,
@@ -317,6 +320,7 @@ export default function Timeline() {
               }}
               blurOnSelect
               clearOnBlur={false}
+              isOptionEqualToValue={(opt, val) => opt.id === val.id}
             />
 
             {/* Pinned only filter */}

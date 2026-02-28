@@ -17,7 +17,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import type { GalleryEntry, Photo } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
 
-import { useCanvases, useGallery } from "../../hooks/queries";
+import { useCanvases, useGallery, useItems } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
@@ -34,7 +34,6 @@ export default function Gallery() {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
-  const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
 
   const [importantOnly, setImportantOnly] = useState(false);
@@ -46,6 +45,9 @@ export default function Gallery() {
       initActiveCanvas(canvases);
     }
   }, [canvases, initActiveCanvas]);
+
+  // Fetch items for filter autocomplete
+  const { data: items = [] } = useItems(activeCanvasId ?? undefined);
 
   // Fetch gallery data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
@@ -123,9 +125,9 @@ export default function Gallery() {
         >
           <Autocomplete
             size="small"
-            options={Array.from(itemsCache.values())}
+            options={items}
             getOptionLabel={(opt) => opt.title}
-            value={parentItemId ? (itemsCache.get(parentItemId) ?? null) : null}
+            value={items.find((i) => i.id === parentItemId) ?? null}
             onChange={(_e, item) => {
               if (item) {
                 searchParams.set("parentItemId", item.id);
@@ -153,7 +155,7 @@ export default function Gallery() {
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Filter by item"
+                placeholder="All items"
                 variant="outlined"
                 InputProps={{
                   ...params.InputProps,
@@ -178,6 +180,7 @@ export default function Gallery() {
             }}
             blurOnSelect
             clearOnBlur={false}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
           />
           <Chip
             label="Pinned only"
