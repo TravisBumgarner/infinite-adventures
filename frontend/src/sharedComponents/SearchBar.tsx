@@ -15,6 +15,24 @@ import { canvasItemTypeIcon, LabelBadge } from "./LabelBadge";
 
 type Destination = "Canvas" | "Sessions" | "Timeline" | "Gallery";
 
+/** Strip markdown syntax from a search snippet while preserving <b> highlight tags. */
+function cleanSnippet(raw: string): string {
+  return (
+    raw
+      // Strip HTML tags except <b> and </b>
+      .replace(/<(?!\/?b>)[^>]+>/g, "")
+      // Markdown links: [text](url) → text
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      // Bold/italic markers: ** __ * _
+      .replace(/(\*{1,3}|_{1,3})/g, "")
+      // Checkboxes: [ ] [x]
+      .replace(/\[[ x]\]/gi, "")
+      // Collapse extra whitespace
+      .replace(/\s{2,}/g, " ")
+      .trim()
+  );
+}
+
 const DESTINATIONS_BY_TYPE: Record<CanvasItemType, Destination[]> = {
   session: ["Canvas", "Sessions", "Timeline", "Gallery"],
   person: ["Canvas", "Timeline", "Gallery"],
@@ -23,10 +41,8 @@ const DESTINATIONS_BY_TYPE: Record<CanvasItemType, Destination[]> = {
   event: ["Canvas", "Timeline", "Gallery"],
 };
 
-const NOTE_DESTINATIONS: Destination[] = ["Canvas"];
-
 function getDestinations(result: CanvasItemSearchResult): Destination[] {
-  return result.noteId ? NOTE_DESTINATIONS : DESTINATIONS_BY_TYPE[result.type];
+  return DESTINATIONS_BY_TYPE[result.type];
 }
 
 export default function SearchBar() {
@@ -69,7 +85,10 @@ export default function SearchBar() {
     };
   }, [query]);
 
-  const { data: results = [] } = useSearchItems(debouncedQuery, activeCanvasId ?? undefined);
+  const { data: results = [], isPlaceholderData } = useSearchItems(
+    debouncedQuery,
+    activeCanvasId ?? undefined,
+  );
 
   // Reset selection when results change
   useEffect(() => {
@@ -111,10 +130,10 @@ export default function SearchBar() {
           navigate(`/sessions/${result.itemId}`);
           break;
         case "Timeline":
-          navigate("/timeline");
+          navigate(`/timeline?parentItemId=${result.itemId}`);
           break;
         case "Gallery":
-          navigate("/gallery");
+          navigate(`/gallery?parentItemId=${result.itemId}`);
           break;
       }
     },
@@ -161,6 +180,7 @@ export default function SearchBar() {
       open={showSearchBar}
       onClose={() => setShowSearchBar(false)}
       maxWidth={false}
+      disableRestoreFocus
       PaperProps={{
         sx: {
           position: "fixed",
@@ -293,7 +313,7 @@ export default function SearchBar() {
                       mb: 0.75,
                     }}
                     dangerouslySetInnerHTML={{
-                      __html: result.snippet,
+                      __html: cleanSnippet(result.snippet),
                     }}
                   />
                 )}
@@ -343,7 +363,7 @@ export default function SearchBar() {
       )}
 
       {/* No results */}
-      {debouncedQuery.trim() && results.length === 0 && (
+      {debouncedQuery.trim() && !isPlaceholderData && results.length === 0 && (
         <Typography
           variant="body2"
           sx={{

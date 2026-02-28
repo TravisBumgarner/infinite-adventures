@@ -28,6 +28,7 @@ export async function getTimeline(
   sort: TimelineSort = "createdAt",
   cursor?: string,
   limit = 30,
+  parentItemId?: string,
 ): Promise<PaginatedTimelineResult> {
   const db = getDb();
   const parsed = cursor ? decodeCursor(cursor) : null;
@@ -42,6 +43,7 @@ export async function getTimeline(
     : undefined;
 
   const noteConditions = [eq(canvasItems.canvasId, canvasId)];
+  if (parentItemId) noteConditions.push(eq(canvasItems.id, parentItemId));
   if (noteCursorCondition) noteConditions.push(noteCursorCondition);
 
   const noteRows = await db
@@ -83,6 +85,7 @@ export async function getTimeline(
     : undefined;
 
   const photoConditions = [eq(canvasItems.canvasId, canvasId)];
+  if (parentItemId) photoConditions.push(eq(canvasItems.id, parentItemId));
   if (photoCursorCondition) photoConditions.push(photoCursorCondition);
 
   const photoRows = await db
@@ -150,6 +153,7 @@ export async function getTimelineDayCounts(
   startDate: string,
   endDate: string,
   tzOffset?: number,
+  parentItemId?: string,
 ): Promise<Record<string, number>> {
   const db = getDb();
 
@@ -164,7 +168,13 @@ export async function getTimelineDayCounts(
     })
     .from(notes)
     .innerJoin(canvasItems, eq(notes.canvasItemId, canvasItems.id))
-    .where(and(eq(canvasItems.canvasId, canvasId), between(noteDateExpr, startDate, endDate)))
+    .where(
+      and(
+        eq(canvasItems.canvasId, canvasId),
+        between(noteDateExpr, startDate, endDate),
+        parentItemId ? eq(canvasItems.id, parentItemId) : undefined,
+      ),
+    )
     .groupBy(noteDateExpr);
 
   const photoDateExpr = sql`to_char(${photos.createdAt}::timestamptz - interval '${sql.raw(String(offsetMinutes))} minutes', 'YYYY-MM-DD')`;
@@ -178,7 +188,13 @@ export async function getTimelineDayCounts(
       canvasItems,
       and(eq(photos.contentType, canvasItems.type), eq(photos.contentId, canvasItems.contentId)),
     )
-    .where(and(eq(canvasItems.canvasId, canvasId), between(photoDateExpr, startDate, endDate)))
+    .where(
+      and(
+        eq(canvasItems.canvasId, canvasId),
+        between(photoDateExpr, startDate, endDate),
+        parentItemId ? eq(canvasItems.id, parentItemId) : undefined,
+      ),
+    )
     .groupBy(photoDateExpr);
 
   const counts: Record<string, number> = {};

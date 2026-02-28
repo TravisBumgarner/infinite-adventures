@@ -11,6 +11,7 @@ const CountsQuery = z.object({
   start: z.string().date(),
   end: z.string().date(),
   tzOffset: z.coerce.number().int().min(-840).max(840).optional(),
+  parentItemId: z.string().uuid().optional(),
 });
 
 export async function handler(req: Request, res: Response): Promise<void> {
@@ -24,7 +25,13 @@ export async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { start, end, tzOffset } = parsed.query;
-  const counts = await getTimelineDayCounts(parsed.params.canvasId, start, end, tzOffset);
+  const { start, end, tzOffset, parentItemId } = parsed.query;
+  const counts = await getTimelineDayCounts(
+    parsed.params.canvasId,
+    start,
+    end,
+    tzOffset,
+    parentItemId,
+  );
   sendSuccess(res, { counts });
 }

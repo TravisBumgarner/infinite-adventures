@@ -1,20 +1,23 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import StarIcon from "@mui/icons-material/Star";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { GalleryEntry, Photo } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
 
-import { useCanvases, useGallery } from "../../hooks/queries";
+import { useCanvases, useGallery, useItems } from "../../hooks/queries";
 import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
@@ -25,8 +28,10 @@ import { FONT_SIZES } from "../../styles/styleConsts";
 export default function Gallery() {
   const theme = useTheme();
   const navigate = useNavigate();
-  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const parentItemId = searchParams.get("parentItemId") ?? undefined;
 
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const openModal = useModalStore((s) => s.openModal);
@@ -41,9 +46,21 @@ export default function Gallery() {
     }
   }, [canvases, initActiveCanvas]);
 
+  // Fetch items for filter autocomplete
+  const { data: rawItems = [] } = useItems(activeCanvasId ?? undefined);
+  const items = useMemo(
+    () =>
+      [...rawItems].sort(
+        (a, b) =>
+          a.type.localeCompare(b.type) ||
+          a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
+      ),
+    [rawItems],
+  );
+
   // Fetch gallery data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
-    useGallery(activeCanvasId ?? undefined, importantOnly);
+    useGallery(activeCanvasId ?? undefined, importantOnly, parentItemId);
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
@@ -115,12 +132,89 @@ export default function Gallery() {
             mb: 3,
           }}
         >
+          <Autocomplete
+            size="small"
+            options={items}
+            getOptionLabel={(opt) => opt.title}
+            value={items.find((i) => i.id === parentItemId) ?? null}
+            onChange={(_e, item) => {
+              if (item) {
+                searchParams.set("parentItemId", item.id);
+              } else {
+                searchParams.delete("parentItemId");
+              }
+              setSearchParams(searchParams, { replace: true });
+            }}
+            renderOption={(props, option) => {
+              const colors = theme.palette.canvasItemTypes[option.type];
+              return (
+                <li
+                  {...props}
+                  key={option.id}
+                  style={{
+                    ...props.style,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <LabelBadge
+                    label={option.type}
+                    accentColor={colors.light}
+                    icon={canvasItemTypeIcon(option.type)}
+                    height={18}
+                    fontSize={FONT_SIZES.xs}
+                    sx={{ mr: 1, flexShrink: 0, textTransform: "capitalize" }}
+                  />
+                  <span
+                    style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  >
+                    {option.title}
+                  </span>
+                </li>
+              );
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="All items"
+                variant="outlined"
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <FilterListIcon
+                        sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-overlay0)", mr: 0.5 }}
+                      />
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            sx={{
+              minWidth: 250,
+              maxWidth: 350,
+              "& .MuiInputBase-root": {
+                py: 0,
+                height: 32,
+                fontSize: FONT_SIZES.xs,
+                "& input": { py: 0 },
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "var(--color-surface1)",
+              },
+            }}
+            blurOnSelect
+            clearOnBlur={false}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+          />
           <Chip
             label="Pinned only"
             icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
-            size="small"
             onClick={() => setImportantOnly(!importantOnly)}
             sx={{
+              height: 32,
               bgcolor: importantOnly ? "var(--color-yellow)" : "transparent",
               color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
               border: importantOnly ? "none" : "1px solid var(--color-surface1)",

@@ -9,13 +9,14 @@ export const queryKeys = {
       ["canvases", canvasId, "items", "search", query] as const,
   },
   timeline: {
-    list: (canvasId: string, sort: string) => ["canvases", canvasId, "timeline", sort] as const,
-    counts: (canvasId: string, start: string, end: string) =>
-      ["canvases", canvasId, "timeline", "counts", start, end] as const,
+    list: (canvasId: string, sort: string, parentItemId?: string) =>
+      ["canvases", canvasId, "timeline", sort, parentItemId] as const,
+    counts: (canvasId: string, start: string, end: string, parentItemId?: string) =>
+      ["canvases", canvasId, "timeline", "counts", start, end, parentItemId] as const,
   },
   gallery: {
-    list: (canvasId: string, importantOnly: boolean) =>
-      ["canvases", canvasId, "gallery", importantOnly] as const,
+    list: (canvasId: string, importantOnly: boolean, parentItemId?: string) =>
+      ["canvases", canvasId, "gallery", importantOnly, parentItemId] as const,
   },
   sessions: {
     list: (canvasId: string) => ["canvases", canvasId, "sessions"] as const,
