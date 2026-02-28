@@ -655,7 +655,7 @@ export default function MentionEditor({
             sx={{
               position: "fixed",
               top: suggestionPosition.top,
-              left: suggestionPosition.left,
+              left: Math.min(suggestionPosition.left, window.innerWidth - 320),
               transform: "translateY(-100%)",
               zIndex: 1300,
               mb: 0.5,

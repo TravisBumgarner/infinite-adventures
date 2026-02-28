@@ -18,7 +18,6 @@ import { useAutoSave } from "../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../modals";
-import CanvasItemPanel from "../../pages/Canvas/components/CanvasItemPanel";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
@@ -39,6 +38,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const setItemsCache = useCanvasStore((s) => s.setItemsCache);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const openModal = useModalStore((s) => s.openModal);
 
   // Fetch item via React Query
@@ -66,7 +66,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("notes");
-  const [mentionItemId, setMentionItemId] = useState<string | null>(null);
 
   // Note history state
   const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
@@ -306,9 +305,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     setHistoryNoteId(null);
   }
 
-  const handleMentionClick = useCallback((itemId: string) => {
-    setMentionItemId(itemId);
-  }, []);
+  const handleMentionClick = useCallback(
+    (itemId: string) => {
+      setEditingItemId(itemId);
+    },
+    [setEditingItemId],
+  );
 
   if (itemError) return <QueryErrorDisplay error={itemError} onRetry={refetchItem} />;
   if (!item) {
@@ -403,91 +405,78 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         />
       </Box>
 
-      {/* Session content + optional item panel */}
-      <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <Box
+      {/* Session content */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {/* Tabs */}
+        <Tabs
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
           sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
+            borderBottom: "1px solid var(--color-surface0)",
+            px: 2,
           }}
         >
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onChange={(_, newValue) => setActiveTab(newValue)}
-            sx={{
-              borderBottom: "1px solid var(--color-surface0)",
-              px: 2,
-            }}
-          >
-            <Tab label="Notes" value="notes" />
-            <Tab label="Photos" value="photos" />
-          </Tabs>
+          <Tab label="Notes" value="notes" />
+          <Tab label="Photos" value="photos" />
+        </Tabs>
 
-          {/* Tab content */}
-          {activeTab === "notes" && (
-            <NotesTab
-              notes={notes}
-              editingNoteId={editingNoteId}
-              noteContent={noteContent}
-              noteTitle={noteTitle}
-              noteStatus={noteStatus}
-              itemsCache={itemsCache}
-              canvasId={activeCanvasId ?? ""}
-              onAddNote={handleAddNote}
-              onSelectNote={handleSelectNote}
-              onDeleteNote={handleDeleteNote}
-              onBackToList={handleBackToNoteList}
-              onNoteContentChange={(val) => {
-                setNoteContent(val);
-                markNoteDirty();
-              }}
-              onNoteTitleChange={(val) => {
-                setNoteTitle(val);
-                markNoteDirty();
-              }}
-              onToggleImportant={handleToggleImportant}
-              onCreateMentionItem={handleCreateMentionItem}
-              getNotePreview={notePreview}
-              onMentionClick={handleMentionClick}
-              onHistoryNote={setHistoryNoteId}
-            />
-          )}
-
-          <NoteHistoryModal
-            open={historyNoteId !== null}
-            onClose={() => setHistoryNoteId(null)}
-            entries={historyEntries}
-            loading={historyLoading}
-            onRevert={handleRevertNote}
-          />
-
-          {activeTab === "photos" && (
-            <PhotosTab
-              photos={photos}
-              onUpload={handlePhotoUpload}
-              onDelete={handlePhotoDelete}
-              onSelect={handlePhotoSelect}
-              onToggleImportant={handleTogglePhotoImportant}
-              onOpenLightbox={handleOpenLightbox}
-              onFileDrop={handleFileDrop}
-              onUpdateCaption={handleUpdateCaption}
-              columns={photoColumns}
-              onColumnsChange={setPhotoColumns}
-            />
-          )}
-        </Box>
-
-        {mentionItemId && (
-          <CanvasItemPanel
-            itemId={mentionItemId}
-            onClose={() => setMentionItemId(null)}
-            onSaved={() => {}}
-            onDeleted={() => {}}
-            onNavigate={(itemId) => setMentionItemId(itemId)}
+        {/* Tab content */}
+        {activeTab === "notes" && (
+          <NotesTab
+            notes={notes}
+            editingNoteId={editingNoteId}
+            noteContent={noteContent}
+            noteTitle={noteTitle}
+            noteStatus={noteStatus}
             itemsCache={itemsCache}
+            canvasId={activeCanvasId ?? ""}
+            onAddNote={handleAddNote}
+            onSelectNote={handleSelectNote}
+            onDeleteNote={handleDeleteNote}
+            onBackToList={handleBackToNoteList}
+            onNoteContentChange={(val) => {
+              setNoteContent(val);
+              markNoteDirty();
+            }}
+            onNoteTitleChange={(val) => {
+              setNoteTitle(val);
+              markNoteDirty();
+            }}
+            onToggleImportant={handleToggleImportant}
+            onCreateMentionItem={handleCreateMentionItem}
+            getNotePreview={notePreview}
+            onMentionClick={handleMentionClick}
+            onHistoryNote={setHistoryNoteId}
+          />
+        )}
+
+        <NoteHistoryModal
+          open={historyNoteId !== null}
+          onClose={() => setHistoryNoteId(null)}
+          entries={historyEntries}
+          loading={historyLoading}
+          onRevert={handleRevertNote}
+        />
+
+        {activeTab === "photos" && (
+          <PhotosTab
+            photos={photos}
+            onUpload={handlePhotoUpload}
+            onDelete={handlePhotoDelete}
+            onSelect={handlePhotoSelect}
+            onToggleImportant={handleTogglePhotoImportant}
+            onOpenLightbox={handleOpenLightbox}
+            onFileDrop={handleFileDrop}
+            onUpdateCaption={handleUpdateCaption}
+            columns={photoColumns}
+            onColumnsChange={setPhotoColumns}
           />
         )}
       </Box>
