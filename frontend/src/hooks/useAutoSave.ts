@@ -1,6 +1,28 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
+
+// Global count of useAutoSave instances with pending changes.
+// The beforeunload listener is added/removed based on this count.
+let dirtyCount = 0;
+
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  e.preventDefault();
+}
+
+function incrementDirty() {
+  if (dirtyCount === 0) {
+    window.addEventListener("beforeunload", onBeforeUnload);
+  }
+  dirtyCount++;
+}
+
+function decrementDirty() {
+  dirtyCount = Math.max(0, dirtyCount - 1);
+  if (dirtyCount === 0) {
+    window.removeEventListener("beforeunload", onBeforeUnload);
+  }
+}
 
 interface UseAutoSaveOptions {
   /** Function that performs the save. Should throw on failure. */
@@ -28,8 +50,18 @@ export function useAutoSave({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyRef = useRef(false);
+  const isDirtyForUnloadRef = useRef(false);
   const saveFnRef = useRef(saveFn);
   saveFnRef.current = saveFn;
+
+  // Clean up on unmount if this instance was dirty
+  useEffect(() => {
+    return () => {
+      if (isDirtyForUnloadRef.current) {
+        decrementDirty();
+      }
+    };
+  }, []);
 
   const doSave = useCallback(async () => {
     if (!dirtyRef.current) return;
@@ -41,6 +73,10 @@ export function useAutoSave({
     setStatus("saving");
     try {
       await saveFnRef.current();
+      if (isDirtyForUnloadRef.current) {
+        isDirtyForUnloadRef.current = false;
+        decrementDirty();
+      }
       setStatus("saved");
       savedTimerRef.current = setTimeout(() => {
         setStatus("idle");
@@ -53,6 +89,10 @@ export function useAutoSave({
 
   const markDirty = useCallback(() => {
     dirtyRef.current = true;
+    if (!isDirtyForUnloadRef.current) {
+      isDirtyForUnloadRef.current = true;
+      incrementDirty();
+    }
     setStatus("unsaved");
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
