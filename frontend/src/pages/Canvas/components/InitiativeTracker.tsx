@@ -40,14 +40,13 @@ export default function InitiativeTracker() {
   const clearAll = useInitiativeStore((s) => s.clearAll);
 
   const itemsCache = useCanvasStore((s) => s.itemsCache);
-  const personNames = useMemo(
-    () =>
-      [...itemsCache.values()]
-        .filter((item) => item.type === "person")
-        .map((item) => item.title)
-        .sort((a, b) => a.localeCompare(b)),
-    [itemsCache],
-  );
+  const personNames = useMemo(() => {
+    const existing = new Set(combatants.map((c) => c.name));
+    return [...itemsCache.values()]
+      .filter((item) => item.type === "person" && !existing.has(item.title))
+      .map((item) => item.title)
+      .sort((a, b) => a.localeCompare(b));
+  }, [itemsCache, combatants]);
 
   const [name, setName] = useState("");
   const [initiative, setInitiative] = useState("");
@@ -143,8 +142,8 @@ export default function InitiativeTracker() {
         </Box>
 
         <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
-          {/* Add combatant form */}
-          {showAddForm && (
+          {/* Add combatant form (hidden when collapsed) */}
+          {showAddForm && expanded && (
             <Box sx={{ display: "flex", gap: 0.5, alignItems: "stretch" }}>
               <Autocomplete
                 freeSolo
@@ -175,6 +174,7 @@ export default function InitiativeTracker() {
                 variant="outlined"
                 size="small"
                 onClick={handleAdd}
+                disabled={!name.trim() || !initiative.trim()}
                 sx={{ fontSize: FONT_SIZES.sm, minWidth: 0 }}
               >
                 +

@@ -5,7 +5,7 @@ import "@xyflow/react/dist/style.css";
 import { useTheme } from "@mui/material";
 import { toPng } from "html-to-image";
 import { useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { useDeleteItem } from "../../hooks/mutations";
 import { useCanvases } from "../../hooks/queries";
@@ -36,6 +36,7 @@ const edgeTypes: EdgeTypes = {
 export default function Canvas() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
@@ -90,6 +91,14 @@ export default function Canvas() {
     onDrop,
     onDragOver,
   } = useCanvasActions();
+
+  // Navigate to a specific item when arriving via ?focus=<itemId>
+  const focusId = searchParams.get("focus");
+  useEffect(() => {
+    if (!focusId || filteredNodes.length === 0) return;
+    navigateToItem(focusId);
+    setSearchParams({}, { replace: true });
+  }, [focusId, filteredNodes.length, navigateToItem, setSearchParams]);
 
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
 

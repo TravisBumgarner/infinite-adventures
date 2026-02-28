@@ -1,10 +1,14 @@
+import MapIcon from "@mui/icons-material/Map";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useQueryClient } from "@tanstack/react-query";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Note } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
 import { queryKeys, useTaggedItems } from "../../../hooks/queries";
@@ -27,6 +31,7 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
   ref,
 ) {
   const theme = useTheme();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
 
@@ -196,6 +201,23 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                       fontSize={FONT_SIZES.xs}
                       sx={{ flexShrink: 0 }}
                     />
+                    <Tooltip title="Open in Canvas">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/canvas?focus=${tagged.id}`);
+                        }}
+                        sx={{
+                          color: "var(--color-subtext0)",
+                          "&:hover": { color: "var(--color-text)" },
+                          p: 0.5,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <MapIcon sx={{ fontSize: FONT_SIZES.md }} />
+                      </IconButton>
+                    </Tooltip>
                   </ListItemButton>
                 </Box>
               );

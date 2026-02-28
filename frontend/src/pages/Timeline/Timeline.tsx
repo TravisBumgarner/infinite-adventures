@@ -57,18 +57,14 @@ function toLocalDateString(isoString: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function timelineNotePreview(content: string): string {
-  return getNotePreview(content, undefined, 0);
-}
-
 export default function Timeline() {
   const navigate = useNavigate();
   const theme = useTheme();
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
-  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
+  const itemsCache = useCanvasStore((s) => s.itemsCache);
 
   const [sort, setSort] = useState<"createdAt" | "updatedAt">("createdAt");
   const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(() => new Set());
@@ -396,8 +392,7 @@ export default function Timeline() {
                           <IconButton
                             size="small"
                             onClick={() => {
-                              setEditingItemId(entry.parentItemId);
-                              navigate("/canvas");
+                              navigate(`/canvas?focus=${entry.parentItemId}`);
                             }}
                             sx={{
                               color: "var(--color-subtext0)",
@@ -451,7 +446,7 @@ export default function Timeline() {
                             wordBreak: "break-word",
                           }}
                           dangerouslySetInnerHTML={{
-                            __html: timelineNotePreview(entry.content || ""),
+                            __html: getNotePreview(entry.content || "", itemsCache, 0),
                           }}
                         />
                       )}

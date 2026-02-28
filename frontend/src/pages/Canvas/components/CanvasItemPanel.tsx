@@ -259,6 +259,7 @@ export default function CanvasItemPanel({
     handlePhotoDelete,
     handlePhotoSelect,
     handleTogglePhotoImportant,
+    handleFileDrop,
     handleUpdateCaption,
   } = usePhotoHandlers({
     itemId,
@@ -706,7 +707,7 @@ export default function CanvasItemPanel({
           onSelect={handlePhotoSelect}
           onToggleImportant={handleTogglePhotoImportant}
           onOpenLightbox={handleOpenLightbox}
-          onFileDrop={handleFileUpload}
+          onFileDrop={handleFileDrop}
           onUpdateCaption={handleUpdateCaption}
         />
       )}

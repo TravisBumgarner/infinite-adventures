@@ -27,7 +27,6 @@ export default function Gallery() {
   const navigate = useNavigate();
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
 
-  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const openModal = useModalStore((s) => s.openModal);
@@ -256,8 +255,7 @@ export default function Gallery() {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingItemId(entry.parentItemId);
-                            navigate("/canvas");
+                            navigate(`/canvas?focus=${entry.parentItemId}`);
                           }}
                           sx={{
                             color: "white",
