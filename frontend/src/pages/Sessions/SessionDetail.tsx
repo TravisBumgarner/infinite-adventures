@@ -170,20 +170,19 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }, [flushTitle, flushDate, flushNote]);
 
   // Extracted note handlers
-  const { handleAddNote, handleSelectNote, handleDeleteNote, handleBackToNoteList } =
-    useNoteHandlers({
-      itemId: sessionId,
-      getEditingNoteId: () => editingNoteIdRef.current,
-      setEditingNoteId,
-      setNoteContent,
-      setNoteTitle,
-      setNotes,
-      flushNote,
-      refetchItem,
-      onItemUpdated: (refreshed) => {
-        setItem(refreshed);
-      },
-    });
+  const { handleAddNote, handleSelectNote, handleDeleteNote, handleCloseNote } = useNoteHandlers({
+    itemId: sessionId,
+    getEditingNoteId: () => editingNoteIdRef.current,
+    setEditingNoteId,
+    setNoteContent,
+    setNoteTitle,
+    setNotes,
+    flushNote,
+    refetchItem,
+    onItemUpdated: (refreshed) => {
+      setItem(refreshed);
+    },
+  });
 
   // Extracted photo handlers
   const {
@@ -444,7 +443,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             onAddNote={handleAddNote}
             onSelectNote={handleSelectNote}
             onDeleteNote={handleDeleteNote}
-            onBackToList={handleBackToNoteList}
+            onCloseNote={handleCloseNote}
             onNoteContentChange={(val) => {
               setNoteContent(val);
               markNoteDirty();

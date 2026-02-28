@@ -237,21 +237,20 @@ export default function CanvasItemPanel({
   }, [flushTitle, flushSummary, flushDate, flushNote]);
 
   // Extracted note handlers
-  const { handleAddNote, handleSelectNote, handleDeleteNote, handleBackToNoteList } =
-    useNoteHandlers({
-      itemId,
-      getEditingNoteId: () => editingNoteIdRef.current,
-      setEditingNoteId,
-      setNoteContent,
-      setNoteTitle,
-      setNotes,
-      flushNote,
-      refetchItem,
-      onItemUpdated: (refreshed) => {
-        setItem(refreshed);
-        handleSaved(refreshed);
-      },
-    });
+  const { handleAddNote, handleSelectNote, handleDeleteNote, handleCloseNote } = useNoteHandlers({
+    itemId,
+    getEditingNoteId: () => editingNoteIdRef.current,
+    setEditingNoteId,
+    setNoteContent,
+    setNoteTitle,
+    setNotes,
+    flushNote,
+    refetchItem,
+    onItemUpdated: (refreshed) => {
+      setItem(refreshed);
+      handleSaved(refreshed);
+    },
+  });
 
   // Extracted photo handlers
   const {
@@ -689,7 +688,7 @@ export default function CanvasItemPanel({
           onAddNote={handleAddNote}
           onSelectNote={handleSelectNote}
           onDeleteNote={handleDeleteNote}
-          onBackToList={handleBackToNoteList}
+          onCloseNote={handleCloseNote}
           onNoteContentChange={(val) => {
             setNoteContent(val);
             markNoteDirty();

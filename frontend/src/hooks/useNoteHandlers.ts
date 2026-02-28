@@ -76,7 +76,7 @@ export function useNoteHandlers({
     ],
   );
 
-  const handleBackToNoteList = useCallback(() => {
+  const handleCloseNote = useCallback(() => {
     if (getEditingNoteId() !== DRAFT_NOTE_ID) {
       flushNote();
     }
@@ -90,6 +90,6 @@ export function useNoteHandlers({
     handleAddNote,
     handleSelectNote,
     handleDeleteNote,
-    handleBackToNoteList,
+    handleCloseNote,
   };
 }
