@@ -1,4 +1,5 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CloseIcon from "@mui/icons-material/Close";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import StarIcon from "@mui/icons-material/Star";
@@ -10,7 +11,7 @@ import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { GalleryEntry, Photo } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
 
@@ -25,10 +26,13 @@ import { FONT_SIZES } from "../../styles/styleConsts";
 export default function Gallery() {
   const theme = useTheme();
   const navigate = useNavigate();
-  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const parentItemId = searchParams.get("parentItemId") ?? undefined;
 
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
+  const itemsCache = useCanvasStore((s) => s.itemsCache);
   const openModal = useModalStore((s) => s.openModal);
 
   const [importantOnly, setImportantOnly] = useState(false);
@@ -43,7 +47,7 @@ export default function Gallery() {
 
   // Fetch gallery data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
-    useGallery(activeCanvasId ?? undefined, importantOnly);
+    useGallery(activeCanvasId ?? undefined, importantOnly, parentItemId);
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
@@ -115,6 +119,27 @@ export default function Gallery() {
             mb: 3,
           }}
         >
+          {parentItemId && (
+            <Chip
+              label={itemsCache.get(parentItemId)?.title ?? "Filtered item"}
+              size="small"
+              deleteIcon={<CloseIcon sx={{ fontSize: FONT_SIZES.md }} />}
+              onDelete={() => {
+                searchParams.delete("parentItemId");
+                setSearchParams(searchParams, { replace: true });
+              }}
+              sx={{
+                bgcolor: "var(--color-blue)",
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: FONT_SIZES.xs,
+                "& .MuiChip-deleteIcon": {
+                  color: "rgba(255,255,255,0.7)",
+                  "&:hover": { color: "#fff" },
+                },
+              }}
+            />
+          )}
           <Chip
             label="Pinned only"
             icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}

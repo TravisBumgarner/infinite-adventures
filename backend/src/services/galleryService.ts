@@ -23,7 +23,7 @@ function encodeCursor(timestamp: string, id: string): string {
 
 export async function getGalleryEntries(
   canvasId: string,
-  options: { cursor?: string; limit?: number; importantOnly?: boolean } = {},
+  options: { cursor?: string; limit?: number; importantOnly?: boolean; parentItemId?: string } = {},
 ): Promise<PaginatedGalleryResult> {
   const db = getDb();
   const limit = options.limit ?? 30;
@@ -37,6 +37,7 @@ export async function getGalleryEntries(
     : undefined;
 
   const conditions = [eq(canvasItems.canvasId, canvasId)];
+  if (options.parentItemId) conditions.push(eq(canvasItems.id, options.parentItemId));
   if (cursorCondition) conditions.push(cursorCondition);
   if (options.importantOnly) conditions.push(eq(photos.isImportant, true));
 

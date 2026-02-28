@@ -53,28 +53,39 @@ export function useSearchItems(query: string, canvasId: string | undefined) {
 export function useTimeline(
   canvasId: string | undefined,
   sort: "createdAt" | "updatedAt" = "createdAt",
+  parentItemId?: string,
 ) {
   return useInfiniteQuery({
-    queryKey: queryKeys.timeline.list(canvasId!, sort),
-    queryFn: ({ pageParam }) => fetchTimeline(canvasId!, sort, pageParam),
+    queryKey: queryKeys.timeline.list(canvasId!, sort, parentItemId),
+    queryFn: ({ pageParam }) => fetchTimeline(canvasId!, sort, pageParam, undefined, parentItemId),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!canvasId,
   });
 }
 
-export function useTimelineCounts(canvasId: string | undefined, start: string, end: string) {
+export function useTimelineCounts(
+  canvasId: string | undefined,
+  start: string,
+  end: string,
+  parentItemId?: string,
+) {
   return useQuery({
-    queryKey: queryKeys.timeline.counts(canvasId!, start, end),
-    queryFn: () => fetchTimelineCounts(canvasId!, start, end),
+    queryKey: queryKeys.timeline.counts(canvasId!, start, end, parentItemId),
+    queryFn: () => fetchTimelineCounts(canvasId!, start, end, parentItemId),
     enabled: !!canvasId,
   });
 }
 
-export function useGallery(canvasId: string | undefined, importantOnly = false) {
+export function useGallery(
+  canvasId: string | undefined,
+  importantOnly = false,
+  parentItemId?: string,
+) {
   return useInfiniteQuery({
-    queryKey: queryKeys.gallery.list(canvasId!, importantOnly),
-    queryFn: ({ pageParam }) => fetchGallery(canvasId!, { cursor: pageParam, importantOnly }),
+    queryKey: queryKeys.gallery.list(canvasId!, importantOnly, parentItemId),
+    queryFn: ({ pageParam }) =>
+      fetchGallery(canvasId!, { cursor: pageParam, importantOnly, parentItemId }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!canvasId,

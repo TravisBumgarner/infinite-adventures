@@ -23,10 +23,8 @@ const DESTINATIONS_BY_TYPE: Record<CanvasItemType, Destination[]> = {
   event: ["Canvas", "Timeline", "Gallery"],
 };
 
-const NOTE_DESTINATIONS: Destination[] = ["Canvas"];
-
 function getDestinations(result: CanvasItemSearchResult): Destination[] {
-  return result.noteId ? NOTE_DESTINATIONS : DESTINATIONS_BY_TYPE[result.type];
+  return DESTINATIONS_BY_TYPE[result.type];
 }
 
 export default function SearchBar() {
@@ -111,10 +109,10 @@ export default function SearchBar() {
           navigate(`/sessions/${result.itemId}`);
           break;
         case "Timeline":
-          navigate("/timeline");
+          navigate(`/timeline?parentItemId=${result.itemId}`);
           break;
         case "Gallery":
-          navigate("/gallery");
+          navigate(`/gallery?parentItemId=${result.itemId}`);
           break;
       }
     },

@@ -11,6 +11,7 @@ const ListTimelineQuery = z.object({
   sort: z.enum(["createdAt", "updatedAt"]).default("createdAt"),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().positive().max(100).default(30),
+  parentItemId: z.string().uuid().optional(),
 });
 
 export async function handler(req: Request, res: Response): Promise<void> {
@@ -24,7 +25,7 @@ export async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { sort, cursor, limit } = parsed.query;
-  const result = await getTimeline(parsed.params.canvasId, sort, cursor, limit);
+  const { sort, cursor, limit, parentItemId } = parsed.query;
+  const result = await getTimeline(parsed.params.canvasId, sort, cursor, limit, parentItemId);
   sendSuccess(res, { entries: result.entries, nextCursor: result.nextCursor });
 }

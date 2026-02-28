@@ -1,4 +1,5 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CloseIcon from "@mui/icons-material/Close";
 import MapIcon from "@mui/icons-material/Map";
 import SortIcon from "@mui/icons-material/Sort";
 import StarIcon from "@mui/icons-material/Star";
@@ -14,7 +15,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
@@ -59,6 +60,8 @@ function toLocalDateString(isoString: string): string {
 export default function Timeline() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const parentItemId = searchParams.get("parentItemId") ?? undefined;
 
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
@@ -86,7 +89,7 @@ export default function Timeline() {
 
   // Fetch timeline data (infinite query)
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch } =
-    useTimeline(activeCanvasId ?? undefined, sort);
+    useTimeline(activeCanvasId ?? undefined, sort, parentItemId);
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
@@ -96,7 +99,12 @@ export default function Timeline() {
     () => getCalendarRange(calEndYear, calEndMonth),
     [calEndYear, calEndMonth],
   );
-  const { data: countsData } = useTimelineCounts(activeCanvasId ?? undefined, calStart, calEnd);
+  const { data: countsData } = useTimelineCounts(
+    activeCanvasId ?? undefined,
+    calStart,
+    calEnd,
+    parentItemId,
+  );
   const calCounts = countsData?.counts ?? {};
 
   const handleShiftMonth = useCallback((delta: number) => {
@@ -248,6 +256,29 @@ export default function Timeline() {
                 Last Updated
               </ToggleButton>
             </ToggleButtonGroup>
+
+            {/* Parent item filter chip */}
+            {parentItemId && (
+              <Chip
+                label={itemsCache.get(parentItemId)?.title ?? "Filtered item"}
+                size="small"
+                deleteIcon={<CloseIcon sx={{ fontSize: FONT_SIZES.md }} />}
+                onDelete={() => {
+                  searchParams.delete("parentItemId");
+                  setSearchParams(searchParams, { replace: true });
+                }}
+                sx={{
+                  bgcolor: "var(--color-blue)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: FONT_SIZES.xs,
+                  "& .MuiChip-deleteIcon": {
+                    color: "rgba(255,255,255,0.7)",
+                    "&:hover": { color: "#fff" },
+                  },
+                }}
+              />
+            )}
 
             {/* Pinned only filter */}
             <Chip

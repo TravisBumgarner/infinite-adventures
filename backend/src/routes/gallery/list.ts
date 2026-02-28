@@ -14,6 +14,7 @@ const ListGalleryQuery = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  parentItemId: z.string().uuid().optional(),
 });
 
 export async function handler(req: Request, res: Response): Promise<void> {
@@ -27,11 +28,12 @@ export async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { cursor, limit, importantOnly } = parsed.query;
+  const { cursor, limit, importantOnly, parentItemId } = parsed.query;
   const result = await getGalleryEntries(parsed.params.canvasId, {
     cursor,
     limit,
     importantOnly,
+    parentItemId,
   });
   sendSuccess(res, { entries: result.entries, nextCursor: result.nextCursor });
 }
