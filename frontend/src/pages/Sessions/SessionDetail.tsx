@@ -148,11 +148,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const { markDirty: markDateDirty, flush: flushDate } = useAutoSave({
     saveFn: saveDateFn,
   });
-  const {
-    status: noteStatus,
-    markDirty: markNoteDirty,
-    flush: flushNote,
-  } = useAutoSave({ saveFn: saveNoteFn });
+  const { markDirty: markNoteDirty, flush: flushNote } = useAutoSave({ saveFn: saveNoteFn });
 
   void titleStatus;
 
@@ -438,7 +434,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             editingNoteId={editingNoteId}
             noteContent={noteContent}
             noteTitle={noteTitle}
-            noteStatus={noteStatus}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
             onAddNote={handleAddNote}

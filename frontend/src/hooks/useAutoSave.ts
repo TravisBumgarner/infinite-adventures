@@ -1,6 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { create } from "zustand";
 
 export type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
+
+/** Global reactive saving state exposed via zustand. */
+interface SavingState {
+  activeSaves: number;
+  isSaving: boolean;
+}
+export const useSavingStore = create<SavingState>(() => ({
+  activeSaves: 0,
+  isSaving: false,
+}));
+
+function incrementSaving() {
+  useSavingStore.setState((s) => ({
+    activeSaves: s.activeSaves + 1,
+    isSaving: true,
+  }));
+}
+
+function decrementSaving() {
+  useSavingStore.setState((s) => {
+    const next = Math.max(0, s.activeSaves - 1);
+    return { activeSaves: next, isSaving: next > 0 };
+  });
+}
 
 // Global count of useAutoSave instances with pending changes.
 // The beforeunload listener is added/removed based on this count.
@@ -71,6 +96,7 @@ export function useAutoSave({
       debounceRef.current = null;
     }
     setStatus("saving");
+    incrementSaving();
     try {
       await saveFnRef.current();
       if (isDirtyForUnloadRef.current) {
@@ -84,6 +110,8 @@ export function useAutoSave({
     } catch {
       dirtyRef.current = true;
       setStatus("error");
+    } finally {
+      decrementSaving();
     }
   }, [savedDuration]);
 

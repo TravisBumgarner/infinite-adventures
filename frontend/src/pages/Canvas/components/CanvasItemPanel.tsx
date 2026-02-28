@@ -41,7 +41,6 @@ import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { formatItemMarkdown } from "../../../utils/noteExport";
 import { shouldSnapshot } from "../../../utils/shouldSnapshot";
-import { statusLabel } from "../../../utils/statusLabel";
 import PanelConnectionsTab from "./PanelConnectionsTab";
 import PanelHeader from "./PanelHeader";
 
@@ -207,16 +206,8 @@ export default function CanvasItemPanel({
     markDirty: markSummaryDirty,
     flush: flushSummary,
   } = useAutoSave({ saveFn: saveSummaryFn });
-  const {
-    status: dateStatus,
-    markDirty: markDateDirty,
-    flush: flushDate,
-  } = useAutoSave({ saveFn: saveDateFn });
-  const {
-    status: noteStatus,
-    markDirty: markNoteDirty,
-    flush: flushNote,
-  } = useAutoSave({ saveFn: saveNoteFn });
+  const { markDirty: markDateDirty, flush: flushDate } = useAutoSave({ saveFn: saveDateFn });
+  const { markDirty: markNoteDirty, flush: flushNote } = useAutoSave({ saveFn: saveNoteFn });
 
   // titleStatus and summaryStatus are used implicitly by saving on blur/Enter
   void titleStatus;
@@ -680,7 +671,6 @@ export default function CanvasItemPanel({
           editingNoteId={editingNoteId}
           noteContent={noteContent}
           noteTitle={noteTitle}
-          noteStatus={noteStatus}
           itemsCache={itemsCache}
           canvasId={activeCanvasId ?? ""}
           highlightNoteId={highlightNoteId}
@@ -746,9 +736,6 @@ export default function CanvasItemPanel({
                 }}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
-              <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-                {statusLabel(dateStatus)}
-              </Typography>
               <Button
                 variant="outlined"
                 size="small"

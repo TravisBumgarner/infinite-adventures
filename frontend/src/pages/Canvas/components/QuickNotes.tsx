@@ -31,7 +31,6 @@ import { useQuickNotesStore } from "../../../stores/quickNotesStore";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { shouldSnapshot } from "../../../utils/shouldSnapshot";
-import { statusLabel } from "../../../utils/statusLabel";
 import MentionEditor from "./MentionEditor";
 
 function QuickNoteItem({
@@ -65,7 +64,7 @@ function QuickNoteItem({
   const localTitleRef = useRef(title ?? "");
   const lastSnapshotAtRef = useRef<number | undefined>(undefined);
 
-  const { status: saveStatus, markDirty } = useAutoSave({
+  const { markDirty } = useAutoSave({
     saveFn: async () => {
       const snapshot = shouldSnapshot(lastSnapshotAtRef.current);
       await updateMutation.mutateAsync({
@@ -245,17 +244,6 @@ function QuickNoteItem({
                 overflow: "auto",
               }}
             />
-            <Typography
-              variant="caption"
-              sx={{
-                color: "var(--color-subtext0)",
-                minHeight: "1.2em",
-                display: "block",
-                mt: 0.25,
-              }}
-            >
-              {statusLabel(saveStatus) || "\u00A0"}
-            </Typography>
           </Box>
         ) : (
           <Box

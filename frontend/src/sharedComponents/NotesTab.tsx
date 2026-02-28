@@ -17,10 +17,8 @@ import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, CanvasItemType, Note } from "shared";
 import { DRAFT_NOTE_ID } from "../constants";
-import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { FONT_SIZES } from "../styles/styleConsts";
-import { statusLabel } from "../utils/statusLabel";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import LinkTooltip from "./LinkTooltip";
 
@@ -34,7 +32,6 @@ interface NotesTabProps {
   editingNoteId: string | null;
   noteContent: string;
   noteTitle: string;
-  noteStatus: SaveStatus;
   itemsCache: Map<string, CanvasItem>;
   canvasId: string;
   highlightNoteId?: string | null;
@@ -60,7 +57,6 @@ export default function NotesTab({
   editingNoteId,
   noteContent,
   noteTitle,
-  noteStatus,
   itemsCache,
   canvasId,
   highlightNoteId,
@@ -208,17 +204,6 @@ export default function NotesTab({
                 overflow: "auto",
               }}
             />
-            <Typography
-              variant="caption"
-              sx={{
-                color: "var(--color-subtext0)",
-                mt: 0.5,
-                minHeight: "1.2em",
-                display: "block",
-              }}
-            >
-              {statusLabel(noteStatus) || "\u00A0"}
-            </Typography>
           </Box>
         </Box>
       )}
@@ -417,17 +402,6 @@ export default function NotesTab({
                           overflow: "auto",
                         }}
                       />
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "var(--color-subtext0)",
-                          mt: 0.5,
-                          minHeight: "1.2em",
-                          display: "block",
-                        }}
-                      >
-                        {statusLabel(noteStatus) || "\u00A0"}
-                      </Typography>
                     </Box>
                   ) : (
                     <Box
