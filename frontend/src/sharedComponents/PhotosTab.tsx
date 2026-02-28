@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Photo } from "shared";
 import { FONT_SIZES } from "../styles/styleConsts";
 import { blurhashToDataURL } from "../utils/blurhashToDataURL";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 
 interface PhotosTabProps {
   photos: Photo[];
@@ -83,6 +84,7 @@ export default function PhotosTab({
   onColumnsChange,
 }: PhotosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -299,7 +301,7 @@ export default function PhotosTab({
                   <Tooltip title="Delete" placement="top">
                     <IconButton
                       size="small"
-                      onClick={() => onDelete(photo.id)}
+                      onClick={() => setDeletePhotoId(photo.id)}
                       sx={{
                         position: "absolute",
                         top: 2,
@@ -328,6 +330,17 @@ export default function PhotosTab({
           })
         )}
       </Box>
+
+      <ConfirmDeleteDialog
+        open={deletePhotoId !== null}
+        onClose={() => setDeletePhotoId(null)}
+        onConfirm={() => {
+          onDelete(deletePhotoId!);
+          setDeletePhotoId(null);
+        }}
+        title="Delete Photo"
+        message="Are you sure you want to delete this photo? This cannot be undone."
+      />
     </Box>
   );
 }

@@ -170,7 +170,10 @@ export default forwardRef<TaggedItemsPanelRef, TaggedItemsPanelProps>(function T
                           fontSize: FONT_SIZES.sm,
                         }}
                       >
-                        {canvasItemTypeIcon(tagged.type)}
+                        {(() => {
+                          const Icon = canvasItemTypeIcon(tagged.type);
+                          return <Icon />;
+                        })()}
                       </Box>
                     )}
                     <Box sx={{ flex: 1, minWidth: 0 }}>

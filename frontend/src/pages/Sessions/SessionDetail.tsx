@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import NoteHistoryModal from "../../components/NoteHistoryModal";
 import { DRAFT_NOTE_ID } from "../../constants";
 import { useCreateItem, useCreateNote, useUpdateItem, useUpdateNote } from "../../hooks/mutations";
@@ -310,11 +310,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   // Create mention item
   async function handleCreateMentionItem(
     mentionTitle: string,
+    type: CanvasItemType,
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
       const newItem = await createItemMutation.mutateAsync({
-        type: "person",
+        type,
         title: mentionTitle,
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,

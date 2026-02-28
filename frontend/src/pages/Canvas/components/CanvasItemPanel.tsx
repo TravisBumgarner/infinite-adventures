@@ -10,7 +10,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CanvasItem, Note, Photo, Tag } from "shared";
+import type { CanvasItem, CanvasItemType, Note, Photo, Tag } from "shared";
 import NoteHistoryModal from "../../../components/NoteHistoryModal";
 import {
   CANVAS_ITEM_TYPE_LABELS,
@@ -413,11 +413,12 @@ export default function CanvasItemPanel({
 
   async function handleCreateMentionItem(
     mentionTitle: string,
+    type: CanvasItemType,
   ): Promise<{ id: string; title: string } | null> {
     if (!activeCanvasId || !item) return null;
     try {
       const newItem = await createItemMutation.mutateAsync({
-        type: "person",
+        type,
         title: mentionTitle,
         canvasX: item.canvasX + 220,
         canvasY: item.canvasY,

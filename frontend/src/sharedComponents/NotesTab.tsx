@@ -16,7 +16,7 @@ import { keyframes } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
-import type { CanvasItem, Note } from "shared";
+import type { CanvasItem, CanvasItemType, Note } from "shared";
 import type { SaveStatus } from "../hooks/useAutoSave";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { FONT_SIZES } from "../styles/styleConsts";
@@ -46,7 +46,10 @@ interface NotesTabProps {
   onNoteContentChange: (value: string) => void;
   onNoteTitleChange: (value: string) => void;
   onToggleImportant: (noteId: string, isImportant: boolean) => void;
-  onCreateMentionItem: (title: string) => Promise<{ id: string; title: string } | null>;
+  onCreateMentionItem: (
+    title: string,
+    type: CanvasItemType,
+  ) => Promise<{ id: string; title: string } | null>;
   getNotePreview: (content: string) => string;
   onMentionClick?: (itemId: string) => void;
   onHistoryNote?: (noteId: string) => void;
