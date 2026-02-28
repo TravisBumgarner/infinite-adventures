@@ -177,6 +177,8 @@ export default function CanvasItemPanel({
       });
       editingNoteIdRef.current = newNote.id;
       setEditingNoteId(newNote.id);
+      // Insert optimistically so the inline editor renders immediately
+      setNotes((prev) => [newNote, ...prev]);
       const { data: refreshed } = await refetchItem();
       if (refreshed) {
         setItem(refreshed);
