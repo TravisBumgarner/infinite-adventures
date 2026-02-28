@@ -177,9 +177,14 @@ export default function CanvasItemPanel({
       });
       editingNoteIdRef.current = newNote.id;
       setEditingNoteId(newNote.id);
-      // Insert optimistically so the inline editor renders immediately.
-      // Skip refetch — server-sorted notes would re-order while editing.
+      // Insert optimistically so the inline editor renders immediately
       setNotes((prev) => [newNote, ...prev]);
+      const { data: refreshed } = await refetchItem();
+      if (refreshed) {
+        setItem(refreshed);
+        setNotes(refreshed.notes);
+        handleSaved(refreshed);
+      }
       return;
     }
 
