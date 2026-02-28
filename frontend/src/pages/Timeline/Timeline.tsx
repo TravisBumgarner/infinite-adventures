@@ -17,7 +17,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../constants";
-
 import { useCanvases, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
@@ -26,6 +25,7 @@ import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
 import { getContrastText } from "../../utils/getContrastText";
 import { getNotePreview } from "../../utils/getNotePreview";
+import CanvasItemPanel from "../Canvas/components/CanvasItemPanel";
 import TimelineCalendar, { getCalendarRange } from "./TimelineCalendar";
 
 function formatTimestamp(isoString: string): string {
@@ -70,6 +70,7 @@ export default function Timeline() {
   const [activeFilters, setActiveFilters] = useState<Set<CanvasItemType>>(() => new Set());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [importantOnly, setImportantOnly] = useState(false);
+  const [mentionItemId, setMentionItemId] = useState<string | null>(null);
 
   // Calendar window state
   const now = new Date();
@@ -167,307 +168,332 @@ export default function Timeline() {
   if (!activeCanvasId) return null;
 
   return (
-    <Box sx={{ height: "100%", overflow: "auto", bgcolor: "var(--color-base)" }}>
-      {/* Main content: two-column layout */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 3,
-          maxWidth: 1040,
-          mx: "auto",
-          px: 3,
-          pt: 2,
-          ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
-          transition: "margin-left 0.2s",
-        }}
-      >
-        {/* Left column: calendar sidebar */}
+    <Box sx={{ height: "100%", display: "flex", overflow: "hidden" }}>
+      <Box sx={{ flex: 1, overflow: "auto", bgcolor: "var(--color-base)" }}>
+        {/* Main content: two-column layout */}
         <Box
           sx={{
-            width: 280,
-            flexShrink: 0,
-            position: "sticky",
-            top: 80,
-            alignSelf: "flex-start",
+            display: "flex",
+            gap: 3,
+            maxWidth: 1040,
+            mx: "auto",
+            px: 3,
+            pt: 2,
+            ml: showSettings ? "calc((100vw - 1040px) / 2 + 180px)" : "auto",
+            transition: "margin-left 0.2s",
           }}
         >
-          <TimelineCalendar
-            endYear={calEndYear}
-            endMonth={calEndMonth}
-            counts={calCounts}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            onShiftMonth={handleShiftMonth}
-            onShiftYear={handleShiftYear}
-          />
-          {selectedDate && (
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                mt: 1,
-                color: "var(--color-blue)",
-                cursor: "pointer",
-                "&:hover": { textDecoration: "underline" },
-              }}
-              onClick={() => setSelectedDate(null)}
-            >
-              Clear date filter
-            </Typography>
-          )}
-        </Box>
-
-        {/* Right column: timeline feed */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          {/* Controls bar */}
+          {/* Left column: calendar sidebar */}
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              mb: 3,
-              flexWrap: "wrap",
+              width: 280,
+              flexShrink: 0,
+              position: "sticky",
+              top: 80,
+              alignSelf: "flex-start",
             }}
           >
-            {/* Sort toggle */}
-            <ToggleButtonGroup
-              value={sort}
-              exclusive
-              onChange={(_, val) => {
-                if (val) setSort(val);
-              }}
-              size="small"
-            >
-              <ToggleButton value="createdAt" sx={{ gap: 0.5 }}>
-                <SortIcon fontSize="small" />
-                Created
-              </ToggleButton>
-              <ToggleButton value="updatedAt" sx={{ gap: 0.5 }}>
-                <SortIcon fontSize="small" />
-                Last Updated
-              </ToggleButton>
-            </ToggleButtonGroup>
-
-            {/* Pinned only filter */}
-            <Chip
-              label="Pinned only"
-              icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
-              size="small"
-              onClick={() => setImportantOnly(!importantOnly)}
-              sx={{
-                bgcolor: importantOnly ? "var(--color-yellow)" : "transparent",
-                color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
-                border: importantOnly ? "none" : "1px solid var(--color-surface1)",
-                fontWeight: 600,
-                fontSize: FONT_SIZES.xs,
-                cursor: "pointer",
-                "&:hover": { opacity: 0.8 },
-              }}
+            <TimelineCalendar
+              endYear={calEndYear}
+              endMonth={calEndMonth}
+              counts={calCounts}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              onShiftMonth={handleShiftMonth}
+              onShiftYear={handleShiftYear}
             />
-
-            {/* Type filter chips */}
-            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-              {CANVAS_ITEM_TYPES.map((t) => {
-                const colors = theme.palette.canvasItemTypes[t.value];
-                const isActive = activeFilters.has(t.value);
-                return (
-                  <Chip
-                    key={t.value}
-                    label={t.label}
-                    size="small"
-                    onClick={() => toggleFilter(t.value)}
-                    sx={{
-                      bgcolor: isActive ? colors.light : "transparent",
-                      color: isActive ? getContrastText(colors.light) : "var(--color-subtext0)",
-                      border: isActive ? "none" : "1px solid var(--color-surface1)",
-                      fontWeight: 600,
-                      fontSize: FONT_SIZES.xs,
-                      cursor: "pointer",
-                      "&:hover": { opacity: 0.8 },
-                    }}
-                  />
-                );
-              })}
-            </Box>
+            {selectedDate && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  textAlign: "center",
+                  mt: 1,
+                  color: "var(--color-blue)",
+                  cursor: "pointer",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+                onClick={() => setSelectedDate(null)}
+              >
+                Clear date filter
+              </Typography>
+            )}
           </Box>
 
-          {/* Timeline list */}
-          {error ? (
-            <QueryErrorDisplay error={error} onRetry={refetch} />
-          ) : isLoading ? (
-            <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
-              Loading timeline...
-            </Typography>
-          ) : filtered.length === 0 ? (
-            <Box sx={{ textAlign: "center", py: 8, color: "var(--color-subtext0)" }}>
-              <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                No entries yet
-              </Typography>
-              <Typography variant="body2">
-                Notes and photos from your canvas items will appear here.
-              </Typography>
-            </Box>
-          ) : (
-            <List disablePadding>
-              {filtered.map((entry, idx) => {
-                const colors = theme.palette.canvasItemTypes[entry.parentItemType];
-                const typeLabel =
-                  CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
-                  entry.parentItemType;
-                const ts = sort === "updatedAt" ? entry.updatedAt : entry.createdAt;
-                const currentDateKey = getDateKey(ts);
-                const prevEntry = idx > 0 ? filtered[idx - 1] : null;
-                const prevTs = prevEntry
-                  ? sort === "updatedAt"
-                    ? prevEntry.updatedAt
-                    : prevEntry.createdAt
-                  : null;
-                const showDivider = !prevTs || getDateKey(prevTs) !== currentDateKey;
+          {/* Right column: timeline feed */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* Controls bar */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                mb: 3,
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Sort toggle */}
+              <ToggleButtonGroup
+                value={sort}
+                exclusive
+                onChange={(_, val) => {
+                  if (val) setSort(val);
+                }}
+                size="small"
+              >
+                <ToggleButton value="createdAt" sx={{ gap: 0.5 }}>
+                  <SortIcon fontSize="small" />
+                  Created
+                </ToggleButton>
+                <ToggleButton value="updatedAt" sx={{ gap: 0.5 }}>
+                  <SortIcon fontSize="small" />
+                  Last Updated
+                </ToggleButton>
+              </ToggleButtonGroup>
 
-                return (
-                  <Box key={`${entry.kind}-${entry.id}`}>
-                    {/* Date divider */}
-                    {showDivider && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
-                          my: 2,
-                        }}
-                      >
-                        <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "var(--color-subtext0)",
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {formatDateLabel(ts)}
-                        </Typography>
-                        <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
-                      </Box>
-                    )}
+              {/* Pinned only filter */}
+              <Chip
+                label="Pinned only"
+                icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
+                size="small"
+                onClick={() => setImportantOnly(!importantOnly)}
+                sx={{
+                  bgcolor: importantOnly ? "var(--color-yellow)" : "transparent",
+                  color: importantOnly ? "var(--color-base)" : "var(--color-subtext0)",
+                  border: importantOnly ? "none" : "1px solid var(--color-surface1)",
+                  fontWeight: 600,
+                  fontSize: FONT_SIZES.xs,
+                  cursor: "pointer",
+                  "&:hover": { opacity: 0.8 },
+                }}
+              />
 
-                    <Box
+              {/* Type filter chips */}
+              <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                {CANVAS_ITEM_TYPES.map((t) => {
+                  const colors = theme.palette.canvasItemTypes[t.value];
+                  const isActive = activeFilters.has(t.value);
+                  return (
+                    <Chip
+                      key={t.value}
+                      label={t.label}
+                      size="small"
+                      onClick={() => toggleFilter(t.value)}
                       sx={{
-                        mb: 1,
-                        border: "1px solid var(--color-surface1)",
-                        bgcolor: "var(--color-base)",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "stretch",
-                        gap: 1,
-                        py: 1.5,
-                        px: 2,
+                        bgcolor: isActive ? colors.light : "transparent",
+                        color: isActive ? getContrastText(colors.light) : "var(--color-subtext0)",
+                        border: isActive ? "none" : "1px solid var(--color-surface1)",
+                        fontWeight: 600,
+                        fontSize: FONT_SIZES.xs,
+                        cursor: "pointer",
+                        "&:hover": { opacity: 0.8 },
                       }}
-                    >
-                      {/* Row 1: type chip + title + date + action buttons */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <LabelBadge
-                          label={typeLabel}
-                          accentColor={colors.light}
-                          icon={canvasItemTypeIcon(entry.parentItemType)}
-                          height={22}
-                          fontSize={FONT_SIZES.xs}
-                          sx={{ minWidth: 60 }}
-                        />
-                        <Typography
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+
+            {/* Timeline list */}
+            {error ? (
+              <QueryErrorDisplay error={error} onRetry={refetch} />
+            ) : isLoading ? (
+              <Typography sx={{ color: "var(--color-subtext0)", textAlign: "center", mt: 4 }}>
+                Loading timeline...
+              </Typography>
+            ) : filtered.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 8, color: "var(--color-subtext0)" }}>
+                <TimelineIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  No entries yet
+                </Typography>
+                <Typography variant="body2">
+                  Notes and photos from your canvas items will appear here.
+                </Typography>
+              </Box>
+            ) : (
+              <List
+                disablePadding
+                onClick={(e) => {
+                  const target = (e.target as HTMLElement).closest(
+                    ".mention-link",
+                  ) as HTMLElement | null;
+                  if (target) {
+                    e.stopPropagation();
+                    const itemId = target.dataset.itemId;
+                    if (itemId) setMentionItemId(itemId);
+                  }
+                }}
+              >
+                {filtered.map((entry, idx) => {
+                  const colors = theme.palette.canvasItemTypes[entry.parentItemType];
+                  const typeLabel =
+                    CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
+                    entry.parentItemType;
+                  const ts = sort === "updatedAt" ? entry.updatedAt : entry.createdAt;
+                  const currentDateKey = getDateKey(ts);
+                  const prevEntry = idx > 0 ? filtered[idx - 1] : null;
+                  const prevTs = prevEntry
+                    ? sort === "updatedAt"
+                      ? prevEntry.updatedAt
+                      : prevEntry.createdAt
+                    : null;
+                  const showDivider = !prevTs || getDateKey(prevTs) !== currentDateKey;
+
+                  return (
+                    <Box key={`${entry.kind}-${entry.id}`}>
+                      {/* Date divider */}
+                      {showDivider && (
+                        <Box
                           sx={{
-                            fontWeight: 600,
-                            color: "var(--color-text)",
-                            flex: 1,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            my: 2,
                           }}
                         >
-                          {entry.parentItemTitle}
-                        </Typography>
-                        <Tooltip title="Open in Canvas">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              navigate(`/canvas?focus=${entry.parentItemId}`);
-                            }}
+                          <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
+                          <Typography
+                            variant="caption"
                             sx={{
                               color: "var(--color-subtext0)",
-                              "&:hover": { color: "var(--color-text)" },
-                              p: 0.5,
+                              fontWeight: 600,
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
-                          </IconButton>
-                        </Tooltip>
-                        {entry.parentItemType === "session" && (
-                          <Tooltip title="Open in Session Viewer">
+                            {formatDateLabel(ts)}
+                          </Typography>
+                          <Box sx={{ flex: 1, height: "1px", bgcolor: "var(--color-surface1)" }} />
+                        </Box>
+                      )}
+
+                      <Box
+                        sx={{
+                          mb: 1,
+                          border: "1px solid var(--color-surface1)",
+                          bgcolor: "var(--color-base)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "stretch",
+                          gap: 1,
+                          py: 1.5,
+                          px: 2,
+                        }}
+                      >
+                        {/* Row 1: type chip + title + date + action buttons */}
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <LabelBadge
+                            label={typeLabel}
+                            accentColor={colors.light}
+                            icon={canvasItemTypeIcon(entry.parentItemType)}
+                            height={22}
+                            fontSize={FONT_SIZES.xs}
+                            sx={{ minWidth: 60 }}
+                          />
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "var(--color-text)",
+                              flex: 1,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {entry.parentItemTitle}
+                          </Typography>
+                          <Tooltip title="Open in Canvas">
                             <IconButton
                               size="small"
-                              onClick={() => navigate(`/sessions/${entry.parentItemId}`)}
+                              onClick={() => {
+                                navigate(`/canvas?focus=${entry.parentItemId}`);
+                              }}
                               sx={{
                                 color: "var(--color-subtext0)",
                                 "&:hover": { color: "var(--color-text)" },
                                 p: 0.5,
                               }}
                             >
-                              <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.lg }} />
+                              <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
                             </IconButton>
                           </Tooltip>
+                          {entry.parentItemType === "session" && (
+                            <Tooltip title="Open in Session Viewer">
+                              <IconButton
+                                size="small"
+                                onClick={() => navigate(`/sessions/${entry.parentItemId}`)}
+                                sx={{
+                                  color: "var(--color-subtext0)",
+                                  "&:hover": { color: "var(--color-text)" },
+                                  p: 0.5,
+                                }}
+                              >
+                                <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.lg }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+
+                        {/* Row 2: date */}
+                        <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
+                          {formatTimestamp(ts)}
+                        </Typography>
+
+                        {/* Row 3: full content */}
+                        {entry.kind === "photo" ? (
+                          <BlurImage
+                            src={entry.photoUrl!}
+                            alt={entry.originalName ?? ""}
+                            blurhash={entry.blurhash}
+                            sx={{
+                              width: "100%",
+                              maxHeight: "80vh",
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            component="div"
+                            sx={{
+                              color: "var(--color-subtext0)",
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: getNotePreview(entry.content || "", itemsCache, 0),
+                            }}
+                          />
                         )}
                       </Box>
-
-                      {/* Row 2: date */}
-                      <Typography variant="caption" sx={{ color: "var(--color-overlay0)" }}>
-                        {formatTimestamp(ts)}
-                      </Typography>
-
-                      {/* Row 3: full content */}
-                      {entry.kind === "photo" ? (
-                        <BlurImage
-                          src={entry.photoUrl!}
-                          alt={entry.originalName ?? ""}
-                          blurhash={entry.blurhash}
-                          sx={{
-                            width: "100%",
-                            maxHeight: "80vh",
-                          }}
-                        />
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          component="div"
-                          sx={{
-                            color: "var(--color-subtext0)",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html: getNotePreview(entry.content || "", itemsCache, 0),
-                          }}
-                        />
-                      )}
                     </Box>
-                  </Box>
-                );
-              })}
-            </List>
-          )}
+                  );
+                })}
+              </List>
+            )}
 
-          {/* Infinite scroll sentinel */}
-          <Box ref={sentinelRef} sx={{ height: "1px" }} />
+            {/* Infinite scroll sentinel */}
+            <Box ref={sentinelRef} sx={{ height: "1px" }} />
 
-          {/* Loading indicator for next page */}
-          {isFetchingNextPage && (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
+            {/* Loading indicator for next page */}
+            {isFetchingNextPage && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
+
+      {mentionItemId && (
+        <CanvasItemPanel
+          itemId={mentionItemId}
+          onClose={() => setMentionItemId(null)}
+          onSaved={() => {}}
+          onDeleted={() => {}}
+          onNavigate={(itemId) => setMentionItemId(itemId)}
+          itemsCache={itemsCache}
+        />
+      )}
     </Box>
   );
 }

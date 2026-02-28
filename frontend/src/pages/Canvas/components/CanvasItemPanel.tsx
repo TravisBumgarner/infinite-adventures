@@ -687,6 +687,7 @@ export default function CanvasItemPanel({
           onToggleImportant={handleToggleImportant}
           onCreateMentionItem={handleCreateMentionItem}
           getNotePreview={notePreview}
+          onMentionClick={handleNavigate}
           onHistoryNote={setHistoryNoteId}
         />
       )}

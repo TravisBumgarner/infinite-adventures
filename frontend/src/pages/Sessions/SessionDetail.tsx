@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
+
 import NoteHistoryModal from "../../components/NoteHistoryModal";
 import { DRAFT_NOTE_ID } from "../../constants";
 import { useCreateItem, useCreateNote, useUpdateItem, useUpdateNote } from "../../hooks/mutations";
@@ -17,6 +18,7 @@ import { useAutoSave } from "../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../modals";
+import CanvasItemPanel from "../../pages/Canvas/components/CanvasItemPanel";
 import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
@@ -25,10 +27,6 @@ import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
 import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
-import TaggedItemsPanel, { type TaggedItemsPanelRef } from "./components/TaggedItemsPanel";
-
-const MIN_LEFT_WIDTH = 400;
-const MIN_RIGHT_WIDTH = 280;
 
 type DetailTab = "notes" | "photos";
 
@@ -42,7 +40,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const itemsCache = useCanvasStore((s) => s.itemsCache);
   const setItemsCache = useCanvasStore((s) => s.setItemsCache);
   const openModal = useModalStore((s) => s.openModal);
-  const taggedPanelRef = useRef<TaggedItemsPanelRef>(null);
 
   // Fetch item via React Query
   const { data: queryItem, refetch: refetchItem, error: itemError } = useItem(sessionId);
@@ -69,16 +66,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("notes");
+  const [mentionItemId, setMentionItemId] = useState<string | null>(null);
 
   // Note history state
   const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
   const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
   const [photoColumns, setPhotoColumns] = useState(4);
-
-  // Resizable divider
-  const [leftWidth, setLeftWidth] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
 
   // Mutation hooks
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
@@ -232,44 +225,6 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }, [sessionId, queryItem]);
 
-  // Drag handling for resizable divider
-  const handleMouseDown = useCallback(() => {
-    isDragging.current = true;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-  }, []);
-
-  useEffect(() => {
-    function handleMouseMove(e: MouseEvent) {
-      if (!isDragging.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const totalWidth = rect.width;
-      let newLeftWidth = e.clientX - rect.left;
-
-      if (newLeftWidth < MIN_LEFT_WIDTH) newLeftWidth = MIN_LEFT_WIDTH;
-      if (totalWidth - newLeftWidth - 8 < MIN_RIGHT_WIDTH) {
-        newLeftWidth = totalWidth - MIN_RIGHT_WIDTH - 8;
-      }
-
-      setLeftWidth(newLeftWidth);
-    }
-
-    function handleMouseUp() {
-      if (isDragging.current) {
-        isDragging.current = false;
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-      }
-    }
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
-
   // Title editing
   function handleTitleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
@@ -352,7 +307,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   const handleMentionClick = useCallback((itemId: string) => {
-    taggedPanelRef.current?.highlightItem(itemId);
+    setMentionItemId(itemId);
   }, []);
 
   if (itemError) return <QueryErrorDisplay error={itemError} onRetry={refetchItem} />;
@@ -448,21 +403,11 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         />
       </Box>
 
-      {/* Content area — left column + divider + right column */}
-      <Box
-        ref={containerRef}
-        sx={{
-          display: "flex",
-          flex: 1,
-          overflow: "hidden",
-          gap: 0,
-        }}
-      >
-        {/* Left column - Session content */}
+      {/* Session content + optional item panel */}
+      <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
         <Box
           sx={{
-            width: leftWidth ?? "60%",
-            minWidth: MIN_LEFT_WIDTH,
+            flex: 1,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -535,31 +480,16 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
           )}
         </Box>
 
-        {/* Draggable divider */}
-        <Box
-          onMouseDown={handleMouseDown}
-          sx={{
-            width: 8,
-            cursor: "col-resize",
-            bgcolor: "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            "&:hover": { bgcolor: "var(--color-surface0)" },
-          }}
-        >
-          <Box
-            sx={{
-              width: 2,
-              height: 40,
-              bgcolor: "var(--color-surface1)",
-            }}
+        {mentionItemId && (
+          <CanvasItemPanel
+            itemId={mentionItemId}
+            onClose={() => setMentionItemId(null)}
+            onSaved={() => {}}
+            onDeleted={() => {}}
+            onNavigate={(itemId) => setMentionItemId(itemId)}
+            itemsCache={itemsCache}
           />
-        </Box>
-
-        {/* Right column - Tagged items */}
-        <TaggedItemsPanel ref={taggedPanelRef} sessionId={sessionId} notes={notes} />
+        )}
       </Box>
     </Box>
   );
