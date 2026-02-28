@@ -1,15 +1,17 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import CloseIcon from "@mui/icons-material/Close";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import MapIcon from "@mui/icons-material/Map";
 import SortIcon from "@mui/icons-material/Sort";
 import StarIcon from "@mui/icons-material/Star";
 import TimelineIcon from "@mui/icons-material/Timeline";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
@@ -257,28 +259,65 @@ export default function Timeline() {
               </ToggleButton>
             </ToggleButtonGroup>
 
-            {/* Parent item filter chip */}
-            {parentItemId && (
-              <Chip
-                label={itemsCache.get(parentItemId)?.title ?? "Filtered item"}
-                size="small"
-                deleteIcon={<CloseIcon sx={{ fontSize: FONT_SIZES.md }} />}
-                onDelete={() => {
+            {/* Item filter */}
+            <Autocomplete
+              size="small"
+              options={Array.from(itemsCache.values())}
+              getOptionLabel={(opt) => opt.title}
+              value={parentItemId ? (itemsCache.get(parentItemId) ?? null) : null}
+              onChange={(_e, item) => {
+                if (item) {
+                  searchParams.set("parentItemId", item.id);
+                } else {
                   searchParams.delete("parentItemId");
-                  setSearchParams(searchParams, { replace: true });
-                }}
-                sx={{
-                  bgcolor: "var(--color-blue)",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: FONT_SIZES.xs,
-                  "& .MuiChip-deleteIcon": {
-                    color: "rgba(255,255,255,0.7)",
-                    "&:hover": { color: "#fff" },
-                  },
-                }}
-              />
-            )}
+                }
+                setSearchParams(searchParams, { replace: true });
+              }}
+              renderOption={(props, option) => {
+                const colors = theme.palette.canvasItemTypes[option.type];
+                return (
+                  <li {...props} key={option.id}>
+                    <LabelBadge
+                      label={option.type}
+                      accentColor={colors.light}
+                      icon={canvasItemTypeIcon(option.type)}
+                      height={18}
+                      fontSize={FONT_SIZES.xs}
+                      sx={{ mr: 1, textTransform: "capitalize" }}
+                    />
+                    {option.title}
+                  </li>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Filter by item"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <FilterListIcon
+                          sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-overlay0)", mr: 0.5 }}
+                        />
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              sx={{
+                minWidth: 200,
+                maxWidth: 300,
+                "& .MuiInputBase-root": { py: 0, fontSize: FONT_SIZES.sm },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "var(--color-surface1)",
+                },
+              }}
+              blurOnSelect
+              clearOnBlur={false}
+            />
 
             {/* Pinned only filter */}
             <Chip
