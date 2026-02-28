@@ -1,7 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 import HistoryIcon from "@mui/icons-material/History";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
@@ -17,10 +16,9 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem, CanvasItemType, Note } from "shared";
-import type { SaveStatus } from "../hooks/useAutoSave";
+import { DRAFT_NOTE_ID } from "../constants";
 import MentionEditor from "../pages/Canvas/components/MentionEditor";
 import { FONT_SIZES } from "../styles/styleConsts";
-import { statusLabel } from "../utils/statusLabel";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
 import LinkTooltip from "./LinkTooltip";
 
@@ -34,7 +32,6 @@ interface NotesTabProps {
   editingNoteId: string | null;
   noteContent: string;
   noteTitle: string;
-  noteStatus: SaveStatus;
   itemsCache: Map<string, CanvasItem>;
   canvasId: string;
   highlightNoteId?: string | null;
@@ -42,7 +39,7 @@ interface NotesTabProps {
   onAddNote: () => void;
   onSelectNote: (note: Note) => void;
   onDeleteNote: (noteId: string) => void;
-  onBackToList: () => void;
+  onCloseNote: () => void;
   onNoteContentChange: (value: string) => void;
   onNoteTitleChange: (value: string) => void;
   onToggleImportant: (noteId: string, isImportant: boolean) => void;
@@ -60,7 +57,6 @@ export default function NotesTab({
   editingNoteId,
   noteContent,
   noteTitle,
-  noteStatus,
   itemsCache,
   canvasId,
   highlightNoteId,
@@ -68,7 +64,7 @@ export default function NotesTab({
   onAddNote,
   onSelectNote,
   onDeleteNote,
-  onBackToList,
+  onCloseNote,
   onNoteContentChange,
   onNoteTitleChange,
   onToggleImportant,
@@ -78,6 +74,7 @@ export default function NotesTab({
   onHistoryNote,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
+  const editingCardRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
   const [flashingNoteId, setFlashingNoteId] = useState<string | null>(null);
   const [expandedNoteIds, setExpandedNoteIds] = useState<Set<string>>(new Set());
@@ -98,7 +95,6 @@ export default function NotesTab({
   useEffect(() => {
     if (!highlightNoteId || notes.length === 0) return;
 
-    // Small delay so the DOM has rendered the note elements
     const timer = setTimeout(() => {
       const el = noteRefs.current.get(highlightNoteId);
       if (el) {
@@ -111,81 +107,23 @@ export default function NotesTab({
     return () => clearTimeout(timer);
   }, [highlightNoteId, notes, onHighlightComplete]);
 
-  // Clear flash after animation completes
   useEffect(() => {
     if (!flashingNoteId) return;
     const timer = setTimeout(() => setFlashingNoteId(null), 1200);
     return () => clearTimeout(timer);
   }, [flashingNoteId]);
 
-  if (editingNoteId) {
-    return (
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ArrowBackIcon />}
-            fullWidth
-            onClick={onBackToList}
-            sx={{ alignSelf: "flex-start" }}
-          >
-            Back to Notes
-          </Button>
-        </Box>
-        <Typography
-          variant="caption"
-          sx={{ color: "var(--color-subtext0)", mb: 1, minHeight: "1.2em" }}
-        >
-          {statusLabel(noteStatus) || "\u00A0"}
-        </Typography>
-        <InputBase
-          placeholder="Title (optional)"
-          value={noteTitle}
-          onChange={(e) => onNoteTitleChange(e.target.value)}
-          sx={{
-            mb: 1,
-            px: 1,
-            py: 0.5,
-            fontSize: FONT_SIZES.md,
-            fontWeight: 600,
-            background: "var(--color-mantle)",
-            border: "1px solid var(--color-surface1)",
-            color: "var(--color-text)",
-          }}
-          fullWidth
-        />
-        <MentionEditor
-          value={noteContent}
-          onChange={onNoteContentChange}
-          itemsCache={itemsCache}
-          canvasId={canvasId}
-          onCreate={onCreateMentionItem}
-          onMentionClick={onMentionClick}
-          containerStyle={{ flex: 1, minHeight: 0 }}
-          style={{
-            background: "var(--color-mantle)",
-            border: "1px solid var(--color-surface1)",
-            borderRadius: 0,
-            padding: "8px 10px",
-            color: "var(--color-text)",
-            fontSize: FONT_SIZES.md,
-            overflow: "auto",
-          }}
-        />
-        <Box sx={{ mt: 1.5, flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => setDeleteNoteId(editingNoteId)}
-          >
-            Delete Note
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
+  // Close editor on click outside the editing card
+  useEffect(() => {
+    if (!editingNoteId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (editingCardRef.current && !editingCardRef.current.contains(e.target as Node)) {
+        onCloseNote();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editingNoteId, onCloseNote]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
@@ -199,6 +137,77 @@ export default function NotesTab({
       >
         Add Note
       </Button>
+      {editingNoteId === DRAFT_NOTE_ID && (
+        <Box
+          ref={editingCardRef}
+          sx={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            mb: 1,
+            border: "1px solid var(--color-surface1)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
+            <InputBase
+              placeholder="Title (optional)"
+              value={noteTitle}
+              onChange={(e) => onNoteTitleChange(e.target.value)}
+              sx={{
+                flex: 1,
+                px: 0.5,
+                py: 0.5,
+                fontSize: FONT_SIZES.md,
+                fontWeight: 600,
+                color: "var(--color-text)",
+              }}
+              fullWidth
+            />
+          </Box>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              display: "flex",
+              bgcolor: "var(--color-surface0)",
+              border: "1px solid var(--color-surface1)",
+              zIndex: 1,
+            }}
+          >
+            <Tooltip title="Done">
+              <IconButton
+                size="small"
+                onClick={onCloseNote}
+                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+              >
+                <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ px: 1, pb: 1 }}>
+            <MentionEditor
+              value={noteContent}
+              onChange={onNoteContentChange}
+              itemsCache={itemsCache}
+              canvasId={canvasId}
+              onCreate={onCreateMentionItem}
+              onMentionClick={onMentionClick}
+              containerStyle={{ minHeight: 120 }}
+              style={{
+                background: "var(--color-mantle)",
+                border: "1px solid var(--color-surface1)",
+                borderRadius: 0,
+                padding: "8px 10px",
+                color: "var(--color-text)",
+                fontSize: FONT_SIZES.md,
+                overflow: "auto",
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
       <Box
         ref={notesListRef}
         sx={{ flex: 1, overflowY: "auto" }}
@@ -212,7 +221,7 @@ export default function NotesTab({
         }}
       >
         <LinkTooltip containerRef={notesListRef} />
-        {notes.length === 0 ? (
+        {notes.length === 0 && !editingNoteId ? (
           <Typography
             variant="body2"
             sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
@@ -221,137 +230,223 @@ export default function NotesTab({
           </Typography>
         ) : (
           <List sx={{ p: 0 }}>
-            {notes.map((note) => (
-              <Box
-                key={note.id}
-                ref={(el: HTMLElement | null) => {
-                  if (el) {
-                    noteRefs.current.set(note.id, el);
-                  } else {
-                    noteRefs.current.delete(note.id);
-                  }
-                }}
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  mb: 1,
-                  border: note.isImportant
-                    ? "1px solid var(--color-yellow)"
-                    : "1px solid var(--color-surface1)",
-                  ...(flashingNoteId === note.id && {
-                    animation: `${flashNote} 0.6s ease-in-out 2`,
-                  }),
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", px: 0.5 }}>
-                  {note.title && (
+            {notes.map((note) => {
+              const isEditing = note.id === editingNoteId;
+              const hasTitle = !!note.title;
+
+              return (
+                <Box
+                  key={note.id}
+                  ref={(el: HTMLElement | null) => {
+                    if (el) {
+                      noteRefs.current.set(note.id, el);
+                    } else {
+                      noteRefs.current.delete(note.id);
+                    }
+                    if (isEditing) {
+                      editingCardRef.current = el;
+                    }
+                  }}
+                  sx={{
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    mb: 1,
+                    border: note.isImportant
+                      ? "1px solid var(--color-yellow)"
+                      : "1px solid var(--color-surface1)",
+                    ...(flashingNoteId === note.id && {
+                      animation: `${flashNote} 0.6s ease-in-out 2`,
+                    }),
+                    ...(!isEditing && { cursor: "pointer" }),
+                    "&:hover .note-actions": {
+                      opacity: 1,
+                    },
+                  }}
+                  onClick={isEditing ? undefined : () => onSelectNote(note)}
+                >
+                  {isEditing || hasTitle ? (
+                    <Box sx={{ display: "flex", alignItems: "center", px: 1, ml: "1px" }}>
+                      {isEditing ? (
+                        <InputBase
+                          placeholder="Title (optional)"
+                          value={noteTitle}
+                          onChange={(e) => onNoteTitleChange(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{
+                            flex: 1,
+                            py: 0.5,
+                            fontSize: FONT_SIZES.md,
+                            fontWeight: 600,
+                            color: "var(--color-text)",
+                          }}
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            flex: 1,
+                            fontWeight: 600,
+                            wordBreak: "break-word",
+                            py: 0.5,
+                          }}
+                        >
+                          {note.title}
+                        </Typography>
+                      )}
+                    </Box>
+                  ) : null}
+
+                  <Box
+                    className="note-actions"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      opacity: isEditing ? 1 : 0,
+                      transition: "opacity 0.15s",
+                      zIndex: 1,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Typography
-                      variant="body2"
+                      variant="caption"
                       sx={{
-                        flex: 1,
-                        fontWeight: 600,
-                        wordBreak: "break-word",
-                        py: 0.5,
+                        color: "var(--color-subtext0)",
                         px: 0.5,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {note.title}
+                      {new Date(note.updatedAt).toLocaleDateString()}
                     </Typography>
-                  )}
-                  {!note.title && <Box sx={{ flex: 1 }} />}
-                  <Box sx={{ display: "flex", flexShrink: 0 }}>
-                    <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleExpanded(note.id)}
-                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                      >
-                        {expandedNoteIds.has(note.id) ? (
-                          <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        ) : (
-                          <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={() => onSelectNote(note)}
-                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                      >
-                        <EditIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onToggleImportant(note.id, !note.isImportant)}
-                        sx={{
-                          color: note.isImportant ? "var(--color-yellow)" : "var(--color-overlay0)",
-                          p: 0.25,
-                        }}
-                      >
-                        {note.isImportant ? (
-                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        ) : (
-                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                    {onHistoryNote && (
-                      <Tooltip title="History">
+                    <Box
+                      sx={{
+                        display: "flex",
+                        bgcolor: "var(--color-surface0)",
+                        border: "1px solid var(--color-surface1)",
+                      }}
+                    >
+                      {isEditing ? (
+                        <Tooltip title="Done">
+                          <IconButton
+                            size="small"
+                            onClick={onCloseNote}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={expandedNoteIds.has(note.id) ? "Collapse" : "Expand"}>
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleExpanded(note.id)}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            {expandedNoteIds.has(note.id) ? (
+                              <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            ) : (
+                              <UnfoldMoreIcon sx={{ fontSize: FONT_SIZES.md }} />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title={note.isImportant ? "Unpin" : "Pin"}>
                         <IconButton
                           size="small"
-                          onClick={() => onHistoryNote(note.id)}
-                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          onClick={() => onToggleImportant(note.id, !note.isImportant)}
+                          sx={{
+                            color: note.isImportant
+                              ? "var(--color-yellow)"
+                              : "var(--color-overlay0)",
+                            p: 0.25,
+                          }}
                         >
-                          <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          {note.isImportant ? (
+                            <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          ) : (
+                            <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          )}
                         </IconButton>
                       </Tooltip>
-                    )}
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => setDeleteNoteId(note.id)}
-                        sx={{ color: "var(--color-overlay0)", p: 0.25 }}
-                      >
-                        <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      </IconButton>
-                    </Tooltip>
+                      {onHistoryNote && (
+                        <Tooltip title="History">
+                          <IconButton
+                            size="small"
+                            onClick={() => onHistoryNote(note.id)}
+                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          >
+                            <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          onClick={() => setDeleteNoteId(note.id)}
+                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                        >
+                          <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
-                </Box>
-                <Box
-                  sx={{
-                    py: 0.5,
-                    px: 1,
-                    fontSize: FONT_SIZES.sm,
-                    color: "var(--color-text)",
-                    wordBreak: "break-word",
-                    ...(!expandedNoteIds.has(note.id) &&
-                      !note.title && {
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical" as const,
-                        overflow: "hidden",
-                      }),
-                  }}
-                >
-                  {(expandedNoteIds.has(note.id) || !note.title) && (
-                    <Typography
-                      variant="body2"
+
+                  {isEditing ? (
+                    <Box sx={{ px: 1, pb: 1 }} onClick={(e) => e.stopPropagation()}>
+                      <MentionEditor
+                        value={noteContent}
+                        onChange={onNoteContentChange}
+                        itemsCache={itemsCache}
+                        canvasId={canvasId}
+                        onCreate={onCreateMentionItem}
+                        onMentionClick={onMentionClick}
+                        containerStyle={{ minHeight: 120 }}
+                        style={{
+                          background: "var(--color-mantle)",
+                          border: "1px solid var(--color-surface1)",
+                          borderRadius: 0,
+                          padding: "8px 10px",
+                          color: "var(--color-text)",
+                          fontSize: FONT_SIZES.md,
+                          overflow: "auto",
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
                       sx={{
-                        whiteSpace: "pre-wrap",
+                        py: 0.5,
+                        px: 1,
+                        fontSize: FONT_SIZES.sm,
+                        color: "var(--color-text)",
                         wordBreak: "break-word",
+                        ...(!expandedNoteIds.has(note.id) && {
+                          display: "-webkit-box",
+                          WebkitLineClamp: 5,
+                          WebkitBoxOrient: "vertical" as const,
+                          overflow: "hidden",
+                        }),
                       }}
-                      dangerouslySetInnerHTML={{ __html: getNotePreview(note.content) }}
-                    />
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: getNotePreview(note.content),
+                        }}
+                      />
+                    </Box>
                   )}
-                  <Typography variant="caption" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
-                    Last edited on {new Date(note.updatedAt).toLocaleDateString()}
-                  </Typography>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </List>
         )}
       </Box>

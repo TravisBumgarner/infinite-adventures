@@ -1,0 +1,145 @@
+project: notes-ux-overhaul
+design_file: n/a (user-directed)
+scoping_date: 2026-02-28
+
+milestones:
+  - number: 1
+    title: "1. Notes UX Overhaul"
+    description: |
+      Replace the separate "Back to Notes" editing view with inline editing,
+      add hover-only action buttons and timestamps, hide empty title fields,
+      and unify NotesTab and QuickNotes patterns.
+    branch:
+      working: task-1-notes-ux-overhaul
+      base: main
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: "NotesTab: Replace separate editing view with inline editing"
+    description: |
+      The current NotesTab has two rendering modes: a note list, and a
+      completely separate full-editor view reached via an edit button (the
+      `if (editingNoteId)` branch at line 121). This is disorienting—the
+      whole list disappears and is replaced by a single note editor with
+      a "Back to Notes" button.
+
+      Replace this with inline editing: when a note card is clicked anywhere
+      on its body, that card expands in-place to show the MentionEditor.
+      All other notes remain visible above/below.
+
+      **Key changes to `NotesTab.tsx`:**
+      - Remove the `if (editingNoteId) { ... }` branch (lines 121-188)
+        that renders the separate editor view.
+      - In the note list, for the note where `note.id === editingNoteId`,
+        render the MentionEditor inline inside the card instead of the
+        preview HTML. Show the title input above it only if the note has
+        a title (or the user is editing one).
+      - Clicking anywhere on a non-editing note's body calls `onSelectNote`.
+        Add `cursor: pointer` to the body area.
+      - Provide a way to exit editing: a small close/done button in the
+        card's action row, or detect click-outside. Use the same pattern
+        QuickNotes uses (close icon button in the action row).
+      - The save status indicator (`statusLabel`) should appear inside
+        the editing card (small caption below the editor).
+      - The "Delete Note" button currently at the bottom of the editor
+        view should move into the card's action row (it already exists
+        there as a trash icon—just keep that).
+      - Remove `onBackToList` from the props interface since it's no
+        longer needed.
+
+      **Parent changes (CanvasItemPanel, SessionDetail, useNoteHandlers):**
+      - Remove `handleBackToNoteList` usage. The close action now just
+        calls `flushNote()` + `setEditingNoteId(null)` directly, which
+        is essentially what `handleBackToNoteList` already does.
+      - Remove `onBackToList` prop from NotesTab call sites.
+      - The `handleBackToNoteList` function in `useNoteHandlers` can be
+        removed or renamed to `handleCloseNote`.
+
+      The parent still manages `editingNoteId`, `noteContent`, `noteTitle`,
+      and auto-save—this task only changes how NotesTab *renders*, not the
+      data flow.
+    acceptance_criteria:
+      - Clicking a note body enters inline editing with MentionEditor in-place
+      - Other notes remain visible while one is being edited
+      - Close button (or click-outside) exits editing and triggers auto-save flush
+      - The separate "Back to Notes" full-editor view is gone
+      - onBackToList prop removed from NotesTab interface
+    depends_on: []
+    effort: 3
+    status: scoped
+
+  - id: 2
+    milestone: 1
+    title: "NotesTab: Hover-only action buttons, timestamps, and title cleanup"
+    description: |
+      Make note cards in NotesTab visually cleaner by hiding chrome until
+      the user hovers.
+
+      **Action buttons (expand, pin, history, delete, and new close button):**
+      - Wrap the action button row in a container with `opacity: 0` by
+        default, `opacity: 1` on the parent card's `:hover`.
+      - Use a CSS transition for smooth fade (`transition: opacity 0.15s`).
+      - When a note is being edited inline, always show the action buttons
+        (the close button must be reachable).
+
+      **Timestamps:**
+      - The "Last edited on ..." caption: same hover-only treatment. Hide
+        by default, show on card hover.
+
+      **Title row cleanup:**
+      - When a note has no title AND is not being edited, don't render the
+        title/action-button header row at all. The note content/preview
+        should start at the top of the card with just padding.
+      - When hovered, the action buttons should appear overlaid at the
+        top-right of the card (use `position: absolute` inside a
+        `position: relative` card container).
+
+      This means the default non-hovered card for a title-less note is
+      just content text with a border—minimal and clean.
+    acceptance_criteria:
+      - Action buttons are hidden by default, visible on card hover
+      - Action buttons always visible when the note is being edited inline
+      - Timestamps hidden by default, visible on card hover
+      - Notes without titles have no empty header row; content starts at the top
+      - Hover action buttons overlay top-right via absolute positioning
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: "QuickNotes: Unify with NotesTab hover and title patterns"
+    description: |
+      Apply the same hover-only and title-hiding treatment from task 2
+      to the QuickNoteItem component in `QuickNotes.tsx`.
+
+      **Action buttons:**
+      - Same hover-only pattern: `opacity: 0` by default, `opacity: 1`
+        on card hover. Always visible when `isEditing`.
+      - QuickNotes already has inline editing with a close button—keep
+        that pattern (it's what NotesTab is adopting in task 1).
+
+      **Title row:**
+      - When `title` is null/empty and not editing, don't render the
+        header row. Content starts at top of card.
+      - When hovered, action buttons overlay top-right (same positioning
+        as NotesTab from task 2).
+
+      **Timestamps:**
+      - QuickNotes currently doesn't show timestamps in the card preview.
+        No change needed here.
+
+      **Click-to-edit:**
+      - QuickNotes currently requires clicking the edit icon button.
+        Change so clicking anywhere on the note body enters edit mode
+        (same as NotesTab), adding `cursor: pointer` to the body area
+        and calling `onStartEdit` on click.
+    acceptance_criteria:
+      - QuickNoteItem action buttons are hover-only (visible when editing)
+      - Notes without titles show no header row; content starts at top
+      - Clicking anywhere on QuickNoteItem body enters edit mode
+      - Visual treatment matches NotesTab cards from tasks 1-2
+    depends_on: [2]
+    effort: 2
+    status: scoped

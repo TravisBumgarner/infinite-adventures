@@ -113,19 +113,15 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
 
-    // Draft note — create on server for the first time
+    // Draft note — create on server for the first time.
+    // Keep editingNoteId as DRAFT_NOTE_ID so the draft card stays in place;
+    // store the real ID in the ref so subsequent saves use updateNote.
     if (noteId === DRAFT_NOTE_ID) {
       const newNote = await createNoteMutation.mutateAsync({
         content: noteContentRef.current,
         title: noteTitleRef.current,
       });
       editingNoteIdRef.current = newNote.id;
-      setEditingNoteId(newNote.id);
-      const { data: refreshed } = await refetchItem();
-      if (refreshed) {
-        setItem(refreshed);
-        setNotes(refreshed.notes);
-      }
       return;
     }
 
@@ -152,11 +148,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const { markDirty: markDateDirty, flush: flushDate } = useAutoSave({
     saveFn: saveDateFn,
   });
-  const {
-    status: noteStatus,
-    markDirty: markNoteDirty,
-    flush: flushNote,
-  } = useAutoSave({ saveFn: saveNoteFn });
+  const { markDirty: markNoteDirty, flush: flushNote } = useAutoSave({ saveFn: saveNoteFn });
 
   void titleStatus;
 
@@ -170,20 +162,20 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }, [flushTitle, flushDate, flushNote]);
 
   // Extracted note handlers
-  const { handleAddNote, handleSelectNote, handleDeleteNote, handleBackToNoteList } =
-    useNoteHandlers({
-      itemId: sessionId,
-      getEditingNoteId: () => editingNoteIdRef.current,
-      setEditingNoteId,
-      setNoteContent,
-      setNoteTitle,
-      setNotes,
-      flushNote,
-      refetchItem,
-      onItemUpdated: (refreshed) => {
-        setItem(refreshed);
-      },
-    });
+  const { handleAddNote, handleSelectNote, handleDeleteNote, handleCloseNote } = useNoteHandlers({
+    itemId: sessionId,
+    getEditingNoteId: () => editingNoteIdRef.current,
+    getRealNoteId: () => editingNoteIdRef.current,
+    setEditingNoteId,
+    setNoteContent,
+    setNoteTitle,
+    setNotes,
+    flushNote,
+    refetchItem,
+    onItemUpdated: (refreshed) => {
+      setItem(refreshed);
+    },
+  });
 
   // Extracted photo handlers
   const {
@@ -211,7 +203,11 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       setItem(queryItem);
       setTitle(queryItem.title);
       setSessionDate(queryItem.sessionDate ?? "");
-      setNotes(queryItem.notes);
+      // Skip notes sync while editing a draft — the draft card handles display,
+      // and the server-sorted list would cause a duplicate.
+      if (editingNoteId !== DRAFT_NOTE_ID) {
+        setNotes(queryItem.notes);
+      }
       setPhotos(queryItem.photos);
       // Only reset editing state when switching to a different session,
       // not on refetches (which happen after auto-save)
@@ -222,7 +218,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
         setNoteTitle("");
       }
     }
-  }, [sessionId, queryItem]);
+  }, [sessionId, queryItem, editingNoteId]);
 
   // Title editing
   function handleTitleKeyDown(e: React.KeyboardEvent) {
@@ -438,13 +434,12 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
             editingNoteId={editingNoteId}
             noteContent={noteContent}
             noteTitle={noteTitle}
-            noteStatus={noteStatus}
             itemsCache={itemsCache}
             canvasId={activeCanvasId ?? ""}
             onAddNote={handleAddNote}
             onSelectNote={handleSelectNote}
             onDeleteNote={handleDeleteNote}
-            onBackToList={handleBackToNoteList}
+            onCloseNote={handleCloseNote}
             onNoteContentChange={(val) => {
               setNoteContent(val);
               markNoteDirty();

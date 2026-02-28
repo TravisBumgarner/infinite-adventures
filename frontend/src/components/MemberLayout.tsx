@@ -9,6 +9,7 @@ import QuickNotes from "../pages/Canvas/components/QuickNotes";
 import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
 import ConnectedCanvasPicker from "../sharedComponents/ConnectedCanvasPicker";
 import PageToggle from "../sharedComponents/PageToggle";
+import SavingIndicator from "../sharedComponents/SavingIndicator";
 import SearchBar from "../sharedComponents/SearchBar";
 import SearchBarButton from "../sharedComponents/SearchBarButton";
 import TopBar from "../sharedComponents/TopBar";
@@ -64,7 +65,12 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
             <SearchBarButton onClick={() => setShowSearchBar(true)} />
           </>
         }
-        right={<SettingsButton onClick={() => setShowSettings(true)} />}
+        right={
+          <>
+            <SavingIndicator />
+            <SettingsButton onClick={() => setShowSettings(true)} />
+          </>
+        }
       />
       <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>
