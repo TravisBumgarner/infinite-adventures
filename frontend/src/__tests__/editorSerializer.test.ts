@@ -212,4 +212,10 @@ describe("contentToHtml", () => {
     expect(result).not.toContain("<ul><li>");
     expect(result).toContain('data-type="taskList"');
   });
+
+  it("does not insert <br> in empty paragraphs", () => {
+    const result = contentToHtml("Before\n\nAfter", new Map());
+    expect(result).toBe("<p>Before</p><p></p><p>After</p>");
+    expect(result).not.toContain("<br>");
+  });
 });
