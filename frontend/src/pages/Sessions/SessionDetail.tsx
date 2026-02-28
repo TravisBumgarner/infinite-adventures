@@ -113,19 +113,15 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
 
-    // Draft note — create on server for the first time
+    // Draft note — create on server for the first time.
+    // Keep editingNoteId as DRAFT_NOTE_ID so the draft card stays in place;
+    // store the real ID in the ref so subsequent saves use updateNote.
     if (noteId === DRAFT_NOTE_ID) {
       const newNote = await createNoteMutation.mutateAsync({
         content: noteContentRef.current,
         title: noteTitleRef.current,
       });
       editingNoteIdRef.current = newNote.id;
-      setEditingNoteId(newNote.id);
-      const { data: refreshed } = await refetchItem();
-      if (refreshed) {
-        setItem(refreshed);
-        setNotes(refreshed.notes);
-      }
       return;
     }
 
@@ -173,6 +169,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const { handleAddNote, handleSelectNote, handleDeleteNote, handleCloseNote } = useNoteHandlers({
     itemId: sessionId,
     getEditingNoteId: () => editingNoteIdRef.current,
+    getRealNoteId: () => editingNoteIdRef.current,
     setEditingNoteId,
     setNoteContent,
     setNoteTitle,

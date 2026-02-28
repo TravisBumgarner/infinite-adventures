@@ -6,6 +6,7 @@ import { useDeleteNote } from "./mutations";
 interface UseNoteHandlersParams {
   itemId: string;
   getEditingNoteId: () => string | null;
+  getRealNoteId: () => string | null;
   setEditingNoteId: (id: string | null) => void;
   setNoteContent: (content: string) => void;
   setNoteTitle: (title: string) => void;
@@ -18,6 +19,7 @@ interface UseNoteHandlersParams {
 export function useNoteHandlers({
   itemId,
   getEditingNoteId,
+  getRealNoteId,
   setEditingNoteId,
   setNoteContent,
   setNoteTitle,
@@ -46,13 +48,16 @@ export function useNoteHandlers({
 
   const handleDeleteNote = useCallback(
     async (noteId: string) => {
-      if (noteId === DRAFT_NOTE_ID) {
+      // Draft that was never persisted
+      if (noteId === DRAFT_NOTE_ID && getRealNoteId() === DRAFT_NOTE_ID) {
         setEditingNoteId(null);
         setNoteContent("");
         setNoteTitle("");
         return;
       }
-      await deleteNoteMutation.mutateAsync(noteId);
+      // Draft that was already persisted — delete using the real server ID
+      const idToDelete = noteId === DRAFT_NOTE_ID ? getRealNoteId()! : noteId;
+      await deleteNoteMutation.mutateAsync(idToDelete);
       const { data: refreshed } = await refetchItem();
       if (refreshed) {
         setNotes(refreshed.notes);
@@ -69,6 +74,7 @@ export function useNoteHandlers({
       refetchItem,
       onItemUpdated,
       getEditingNoteId,
+      getRealNoteId,
       setEditingNoteId,
       setNoteContent,
       setNoteTitle,
@@ -76,14 +82,30 @@ export function useNoteHandlers({
     ],
   );
 
-  const handleCloseNote = useCallback(() => {
-    if (getEditingNoteId() !== DRAFT_NOTE_ID) {
+  const handleCloseNote = useCallback(async () => {
+    const editingId = getEditingNoteId();
+    if (editingId && editingId !== DRAFT_NOTE_ID) {
       flushNote();
     }
     setEditingNoteId(null);
     setNoteContent("");
     setNoteTitle("");
-  }, [getEditingNoteId, flushNote, setEditingNoteId, setNoteContent, setNoteTitle]);
+    // Refetch to get server-sorted notes (new note in proper position)
+    const { data: refreshed } = await refetchItem();
+    if (refreshed) {
+      setNotes(refreshed.notes);
+      onItemUpdated?.(refreshed);
+    }
+  }, [
+    getEditingNoteId,
+    flushNote,
+    setEditingNoteId,
+    setNoteContent,
+    setNoteTitle,
+    refetchItem,
+    setNotes,
+    onItemUpdated,
+  ]);
 
   return {
     deleteNoteMutation,
