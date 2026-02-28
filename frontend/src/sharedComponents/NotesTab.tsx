@@ -78,6 +78,7 @@ export default function NotesTab({
   onHistoryNote,
 }: NotesTabProps) {
   const notesListRef = useRef<HTMLDivElement>(null);
+  const editingCardRef = useRef<HTMLDivElement>(null);
   const noteRefs = useRef<Map<string, HTMLElement>>(new Map());
   const [flashingNoteId, setFlashingNoteId] = useState<string | null>(null);
   const [expandedNoteIds, setExpandedNoteIds] = useState<Set<string>>(new Set());
@@ -116,6 +117,18 @@ export default function NotesTab({
     return () => clearTimeout(timer);
   }, [flashingNoteId]);
 
+  // Close editor on click outside the editing card
+  useEffect(() => {
+    if (!editingNoteId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (editingCardRef.current && !editingCardRef.current.contains(e.target as Node)) {
+        onCloseNote();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editingNoteId, onCloseNote]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, overflow: "hidden" }}>
       <Button
@@ -130,6 +143,7 @@ export default function NotesTab({
       </Button>
       {editingNoteId === DRAFT_NOTE_ID && (
         <Box
+          ref={editingCardRef}
           sx={{
             position: "relative",
             display: "flex",
@@ -243,6 +257,9 @@ export default function NotesTab({
                       noteRefs.current.set(note.id, el);
                     } else {
                       noteRefs.current.delete(note.id);
+                    }
+                    if (isEditing) {
+                      editingCardRef.current = el;
                     }
                   }}
                   sx={{
