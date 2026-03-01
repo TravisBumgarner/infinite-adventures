@@ -1,10 +1,6 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ImageIcon from "@mui/icons-material/Image";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
-import Accordion from "@mui/material/Accordion";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -336,24 +332,17 @@ function SharedCanvasView({
         {content.items.length} item{content.items.length !== 1 ? "s" : ""}
       </Typography>
       {content.items.map((item) => (
-        <Accordion
+        <Box
           key={item.id}
-          disableGutters
           sx={{
-            bgcolor: "var(--color-base)",
+            bgcolor: "var(--color-surface0)",
             border: "1px solid var(--color-surface1)",
-            "&:before": { display: "none" },
+            borderRadius: 1,
+            p: 1.5,
           }}
         >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <ItemCard item={item} />
-          </AccordionSummary>
-          <AccordionDetails>
-            <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
-              Open this item for full details by copying to your workspace.
-            </Typography>
-          </AccordionDetails>
-        </Accordion>
+          <ItemCard item={item} />
+        </Box>
       ))}
       <CopySection token={token} />
     </Box>
@@ -405,7 +394,14 @@ export default function SharedViewer() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "var(--color-base)", color: "var(--color-text)" }}>
+    <Box
+      sx={{
+        height: "100vh",
+        overflow: "auto",
+        bgcolor: "var(--color-base)",
+        color: "var(--color-text)",
+      }}
+    >
       <SharedHeader canvasName={data.canvasName} shareType={data.shareType} />
       {data.shareType === "canvas" ? (
         <SharedCanvasView content={data} token={token!} />
