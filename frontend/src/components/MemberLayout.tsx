@@ -1,6 +1,9 @@
+import ShareIcon from "@mui/icons-material/Share";
 import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
 import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { MODAL_ID, useModalStore } from "../modals";
 import CanvasItemPanel from "../pages/Canvas/components/CanvasItemPanel";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
@@ -27,8 +30,10 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const showSettings = useCanvasStore((s) => s.showSettings);
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
+  const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const setShowSearchBar = useCanvasStore((s) => s.setShowSearchBar);
   const showOnboarding = useCanvasStore((s) => s.showOnboarding);
+  const openModal = useModalStore((s) => s.openModal);
 
   // Global Cmd+K / Ctrl+K shortcut
   useEffect(() => {
@@ -68,6 +73,28 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
         right={
           <>
             <SavingIndicator />
+            <IconButton
+              title="Share Canvas"
+              size="small"
+              onClick={() => {
+                if (activeCanvasId) {
+                  openModal({
+                    id: MODAL_ID.SHARE,
+                    canvasId: activeCanvasId,
+                  });
+                }
+              }}
+              disabled={!activeCanvasId}
+              sx={{
+                color: "var(--color-subtext0)",
+                "&:hover": {
+                  bgcolor: "var(--color-surface0)",
+                  color: "var(--color-text)",
+                },
+              }}
+            >
+              <ShareIcon />
+            </IconButton>
             <SettingsButton onClick={() => setShowSettings(true)} />
           </>
         }

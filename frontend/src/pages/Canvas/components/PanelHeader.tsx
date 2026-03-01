@@ -3,6 +3,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import LinkIcon from "@mui/icons-material/Link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Box from "@mui/material/Box";
@@ -25,6 +26,7 @@ interface PanelHeaderProps {
   onDownloadPdf: () => void;
   onDownloadMarkdown: () => void;
   onDeleteItem: () => void;
+  onShare?: () => void;
 }
 
 export default function PanelHeader({
@@ -35,6 +37,7 @@ export default function PanelHeader({
   onDownloadPdf,
   onDownloadMarkdown,
   onDeleteItem,
+  onShare,
 }: PanelHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -138,6 +141,19 @@ export default function PanelHeader({
           </ListItemIcon>
           Edit Title
         </MenuItem>
+        {onShare && (
+          <MenuItem
+            onClick={() => {
+              closeAllMenus();
+              onShare();
+            }}
+          >
+            <ListItemIcon>
+              <LinkIcon fontSize="small" />
+            </ListItemIcon>
+            Share
+          </MenuItem>
+        )}
         <MenuItem
           onMouseEnter={(e) => {
             if (exportTimeout.current) clearTimeout(exportTimeout.current);

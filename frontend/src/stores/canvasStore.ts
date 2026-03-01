@@ -29,6 +29,7 @@ export function getViewportKey(canvasId: string): string {
 }
 
 type PanelTab = "notes" | "photos" | "connections" | "details";
+type SettingsTab = "general" | "tags" | "data" | "sharing";
 
 interface CanvasState {
   canvases: CanvasSummary[];
@@ -51,6 +52,9 @@ interface CanvasState {
 
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
+
+  settingsTab: SettingsTab;
+  setSettingsTab: (tab: SettingsTab) => void;
 
   showSearchBar: boolean;
   setShowSearchBar: (show: boolean) => void;
@@ -123,6 +127,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
 
   showSettings: false,
   setShowSettings: (show) => set({ showSettings: show }),
+
+  settingsTab: "general",
+  setSettingsTab: (tab) => set({ settingsTab: tab }),
 
   showSearchBar: false,
   setShowSearchBar: (show) => set({ showSearchBar: show }),

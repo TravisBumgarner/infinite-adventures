@@ -5,6 +5,7 @@ import CropPhotoModal from "./components/CropPhotoModal";
 import DeleteItemModal from "./components/DeleteItemModal";
 import ItemSettingsModal from "./components/ItemSettingsModal";
 import LightboxModal from "./components/LightboxModal";
+import ShareModal from "./components/ShareModal";
 import { useModalStore } from "./store";
 import { MODAL_ID } from "./types";
 
@@ -28,6 +29,8 @@ export default function ModalRenderer() {
       return <CreateCanvasModal {...activeModal} />;
     case MODAL_ID.CROP_PHOTO:
       return <CropPhotoModal {...activeModal} />;
+    case MODAL_ID.SHARE:
+      return <ShareModal {...activeModal} />;
     default:
       return null;
   }
