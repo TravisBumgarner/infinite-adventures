@@ -77,7 +77,7 @@ describe("note history route", () => {
     const { note } = await createTestNoteWithHistory();
     const req = createMockReq({
       params: { noteId: note.id },
-      user: { userId: "other-user-id" },
+      user: { userId: "00000000-0000-4000-8000-000000000099" },
     });
     const res = createMockRes();
     await historyHandler(req, res);

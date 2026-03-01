@@ -8,7 +8,7 @@ import { handler as listTagsHandler } from "../routes/tags/list.js";
 import { DEFAULT_CANVAS_ID } from "../services/canvasItemService.js";
 import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-const OTHER_USER_ID = "other-user-0000-0000-000000000002";
+const OTHER_USER_ID = "00000000-0000-4000-8000-000000000002";
 
 function createMockRes() {
   const res = {

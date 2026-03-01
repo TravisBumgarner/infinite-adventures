@@ -13,11 +13,13 @@ import {
   canvasItems,
   canvasItemTags,
   canvasUsers,
+  contentHistory,
   events,
   notes,
   people,
   photos,
   places,
+  quickNotes,
   sessions,
   tags,
   things,
@@ -25,7 +27,7 @@ import {
 
 const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export interface BackupManifest {
   schemaVersion: number;
@@ -56,7 +58,9 @@ export interface BackupData {
   notes: Array<{
     id: string;
     canvasItemId: string;
+    title: string | null;
     content: string;
+    plainContent: string;
     isImportant: boolean;
     createdAt: string;
     updatedAt: string;
@@ -70,8 +74,11 @@ export interface BackupData {
     mimeType: string;
     isMainPhoto: boolean;
     isImportant: boolean;
+    caption: string;
     aspectRatio: number | null;
     blurhash: string | null;
+    cropX: number | null;
+    cropY: number | null;
     createdAt: string;
   }>;
   tags: Array<{
@@ -89,6 +96,22 @@ export interface BackupData {
     targetItemId: string;
     snippet: string | null;
     createdAt: string;
+  }>;
+  quickNotes: Array<{
+    id: string;
+    canvasId: string;
+    title: string | null;
+    content: string;
+    isImportant: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  contentHistory: Array<{
+    id: string;
+    sourceId: string;
+    sourceType: string;
+    content: string;
+    snapshotAt: string;
   }>;
 }
 
@@ -192,6 +215,18 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
           )
       : [];
 
+  // Fetch quick notes
+  const quickNoteRows = await db.select().from(quickNotes).where(eq(quickNotes.canvasId, canvasId));
+
+  // Fetch content history for notes and quick notes in this canvas
+  const noteIds = noteRows.map((n) => n.id);
+  const quickNoteIds = quickNoteRows.map((q) => q.id);
+  const allSourceIds = [...noteIds, ...quickNoteIds];
+  const contentHistoryRows =
+    allSourceIds.length > 0
+      ? await db.select().from(contentHistory).where(inArray(contentHistory.sourceId, allSourceIds))
+      : [];
+
   const toISO = (d: Date) => d.toISOString();
 
   const data: BackupData = {
@@ -232,12 +267,29 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
       updatedAt: toISO(r.updatedAt),
     })),
     notes: noteRows.map((r) => ({
-      ...r,
+      id: r.id,
+      canvasItemId: r.canvasItemId,
+      title: r.title,
+      content: r.content,
+      plainContent: r.plainContent,
+      isImportant: r.isImportant,
       createdAt: toISO(r.createdAt),
       updatedAt: toISO(r.updatedAt),
     })),
     photos: photoData.map((r) => ({
-      ...r,
+      id: r.id,
+      contentType: r.contentType,
+      contentId: r.contentId,
+      filename: r.filename,
+      originalName: r.originalName,
+      mimeType: r.mimeType,
+      isMainPhoto: r.isMainPhoto,
+      isImportant: r.isImportant,
+      caption: r.caption,
+      aspectRatio: r.aspectRatio,
+      blurhash: r.blurhash,
+      cropX: r.cropX,
+      cropY: r.cropY,
       createdAt: toISO(r.createdAt),
     })),
     tags: tagRows.map((r) => ({
@@ -249,6 +301,22 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
     canvasItemLinks: linkRows.map((r) => ({
       ...r,
       createdAt: toISO(r.createdAt),
+    })),
+    quickNotes: quickNoteRows.map((r) => ({
+      id: r.id,
+      canvasId: r.canvasId,
+      title: r.title,
+      content: r.content,
+      isImportant: r.isImportant,
+      createdAt: toISO(r.createdAt),
+      updatedAt: toISO(r.updatedAt),
+    })),
+    contentHistory: contentHistoryRows.map((r) => ({
+      id: r.id,
+      sourceId: r.sourceId,
+      sourceType: r.sourceType,
+      content: r.content,
+      snapshotAt: toISO(r.snapshotAt),
     })),
   };
 
@@ -313,6 +381,8 @@ export async function importCanvas(
   const noteIdMap = new Map<string, string>();
   const photoIdMap = new Map<string, string>();
   const tagIdMap = new Map<string, string>();
+  const quickNoteIdMap = new Map<string, string>();
+  const contentHistoryIdMap = new Map<string, string>();
 
   // 1. New canvas ID
   const newCanvasId = uuidv4();
@@ -336,6 +406,12 @@ export async function importCanvas(
 
   // 6. New tag IDs
   for (const t of data.tags) tagIdMap.set(t.id, uuidv4());
+
+  // 7. New quick note IDs (v2+)
+  for (const q of data.quickNotes ?? []) quickNoteIdMap.set(q.id, uuidv4());
+
+  // 8. New content history IDs (v2+)
+  for (const ch of data.contentHistory ?? []) contentHistoryIdMap.set(ch.id, uuidv4());
 
   // Track written photo files for cleanup on failure
   const writtenPhotoPaths: string[] = [];
@@ -419,7 +495,9 @@ export async function importCanvas(
         await tx.insert(notes).values({
           id: noteIdMap.get(n.id)!,
           canvasItemId: canvasItemIdMap.get(n.canvasItemId)!,
+          title: n.title ?? null,
           content: n.content,
+          plainContent: n.plainContent ?? "",
           isImportant: n.isImportant,
           createdAt: new Date(n.createdAt),
           updatedAt: new Date(n.updatedAt),
@@ -453,8 +531,11 @@ export async function importCanvas(
           mimeType: p.mimeType,
           isMainPhoto: p.isMainPhoto,
           isImportant: p.isImportant,
+          caption: p.caption ?? "",
           aspectRatio: p.aspectRatio,
           blurhash: p.blurhash,
+          cropX: p.cropX ?? null,
+          cropY: p.cropY ?? null,
           createdAt: new Date(p.createdAt),
         });
       }
@@ -487,6 +568,32 @@ export async function importCanvas(
           targetItemId: canvasItemIdMap.get(link.targetItemId)!,
           snippet: link.snippet,
           createdAt: new Date(link.createdAt),
+        });
+      }
+
+      // Insert quick notes (v2+, remap canvasId)
+      for (const q of data.quickNotes ?? []) {
+        await tx.insert(quickNotes).values({
+          id: quickNoteIdMap.get(q.id)!,
+          canvasId: newCanvasId,
+          title: q.title ?? null,
+          content: q.content,
+          isImportant: q.isImportant,
+          createdAt: new Date(q.createdAt),
+          updatedAt: new Date(q.updatedAt),
+        });
+      }
+
+      // Insert content history (v2+, remap sourceId to new note/quickNote ID)
+      for (const ch of data.contentHistory ?? []) {
+        const remappedSourceId =
+          noteIdMap.get(ch.sourceId) ?? quickNoteIdMap.get(ch.sourceId) ?? ch.sourceId;
+        await tx.insert(contentHistory).values({
+          id: contentHistoryIdMap.get(ch.id)!,
+          sourceId: remappedSourceId,
+          sourceType: ch.sourceType as "note" | "quick_note",
+          content: ch.content,
+          snapshotAt: new Date(ch.snapshotAt),
         });
       }
     });

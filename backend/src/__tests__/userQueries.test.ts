@@ -79,7 +79,7 @@ describe("user queries", () => {
 
   describe("getUserById", () => {
     it("returns undefined when no user exists", async () => {
-      expect(await getUserById("nonexistent")).toBeUndefined();
+      expect(await getUserById("00000000-0000-4000-8000-ffffffffffff")).toBeUndefined();
     });
 
     it("returns user when found", async () => {

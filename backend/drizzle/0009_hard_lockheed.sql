@@ -1,1 +1,0 @@
-ALTER TABLE "quick_notes" ADD COLUMN "title" text;
