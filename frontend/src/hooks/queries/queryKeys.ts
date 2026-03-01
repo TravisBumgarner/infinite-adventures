@@ -33,6 +33,9 @@ export const queryKeys = {
   noteHistory: {
     list: (noteId: string) => ["notes", noteId, "history"] as const,
   },
+  shares: {
+    list: (canvasId: string) => ["canvases", canvasId, "shares"] as const,
+  },
   quickNoteHistory: {
     list: (canvasId: string, quickNoteId: string) =>
       ["canvases", canvasId, "quickNotes", quickNoteId, "history"] as const,
