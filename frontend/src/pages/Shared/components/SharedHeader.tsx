@@ -7,7 +7,7 @@ import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { copySharedContent } from "../../../api/shares";
-import { STORAGE_KEY_POST_AUTH_REDIRECT } from "../../../constants";
+import { STORAGE_KEY_POST_AUTH_REDIRECT, STORAGE_KEY_SHARED_COPY_PROMPT } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 
 interface SharedHeaderProps {
@@ -37,6 +37,7 @@ export default function SharedHeader({ canvasName, shareType, token }: SharedHea
 
   const storeRedirectAndNavigate = (path: string) => {
     localStorage.setItem(STORAGE_KEY_POST_AUTH_REDIRECT, `/shared/${token}`);
+    localStorage.setItem(STORAGE_KEY_SHARED_COPY_PROMPT, "1");
     navigate(path);
   };
 

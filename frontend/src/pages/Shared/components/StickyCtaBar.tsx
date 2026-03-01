@@ -5,7 +5,7 @@ import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-import { STORAGE_KEY_POST_AUTH_REDIRECT } from "../../../constants";
+import { STORAGE_KEY_POST_AUTH_REDIRECT, STORAGE_KEY_SHARED_COPY_PROMPT } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 
 interface StickyCtaBarProps {
@@ -20,6 +20,7 @@ export default function StickyCtaBar({ token }: StickyCtaBarProps) {
 
   const storeRedirectAndNavigate = (path: string) => {
     localStorage.setItem(STORAGE_KEY_POST_AUTH_REDIRECT, `/shared/${token}`);
+    localStorage.setItem(STORAGE_KEY_SHARED_COPY_PROMPT, "1");
     navigate(path);
   };
 

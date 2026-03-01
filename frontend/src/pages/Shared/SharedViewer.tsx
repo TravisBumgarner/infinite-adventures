@@ -1,14 +1,22 @@
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import type { CanvasItem, SharedContent } from "shared";
-import { fetchSharedContent } from "../../api/shares";
+import { copySharedContent, fetchSharedContent } from "../../api/shares";
+import { STORAGE_KEY_SHARED_COPY_PROMPT } from "../../constants";
+import { useAppStore } from "../../stores/appStore";
 import { ItemCard, SharedItemView } from "./components/ItemCard";
 import SharedHeader from "./components/SharedHeader";
 import StickyCtaBar from "./components/StickyCtaBar";
@@ -92,6 +100,70 @@ function SharedCanvasView({
   );
 }
 
+// ─── Copy prompt after login ──────────────────────────────────────────────────
+
+function CopyPromptDialog({
+  token,
+  canvasName,
+  shareType,
+}: {
+  token: string;
+  canvasName: string;
+  shareType: "canvas" | "item";
+}) {
+  const user = useAppStore((s) => s.user);
+  const showToast = useAppStore((s) => s.showToast);
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
+
+  useEffect(() => {
+    if (user && localStorage.getItem(STORAGE_KEY_SHARED_COPY_PROMPT)) {
+      localStorage.removeItem(STORAGE_KEY_SHARED_COPY_PROMPT);
+      setOpen(true);
+    }
+  }, [user]);
+
+  const handleCopy = async () => {
+    setCopying(true);
+    try {
+      const result = await copySharedContent(token);
+      showToast("Copied to your workspace!");
+      navigate(`/canvas?canvasId=${result.id}`);
+    } catch {
+      showToast("Failed to copy");
+      setOpen(false);
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
+      <DialogTitle>Copy to Your Workspace</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+          Would you like to copy this shared {shareType === "canvas" ? "canvas" : "item"} (
+          {canvasName}) to your workspace?
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpen(false)} disabled={copying}>
+          No thanks
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleCopy}
+          disabled={copying}
+          startIcon={<ContentCopyIcon />}
+        >
+          {copying ? "Copying…" : "Copy"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function SharedViewer() {
@@ -158,6 +230,7 @@ export default function SharedViewer() {
       <SharedFooter />
 
       <StickyCtaBar token={token!} />
+      <CopyPromptDialog token={token!} canvasName={data.canvasName} shareType={data.shareType} />
     </Box>
   );
 }
