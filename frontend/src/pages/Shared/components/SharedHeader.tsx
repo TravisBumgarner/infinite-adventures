@@ -7,7 +7,7 @@ import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { copySharedContent } from "../../../api/shares";
-import { STORAGE_KEY_POST_AUTH_REDIRECT, STORAGE_KEY_SHARED_COPY_PROMPT } from "../../../constants";
+import { STORAGE_KEY_ACTIVE_CANVAS, STORAGE_KEY_POST_AUTH_REDIRECT } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 
 interface SharedHeaderProps {
@@ -26,8 +26,9 @@ export default function SharedHeader({ canvasName, shareType, token }: SharedHea
     setCopying(true);
     try {
       const result = await copySharedContent(token);
+      localStorage.setItem(STORAGE_KEY_ACTIVE_CANVAS, result.id);
       showToast("Copied to your workspace!");
-      navigate(`/canvas?canvasId=${result.id}`);
+      navigate("/canvas");
     } catch {
       showToast("Failed to copy");
     } finally {
@@ -37,7 +38,6 @@ export default function SharedHeader({ canvasName, shareType, token }: SharedHea
 
   const storeRedirectAndNavigate = (path: string) => {
     localStorage.setItem(STORAGE_KEY_POST_AUTH_REDIRECT, `/shared/${token}`);
-    localStorage.setItem(STORAGE_KEY_SHARED_COPY_PROMPT, "1");
     navigate(path);
   };
 

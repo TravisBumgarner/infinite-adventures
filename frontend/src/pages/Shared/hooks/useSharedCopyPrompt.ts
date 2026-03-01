@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { copySharedContent } from "../../../api/shares";
-import { STORAGE_KEY_SHARED_COPY_PROMPT } from "../../../constants";
+import { STORAGE_KEY_ACTIVE_CANVAS, STORAGE_KEY_POST_AUTH_REDIRECT } from "../../../constants";
 import { useAppStore } from "../../../stores/appStore";
 
 export function useSharedCopyPrompt(token: string) {
@@ -11,11 +11,14 @@ export function useSharedCopyPrompt(token: string) {
   const navigate = useNavigate();
   const [showPrompt, setShowPrompt] = useState(false);
   const [copying, setCopying] = useState(false);
+  const redirectValue = useRef<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
-    if (user && localStorage.getItem(STORAGE_KEY_SHARED_COPY_PROMPT)) {
-      localStorage.removeItem(STORAGE_KEY_SHARED_COPY_PROMPT);
+    const redirect = localStorage.getItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+    if (user && redirect?.startsWith("/shared/")) {
+      redirectValue.current = redirect;
+      localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
       setShowPrompt(true);
     }
   }, [user, authLoading]);
@@ -24,8 +27,9 @@ export function useSharedCopyPrompt(token: string) {
     setCopying(true);
     try {
       const result = await copySharedContent(token);
+      localStorage.setItem(STORAGE_KEY_ACTIVE_CANVAS, result.id);
       showToast("Copied to your workspace!");
-      navigate(`/canvas?canvasId=${result.id}`);
+      navigate("/canvas");
     } catch {
       showToast("Failed to copy");
       setShowPrompt(false);
@@ -34,7 +38,14 @@ export function useSharedCopyPrompt(token: string) {
     }
   };
 
-  const dismiss = () => setShowPrompt(false);
+  const later = () => {
+    if (redirectValue.current) {
+      localStorage.setItem(STORAGE_KEY_POST_AUTH_REDIRECT, redirectValue.current);
+    }
+    setShowPrompt(false);
+  };
 
-  return { showPrompt, copying, handleCopy, dismiss };
+  const decline = () => setShowPrompt(false);
+
+  return { showPrompt, copying, handleCopy, later, decline };
 }

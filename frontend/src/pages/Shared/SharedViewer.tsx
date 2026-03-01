@@ -166,7 +166,7 @@ export default function SharedViewer() {
 
       <StickyCtaBar token={token!} />
 
-      <Dialog open={copyPrompt.showPrompt} onClose={copyPrompt.dismiss} maxWidth="xs" fullWidth>
+      <Dialog open={copyPrompt.showPrompt} onClose={copyPrompt.later} maxWidth="xs" fullWidth>
         <DialogTitle>Save to Your Account</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
@@ -175,8 +175,11 @@ export default function SharedViewer() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={copyPrompt.dismiss} disabled={copyPrompt.copying}>
+          <Button onClick={copyPrompt.later} disabled={copyPrompt.copying}>
             Later
+          </Button>
+          <Button onClick={copyPrompt.decline} disabled={copyPrompt.copying}>
+            No
           </Button>
           <Button
             variant="contained"
@@ -184,7 +187,7 @@ export default function SharedViewer() {
             disabled={copyPrompt.copying}
             startIcon={<ContentCopyIcon />}
           >
-            {copyPrompt.copying ? "Copying…" : "Yes, save it"}
+            {copyPrompt.copying ? "Copying…" : "Yes"}
           </Button>
         </DialogActions>
       </Dialog>

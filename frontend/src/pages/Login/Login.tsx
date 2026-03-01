@@ -22,7 +22,9 @@ export default function Login() {
     if (result.success) {
       await refreshUser();
       const redirect = localStorage.getItem(STORAGE_KEY_POST_AUTH_REDIRECT);
-      if (redirect) localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+      if (redirect && !redirect.startsWith("/shared/")) {
+        localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+      }
       navigate(redirect ?? "/");
     } else {
       setError(result.error);

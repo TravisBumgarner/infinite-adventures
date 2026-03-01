@@ -9,7 +9,6 @@ export const STORAGE_KEY_THEME = "infinite-adventures-theme";
 export const STORAGE_KEY_ACTIVE_CANVAS = "infinite-adventures-active-canvas";
 export const STORAGE_KEY_ONBOARDING_COMPLETE = "infinite-adventures-onboarding-complete";
 export const STORAGE_KEY_POST_AUTH_REDIRECT = "infinite-adventures-post-auth-redirect";
-export const STORAGE_KEY_SHARED_COPY_PROMPT = "infinite-adventures-shared-copy-prompt";
 
 export const CANVAS_ITEM_TYPE_LABELS: Record<CanvasItemType, string> = {
   person: "Person",

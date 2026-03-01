@@ -35,7 +35,9 @@ export function AnonymousRoute({ children }: { children: ReactNode }) {
   if (loading) return null;
   if (user) {
     const redirect = localStorage.getItem(STORAGE_KEY_POST_AUTH_REDIRECT);
-    if (redirect) localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+    if (redirect && !redirect.startsWith("/shared/")) {
+      localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+    }
     return <Navigate to={redirect ?? "/canvas"} replace />;
   }
 
