@@ -69,35 +69,15 @@ export default function SharedHeader({ canvasName, shareType, token }: SharedHea
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {user ? (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<ContentCopyIcon />}
-                onClick={handleCopy}
-                disabled={copying}
-              >
-                {copying ? "Copying…" : "Copy to My Workspace"}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  size="small"
-                  variant="text"
-                  onClick={() => storeRedirectAndNavigate("/login")}
-                  sx={{ color: "var(--color-subtext0)" }}
-                >
-                  Log in
-                </Button>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => storeRedirectAndNavigate("/signup")}
-                >
-                  Sign up free
-                </Button>
-              </>
-            )}
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<ContentCopyIcon />}
+              onClick={user ? handleCopy : () => storeRedirectAndNavigate("/signup")}
+              disabled={copying}
+            >
+              {copying ? "Copying…" : "Save Canvas"}
+            </Button>
           </Stack>
         </Stack>
       </Container>

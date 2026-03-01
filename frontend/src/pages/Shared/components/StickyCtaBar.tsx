@@ -55,22 +55,14 @@ export default function StickyCtaBar({ token }: StickyCtaBarProps) {
               </Typography>
             </Box>
           </Stack>
-          <Stack direction="row" spacing={1.5} flexShrink={0}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => storeRedirectAndNavigate("/login")}
-            >
-              Log in
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => storeRedirectAndNavigate("/signup")}
-            >
-              Sign up free
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<ContentCopyIcon />}
+            onClick={() => storeRedirectAndNavigate("/signup")}
+          >
+            Save Canvas
+          </Button>
         </Stack>
       </Container>
     </Box>
