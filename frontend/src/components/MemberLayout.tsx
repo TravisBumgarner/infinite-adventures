@@ -18,7 +18,7 @@ import SearchBarButton from "../sharedComponents/SearchBarButton";
 import TopBar from "../sharedComponents/TopBar";
 import { useCanvasStore } from "../stores/canvasStore";
 import OnboardingTour from "./OnboardingTour";
-import { SettingsButton, SettingsSidebar } from "./SettingsSidebar";
+import { SettingsButton, SettingsSidebar } from "./SettingsSidebar/index";
 
 interface MemberLayoutProps {
   children: ReactNode;
