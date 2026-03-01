@@ -1,6 +1,7 @@
 import BulkDeleteModal from "./components/BulkDeleteModal";
 import CanvasSettingsModal from "./components/CanvasSettingsModal";
 import CreateCanvasModal from "./components/CreateCanvasModal";
+import CropPhotoModal from "./components/CropPhotoModal";
 import DeleteItemModal from "./components/DeleteItemModal";
 import ItemSettingsModal from "./components/ItemSettingsModal";
 import LightboxModal from "./components/LightboxModal";
@@ -25,6 +26,8 @@ export default function ModalRenderer() {
       return <CanvasSettingsModal {...activeModal} />;
     case MODAL_ID.CREATE_CANVAS:
       return <CreateCanvasModal {...activeModal} />;
+    case MODAL_ID.CROP_PHOTO:
+      return <CropPhotoModal {...activeModal} />;
     default:
       return null;
   }

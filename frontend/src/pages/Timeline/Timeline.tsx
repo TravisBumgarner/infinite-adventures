@@ -1,5 +1,6 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import MapIcon from "@mui/icons-material/Map";
 import SortIcon from "@mui/icons-material/Sort";
 import StarIcon from "@mui/icons-material/Star";
@@ -477,6 +478,21 @@ export default function Timeline() {
                               </IconButton>
                             </Tooltip>
                           )}
+                          <Tooltip title="Item Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingItemId(entry.parentItemId);
+                              }}
+                              sx={{
+                                color: "var(--color-subtext0)",
+                                "&:hover": { color: "var(--color-text)" },
+                                p: 0.5,
+                              }}
+                            >
+                              <InfoOutlinedIcon sx={{ fontSize: FONT_SIZES.lg }} />
+                            </IconButton>
+                          </Tooltip>
                         </Box>
 
                         {/* Row 2: date */}

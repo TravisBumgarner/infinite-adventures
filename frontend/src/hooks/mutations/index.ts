@@ -172,7 +172,8 @@ export function useDeletePhoto(itemId: string, canvasId: string) {
 export function useSelectPhoto(itemId: string, canvasId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (photoId: string) => selectPhoto(photoId),
+    mutationFn: ({ photoId, cropX, cropY }: { photoId: string; cropX?: number; cropY?: number }) =>
+      selectPhoto(photoId, cropX, cropY),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.items.detail(itemId) });
       qc.invalidateQueries({ queryKey: queryKeys.items.list(canvasId) });

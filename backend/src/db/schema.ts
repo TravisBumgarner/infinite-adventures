@@ -180,6 +180,8 @@ export const photos = pgTable(
     caption: text("caption").notNull().default(""),
     aspectRatio: doublePrecision("aspect_ratio"),
     blurhash: text("blurhash"),
+    cropX: doublePrecision("crop_x"),
+    cropY: doublePrecision("crop_y"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("photos_content_idx").on(table.contentType, table.contentId)],

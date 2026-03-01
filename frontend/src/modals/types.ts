@@ -1,4 +1,10 @@
-import type { Photo } from "shared";
+import type { CanvasItemType, Photo } from "shared";
+
+export type LightboxPhoto = Photo & {
+  parentItemId?: string;
+  parentItemType?: CanvasItemType;
+  parentItemTitle?: string;
+};
 
 // Modal IDs
 export const MODAL_ID = {
@@ -8,6 +14,7 @@ export const MODAL_ID = {
   ITEM_SETTINGS: "ITEM_SETTINGS",
   CANVAS_SETTINGS: "CANVAS_SETTINGS",
   CREATE_CANVAS: "CREATE_CANVAS",
+  CROP_PHOTO: "CROP_PHOTO",
 } as const;
 
 export type ModalId = (typeof MODAL_ID)[keyof typeof MODAL_ID];
@@ -28,8 +35,12 @@ export interface BulkDeleteModalProps {
 
 export interface LightboxModalProps {
   id: typeof MODAL_ID.LIGHTBOX;
-  photos: Photo[];
+  photos: LightboxPhoto[];
   initialIndex: number;
+  onDelete?: (photoId: string) => void;
+  onSelect?: (photoId: string) => void;
+  onToggleImportant?: (photoId: string) => void;
+  onUpdateCaption?: (photoId: string, caption: string) => void;
 }
 
 export interface ItemSettingsModalProps {
@@ -52,6 +63,15 @@ export interface CreateCanvasModalProps {
   onCreate: (name: string) => void;
 }
 
+export interface CropPhotoModalProps {
+  id: typeof MODAL_ID.CROP_PHOTO;
+  photoUrl: string;
+  aspectRatio?: number;
+  initialCropX?: number;
+  initialCropY?: number;
+  onConfirm: (cropX: number, cropY: number) => void;
+}
+
 // Union type of all modals
 export type ActiveModal =
   | DeleteItemModalProps
@@ -59,4 +79,5 @@ export type ActiveModal =
   | LightboxModalProps
   | ItemSettingsModalProps
   | CanvasSettingsModalProps
-  | CreateCanvasModalProps;
+  | CreateCanvasModalProps
+  | CropPhotoModalProps;

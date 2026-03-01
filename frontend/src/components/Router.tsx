@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Canvas from "../pages/Canvas";
 import Gallery from "../pages/Gallery";
+import PhotoDetail from "../pages/Gallery/PhotoDetail";
 import Login from "../pages/Login";
 import Marketing from "../pages/Marketing";
 import NotFound from "../pages/NotFound";
@@ -122,6 +123,16 @@ export default function Router() {
           <MemberRoute>
             <MemberLayout>
               <Gallery />
+            </MemberLayout>
+          </MemberRoute>
+        }
+      />
+      <Route
+        path="/gallery/:photoId"
+        element={
+          <MemberRoute>
+            <MemberLayout>
+              <PhotoDetail />
             </MemberLayout>
           </MemberRoute>
         }

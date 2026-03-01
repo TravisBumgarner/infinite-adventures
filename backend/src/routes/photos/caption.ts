@@ -30,5 +30,9 @@ export async function handler(req: Request<{ id: string }>, res: Response): Prom
     isMainPhoto: photo.isMainPhoto,
     isImportant: photo.isImportant,
     caption: photo.caption,
+    aspectRatio: photo.aspectRatio ?? undefined,
+    blurhash: photo.blurhash ?? undefined,
+    cropX: photo.cropX ?? undefined,
+    cropY: photo.cropY ?? undefined,
   });
 }

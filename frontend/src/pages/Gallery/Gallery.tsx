@@ -1,8 +1,11 @@
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import DeleteIcon from "@mui/icons-material/Delete";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import StarIcon from "@mui/icons-material/Star";
+import Masonry from "@mui/lab/Masonry";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -12,14 +15,14 @@ import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import type { GalleryEntry, Photo } from "shared";
-import { CANVAS_ITEM_TYPES } from "../../constants";
 
+import { deletePhoto } from "../../api/photos";
 import { useCanvases, useGallery, useItems } from "../../hooks/queries";
-import { MODAL_ID, useModalStore } from "../../modals";
 import BlurImage from "../../sharedComponents/BlurImage";
+import ConfirmDeleteDialog from "../../sharedComponents/ConfirmDeleteDialog";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
@@ -34,9 +37,11 @@ export default function Gallery() {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
   const initActiveCanvas = useCanvasStore((s) => s.initActiveCanvas);
   const showSettings = useCanvasStore((s) => s.showSettings);
-  const openModal = useModalStore((s) => s.openModal);
+  const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
 
+  const qc = useQueryClient();
   const [importantOnly, setImportantOnly] = useState(false);
+  const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
 
   // Fetch canvases and initialize active canvas
   const { data: canvases = [] } = useCanvases();
@@ -64,29 +69,6 @@ export default function Gallery() {
 
   // Flatten pages into entries
   const allEntries = useMemo(() => data?.pages.flatMap((p) => p.entries) ?? [], [data]);
-
-  // Canvas mutations
-  // Open lightbox
-  function handleOpenLightbox(_entry: GalleryEntry, index: number) {
-    // Build Photo[] from all entries for lightbox navigation
-    const photos: Photo[] = allEntries.map((e) => ({
-      id: e.id,
-      url: e.url,
-      originalName: e.originalName,
-      caption: e.caption,
-      aspectRatio: e.aspectRatio,
-      blurhash: e.blurhash,
-      isMainPhoto: e.isMainPhoto,
-      isImportant: e.isImportant,
-      createdAt: e.createdAt,
-      updatedAt: e.createdAt,
-    }));
-    openModal({
-      id: MODAL_ID.LIGHTBOX,
-      photos,
-      initialIndex: index,
-    });
-  }
 
   // Infinite scroll sentinel
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -242,36 +224,24 @@ export default function Gallery() {
             <Typography variant="body2">Photos from your canvas items will appear here.</Typography>
           </Box>
         ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-              gap: 1.5,
-            }}
-          >
-            {allEntries.map((entry, idx) => {
-              const typeColors = theme.palette.canvasItemTypes[entry.parentItemType];
-              const typeLabel =
-                CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
-                entry.parentItemType;
+          <Masonry columns={{ xs: 2, sm: 3, md: 4 }} spacing={1.5}>
+            {allEntries.map((entry) => {
               return (
                 <Box
                   key={entry.id}
-                  onClick={() => handleOpenLightbox(entry, idx)}
+                  onClick={() =>
+                    navigate(`/gallery/${entry.id}`, {
+                      state: { photos: allEntries, index: allEntries.indexOf(entry) },
+                    })
+                  }
                   sx={{
                     position: "relative",
-                    zIndex: 1,
                     overflow: "hidden",
                     bgcolor: "var(--color-base)",
                     border: "1px solid var(--color-surface1)",
                     cursor: "pointer",
-                    transition: "transform 0.2s ease",
-                    "&:hover": {
-                      transform: "scale(1.2)",
-                      zIndex: 10,
-                      "& img": { objectFit: "contain" },
-                    },
                     "&:hover .gallery-overlay": { opacity: 1 },
+                    "&:hover .gallery-delete": { opacity: 1 },
                   }}
                 >
                   <BlurImage
@@ -280,31 +250,57 @@ export default function Gallery() {
                     blurhash={entry.blurhash}
                     sx={{
                       width: "100%",
-                      aspectRatio: "1",
+                      display: "block",
                     }}
                   />
 
-                  {/* Pin badge */}
+                  {/* Pin badge — always visible */}
                   {entry.isImportant && (
                     <Box
                       sx={{
                         position: "absolute",
-                        top: 6,
-                        right: 6,
-                        bgcolor: "rgba(0,0,0,0.5)",
-                        borderRadius: "50%",
-                        width: 24,
-                        height: 24,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        top: 8,
+                        left: 8,
+                        zIndex: 2,
                       }}
                     >
-                      <StarIcon sx={{ fontSize: FONT_SIZES.md, color: "var(--color-yellow)" }} />
+                      <StarIcon
+                        sx={{
+                          fontSize: FONT_SIZES.md,
+                          color: "var(--color-yellow)",
+                          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
+                        }}
+                      />
                     </Box>
                   )}
 
-                  {/* Hover overlay with parent item info */}
+                  {/* Delete — top right, hover only */}
+                  <Tooltip title="Delete" placement="top">
+                    <IconButton
+                      className="gallery-delete"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletePhotoId(entry.id);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        bgcolor: "rgba(0,0,0,0.5)",
+                        color: "white",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                        opacity: 0,
+                        transition: "opacity 0.15s",
+                        p: 0.5,
+                        zIndex: 2,
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Bottom overlay — title + icons, appears on hover */}
                   <Box
                     className="gallery-overlay"
                     sx={{
@@ -314,23 +310,15 @@ export default function Gallery() {
                       right: 0,
                       px: 1,
                       py: 0.75,
-                      bgcolor: "rgba(0,0,0,0.6)",
+                      bgcolor: "rgba(0,0,0,0.65)",
                       opacity: 0,
                       transition: "opacity 0.15s",
                       display: "flex",
-                      flexDirection: "column",
-                      gap: 0.25,
+                      alignItems: "center",
+                      gap: 0.5,
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <LabelBadge
-                        label={typeLabel}
-                        accentColor={typeColors.light}
-                        icon={canvasItemTypeIcon(entry.parentItemType)}
-                        height={18}
-                        fontSize={FONT_SIZES.xs}
-                        sx={{ color: "white" }}
-                      />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         variant="caption"
                         sx={{
@@ -339,11 +327,29 @@ export default function Gallery() {
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
-                          flex: 1,
+                          display: "block",
+                          lineHeight: 1.3,
                         }}
                       >
                         {entry.parentItemTitle}
                       </Typography>
+                      {entry.caption && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "rgba(255,255,255,0.7)",
+                            fontSize: FONT_SIZES.xs,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "block",
+                          }}
+                        >
+                          {entry.caption}
+                        </Typography>
+                      )}
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
                       <Tooltip title="Open in Canvas">
                         <IconButton
                           size="small"
@@ -353,7 +359,7 @@ export default function Gallery() {
                           }}
                           sx={{
                             color: "white",
-                            "&:hover": { color: "var(--color-text)" },
+                            "&:hover": { color: "var(--color-blue)" },
                             p: 0.5,
                           }}
                         >
@@ -370,7 +376,7 @@ export default function Gallery() {
                             }}
                             sx={{
                               color: "white",
-                              "&:hover": { color: "var(--color-text)" },
+                              "&:hover": { color: "var(--color-blue)" },
                               p: 0.5,
                             }}
                           >
@@ -378,26 +384,28 @@ export default function Gallery() {
                           </IconButton>
                         </Tooltip>
                       )}
+                      <Tooltip title="Item Details">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingItemId(entry.parentItemId);
+                          }}
+                          sx={{
+                            color: "white",
+                            "&:hover": { color: "var(--color-blue)" },
+                            p: 0.5,
+                          }}
+                        >
+                          <InfoOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                    {entry.caption && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.8)",
-                          fontSize: FONT_SIZES.xs,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {entry.caption}
-                      </Typography>
-                    )}
                   </Box>
                 </Box>
               );
             })}
-          </Box>
+          </Masonry>
         )}
 
         {/* Infinite scroll sentinel */}
@@ -410,6 +418,19 @@ export default function Gallery() {
           </Box>
         )}
       </Box>
+
+      <ConfirmDeleteDialog
+        open={deletePhotoId !== null}
+        onClose={() => setDeletePhotoId(null)}
+        onConfirm={async () => {
+          if (!deletePhotoId || !activeCanvasId) return;
+          await deletePhoto(deletePhotoId);
+          qc.invalidateQueries({ queryKey: ["canvases", activeCanvasId, "gallery"] });
+          setDeletePhotoId(null);
+        }}
+        title="Delete Photo"
+        message="Are you sure you want to delete this photo? This cannot be undone."
+      />
     </Box>
   );
 }

@@ -1,14 +1,12 @@
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
 import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import StarIcon from "@mui/icons-material/Star";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import Masonry from "@mui/lab/Masonry";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
-import InputBase from "@mui/material/InputBase";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -27,48 +25,6 @@ interface PhotosTabProps {
   onFileDrop?: (file: File) => void;
   onUpdateCaption?: (photoId: string, caption: string) => void;
   columns?: number;
-  onColumnsChange?: (columns: number) => void;
-}
-
-function CaptionEditor({
-  photoId,
-  initialCaption,
-  onSave,
-}: {
-  photoId: string;
-  initialCaption: string;
-  onSave: (photoId: string, caption: string) => void;
-}) {
-  const [value, setValue] = useState(initialCaption);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVal = e.target.value;
-    setValue(newVal);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => onSave(photoId, newVal), 600);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  return (
-    <InputBase
-      value={value}
-      onChange={handleChange}
-      placeholder="Add caption..."
-      onClick={(e) => e.stopPropagation()}
-      sx={{
-        width: "100%",
-        fontSize: FONT_SIZES.xs,
-        color: "var(--color-subtext0)",
-        "& input": { padding: "2px 0", textAlign: "center" },
-      }}
-    />
-  );
 }
 
 export default function PhotosTab({
@@ -79,12 +35,29 @@ export default function PhotosTab({
   onToggleImportant,
   onOpenLightbox,
   onFileDrop,
-  onUpdateCaption,
-  columns,
-  onColumnsChange,
+  onUpdateCaption: _onUpdateCaption,
+  columns: columnsProp,
 }: PhotosTabProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [autoColumns, setAutoColumns] = useState(3);
   const [isDragging, setIsDragging] = useState(false);
   const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (columnsProp != null) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      if (width < 200) setAutoColumns(1);
+      else if (width < 400) setAutoColumns(2);
+      else setAutoColumns(3);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [columnsProp]);
+
+  const columns = columnsProp ?? autoColumns;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -124,19 +97,15 @@ export default function PhotosTab({
   }, [photos]);
 
   return (
-    <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+    <Box ref={containerRef} sx={{ flex: 1, overflowY: "auto", p: 2 }}>
       {/* Upload / drop zone */}
       <Button
         component="label"
         variant="outlined"
+        size="small"
+        fullWidth
         sx={{
-          width: "100%",
-          minHeight: 60,
-          mb: 1.5,
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: 0.5,
+          mb: 2,
           textTransform: "none",
           borderStyle: isDragging ? "dashed" : "solid",
           borderColor: isDragging ? "var(--color-blue)" : undefined,
@@ -147,189 +116,176 @@ export default function PhotosTab({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {isDragging ? (
-          <Typography sx={{ color: "var(--color-blue)", fontWeight: 600, fontSize: FONT_SIZES.sm }}>
-            Drop image here
-          </Typography>
-        ) : (
-          <Typography sx={{ color: "var(--color-subtext0)", fontSize: FONT_SIZES.sm }}>
-            Click to select or drop photo here
-          </Typography>
-        )}
+        {isDragging ? "Drop image here" : "Upload Photo"}
         <input type="file" accept="image/*" hidden onChange={onUpload} />
       </Button>
 
-      {/* Column controls */}
-      {onColumnsChange && columns != null && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-          <Tooltip title="Fewer columns">
-            <span>
-              <IconButton
-                size="small"
-                disabled={columns <= 2}
-                onClick={() => onColumnsChange(columns - 1)}
-              >
-                <RemoveCircleOutlineIcon sx={{ fontSize: FONT_SIZES.lg }} />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Typography variant="caption" sx={{ color: "var(--color-subtext0)" }}>
-            {columns} columns
-          </Typography>
-          <Tooltip title="More columns">
-            <span>
-              <IconButton
-                size="small"
-                disabled={columns >= 8}
-                onClick={() => onColumnsChange(columns + 1)}
-              >
-                <AddCircleOutlineIcon sx={{ fontSize: FONT_SIZES.lg }} />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Box>
-      )}
-
       {/* Photo grid */}
-      <Box
-        sx={
-          columns != null
-            ? {
-                display: "grid",
-                gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                gap: 1,
-              }
-            : {
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 1,
-              }
-        }
-      >
-        {sortedPhotos.length === 0 ? (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "var(--color-overlay0)",
-              textAlign: "center",
-              py: 3,
-              width: "100%",
-              gridColumn: "1 / -1",
-            }}
-          >
-            No photos yet
-          </Typography>
-        ) : (
-          sortedPhotos.map((photo) => {
+      {sortedPhotos.length === 0 ? (
+        <Typography
+          variant="body2"
+          sx={{
+            color: "var(--color-overlay0)",
+            textAlign: "center",
+            py: 3,
+          }}
+        >
+          No photos yet
+        </Typography>
+      ) : (
+        <Masonry columns={columns} spacing={1}>
+          {sortedPhotos.map((photo) => {
             const originalIndex = photos.indexOf(photo);
             return (
-              <Box key={photo.id} sx={{ display: "flex", flexDirection: "column" }}>
+              <Box
+                key={photo.id}
+                sx={{
+                  position: "relative",
+                  overflow: "hidden",
+                  border: photo.isMainPhoto
+                    ? "2px solid var(--color-blue)"
+                    : "1px solid var(--color-surface1)",
+                  cursor: "pointer",
+                  backgroundImage: photo.blurhash
+                    ? `url(${blurhashToDataURL(photo.blurhash)})`
+                    : undefined,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  "&:hover .photo-overlay": { opacity: 1 },
+                  "&:hover .photo-delete": { opacity: 1 },
+                }}
+                onClick={() => onOpenLightbox(originalIndex)}
+              >
                 <Box
+                  component="img"
+                  src={photo.url}
+                  alt={photo.originalName}
+                  sx={{ width: "100%", display: "block" }}
+                />
+
+                {/* Pin badge — always visible */}
+                {photo.isImportant && (
+                  <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 2 }}>
+                    <StarIcon
+                      sx={{
+                        fontSize: FONT_SIZES.md,
+                        color: "var(--color-yellow)",
+                        filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {/* Delete — top right, hover only */}
+                <Tooltip title="Delete" placement="top">
+                  <IconButton
+                    className="photo-delete"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletePhotoId(photo.id);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      bgcolor: "rgba(0,0,0,0.5)",
+                      color: "white",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                      opacity: 0,
+                      transition: "opacity 0.15s",
+                      p: 0.5,
+                      zIndex: 2,
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Bottom overlay — caption left, buttons right, hover only */}
+                <Box
+                  className="photo-overlay"
                   sx={{
-                    position: "relative",
-                    width: "100%",
-                    aspectRatio: "1",
-                    border: photo.isMainPhoto
-                      ? "2px solid var(--color-blue)"
-                      : "1px solid var(--color-surface1)",
-                    overflow: "hidden",
-                    backgroundImage: photo.blurhash
-                      ? `url(${blurhashToDataURL(photo.blurhash)})`
-                      : undefined,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    px: 1,
+                    py: 0.75,
+                    bgcolor: "rgba(0,0,0,0.65)",
+                    opacity: 0,
+                    transition: "opacity 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
                   }}
                 >
-                  <Box
-                    component="img"
-                    src={photo.url}
-                    alt={photo.originalName}
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => onOpenLightbox(originalIndex)}
-                  />
-                  <Tooltip title="Set as main photo" placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={() => onSelect(photo.id)}
-                      sx={{
-                        position: "absolute",
-                        bottom: 2,
-                        left: 2,
-                        bgcolor: "rgba(0,0,0,0.5)",
-                        color: photo.isMainPhoto ? "var(--color-blue)" : "white",
-                        "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                        width: 20,
-                        height: 20,
-                        zIndex: 2,
-                      }}
-                    >
-                      {photo.isMainPhoto ? (
-                        <PhotoSizeSelectActualIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      ) : (
-                        <PhotoSizeSelectActualOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={photo.isImportant ? "Unpin" : "Pin"} placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={() => onToggleImportant(photo.id)}
-                      sx={{
-                        position: "absolute",
-                        bottom: 2,
-                        left: 24,
-                        bgcolor: "rgba(0,0,0,0.5)",
-                        color: photo.isImportant ? "var(--color-yellow)" : "white",
-                        "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                        width: 20,
-                        height: 20,
-                        zIndex: 2,
-                      }}
-                    >
-                      {photo.isImportant ? (
-                        <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      ) : (
-                        <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete" placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={() => setDeletePhotoId(photo.id)}
-                      sx={{
-                        position: "absolute",
-                        top: 2,
-                        right: 2,
-                        bgcolor: "rgba(0,0,0,0.5)",
-                        color: "white",
-                        "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-                        width: 20,
-                        height: 20,
-                        zIndex: 2,
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
-                    </IconButton>
-                  </Tooltip>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    {photo.caption && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          fontWeight: 600,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          display: "block",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {photo.caption}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
+                    <Tooltip title="Set as main photo">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(photo.id);
+                        }}
+                        sx={{
+                          color: photo.isMainPhoto ? "var(--color-blue)" : "white",
+                          "&:hover": { color: "var(--color-blue)" },
+                          p: 0.5,
+                        }}
+                      >
+                        {photo.isMainPhoto ? (
+                          <PhotoSizeSelectActualIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        ) : (
+                          <PhotoSizeSelectActualOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={photo.isImportant ? "Unpin" : "Pin"}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleImportant(photo.id);
+                        }}
+                        sx={{
+                          color: photo.isImportant ? "var(--color-yellow)" : "white",
+                          "&:hover": { color: "var(--color-yellow)" },
+                          p: 0.5,
+                        }}
+                      >
+                        {photo.isImportant ? (
+                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        ) : (
+                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
-                {onUpdateCaption && (
-                  <CaptionEditor
-                    photoId={photo.id}
-                    initialCaption={photo.caption}
-                    onSave={onUpdateCaption}
-                  />
-                )}
               </Box>
             );
-          })
-        )}
-      </Box>
+          })}
+        </Masonry>
+      )}
 
       <ConfirmDeleteDialog
         open={deletePhotoId !== null}

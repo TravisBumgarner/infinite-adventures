@@ -24,8 +24,11 @@ export function deletePhoto(id: string): Promise<void> {
   return request<void>(`/photos/${id}`, { method: "DELETE" });
 }
 
-export function selectPhoto(id: string): Promise<Photo> {
-  return request<Photo>(`/photos/${id}/select`, { method: "PUT" });
+export function selectPhoto(id: string, cropX?: number, cropY?: number): Promise<Photo> {
+  return request<Photo>(`/photos/${id}/select`, {
+    method: "PUT",
+    body: JSON.stringify({ cropX, cropY }),
+  });
 }
 
 export function togglePhotoImportant(id: string): Promise<Photo> {

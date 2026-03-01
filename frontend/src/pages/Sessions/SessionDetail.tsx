@@ -1,10 +1,10 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import InputBase from "@mui/material/InputBase";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,12 +22,10 @@ import NotesTab from "../../sharedComponents/NotesTab";
 import PhotosTab from "../../sharedComponents/PhotosTab";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
-
 import { FONT_SIZES } from "../../styles/styleConsts";
 import { getNotePreview } from "../../utils/getNotePreview";
 import { shouldSnapshot } from "../../utils/shouldSnapshot";
-
-type DetailTab = "notes" | "photos";
+import CanvasItemPanel from "../Canvas/components/CanvasItemPanel";
 
 interface SessionDetailProps {
   sessionId: string;
@@ -65,12 +63,14 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   const [noteTitle, setNoteTitle] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [activeTab, setActiveTab] = useState<DetailTab>("notes");
+  const [splitPercent, setSplitPercent] = useState(60);
+  const [showPanel, setShowPanel] = useState(false);
 
   // Note history state
   const [historyNoteId, setHistoryNoteId] = useState<string | null>(null);
   const lastSnapshotAtRef = useRef<Map<string, number>>(new Map());
-  const [photoColumns, setPhotoColumns] = useState(4);
+  const draggingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Mutation hooks
   const updateItemMutation = useUpdateItem(activeCanvasId ?? "");
@@ -249,11 +249,30 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     }
   }
 
+  function handleOpenCropModal(photoId: string) {
+    const photo = photos.find((p) => p.id === photoId);
+    if (!photo) return;
+    openModal({
+      id: MODAL_ID.CROP_PHOTO,
+      photoUrl: photo.url,
+      aspectRatio: photo.aspectRatio,
+      initialCropX: photo.cropX,
+      initialCropY: photo.cropY,
+      onConfirm: (cropX: number, cropY: number) => {
+        handlePhotoSelect(photoId, cropX, cropY);
+      },
+    });
+  }
+
   function handleOpenLightbox(index: number) {
     openModal({
       id: MODAL_ID.LIGHTBOX,
       photos,
       initialIndex: index,
+      onDelete: handlePhotoDelete,
+      onSelect: handleOpenCropModal,
+      onToggleImportant: handleTogglePhotoImportant,
+      onUpdateCaption: handleUpdateCaption,
     });
   }
 
@@ -330,131 +349,179 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", pl: 7 }}>
-      {/* Header row — back + title | date */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 2,
-          py: 1.5,
-          borderBottom: "1px solid var(--color-surface0)",
-          flexShrink: 0,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flex: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => {
-              flushTitle();
-              flushDate();
-              flushNote();
-              navigate("/sessions");
-            }}
-            sx={{ color: "var(--color-subtext0)", flexShrink: 0 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          {isEditingTitle ? (
-            <InputBase
-              inputRef={titleInputRef}
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                markTitleDirty();
-              }}
-              onBlur={() => setIsEditingTitle(false)}
-              onKeyDown={handleTitleKeyDown}
-              sx={{
-                fontSize: FONT_SIZES.xl,
-                fontWeight: 600,
-                flex: 1,
-                "& input": { padding: 0 },
-              }}
-            />
-          ) : (
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 600,
-                cursor: "pointer",
-                color: "var(--color-text)",
-                "&:hover": { color: "var(--color-subtext0)" },
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              onClick={() => setIsEditingTitle(true)}
-            >
-              {title}
-            </Typography>
-          )}
-        </Box>
-        <TextField
-          label="Session Date"
-          type="date"
-          value={sessionDate}
-          onChange={(e) => {
-            setSessionDate(e.target.value);
-            markDateDirty();
-          }}
-          size="small"
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ width: 200, flexShrink: 0 }}
-        />
-      </Box>
-
-      {/* Session content */}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {/* Tabs */}
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
+    <Box sx={{ display: "flex", height: "100%" }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100%", flex: 1, minWidth: 0 }}>
+        {/* Header row — back + title | date */}
+        <Box
           sx={{
-            borderBottom: "1px solid var(--color-surface0)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             px: 2,
+            py: 1.5,
+            borderBottom: "1px solid var(--color-surface0)",
+            flexShrink: 0,
           }}
         >
-          <Tab label="Notes" value="notes" />
-          <Tab label="Photos" value="photos" />
-        </Tabs>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flex: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => {
+                flushTitle();
+                flushDate();
+                flushNote();
+                navigate("/sessions");
+              }}
+              sx={{ color: "var(--color-subtext0)", flexShrink: 0 }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            {isEditingTitle ? (
+              <InputBase
+                inputRef={titleInputRef}
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  markTitleDirty();
+                }}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={handleTitleKeyDown}
+                sx={{
+                  fontSize: FONT_SIZES.xl,
+                  fontWeight: 600,
+                  flex: 1,
+                  "& input": { padding: 0 },
+                }}
+              />
+            ) : (
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "var(--color-text)",
+                  "&:hover": { color: "var(--color-subtext0)" },
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                onClick={() => setIsEditingTitle(true)}
+              >
+                {title}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+            <Tooltip title="Session details">
+              <IconButton
+                size="small"
+                onClick={() => setShowPanel((v) => !v)}
+                sx={{
+                  color: showPanel ? "var(--color-blue)" : "var(--color-subtext0)",
+                }}
+              >
+                <InfoOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+            <TextField
+              label="Session Date"
+              type="date"
+              value={sessionDate}
+              onChange={(e) => {
+                setSessionDate(e.target.value);
+                markDateDirty();
+              }}
+              size="small"
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{ width: 200 }}
+            />
+          </Box>
+        </Box>
 
-        {/* Tab content */}
-        {activeTab === "notes" && (
-          <NotesTab
-            notes={notes}
-            editingNoteId={editingNoteId}
-            noteContent={noteContent}
-            noteTitle={noteTitle}
-            itemsCache={itemsCache}
-            canvasId={activeCanvasId ?? ""}
-            onAddNote={handleAddNote}
-            onSelectNote={handleSelectNote}
-            onDeleteNote={handleDeleteNote}
-            onCloseNote={handleCloseNote}
-            onNoteContentChange={(val) => {
-              setNoteContent(val);
-              markNoteDirty();
+        {/* Session content — split pane */}
+        <Box
+          ref={containerRef}
+          onMouseMove={(e) => {
+            if (!draggingRef.current || !containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const pct = ((e.clientX - rect.left) / rect.width) * 100;
+            setSplitPercent(Math.min(80, Math.max(20, pct)));
+          }}
+          onMouseUp={() => {
+            draggingRef.current = false;
+          }}
+          onMouseLeave={() => {
+            draggingRef.current = false;
+          }}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            overflow: "hidden",
+            userSelect: draggingRef.current ? "none" : undefined,
+          }}
+        >
+          {/* Notes pane */}
+          <Box sx={{ width: `${splitPercent}%`, overflowY: "auto", display: "flex" }}>
+            <NotesTab
+              notes={notes}
+              editingNoteId={editingNoteId}
+              noteContent={noteContent}
+              noteTitle={noteTitle}
+              itemsCache={itemsCache}
+              canvasId={activeCanvasId ?? ""}
+              onAddNote={handleAddNote}
+              onSelectNote={handleSelectNote}
+              onDeleteNote={handleDeleteNote}
+              onCloseNote={handleCloseNote}
+              onNoteContentChange={(val) => {
+                setNoteContent(val);
+                markNoteDirty();
+              }}
+              onNoteTitleChange={(val) => {
+                setNoteTitle(val);
+                markNoteDirty();
+              }}
+              onToggleImportant={handleToggleImportant}
+              onCreateMentionItem={handleCreateMentionItem}
+              getNotePreview={notePreview}
+              onMentionClick={handleMentionClick}
+              onHistoryNote={setHistoryNoteId}
+            />
+          </Box>
+
+          {/* Draggable divider */}
+          <Box
+            onMouseDown={() => {
+              draggingRef.current = true;
             }}
-            onNoteTitleChange={(val) => {
-              setNoteTitle(val);
-              markNoteDirty();
+            sx={{
+              width: 8,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "stretch",
+              justifyContent: "center",
+              cursor: "col-resize",
+              "&:hover > div": { bgcolor: "var(--color-overlay0)" },
             }}
-            onToggleImportant={handleToggleImportant}
-            onCreateMentionItem={handleCreateMentionItem}
-            getNotePreview={notePreview}
-            onMentionClick={handleMentionClick}
-            onHistoryNote={setHistoryNoteId}
-          />
-        )}
+          >
+            <Box sx={{ width: 2, alignSelf: "stretch", bgcolor: "var(--color-surface1)" }} />
+          </Box>
+
+          {/* Photos pane */}
+          <Box sx={{ flex: 1, overflowY: "auto", display: "flex" }}>
+            <PhotosTab
+              photos={photos}
+              onUpload={handlePhotoUpload}
+              onDelete={handlePhotoDelete}
+              onSelect={handleOpenCropModal}
+              onToggleImportant={handleTogglePhotoImportant}
+              onOpenLightbox={handleOpenLightbox}
+              onFileDrop={handleFileDrop}
+              onUpdateCaption={handleUpdateCaption}
+            />
+          </Box>
+        </Box>
 
         <NoteHistoryModal
           open={historyNoteId !== null}
@@ -463,22 +530,8 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
           loading={historyLoading}
           onRevert={handleRevertNote}
         />
-
-        {activeTab === "photos" && (
-          <PhotosTab
-            photos={photos}
-            onUpload={handlePhotoUpload}
-            onDelete={handlePhotoDelete}
-            onSelect={handlePhotoSelect}
-            onToggleImportant={handleTogglePhotoImportant}
-            onOpenLightbox={handleOpenLightbox}
-            onFileDrop={handleFileDrop}
-            onUpdateCaption={handleUpdateCaption}
-            columns={photoColumns}
-            onColumnsChange={setPhotoColumns}
-          />
-        )}
       </Box>
+      {showPanel && <CanvasItemPanel itemId={sessionId} onClose={() => setShowPanel(false)} />}
     </Box>
   );
 }

@@ -1,3 +1,4 @@
+import ImageIcon from "@mui/icons-material/Image";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -28,6 +29,8 @@ import { useAutoSave } from "../../../hooks/useAutoSave";
 import { useNoteHandlers } from "../../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../../modals";
+import BlurImage from "../../../sharedComponents/BlurImage";
+import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../../stores/canvasStore";
@@ -269,8 +272,31 @@ export default function CanvasItemPanel({
     handleDeleted(itemId);
   }
 
+  function handleOpenCropModal(photoId: string) {
+    const photo = photos.find((p) => p.id === photoId);
+    if (!photo) return;
+    openModal({
+      id: MODAL_ID.CROP_PHOTO,
+      photoUrl: photo.url,
+      aspectRatio: photo.aspectRatio,
+      initialCropX: photo.cropX,
+      initialCropY: photo.cropY,
+      onConfirm: (cropX: number, cropY: number) => {
+        handlePhotoSelect(photoId, cropX, cropY);
+      },
+    });
+  }
+
   function handleOpenLightbox(index: number) {
-    openModal({ id: MODAL_ID.LIGHTBOX, photos, initialIndex: index });
+    openModal({
+      id: MODAL_ID.LIGHTBOX,
+      photos,
+      initialIndex: index,
+      onDelete: handlePhotoDelete,
+      onSelect: handleOpenCropModal,
+      onToggleImportant: handleTogglePhotoImportant,
+      onUpdateCaption: handleUpdateCaption,
+    });
   }
 
   function handleOpenDeleteModal() {
@@ -358,6 +384,7 @@ export default function CanvasItemPanel({
 
   const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
+  const mainPhoto = item?.photos.find((p) => p.isMainPhoto) ?? null;
 
   if (itemError || !item) {
     return (
@@ -403,8 +430,6 @@ export default function CanvasItemPanel({
       <PanelHeader
         item={item}
         title={title}
-        typeBgColor={typeBgColor}
-        typeLabel={typeInfo?.label ?? item.type}
         onTitleChange={(value) => {
           setTitle(value);
           markTitleDirty();
@@ -415,33 +440,86 @@ export default function CanvasItemPanel({
         onDeleteItem={handleOpenDeleteModal}
       />
 
-      <PanelTagsSection item={item} itemId={itemId} onItemUpdated={handleItemUpdated} />
+      {/* Two-column metadata section */}
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          borderBottom: "1px solid var(--color-surface0)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", gap: 1.5 }}>
+          {/* Left column: main photo */}
+          <Box
+            sx={{
+              width: 120,
+              height: 120,
+              flexShrink: 0,
+              borderRadius: 1,
+              overflow: "hidden",
+              bgcolor: "var(--color-surface0)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {mainPhoto ? (
+              <BlurImage
+                src={mainPhoto.url}
+                alt={item.title}
+                blurhash={mainPhoto.blurhash}
+                cropX={mainPhoto.cropX}
+                cropY={mainPhoto.cropY}
+                aspectRatio={mainPhoto.aspectRatio}
+                sx={{ width: "100%", height: "100%" }}
+              />
+            ) : (
+              <ImageIcon sx={{ fontSize: 40, color: "var(--color-overlay0)" }} />
+            )}
+          </Box>
 
-      {/* Summary */}
-      <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
-        <TextField
-          label="Summary"
-          size="small"
-          fullWidth
-          multiline
-          minRows={1}
-          maxRows={3}
-          value={summary}
-          onChange={(e) => {
-            setSummary(e.target.value);
-            markSummaryDirty();
-          }}
-          variant="standard"
-          InputProps={{ disableUnderline: true }}
-          InputLabelProps={{ shrink: true }}
-          placeholder="Brief description..."
-          sx={{
-            "& .MuiInputBase-root": {
-              fontSize: FONT_SIZES.sm,
-              color: "var(--color-subtext0)",
-            },
-          }}
-        />
+          {/* Right column: type badge, summary */}
+          <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
+            <Box>
+              <LabelBadge
+                label={typeInfo?.label ?? item.type}
+                accentColor={typeBgColor}
+                icon={canvasItemTypeIcon(item.type)}
+                height={22}
+                fontSize={FONT_SIZES.xs}
+              />
+            </Box>
+            <TextField
+              label="Summary"
+              size="small"
+              fullWidth
+              multiline
+              minRows={1}
+              maxRows={3}
+              value={summary}
+              onChange={(e) => {
+                setSummary(e.target.value);
+                markSummaryDirty();
+              }}
+              variant="standard"
+              InputProps={{ disableUnderline: true }}
+              InputLabelProps={{ shrink: true }}
+              placeholder="Brief description..."
+              sx={{
+                "& .MuiInputBase-root": {
+                  fontSize: FONT_SIZES.sm,
+                  color: "var(--color-subtext0)",
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Tags row */}
+        <PanelTagsSection item={item} itemId={itemId} onItemUpdated={handleItemUpdated} />
       </Box>
 
       {/* Tabs */}
@@ -500,11 +578,12 @@ export default function CanvasItemPanel({
           photos={photos}
           onUpload={handlePhotoUpload}
           onDelete={handlePhotoDelete}
-          onSelect={handlePhotoSelect}
+          onSelect={handleOpenCropModal}
           onToggleImportant={handleTogglePhotoImportant}
           onOpenLightbox={handleOpenLightbox}
           onFileDrop={handleFileDrop}
           onUpdateCaption={handleUpdateCaption}
+          columns={2}
         />
       )}
 

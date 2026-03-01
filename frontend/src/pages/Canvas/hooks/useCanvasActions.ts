@@ -49,6 +49,8 @@ function toFlowNode(
       content: noteContent,
       selectedPhotoUrl: selectedPhoto?.url,
       selectedPhotoAspectRatio: selectedPhoto?.aspectRatio,
+      selectedPhotoCropX: selectedPhoto?.cropX,
+      selectedPhotoCropY: selectedPhoto?.cropY,
       mentionLabels,
       onMentionClick,
       notesCount: item.notes.length,

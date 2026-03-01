@@ -23,9 +23,8 @@ export default function ToolSidebar() {
     <Box
       sx={{
         position: "fixed",
-        top: "50%",
+        bottom: "5%",
         left: showSettings ? SIDEBAR_WIDTH + 8 : 8,
-        transform: "translateY(-50%)",
         zIndex: 50,
         pointerEvents: "auto",
         transition: "left 0.2s",

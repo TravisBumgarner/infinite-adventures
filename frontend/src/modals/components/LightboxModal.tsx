@@ -1,16 +1,27 @@
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
+import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import Box from "@mui/material/Box";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useState } from "react";
-import BlurImage from "../../sharedComponents/BlurImage";
 import { useModalStore } from "../store";
 import type { LightboxModalProps } from "../types";
 
-export default function LightboxModal({ photos, initialIndex }: LightboxModalProps) {
+export default function LightboxModal({
+  photos,
+  initialIndex,
+  onDelete,
+  onSelect,
+  onToggleImportant,
+}: LightboxModalProps) {
   const closeModal = useModalStore((s) => s.closeModal);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
@@ -35,6 +46,8 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
   const currentPhoto = photos[currentIndex];
   if (!currentPhoto) return null;
 
+  const hasActions = onDelete || onSelect || onToggleImportant;
+
   return (
     <Dialog
       open
@@ -44,10 +57,10 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
         paper: {
           sx: {
             bgcolor: "rgba(0, 0, 0, 0.95)",
-            width: "80vw",
-            height: "80vh",
-            maxWidth: "80vw",
-            maxHeight: "80vh",
+            width: "95vw",
+            height: "95vh",
+            maxWidth: "95vw",
+            maxHeight: "95vh",
             m: 2,
           },
         },
@@ -96,27 +109,18 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
           </IconButton>
         )}
 
-        {/* Blurhash backdrop + Image */}
+        {/* Image */}
         <Box
+          component="img"
+          src={currentPhoto.url}
+          alt={currentPhoto.originalName}
           sx={{
-            position: "relative",
             maxWidth: "calc(100% - 120px)",
             maxHeight: "calc(100% - 60px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            objectFit: "contain",
+            display: "block",
           }}
-        >
-          <BlurImage
-            src={currentPhoto.url}
-            alt={currentPhoto.originalName}
-            blurhash={currentPhoto.blurhash}
-            sx={{
-              maxWidth: "100%",
-              maxHeight: "calc(80vh - 60px)",
-            }}
-          />
-        </Box>
+        />
 
         {/* Next button */}
         {photos.length > 1 && (
@@ -135,46 +139,116 @@ export default function LightboxModal({ photos, initialIndex }: LightboxModalPro
           </IconButton>
         )}
 
-        {/* Caption + Photo counter */}
+        {/* Floating bottom bar */}
         <Box
           sx={{
             position: "absolute",
-            bottom: 12,
+            bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
+            width: "100%",
+            maxWidth: 600,
+            bgcolor: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(8px)",
+            borderRadius: 2,
+            px: 2,
+            py: 1,
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            gap: 0.5,
             zIndex: 2,
           }}
         >
-          {currentPhoto.caption && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: "white",
-                bgcolor: "rgba(0,0,0,0.5)",
-                px: 2,
-                py: 0.5,
-                maxWidth: "60vw",
-                textAlign: "center",
-              }}
-            >
-              {currentPhoto.caption}
-            </Typography>
-          )}
+          {/* Left: caption */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {currentPhoto.caption && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "white",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {currentPhoto.caption}
+              </Typography>
+            )}
+          </Box>
+
+          {/* Center: counter */}
           <Typography
             variant="caption"
             sx={{
-              color: "white",
-              bgcolor: "rgba(0,0,0,0.5)",
-              px: 1.5,
-              py: 0.5,
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              color: "rgba(255,255,255,0.7)",
             }}
           >
             {currentIndex + 1} / {photos.length}
           </Typography>
+
+          {/* Right: action buttons */}
+          {hasActions && (
+            <Box sx={{ display: "flex", gap: 0.25, flexShrink: 0 }}>
+              {onSelect && (
+                <Tooltip title="Set as main photo">
+                  <IconButton
+                    size="small"
+                    onClick={() => onSelect(currentPhoto.id)}
+                    sx={{
+                      color: currentPhoto.isMainPhoto ? "var(--color-blue)" : "white",
+                      "&:hover": { color: "var(--color-blue)" },
+                      p: 0.5,
+                    }}
+                  >
+                    {currentPhoto.isMainPhoto ? (
+                      <PhotoSizeSelectActualIcon />
+                    ) : (
+                      <PhotoSizeSelectActualOutlinedIcon />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onToggleImportant && (
+                <Tooltip title={currentPhoto.isImportant ? "Unpin" : "Pin"}>
+                  <IconButton
+                    size="small"
+                    onClick={() => onToggleImportant(currentPhoto.id)}
+                    sx={{
+                      color: currentPhoto.isImportant ? "var(--color-yellow)" : "white",
+                      "&:hover": { color: "var(--color-yellow)" },
+                      p: 0.5,
+                    }}
+                  >
+                    {currentPhoto.isImportant ? <StarIcon /> : <StarOutlineIcon />}
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onDelete && (
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      onDelete(currentPhoto.id);
+                      if (photos.length <= 1) {
+                        closeModal();
+                      } else if (currentIndex >= photos.length - 1) {
+                        setCurrentIndex(photos.length - 2);
+                      }
+                    }}
+                    sx={{
+                      color: "white",
+                      "&:hover": { color: "var(--color-red)" },
+                      p: 0.5,
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
     </Dialog>

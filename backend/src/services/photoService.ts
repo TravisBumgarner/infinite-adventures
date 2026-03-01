@@ -22,6 +22,8 @@ export interface PhotoInfo {
   caption: string;
   aspectRatio: number | null;
   blurhash: string | null;
+  cropX: number | null;
+  cropY: number | null;
   createdAt: string;
 }
 
@@ -116,6 +118,8 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     caption: "",
     aspectRatio,
     blurhash,
+    cropX: null,
+    cropY: null,
     createdAt: now.toISOString(),
   };
 }
@@ -174,7 +178,11 @@ export async function deletePhoto(id: string): Promise<boolean> {
  * Unselects any previously selected photo for the same content.
  * Returns the updated photo or null if not found.
  */
-export async function selectPhoto(id: string): Promise<PhotoInfo | null> {
+export async function selectPhoto(
+  id: string,
+  cropX?: number,
+  cropY?: number,
+): Promise<PhotoInfo | null> {
   const db = getDb();
 
   // Get the photo to find its content
@@ -187,8 +195,15 @@ export async function selectPhoto(id: string): Promise<PhotoInfo | null> {
     .set({ isMainPhoto: false })
     .where(and(eq(photos.contentType, photo.contentType), eq(photos.contentId, photo.contentId)));
 
-  // Select the specified photo
-  await db.update(photos).set({ isMainPhoto: true }).where(eq(photos.id, id));
+  // Select the specified photo and optionally store crop
+  await db
+    .update(photos)
+    .set({
+      isMainPhoto: true,
+      cropX: cropX ?? null,
+      cropY: cropY ?? null,
+    })
+    .where(eq(photos.id, id));
 
   // Return updated photo
   return getPhoto(id);

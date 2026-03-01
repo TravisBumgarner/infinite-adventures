@@ -35,6 +35,8 @@ export const PhotoSchema = z.object({
   caption: z.string(),
   aspectRatio: z.number().optional(),
   blurhash: z.string().optional(),
+  cropX: z.number().optional(),
+  cropY: z.number().optional(),
 });
 
 export const QuickNoteSchema = z.object({
@@ -152,6 +154,9 @@ export const SessionSummarySchema = z.object({
   title: z.string(),
   sessionDate: z.string(),
   selectedPhotoUrl: z.string().optional(),
+  selectedPhotoCropX: z.number().optional(),
+  selectedPhotoCropY: z.number().optional(),
+  selectedPhotoAspectRatio: z.number().optional(),
   createdAt: z.string(),
 });
 

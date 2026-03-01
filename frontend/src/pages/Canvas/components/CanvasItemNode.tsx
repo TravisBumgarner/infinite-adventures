@@ -7,6 +7,7 @@ import { Handle, Position } from "@xyflow/react";
 import { memo, useMemo } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS } from "../../../constants";
+import BlurImage from "../../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge, TagBadge } from "../../../sharedComponents/LabelBadge";
 import { useTagStore } from "../../../stores/tagStore";
 
@@ -18,6 +19,8 @@ export type CanvasItemNodeData = {
   content: string;
   selectedPhotoUrl?: string;
   selectedPhotoAspectRatio?: number;
+  selectedPhotoCropX?: number;
+  selectedPhotoCropY?: number;
   mentionLabels: Record<string, string>;
   onMentionClick: (sourceItemId: string, targetItemId: string) => void;
   notesCount: number;
@@ -27,14 +30,6 @@ export type CanvasItemNodeData = {
   tagIds: string[];
 };
 
-/** Compute card dimensions based on the selected photo's aspect ratio. */
-function getNodeSize(aspectRatio?: number): { minWidth: number; maxWidth: number } {
-  if (!aspectRatio) return { minWidth: 210, maxWidth: 270 };
-  if (aspectRatio >= 1.4) return { minWidth: 480, maxWidth: 560 }; // 3x2 landscape
-  if (aspectRatio <= 0.7) return { minWidth: 320, maxWidth: 400 }; // 2x3 portrait
-  return { minWidth: 210, maxWidth: 270 }; // ~square, keep default
-}
-
 type CanvasItemNodeType = Node<CanvasItemNodeData, "canvasItem">;
 
 function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
@@ -42,7 +37,6 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const color = theme.palette.canvasItemTypes[data.type].light;
   const label = CANVAS_ITEM_TYPE_LABELS[data.type];
   const tagsById = useTagStore((s) => s.tags);
-  const nodeSize = getNodeSize(data.selectedPhotoUrl ? data.selectedPhotoAspectRatio : undefined);
 
   const tags = useMemo(
     () => data.tagIds.map((id) => tagsById[id]).filter(Boolean),
@@ -69,8 +63,8 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           bgcolor: "var(--color-base)",
           border: `${data.isFocused ? 3 : 2}px solid ${color}`,
           p: 1.5,
-          minWidth: nodeSize.minWidth,
-          maxWidth: nodeSize.maxWidth,
+          minWidth: 210,
+          maxWidth: 270,
           color: "var(--color-text)",
           boxShadow: data.isFocused ? `0 0 12px 2px ${color}` : "none",
           transform: data.isFocused ? "scale(1.02)" : "none",
@@ -128,27 +122,21 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           </Box>
         )}
 
-        {/* Row 4: Image (if present) */}
+        {/* Row 4: Image (if present) — square crop */}
         {data.selectedPhotoUrl && (
-          <Box
+          <BlurImage
+            src={data.selectedPhotoUrl}
+            alt=""
+            cropX={data.selectedPhotoCropX}
+            cropY={data.selectedPhotoCropY}
+            aspectRatio={data.selectedPhotoAspectRatio}
             sx={{
               width: "100%",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
+              aspectRatio: "1",
               mt: 1,
+              borderRadius: 0.5,
             }}
-          >
-            <Box
-              component="img"
-              src={data.selectedPhotoUrl}
-              alt=""
-              sx={{
-                width: "100%",
-                height: "auto",
-              }}
-            />
-          </Box>
+          />
         )}
 
         {/* Row 5: Metadata */}

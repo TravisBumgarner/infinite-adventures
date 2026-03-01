@@ -1,8 +1,16 @@
 import AddIcon from "@mui/icons-material/Add";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import { useMemo } from "react";
+import Checkbox from "@mui/material/Checkbox";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Popover from "@mui/material/Popover";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useMemo, useRef, useState } from "react";
 import type { CanvasItem, Tag } from "shared";
 import { useAddTagToItem, useRemoveTagFromItem } from "../../../hooks/mutations";
 import { TagBadge } from "../../../sharedComponents/LabelBadge";
@@ -21,103 +29,119 @@ export default function PanelTagsSection({ item, itemId, onItemUpdated }: PanelT
   const setShowSettings = useCanvasStore((s) => s.setShowSettings);
   const tagsById = useTagStore((s) => s.tags);
   const allTags = useMemo(() => Object.values(tagsById), [tagsById]);
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
 
   const addTagMutation = useAddTagToItem(itemId, activeCanvasId ?? "");
   const removeTagMutation = useRemoveTagFromItem(itemId, activeCanvasId ?? "");
 
   const assignedTagIds = useMemo(() => new Set(item.tags.map((t) => t.id)), [item.tags]);
-  const availableTags = useMemo(
-    () => allTags.filter((t) => !assignedTagIds.has(t.id)),
-    [allTags, assignedTagIds],
-  );
 
-  function handleAddTag(tag: Tag) {
-    addTagMutation.mutate(tag.id, {
-      onSuccess: () => {
-        const updated = { ...item, tags: [...item.tags, tag] };
-        onItemUpdated(updated);
-      },
-    });
-  }
-
-  function handleRemoveTag(tagId: string) {
-    removeTagMutation.mutate(tagId, {
-      onSuccess: () => {
-        const updated = { ...item, tags: item.tags.filter((t) => t.id !== tagId) };
-        onItemUpdated(updated);
-      },
-    });
+  function handleToggleTag(tag: Tag) {
+    if (assignedTagIds.has(tag.id)) {
+      removeTagMutation.mutate(tag.id, {
+        onSuccess: () => {
+          onItemUpdated({ ...item, tags: item.tags.filter((t) => t.id !== tag.id) });
+        },
+      });
+    } else {
+      addTagMutation.mutate(tag.id, {
+        onSuccess: () => {
+          onItemUpdated({ ...item, tags: [...item.tags, tag] });
+        },
+      });
+    }
   }
 
   return (
-    <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--color-surface0)" }}>
+    <Box>
       <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
-        {item.tags.map((tag) => (
-          <TagBadge key={tag.id} tag={tag} onDelete={() => handleRemoveTag(tag.id)} />
-        ))}
-        {availableTags.length > 0 && (
-          <Autocomplete
+        <Tooltip title="Manage tags">
+          <IconButton
+            ref={anchorRef}
             size="small"
-            options={availableTags}
-            getOptionLabel={(opt) => opt.name}
-            onChange={(_e, tag) => {
-              if (tag) handleAddTag(tag);
-            }}
-            value={null}
-            renderOption={(props, option) => (
-              <li {...props} key={option.id}>
-                <TagBadge tag={option} />
-              </li>
-            )}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Add tag"
-                variant="standard"
-                InputProps={{
-                  ...params.InputProps,
-                  disableUnderline: true,
-                  startAdornment: (
-                    <AddIcon sx={{ fontSize: FONT_SIZES.lg, color: "var(--color-overlay0)" }} />
-                  ),
-                }}
-              />
-            )}
+            onClick={() => setOpen(true)}
             sx={{
-              minWidth: 120,
-              "& .MuiInputBase-root": {
-                py: 0,
-                fontSize: FONT_SIZES.sm,
+              width: 26,
+              height: 26,
+              border: "1px dashed var(--color-overlay0)",
+              borderRadius: 0.5,
+              color: "var(--color-overlay0)",
+              "&:hover": {
+                borderColor: "var(--color-text)",
+                color: "var(--color-text)",
               },
             }}
-            fullWidth
-            blurOnSelect
-            clearOnBlur
-          />
-        )}
-        <Box
-          onClick={() => setShowSettings(true)}
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.5,
-            height: 26,
-            px: 1,
-            border: "1px dashed var(--color-overlay0)",
-            color: "var(--color-overlay0)",
-            fontSize: FONT_SIZES.sm,
-            fontWeight: 600,
-            cursor: "pointer",
-            "&:hover": {
-              borderColor: "var(--color-text)",
-              color: "var(--color-text)",
-            },
-          }}
-        >
-          <AddIcon sx={{ fontSize: FONT_SIZES.lg }} />
-          New
-        </Box>
+          >
+            <AddIcon sx={{ fontSize: FONT_SIZES.md }} />
+          </IconButton>
+        </Tooltip>
+        {item.tags.map((tag) => (
+          <TagBadge key={tag.id} tag={tag} onDelete={() => handleToggleTag(tag)} />
+        ))}
       </Box>
+
+      <Popover
+        open={open}
+        anchorEl={anchorRef.current}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: 240,
+              maxHeight: 320,
+              mt: 0.5,
+              bgcolor: "var(--color-mantle)",
+              border: "1px solid var(--color-surface1)",
+            },
+          },
+        }}
+      >
+        {allTags.length === 0 ? (
+          <Box sx={{ p: 2, textAlign: "center" }}>
+            <Typography variant="body2" sx={{ color: "var(--color-overlay0)", mb: 1 }}>
+              No tags yet
+            </Typography>
+          </Box>
+        ) : (
+          <List dense disablePadding sx={{ py: 0.5 }}>
+            {allTags.map((tag) => (
+              <ListItemButton key={tag.id} onClick={() => handleToggleTag(tag)} sx={{ py: 0.25 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <Checkbox
+                    edge="start"
+                    size="small"
+                    checked={assignedTagIds.has(tag.id)}
+                    tabIndex={-1}
+                    disableRipple
+                  />
+                </ListItemIcon>
+                <ListItemText>
+                  <TagBadge tag={tag} />
+                </ListItemText>
+              </ListItemButton>
+            ))}
+          </List>
+        )}
+        <Divider />
+        <ListItemButton
+          onClick={() => {
+            setOpen(false);
+            setShowSettings(true);
+          }}
+          sx={{ py: 1 }}
+        >
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <AddIcon sx={{ fontSize: FONT_SIZES.md, color: "var(--color-overlay0)" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="Create new tag"
+            primaryTypographyProps={{ fontSize: FONT_SIZES.sm, color: "var(--color-subtext0)" }}
+          />
+        </ListItemButton>
+      </Popover>
     </Box>
   );
 }

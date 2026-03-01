@@ -11,6 +11,22 @@ interface ReleaseEntry {
 
 const releases: ReleaseEntry[] = [
   {
+    date: "2026-02-28",
+    added: [
+      "Photo crop / focal point — choose where square thumbnails focus when setting a main photo",
+      "Crop modal with draggable frame on set-as-main-photo (canvas panel & session detail)",
+      "Lightbox action buttons (set main, pin/unpin, delete) available everywhere",
+      "Gallery full-screen photo detail page (/gallery/:id)",
+      "Info sidebar on session detail page",
+    ],
+    improved: [
+      "Floating bottom bar in lightbox and gallery detail (600px max, rounded, blurred backdrop)",
+      "Tag management: plus-button opens a checklist popover instead of inline autocomplete",
+      "Square cropped thumbnails on sessions list, canvas nodes, and sidebar panel",
+      "Tool sidebar moved to bottom-left of canvas",
+    ],
+  },
+  {
     date: "2026-02-27",
     added: ["Flexible mention type selection (all item types)"],
     improved: [
