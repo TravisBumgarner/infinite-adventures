@@ -2,7 +2,6 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ImageIcon from "@mui/icons-material/Image";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
-import LoginIcon from "@mui/icons-material/Login";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -15,7 +14,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { CanvasItem, CanvasItemSummary, SharedContent } from "shared";
 import { copySharedContent, fetchSharedContent } from "../../api/shares";
-import { CANVAS_ITEM_TYPES } from "../../constants";
+import { CANVAS_ITEM_TYPES, STORAGE_KEY_POST_AUTH_REDIRECT } from "../../constants";
 import BlurImage from "../../sharedComponents/BlurImage";
 import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
 import { useAppStore } from "../../stores/appStore";
@@ -70,6 +69,11 @@ function CopySection({ token }: { token: string }) {
     }
   };
 
+  const storeRedirectAndNavigate = (path: string) => {
+    localStorage.setItem(STORAGE_KEY_POST_AUTH_REDIRECT, `/shared/${token}`);
+    navigate(path);
+  };
+
   if (user) {
     return (
       <Button
@@ -85,14 +89,33 @@ function CopySection({ token }: { token: string }) {
   }
 
   return (
-    <Button
-      variant="outlined"
-      startIcon={<LoginIcon />}
-      component="a"
-      href={`/login?redirect=/shared/${token}`}
+    <Box
+      sx={{
+        bgcolor: "var(--color-surface0)",
+        borderRadius: 2,
+        p: 3,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1.5,
+        textAlign: "center",
+      }}
     >
-      Sign in to copy this to your workspace
-    </Button>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        Want to add this to your own workspace?
+      </Typography>
+      <Typography variant="body2" sx={{ color: "var(--color-subtext0)", maxWidth: 400 }}>
+        Sign up for Infinite Adventures to copy this content and start building your own world.
+      </Typography>
+      <Box sx={{ display: "flex", gap: 1.5, mt: 0.5 }}>
+        <Button variant="contained" onClick={() => storeRedirectAndNavigate("/signup")}>
+          Sign Up
+        </Button>
+        <Button variant="outlined" onClick={() => storeRedirectAndNavigate("/login")}>
+          Log In
+        </Button>
+      </Box>
+    </Box>
   );
 }
 

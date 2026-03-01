@@ -1,6 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react";
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { STORAGE_KEY_POST_AUTH_REDIRECT } from "../constants";
 import Canvas from "../pages/Canvas";
 import Gallery from "../pages/Gallery";
 import PhotoDetail from "../pages/Gallery/PhotoDetail";
@@ -32,7 +33,11 @@ export function AnonymousRoute({ children }: { children: ReactNode }) {
   const loading = useAppStore((s) => s.authLoading);
 
   if (loading) return null;
-  if (user) return <Navigate to="/canvas" replace />;
+  if (user) {
+    const redirect = localStorage.getItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+    if (redirect) localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+    return <Navigate to={redirect ?? "/canvas"} replace />;
+  }
 
   return <>{children}</>;
 }

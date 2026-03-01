@@ -2,6 +2,7 @@ import { Alert, Box, Button, Link as MuiLink, TextField, Typography } from "@mui
 import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../auth/service.js";
+import { STORAGE_KEY_POST_AUTH_REDIRECT } from "../../constants";
 import { useAppStore } from "../../stores/appStore";
 
 export default function Login() {
@@ -20,7 +21,9 @@ export default function Login() {
     const result = await login({ email, password });
     if (result.success) {
       await refreshUser();
-      navigate("/");
+      const redirect = localStorage.getItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+      if (redirect) localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
+      navigate(redirect ?? "/");
     } else {
       setError(result.error);
       setSubmitting(false);
