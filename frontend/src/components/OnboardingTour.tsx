@@ -48,28 +48,36 @@ const steps: Step[] = [
     disableBeacon: true,
     title: "Switch Views",
     content:
-      "Canvas for the big picture, Sessions for notes, Timeline for chronological order, Gallery for photos.",
+      "Canvas is your spatial overview. Sessions organizes by session date. Timeline shows everything chronologically. Gallery collects all photos. Tree displays item connections.",
   },
   {
     target: '[data-tour="search-button"]',
     placement: "bottom",
     disableBeacon: true,
     title: "Search",
-    content: "Search across all items and notes. You can also press ⌘K to open it anytime.",
+    content: "Search across all items and notes. You can also press \u2318K to open it anytime.",
+  },
+  {
+    target: '[data-tour="share-button"]',
+    placement: "bottom",
+    disableBeacon: true,
+    title: "Share",
+    content:
+      "Share your entire canvas or individual items with a link. Anyone with the link can view your world. You can also share from right-click menus.",
   },
   {
     target: '[data-tour="tool-sidebar"]',
     placement: "right",
     disableBeacon: true,
     title: "Tools",
-    content: "Roll dice, throw 3D dice, and track initiative right from the sidebar.",
+    content: "Roll dice, throw 3D dice, track initiative, and jot quick notes from the sidebar.",
   },
   {
     target: '[data-tour="settings-button"]',
     placement: "bottom",
     disableBeacon: true,
     title: "Settings",
-    content: "Manage tags, export data, and relaunch this tour anytime.",
+    content: "Manage tags, export/import data, configure sharing, and relaunch this tour anytime.",
   },
 ];
 

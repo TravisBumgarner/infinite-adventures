@@ -74,6 +74,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
           <>
             <SavingIndicator />
             <IconButton
+              data-tour="share-button"
               title="Share canvas"
               size="small"
               onClick={() => {
