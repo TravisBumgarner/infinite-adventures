@@ -1,14 +1,14 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import ImageIcon from "@mui/icons-material/Image";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { CanvasItem, CanvasItemSummary, SharedContent } from "shared";
+import type { CanvasItem, SharedContent } from "shared";
 import { copySharedContent, fetchSharedContent } from "../../api/shares";
 import { CANVAS_ITEM_TYPES, STORAGE_KEY_POST_AUTH_REDIRECT } from "../../constants";
 import BlurImage from "../../sharedComponents/BlurImage";
@@ -119,9 +119,6 @@ function ItemNotes({ item }: { item: CanvasItem }) {
   if (!item.notes.length) return null;
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-      <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
-        Notes
-      </Typography>
       {item.notes.map((note) => (
         <Box
           key={note.id}
@@ -154,55 +151,50 @@ function ItemNotes({ item }: { item: CanvasItem }) {
 function ItemPhotos({ item }: { item: CanvasItem }) {
   if (!item.photos.length) return null;
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-      <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
-        Photos
-      </Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: 1,
-        }}
-      >
-        {item.photos.map((photo) => (
-          <Box
-            key={photo.id}
-            sx={{
-              borderRadius: 1,
-              overflow: "hidden",
-              aspectRatio: "1",
-              bgcolor: "var(--color-surface0)",
-            }}
-          >
-            <BlurImage
-              src={photo.url}
-              alt={photo.caption ?? ""}
-              blurhash={photo.blurhash}
-              cropX={photo.cropX}
-              cropY={photo.cropY}
-              aspectRatio={photo.aspectRatio}
-              sx={{ width: "100%", height: "100%" }}
-            />
-          </Box>
-        ))}
-      </Box>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: 1,
+      }}
+    >
+      {item.photos.map((photo) => (
+        <Box
+          key={photo.id}
+          sx={{
+            borderRadius: 1,
+            overflow: "hidden",
+            aspectRatio: "1",
+            bgcolor: "var(--color-surface0)",
+          }}
+        >
+          <BlurImage
+            src={photo.url}
+            alt={photo.caption ?? ""}
+            blurhash={photo.blurhash}
+            cropX={photo.cropX}
+            cropY={photo.cropY}
+            aspectRatio={photo.aspectRatio}
+            sx={{ width: "100%", height: "100%" }}
+          />
+        </Box>
+      ))}
     </Box>
   );
 }
 
-function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
+function ItemSection({ item }: { item: CanvasItem }) {
   const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
   const mainPhoto = item.photos.find((p) => p.isMainPhoto);
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
         {mainPhoto && (
           <Box
             sx={{
-              width: 120,
-              height: 120,
+              width: 80,
+              height: 80,
               flexShrink: 0,
               borderRadius: 1,
               overflow: "hidden",
@@ -220,7 +212,7 @@ function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
           </Box>
         )}
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
             {item.title || "Untitled"}
           </Typography>
           {typeInfo && (
@@ -228,12 +220,12 @@ function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
               label={typeInfo.label}
               accentColor="var(--color-surface1)"
               icon={canvasItemTypeIcon(item.type)}
-              height={22}
+              height={20}
               fontSize={FONT_SIZES.xs}
             />
           )}
           {item.summary && (
-            <Typography variant="body2" sx={{ color: "var(--color-subtext0)", mt: 1 }}>
+            <Typography variant="body2" sx={{ color: "var(--color-subtext0)", mt: 0.5 }}>
               {item.summary}
             </Typography>
           )}
@@ -241,77 +233,15 @@ function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
       </Box>
       <ItemNotes item={item} />
       <ItemPhotos item={item} />
-      <CopySection token={token} />
     </Box>
   );
 }
 
-function ItemCard({ item }: { item: CanvasItemSummary }) {
-  const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
-
+function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
   return (
-    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-      <Box
-        sx={{
-          width: 48,
-          height: 48,
-          flexShrink: 0,
-          borderRadius: 1,
-          overflow: "hidden",
-          bgcolor: "var(--color-surface0)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {item.selectedPhotoUrl ? (
-          <Box
-            component="img"
-            src={item.selectedPhotoUrl}
-            alt={item.title}
-            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        ) : (
-          <ImageIcon sx={{ fontSize: 20, color: "var(--color-overlay0)" }} />
-        )}
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography
-          variant="body1"
-          sx={{
-            fontWeight: 500,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {item.title || "Untitled"}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {typeInfo && (
-            <LabelBadge
-              label={typeInfo.label}
-              accentColor="var(--color-surface1)"
-              icon={canvasItemTypeIcon(item.type)}
-              height={18}
-              fontSize={FONT_SIZES.xs}
-            />
-          )}
-          {item.summary && (
-            <Typography
-              variant="caption"
-              sx={{
-                color: "var(--color-subtext0)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {item.summary}
-            </Typography>
-          )}
-        </Box>
-      </Box>
+    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <ItemSection item={item} />
+      <CopySection token={token} />
     </Box>
   );
 }
@@ -324,24 +254,19 @@ function SharedCanvasView({
   token: string;
 }) {
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
-      <Typography variant="h5" sx={{ fontWeight: 600 }}>
-        {content.canvasName}
-      </Typography>
-      <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
-        {content.items.length} item{content.items.length !== 1 ? "s" : ""}
-      </Typography>
-      {content.items.map((item) => (
-        <Box
-          key={item.id}
-          sx={{
-            bgcolor: "var(--color-surface0)",
-            border: "1px solid var(--color-surface1)",
-            borderRadius: 1,
-            p: 1.5,
-          }}
-        >
-          <ItemCard item={item} />
+    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box>
+        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          {content.canvasName}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+          {content.items.length} item{content.items.length !== 1 ? "s" : ""}
+        </Typography>
+      </Box>
+      {content.items.map((item, i) => (
+        <Box key={item.id}>
+          {i > 0 && <Divider sx={{ mb: 3 }} />}
+          <ItemSection item={item} />
         </Box>
       ))}
       <CopySection token={token} />

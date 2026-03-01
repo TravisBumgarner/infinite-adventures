@@ -279,7 +279,7 @@ export const CreateShareInputSchema = z.object({
 export const SharedCanvasContentSchema = z.object({
   shareType: z.literal("canvas"),
   canvasName: z.string(),
-  items: z.array(CanvasItemSummarySchema),
+  items: z.array(CanvasItemSchema),
   tags: z.array(TagSchema),
 });
 

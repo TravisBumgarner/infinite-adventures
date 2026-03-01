@@ -38,8 +38,10 @@ export async function handler(req: Request, res: Response): Promise<void> {
       item,
     });
   } else {
-    // Canvas-level share
-    const items = await listItems(share.canvasId);
+    // Canvas-level share — return full items so viewers can see notes/photos
+    const summaries = await listItems(share.canvasId);
+    const fullItems = await Promise.all(summaries.map((s) => getItem(s.id)));
+    const items = fullItems.filter((item) => item !== null);
     const canvasTags = await listTags(share.canvasId);
     sendSuccess(res, {
       shareType: "canvas",
