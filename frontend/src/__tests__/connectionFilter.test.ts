@@ -50,7 +50,7 @@ describe("buildConnectionEntries", () => {
     expect(result[0].direction).toBe("outgoing");
   });
 
-  it("returns empty array when no connections exist", () => {
+  it("returns empty array when no references exist", () => {
     const result = buildConnectionEntries([], []);
     expect(result).toHaveLength(0);
   });

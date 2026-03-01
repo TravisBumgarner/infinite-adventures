@@ -31,7 +31,7 @@ const steps: Step[] = [
     disableBeacon: true,
     disableOverlay: true,
     title: "The Item Panel",
-    content: "This is where you edit your item — title, summary, notes, photos, and connections.",
+    content: "This is where you edit your item — title, summary, notes, photos, and references.",
   },
   {
     target: '[data-tour="panel-menu"]',
@@ -48,7 +48,7 @@ const steps: Step[] = [
     disableBeacon: true,
     title: "Switch Views",
     content:
-      "Canvas is your spatial overview. Sessions organizes by session date. Timeline shows everything chronologically. Gallery collects all photos. Tree displays item connections.",
+      "Canvas is your spatial overview. Sessions organizes by session date. Timeline shows everything chronologically. Gallery collects all photos. Tree displays item references.",
   },
   {
     target: '[data-tour="search-button"]',

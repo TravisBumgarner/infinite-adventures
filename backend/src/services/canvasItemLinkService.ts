@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "../db/connection.js";
 import { canvasItemLinks, canvasItems } from "../db/schema.js";
 import { createItem } from "./canvasItemService.js";
@@ -223,6 +223,19 @@ export async function resolveCanvasItemLinks(
 
   const resolved: ResolvedCanvasItemLink[] = [];
 
+  // Pre-fetch titles for all ID-based mentions so snippets can resolve @{id} references
+  const idMentionValues = mentionsWithPositions.filter((m) => m.type === "id").map((m) => m.value);
+  const titleMap = new Map<string, string>();
+  if (idMentionValues.length > 0) {
+    const rows = await db
+      .select({ id: canvasItems.id, title: canvasItems.title })
+      .from(canvasItems)
+      .where(inArray(canvasItems.id, idMentionValues));
+    for (const row of rows) {
+      titleMap.set(row.id, row.title);
+    }
+  }
+
   for (let i = 0; i < mentionsWithPositions.length; i++) {
     const mention = mentionsWithPositions[i]!;
 
@@ -267,16 +280,29 @@ export async function resolveCanvasItemLinks(
       }
     }
 
+    // Ensure newly created items are also in the titleMap
+    if (!titleMap.has(targetItem.id)) {
+      titleMap.set(targetItem.id, targetItem.title);
+    }
+
     // Don't link an item to itself
     if (targetItem.id !== sourceItemId) {
       // Extract snippet for this mention, using the resolved title for display
-      const snippet = extractSnippet(
+      let snippet = extractSnippet(
         content,
         mention.startIndex,
         mention.endIndex,
         10,
         targetItem.title,
       );
+
+      // Resolve any remaining @{id} mentions and strip HTML tags from the snippet
+      snippet = snippet
+        .replace(/@\{([^}]+)\}/g, (_, id) => {
+          const title = titleMap.get(id);
+          return title ? `@${title}` : "@mention";
+        })
+        .replace(/<[^>]*>/g, "");
 
       // Insert or update the link with snippet
       await db

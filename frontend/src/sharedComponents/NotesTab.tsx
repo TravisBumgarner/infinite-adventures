@@ -179,7 +179,7 @@ export default function NotesTab({
               <IconButton
                 size="small"
                 onClick={onCloseNote}
-                sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                sx={{ color: "var(--color-subtext0)", p: 0.25 }}
               >
                 <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
               </IconButton>
@@ -224,7 +224,7 @@ export default function NotesTab({
         {notes.length === 0 && !editingNoteId ? (
           <Typography
             variant="body2"
-            sx={{ color: "var(--color-overlay0)", textAlign: "center", py: 3 }}
+            sx={{ color: "var(--color-subtext0)", textAlign: "center", py: 3 }}
           >
             No notes yet
           </Typography>
@@ -248,7 +248,6 @@ export default function NotesTab({
                     }
                   }}
                   sx={{
-                    position: "relative",
                     display: "flex",
                     flexDirection: "column",
                     mb: 1,
@@ -266,7 +265,7 @@ export default function NotesTab({
                   onClick={isEditing ? undefined : () => onSelectNote(note)}
                 >
                   {isEditing || hasTitle ? (
-                    <Box sx={{ display: "flex", alignItems: "center", px: 1, ml: "1px" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", px: 1, pt: 1 }}>
                       {isEditing ? (
                         <InputBase
                           placeholder="Title (optional)"
@@ -275,7 +274,6 @@ export default function NotesTab({
                           onClick={(e) => e.stopPropagation()}
                           sx={{
                             flex: 1,
-                            py: 0.5,
                             fontSize: FONT_SIZES.md,
                             fontWeight: 600,
                             color: "var(--color-text)",
@@ -289,7 +287,6 @@ export default function NotesTab({
                             flex: 1,
                             fontWeight: 600,
                             wordBreak: "break-word",
-                            py: 0.5,
                           }}
                         >
                           {note.title}
@@ -298,17 +295,65 @@ export default function NotesTab({
                     </Box>
                   ) : null}
 
+                  {isEditing ? (
+                    <Box sx={{ px: 1, pb: 1 }} onClick={(e) => e.stopPropagation()}>
+                      <MentionEditor
+                        value={noteContent}
+                        onChange={onNoteContentChange}
+                        itemsCache={itemsCache}
+                        canvasId={canvasId}
+                        onCreate={onCreateMentionItem}
+                        onMentionClick={onMentionClick}
+                        containerStyle={{ minHeight: 120 }}
+                        style={{
+                          background: "var(--color-mantle)",
+                          border: "1px solid var(--color-surface1)",
+                          borderRadius: 0,
+                          padding: "8px 10px",
+                          color: "var(--color-text)",
+                          fontSize: FONT_SIZES.md,
+                          overflow: "auto",
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        p: 1,
+                        fontSize: FONT_SIZES.sm,
+                        color: "var(--color-text)",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                          ...(!expandedNoteIds.has(note.id) && {
+                            display: "-webkit-box",
+                            WebkitLineClamp: 5,
+                            WebkitBoxOrient: "vertical" as const,
+                            overflow: "hidden",
+                          }),
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: getNotePreview(note.content),
+                        }}
+                      />
+                    </Box>
+                  )}
+
                   <Box
                     className="note-actions"
                     sx={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "flex-end",
                       opacity: isEditing ? 1 : 0,
                       transition: "opacity 0.15s",
-                      zIndex: 1,
+                      px: 0.5,
+                      pb: 0.5,
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -334,7 +379,7 @@ export default function NotesTab({
                           <IconButton
                             size="small"
                             onClick={onCloseNote}
-                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                            sx={{ color: "var(--color-subtext0)", p: 0.25 }}
                           >
                             <CloseIcon sx={{ fontSize: FONT_SIZES.md }} />
                           </IconButton>
@@ -344,7 +389,7 @@ export default function NotesTab({
                           <IconButton
                             size="small"
                             onClick={() => toggleExpanded(note.id)}
-                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                            sx={{ color: "var(--color-subtext0)", p: 0.25 }}
                           >
                             {expandedNoteIds.has(note.id) ? (
                               <UnfoldLessIcon sx={{ fontSize: FONT_SIZES.md }} />
@@ -377,7 +422,7 @@ export default function NotesTab({
                           <IconButton
                             size="small"
                             onClick={() => onHistoryNote(note.id)}
-                            sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                            sx={{ color: "var(--color-subtext0)", p: 0.25 }}
                           >
                             <HistoryIcon sx={{ fontSize: FONT_SIZES.md }} />
                           </IconButton>
@@ -387,63 +432,13 @@ export default function NotesTab({
                         <IconButton
                           size="small"
                           onClick={() => setDeleteNoteId(note.id)}
-                          sx={{ color: "var(--color-overlay0)", p: 0.25 }}
+                          sx={{ color: "var(--color-subtext0)", p: 0.25 }}
                         >
                           <DeleteIcon sx={{ fontSize: FONT_SIZES.md }} />
                         </IconButton>
                       </Tooltip>
                     </Box>
                   </Box>
-
-                  {isEditing ? (
-                    <Box sx={{ px: 1, pb: 1 }} onClick={(e) => e.stopPropagation()}>
-                      <MentionEditor
-                        value={noteContent}
-                        onChange={onNoteContentChange}
-                        itemsCache={itemsCache}
-                        canvasId={canvasId}
-                        onCreate={onCreateMentionItem}
-                        onMentionClick={onMentionClick}
-                        containerStyle={{ minHeight: 120 }}
-                        style={{
-                          background: "var(--color-mantle)",
-                          border: "1px solid var(--color-surface1)",
-                          borderRadius: 0,
-                          padding: "8px 10px",
-                          color: "var(--color-text)",
-                          fontSize: FONT_SIZES.md,
-                          overflow: "auto",
-                        }}
-                      />
-                    </Box>
-                  ) : (
-                    <Box
-                      sx={{
-                        py: 0.5,
-                        px: 1,
-                        fontSize: FONT_SIZES.sm,
-                        color: "var(--color-text)",
-                        wordBreak: "break-word",
-                        ...(!expandedNoteIds.has(note.id) && {
-                          display: "-webkit-box",
-                          WebkitLineClamp: 5,
-                          WebkitBoxOrient: "vertical" as const,
-                          overflow: "hidden",
-                        }),
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                        }}
-                        dangerouslySetInnerHTML={{
-                          __html: getNotePreview(note.content),
-                        }}
-                      />
-                    </Box>
-                  )}
                 </Box>
               );
             })}

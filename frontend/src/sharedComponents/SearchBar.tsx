@@ -11,7 +11,7 @@ import type { CanvasItemSearchResult, CanvasItemType } from "shared";
 import { useSearchItems } from "../hooks/queries";
 import { useCanvasStore } from "../stores/canvasStore";
 import { FONT_SIZES } from "../styles/styleConsts";
-import { canvasItemTypeIcon, LabelBadge } from "./LabelBadge";
+import { CanvasItemTypeBadge } from "./LabelBadge";
 
 type Destination = "Canvas" | "Sessions" | "Timeline" | "Gallery";
 
@@ -285,14 +285,7 @@ export default function SearchBar() {
                   <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
                     {result.title}
                   </Typography>
-                  <LabelBadge
-                    label={result.type}
-                    accentColor={bgColor}
-                    icon={canvasItemTypeIcon(result.type)}
-                    height={18}
-                    fontSize={FONT_SIZES.xs}
-                    sx={{ textTransform: "capitalize" }}
-                  />
+                  <CanvasItemTypeBadge type={result.type} accentColor={bgColor} height={18} />
                   {result.noteId && (
                     <LabelBadge
                       label="Note"

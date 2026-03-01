@@ -50,7 +50,7 @@ describe("formatItemMarkdown", () => {
     expect(result).not.toContain("<b>");
   });
 
-  it("includes connections with direction arrows", () => {
+  it("includes references with direction arrows", () => {
     const frodo = makeItem({ id: "2", title: "Frodo" });
     const shire = makeItem({ id: "3", title: "The Shire", type: "place" });
     const item = makeItem({
@@ -69,7 +69,7 @@ describe("formatItemMarkdown", () => {
     expect(result).toContain("The Shire");
   });
 
-  it("returns valid markdown with no notes and no connections", () => {
+  it("returns valid markdown with no notes and no references", () => {
     const item = makeItem({ id: "1", title: "Gandalf" });
     const result = formatItemMarkdown(item, [], new Map());
     expect(result).toContain("# Gandalf");

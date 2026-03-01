@@ -6,9 +6,8 @@ import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { memo, useMemo } from "react";
 import type { CanvasItemType } from "shared";
-import { CANVAS_ITEM_TYPE_LABELS } from "../../../constants";
 import BlurImage from "../../../sharedComponents/BlurImage";
-import { canvasItemTypeIcon, LabelBadge, TagBadge } from "../../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge, TagBadge } from "../../../sharedComponents/LabelBadge";
 import { useTagStore } from "../../../stores/tagStore";
 
 export type CanvasItemNodeData = {
@@ -35,7 +34,6 @@ type CanvasItemNodeType = Node<CanvasItemNodeData, "canvasItem">;
 function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const theme = useTheme();
   const color = theme.palette.canvasItemTypes[data.type].light;
-  const label = CANVAS_ITEM_TYPE_LABELS[data.type];
   const tagsById = useTagStore((s) => s.tags);
 
   const tags = useMemo(
@@ -47,7 +45,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
   const metaText = [
     `${data.notesCount} Note${data.notesCount !== 1 ? "s" : ""}`,
     `${data.photosCount} Photo${data.photosCount !== 1 ? "s" : ""}`,
-    `${data.connectionsCount} Connection${data.connectionsCount !== 1 ? "s" : ""}`,
+    `${data.connectionsCount} References${data.connectionsCount !== 1 ? "s" : ""}`,
   ].join(" · ");
 
   return (
@@ -87,12 +85,7 @@ function CanvasItemNodeComponent({ data }: NodeProps<CanvasItemNodeType>) {
           >
             {data.title}
           </Typography>
-          <LabelBadge
-            label={label}
-            accentColor={color}
-            icon={canvasItemTypeIcon(data.type)}
-            sx={{ flexShrink: 0 }}
-          />
+          <CanvasItemTypeBadge type={data.type} accentColor={color} />
         </Box>
 
         {/* Row 2: Summary (if present) */}

@@ -218,7 +218,7 @@ export default function PhotoDetail() {
           <Tooltip title="Open in Canvas">
             <IconButton
               size="small"
-              onClick={() => navigate(`/canvas?focus=${photo.parentItemId}`)}
+              onClick={() => navigate(`/canvas?item=${photo.parentItemId}`)}
               sx={{
                 color: "white",
                 "&:hover": { color: "var(--color-blue)" },

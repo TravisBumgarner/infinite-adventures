@@ -92,13 +92,28 @@ export default function Canvas() {
     onDragOver,
   } = useCanvasActions();
 
-  // Navigate to a specific item when arriving via ?focus=<itemId>
-  const focusId = searchParams.get("focus");
+  // Navigate to a specific item when arriving via ?item=<itemId>
+  const initialItemParam = useRef(searchParams.get("item"));
   useEffect(() => {
-    if (!focusId || filteredNodes.length === 0) return;
-    navigateToItem(focusId);
-    setSearchParams({}, { replace: true });
-  }, [focusId, filteredNodes.length, navigateToItem, setSearchParams]);
+    if (!initialItemParam.current || filteredNodes.length === 0) return;
+    navigateToItem(initialItemParam.current);
+    initialItemParam.current = null;
+  }, [filteredNodes.length, navigateToItem]);
+
+  // Sync editingItemId → URL search param
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        if (editingItemId) {
+          prev.set("item", editingItemId);
+        } else {
+          prev.delete("item");
+        }
+        return prev;
+      },
+      { replace: true },
+    );
+  }, [editingItemId, setSearchParams]);
 
   const deleteItemMutation = useDeleteItem(activeCanvasId ?? "");
 

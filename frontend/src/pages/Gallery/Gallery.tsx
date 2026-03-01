@@ -23,7 +23,7 @@ import { deletePhoto } from "../../api/photos";
 import { useCanvases, useGallery, useItems } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
 import ConfirmDeleteDialog from "../../sharedComponents/ConfirmDeleteDialog";
-import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../sharedComponents/LabelBadge";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
@@ -140,13 +140,11 @@ export default function Gallery() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  <LabelBadge
-                    label={option.type}
+                  <CanvasItemTypeBadge
+                    type={option.type}
                     accentColor={colors.light}
-                    icon={canvasItemTypeIcon(option.type)}
                     height={18}
-                    fontSize={FONT_SIZES.xs}
-                    sx={{ mr: 1, flexShrink: 0, textTransform: "capitalize" }}
+                    sx={{ mr: 1 }}
                   />
                   <span
                     style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
@@ -355,7 +353,7 @@ export default function Gallery() {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/canvas?focus=${entry.parentItemId}`);
+                            navigate(`/canvas?item=${entry.parentItemId}`);
                           }}
                           sx={{
                             color: "white",

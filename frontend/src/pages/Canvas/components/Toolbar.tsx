@@ -5,9 +5,8 @@ import type { DragEvent } from "react";
 import { useRef } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
-import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
-import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface ToolbarProps {
   onCreate: (type: CanvasItemType) => void;
@@ -44,7 +43,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
         <div style="background: ${color}; color: ${getContrastText(color)}; font-size: 11px; font-weight: 600; padding: 2px 8px;">${CANVAS_ITEM_TYPE_LABELS[type]}</div>
       </div>
       <div style="margin-top: 8px; background: var(--color-surface0); padding: 4px 8px;">
-        <div style="color: var(--color-subtext0); font-size: 12px;">0 Notes · 0 Photos · 0 Connections</div>
+        <div style="color: var(--color-subtext0); font-size: 12px;">0 Notes · 0 Photos · 0 References</div>
       </div>
     `;
     document.body.appendChild(dragImage);
@@ -101,7 +100,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                 bgcolor: "var(--color-base)",
                 border: `2px solid ${color}`,
                 p: 1,
-                width: 90,
+                width: 100,
                 cursor: "pointer",
                 transition: "transform 0.15s, box-shadow 0.15s",
                 "&:hover": {
@@ -122,14 +121,7 @@ export default function Toolbar({ onCreate }: ToolbarProps) {
                     bgcolor: "var(--color-surface1)",
                   }}
                 />
-                <LabelBadge
-                  label={CANVAS_ITEM_TYPE_LABELS[t.value]}
-                  accentColor={color}
-                  icon={canvasItemTypeIcon(t.value)}
-                  height={16}
-                  fontSize={FONT_SIZES.xs}
-                  sx={{ "& .MuiChip-label": { px: 0.75 } }}
-                />
+                <CanvasItemTypeBadge type={t.value} accentColor={color} height={16} />
               </Box>
               {/* Placeholder lines for content */}
               <Box sx={{ mt: 0.75, display: "flex", flexDirection: "column", gap: 0.5 }}>

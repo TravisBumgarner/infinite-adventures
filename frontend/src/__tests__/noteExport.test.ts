@@ -129,7 +129,7 @@ describe("formatItemExport", () => {
     expect(frodoSections).toHaveLength(1);
   });
 
-  it("returns just the source item when there are no connections", () => {
+  it("returns just the source item when there are no references", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
