@@ -24,7 +24,7 @@ function formatItemBlock(item: CanvasItem, itemsCache: Map<string, CanvasItem>):
 }
 
 /**
- * Format an item and its connections as readable plain text.
+ * Format an item and its references as readable plain text.
  * Resolves @{id} mentions in content to item titles.
  */
 export function formatItemExport(item: CanvasItem, itemsCache: Map<string, CanvasItem>): string {
@@ -60,7 +60,7 @@ export function formatItemExport(item: CanvasItem, itemsCache: Map<string, Canva
 }
 
 /**
- * Format an item with its notes and connections as a Markdown document.
+ * Format an item with its notes and references as a Markdown document.
  * Strips HTML tags from note content and resolves @{id} mentions.
  */
 export function formatItemMarkdown(
@@ -92,9 +92,9 @@ export function formatItemMarkdown(
     ...(item.linkedFrom?.map((l) => ({ ...l, direction: "incoming" as const })) ?? []),
   ];
 
-  lines.push("## Connections");
+  lines.push("## References");
   if (connections.length === 0) {
-    lines.push("No connections.");
+    lines.push("No references.");
   } else {
     for (const c of connections) {
       const arrow = c.direction === "outgoing" ? "\u2192" : "\u2190";
@@ -106,7 +106,7 @@ export function formatItemMarkdown(
 }
 
 /**
- * Generate a printable HTML document for an item with notes, photos, and connections.
+ * Generate a printable HTML document for an item with notes, photos, and references.
  * Opens in a new window and triggers the browser print dialog.
  */
 export function printItemHtml(
@@ -143,7 +143,7 @@ export function printItemHtml(
 
   const connectionsHtml =
     connections.length === 0
-      ? '<p style="color: #888;">No connections</p>'
+      ? '<p style="color: #888;">No references</p>'
       : connections
           .map(
             (c) => `
@@ -181,7 +181,7 @@ export function printItemHtml(
   ${notesHtml}
   <h2>Photos (${photos.length})</h2>
   ${photosHtml}
-  <h2>Connections (${connections.length})</h2>
+  <h2>References (${connections.length})</h2>
   ${connectionsHtml}
 </body>
 </html>`;

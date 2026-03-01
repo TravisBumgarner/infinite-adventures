@@ -11,12 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CanvasItem, CanvasItemType, Note, Photo } from "shared";
 import NoteHistoryModal from "../../../components/NoteHistoryModal";
-import {
-  CANVAS_ITEM_TYPE_LABELS,
-  CANVAS_ITEM_TYPES,
-  DRAFT_NOTE_ID,
-  SIDEBAR_WIDTH,
-} from "../../../constants";
+import { CANVAS_ITEM_TYPE_LABELS, DRAFT_NOTE_ID, SIDEBAR_WIDTH } from "../../../constants";
 import {
   useCreateItem,
   useCreateNote,
@@ -30,7 +25,7 @@ import { useNoteHandlers } from "../../../hooks/useNoteHandlers";
 import { usePhotoHandlers } from "../../../hooks/usePhotoHandlers";
 import { MODAL_ID, useModalStore } from "../../../modals";
 import BlurImage from "../../../sharedComponents/BlurImage";
-import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../../stores/canvasStore";
@@ -75,9 +70,24 @@ export default function CanvasItemPanel({
     () => onDeleted ?? (() => setEditingItemId(null)),
     [onDeleted, setEditingItemId],
   );
-  const handleNavigate = useMemo(
-    () => onNavigate ?? ((targetId: string) => setEditingItemId(targetId)),
-    [onNavigate, setEditingItemId],
+
+  // When navigating from a connection card, remember which item was "mentioned"
+  // so we can find and flash the relevant note once the new item's notes load.
+  const pendingFlashMentionOfRef = useRef<string | null>(null);
+
+  const handleNavigate = useCallback(
+    (targetId: string, mentionedItemId?: string) => {
+      if (mentionedItemId) {
+        pendingFlashMentionOfRef.current = mentionedItemId;
+        setPanelTab("notes");
+      }
+      if (onNavigate) {
+        onNavigate(targetId);
+      } else {
+        setEditingItemId(targetId);
+      }
+    },
+    [onNavigate, setEditingItemId, setPanelTab],
   );
 
   // Fetch item via React Query
@@ -263,9 +273,20 @@ export default function CanvasItemPanel({
         setEditingNoteId(null);
         setNoteContent("");
         setNoteTitle("");
+
+        // If we navigated here from a connection click, find and flash the note
+        // that contains a mention of the originating item.
+        if (pendingFlashMentionOfRef.current) {
+          const mentionedId = pendingFlashMentionOfRef.current;
+          pendingFlashMentionOfRef.current = null;
+          const matchingNote = queryItem.notes.find((n) => n.content.includes(`@{${mentionedId}}`));
+          if (matchingNote) {
+            setHighlightNoteId(matchingNote.id);
+          }
+        }
       }
     }
-  }, [itemId, queryItem, editingNoteId]);
+  }, [itemId, queryItem, editingNoteId, setHighlightNoteId]);
 
   async function handleDeleteItem() {
     await deleteItemMutation.mutateAsync(itemId);
@@ -382,7 +403,6 @@ export default function CanvasItemPanel({
     handleSaved(updated);
   }
 
-  const typeInfo = item ? CANVAS_ITEM_TYPES.find((t) => t.value === item.type) : null;
   const typeBgColor = item ? theme.palette.canvasItemTypes[item.type].light : "";
   const mainPhoto = item?.photos.find((p) => p.isMainPhoto) ?? null;
 
@@ -493,13 +513,7 @@ export default function CanvasItemPanel({
           {/* Right column: type badge, summary */}
           <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Box>
-              <LabelBadge
-                label={typeInfo?.label ?? item.type}
-                accentColor={typeBgColor}
-                icon={canvasItemTypeIcon(item.type)}
-                height={22}
-                fontSize={FONT_SIZES.xs}
-              />
+              <CanvasItemTypeBadge type={item.type} accentColor={typeBgColor} height={22} />
             </Box>
             <TextField
               label="Summary"
@@ -539,7 +553,7 @@ export default function CanvasItemPanel({
       >
         <Tab label="Notes" value="notes" />
         <Tab label="Photos" value="photos" />
-        <Tab label="Connections" value="connections" />
+        <Tab label="References" value="connections" />
         <Tab label={CANVAS_ITEM_TYPE_LABELS[item.type]} value="details" />
       </Tabs>
 

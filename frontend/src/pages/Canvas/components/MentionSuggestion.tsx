@@ -4,7 +4,7 @@ import type { SuggestionProps } from "@tiptap/suggestion";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPES } from "../../../constants";
-import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 
 export interface SuggestionItem {
@@ -71,12 +71,10 @@ function SuggestionPopup({
             }}
             sx={{ gap: 1, fontSize: FONT_SIZES.sm }}
           >
-            <LabelBadge
-              label={item.type.toUpperCase()}
+            <CanvasItemTypeBadge
+              type={item.type as CanvasItemType}
               accentColor={bgColor}
-              icon={canvasItemTypeIcon(item.type as CanvasItemType)}
               height={18}
-              fontSize={FONT_SIZES.xs}
             />
             {item.title}
           </MenuItem>
@@ -100,13 +98,7 @@ function SuggestionPopup({
                 color: "var(--color-subtext0)",
               }}
             >
-              <LabelBadge
-                label={t.label.toUpperCase()}
-                accentColor={bgColor}
-                icon={canvasItemTypeIcon(t.value)}
-                height={18}
-                fontSize={FONT_SIZES.xs}
-              />
+              <CanvasItemTypeBadge type={t.value} accentColor={bgColor} height={18} />
               Create &ldquo;{query}&rdquo;
             </MenuItem>
           );

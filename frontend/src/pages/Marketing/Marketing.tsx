@@ -43,7 +43,7 @@ const FEATURES = [
   },
   {
     icon: <HubIcon sx={{ fontSize: 40 }} />,
-    title: "Visual Connections",
+    title: "Visual References",
     description:
       "Draw lines between related items to visualize relationships. See how characters, places, and events interconnect.",
   },

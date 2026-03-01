@@ -4,10 +4,8 @@ import CardContent from "@mui/material/CardContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import type { CanvasItem } from "shared";
-import { CANVAS_ITEM_TYPES } from "../../../constants";
 import BlurImage from "../../../sharedComponents/BlurImage";
-import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
-import { FONT_SIZES } from "../../../styles/styleConsts";
+import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -103,8 +101,6 @@ function ItemPhotos({ item }: { item: CanvasItem }) {
 }
 
 export function ItemCard({ item, itemsMap }: { item: CanvasItem; itemsMap: Map<string, string> }) {
-  const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
-
   return (
     <Card
       sx={{
@@ -121,15 +117,7 @@ export function ItemCard({ item, itemsMap }: { item: CanvasItem; itemsMap: Map<s
               {item.title || "Untitled"}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center">
-              {typeInfo && (
-                <LabelBadge
-                  label={typeInfo.label}
-                  accentColor="var(--color-surface1)"
-                  icon={canvasItemTypeIcon(item.type)}
-                  height={20}
-                  fontSize={FONT_SIZES.xs}
-                />
-              )}
+              <CanvasItemTypeBadge type={item.type} accentColor="var(--color-surface1)" />
             </Stack>
             {item.summary && (
               <Typography variant="body2" sx={{ color: "var(--color-subtext0)", mt: 1 }}>
@@ -153,8 +141,6 @@ interface SharedItemViewProps {
 export function SharedItemView({ item, allItems }: SharedItemViewProps) {
   const itemsMap = new Map(allItems.map((i) => [i.id, i.title]));
   const mainPhoto = item.photos.find((p) => p.isMainPhoto);
-  const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
-
   return (
     <Box sx={{ py: { xs: 3, md: 4 } }}>
       <Stack spacing={3}>
@@ -173,15 +159,7 @@ export function SharedItemView({ item, allItems }: SharedItemViewProps) {
             </Box>
           )}
           <Box>
-            {typeInfo && (
-              <LabelBadge
-                label={typeInfo.label}
-                accentColor="var(--color-surface1)"
-                icon={canvasItemTypeIcon(item.type)}
-                height={20}
-                fontSize={FONT_SIZES.xs}
-              />
-            )}
+            <CanvasItemTypeBadge type={item.type} accentColor="var(--color-surface1)" />
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
               {item.title || "Untitled"}
             </Typography>

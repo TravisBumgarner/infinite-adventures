@@ -4,13 +4,11 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import type { Share } from "shared";
-import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useDeleteShare } from "../../hooks/mutations";
 import { useShares } from "../../hooks/queries";
-import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../sharedComponents/LabelBadge";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
-import { FONT_SIZES } from "../../styles/styleConsts";
 
 function ShareRow({ share }: { share: Share }) {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
@@ -50,14 +48,10 @@ function ShareRow({ share }: { share: Share }) {
           {label}
         </Typography>
         {share.itemId && share.itemType && (
-          <LabelBadge
-            label={
-              CANVAS_ITEM_TYPES.find((t) => t.value === share.itemType)?.label ?? share.itemType
-            }
+          <CanvasItemTypeBadge
+            type={share.itemType}
             accentColor="var(--color-surface1)"
-            icon={canvasItemTypeIcon(share.itemType)}
             height={18}
-            fontSize={FONT_SIZES.xs}
           />
         )}
       </Box>

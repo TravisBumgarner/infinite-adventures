@@ -6,8 +6,7 @@ import type { Node, NodeProps } from "@xyflow/react";
 import { Handle, Position } from "@xyflow/react";
 import { memo } from "react";
 import type { CanvasItemType } from "shared";
-import { CANVAS_ITEM_TYPE_LABELS } from "../../constants";
-import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../sharedComponents/LabelBadge";
 
 export type TreeNodeData = {
   type: CanvasItemType;
@@ -19,7 +18,6 @@ export type TreeNodeType = Node<TreeNodeData, "tree">;
 function TreeNode({ data }: NodeProps<TreeNodeType>) {
   const theme = useTheme();
   const color = theme.palette.canvasItemTypes[data.type].light;
-  const label = CANVAS_ITEM_TYPE_LABELS[data.type];
 
   return (
     <>
@@ -53,12 +51,7 @@ function TreeNode({ data }: NodeProps<TreeNodeType>) {
           >
             {data.title}
           </Typography>
-          <LabelBadge
-            label={label}
-            accentColor={color}
-            icon={canvasItemTypeIcon(data.type)}
-            sx={{ flexShrink: 0 }}
-          />
+          <CanvasItemTypeBadge type={data.type} accentColor={color} />
         </Box>
       </Paper>
       <Handle

@@ -109,3 +109,43 @@ export function TagBadge({ tag, compact, onDelete }: TagBadgeProps) {
 export function canvasItemTypeIcon(type: CanvasItemType): ComponentType<{ sx?: SxProps<Theme> }> {
   return CANVAS_ITEM_TYPE_ICONS[type];
 }
+
+const CANVAS_ITEM_TYPE_LABEL: Record<CanvasItemType, string> = {
+  person: "Person",
+  place: "Place",
+  thing: "Thing",
+  session: "Session",
+  event: "Event",
+};
+
+interface CanvasItemTypeBadgeProps {
+  type: CanvasItemType;
+  accentColor: string;
+  height?: number;
+  fontSize?: number;
+  sx?: SxProps<Theme>;
+}
+
+export function CanvasItemTypeBadge({
+  type,
+  accentColor,
+  height = 20,
+  fontSize = FONT_SIZES.xs,
+  sx,
+}: CanvasItemTypeBadgeProps) {
+  return (
+    <LabelBadge
+      label={CANVAS_ITEM_TYPE_LABEL[type]}
+      accentColor={accentColor}
+      icon={CANVAS_ITEM_TYPE_ICONS[type]}
+      height={height}
+      fontSize={fontSize}
+      sx={{
+        width: 80,
+        flexShrink: 0,
+        justifyContent: "center",
+        ...((sx ?? {}) as Record<string, unknown>),
+      }}
+    />
+  );
+}

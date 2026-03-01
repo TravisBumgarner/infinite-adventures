@@ -20,10 +20,9 @@ import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { CANVAS_ITEM_TYPES } from "../../constants";
 import { useCanvases, useItems, useTimeline, useTimelineCounts } from "../../hooks/queries";
 import BlurImage from "../../sharedComponents/BlurImage";
-import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import { CanvasItemTypeBadge } from "../../sharedComponents/LabelBadge";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useCanvasStore } from "../../stores/canvasStore";
 import { FONT_SIZES } from "../../styles/styleConsts";
@@ -249,13 +248,11 @@ export default function Timeline() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  <LabelBadge
-                    label={option.type}
+                  <CanvasItemTypeBadge
+                    type={option.type}
                     accentColor={colors.light}
-                    icon={canvasItemTypeIcon(option.type)}
                     height={18}
-                    fontSize={FONT_SIZES.xs}
-                    sx={{ mr: 1, flexShrink: 0, textTransform: "capitalize" }}
+                    sx={{ mr: 1 }}
                   />
                   <span
                     style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
@@ -373,9 +370,6 @@ export default function Timeline() {
               >
                 {filtered.map((entry, idx) => {
                   const colors = theme.palette.canvasItemTypes[entry.parentItemType];
-                  const typeLabel =
-                    CANVAS_ITEM_TYPES.find((t) => t.value === entry.parentItemType)?.label ??
-                    entry.parentItemType;
                   const ts = sort === "updatedAt" ? entry.updatedAt : entry.createdAt;
                   const currentDateKey = getDateKey(ts);
                   const prevEntry = idx > 0 ? filtered[idx - 1] : null;
@@ -428,13 +422,10 @@ export default function Timeline() {
                       >
                         {/* Row 1: type chip + title + date + action buttons */}
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <LabelBadge
-                            label={typeLabel}
+                          <CanvasItemTypeBadge
+                            type={entry.parentItemType}
                             accentColor={colors.light}
-                            icon={canvasItemTypeIcon(entry.parentItemType)}
                             height={22}
-                            fontSize={FONT_SIZES.xs}
-                            sx={{ minWidth: 60 }}
                           />
                           <Typography
                             sx={{
@@ -452,7 +443,7 @@ export default function Timeline() {
                             <IconButton
                               size="small"
                               onClick={() => {
-                                navigate(`/canvas?focus=${entry.parentItemId}`);
+                                navigate(`/canvas?item=${entry.parentItemId}`);
                               }}
                               sx={{
                                 color: "var(--color-subtext0)",
