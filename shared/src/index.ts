@@ -287,6 +287,7 @@ export const SharedItemContentSchema = z.object({
   shareType: z.literal("item"),
   canvasName: z.string(),
   item: CanvasItemSchema,
+  allItems: z.array(CanvasItemSchema),
 });
 
 export const SharedContentSchema = z.discriminatedUnion("shareType", [

@@ -53,7 +53,7 @@ export default function ShareModal({ canvasId, itemId, itemTitle }: ShareModalPr
   const title = itemId ? `Share "${itemTitle ?? "Item"}"` : "Share Canvas";
 
   return (
-    <BaseModal title={title} maxWidth="xs">
+    <BaseModal title={title} maxWidth="xs" paperSx={{ minWidth: 400 }}>
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {existingShare ? (
           <>
@@ -68,7 +68,6 @@ export default function ShareModal({ canvasId, itemId, itemTitle }: ShareModalPr
                 py: 1,
               }}
             >
-              <LinkIcon sx={{ color: "var(--color-green)", fontSize: 20 }} />
               <Typography
                 variant="body2"
                 sx={{

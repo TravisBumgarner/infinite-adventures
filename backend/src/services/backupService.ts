@@ -490,13 +490,17 @@ export async function importCanvas(
         });
       }
 
-      // Insert notes (remap canvasItemId)
+      // Insert notes (remap canvasItemId and mention references in content)
       for (const n of data.notes) {
+        const remappedContent = n.content.replace(/@\{([^}]+)\}/g, (_match, oldId) => {
+          const newId = canvasItemIdMap.get(oldId);
+          return newId ? `@{${newId}}` : _match;
+        });
         await tx.insert(notes).values({
           id: noteIdMap.get(n.id)!,
           canvasItemId: canvasItemIdMap.get(n.canvasItemId)!,
           title: n.title ?? null,
-          content: n.content,
+          content: remappedContent,
           plainContent: n.plainContent ?? "",
           isImportant: n.isImportant,
           createdAt: new Date(n.createdAt),
@@ -571,28 +575,36 @@ export async function importCanvas(
         });
       }
 
-      // Insert quick notes (v2+, remap canvasId)
+      // Insert quick notes (v2+, remap canvasId and mention references)
       for (const q of data.quickNotes ?? []) {
+        const remappedContent = q.content.replace(/@\{([^}]+)\}/g, (_match, oldId) => {
+          const newId = canvasItemIdMap.get(oldId);
+          return newId ? `@{${newId}}` : _match;
+        });
         await tx.insert(quickNotes).values({
           id: quickNoteIdMap.get(q.id)!,
           canvasId: newCanvasId,
           title: q.title ?? null,
-          content: q.content,
+          content: remappedContent,
           isImportant: q.isImportant,
           createdAt: new Date(q.createdAt),
           updatedAt: new Date(q.updatedAt),
         });
       }
 
-      // Insert content history (v2+, remap sourceId to new note/quickNote ID)
+      // Insert content history (v2+, remap sourceId and mention references)
       for (const ch of data.contentHistory ?? []) {
         const remappedSourceId =
           noteIdMap.get(ch.sourceId) ?? quickNoteIdMap.get(ch.sourceId) ?? ch.sourceId;
+        const remappedContent = ch.content.replace(/@\{([^}]+)\}/g, (_match, oldId) => {
+          const newId = canvasItemIdMap.get(oldId);
+          return newId ? `@{${newId}}` : _match;
+        });
         await tx.insert(contentHistory).values({
           id: contentHistoryIdMap.get(ch.id)!,
           sourceId: remappedSourceId,
           sourceType: ch.sourceType as "note" | "quick_note",
-          content: ch.content,
+          content: remappedContent,
           snapshotAt: new Date(ch.snapshotAt),
         });
       }

@@ -26,16 +26,20 @@ export async function handler(req: Request, res: Response): Promise<void> {
   }
 
   if (share.itemId) {
-    // Item-level share
+    // Item-level share — include all canvas items for mention resolution
     const item = await getItem(share.itemId);
     if (!item) {
       sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
       return;
     }
+    const summaries = await listItems(share.canvasId);
+    const fullItems = await Promise.all(summaries.map((s) => getItem(s.id)));
+    const allItems = fullItems.filter((i) => i !== null);
     sendSuccess(res, {
       shareType: "item",
       canvasName: canvas.name,
       item,
+      allItems,
     });
   } else {
     // Canvas-level share — return full items so viewers can see notes/photos

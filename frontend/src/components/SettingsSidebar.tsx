@@ -1,7 +1,6 @@
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
-import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SchoolIcon from "@mui/icons-material/School";
@@ -9,7 +8,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import UploadIcon from "@mui/icons-material/Upload";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Tab from "@mui/material/Tab";
@@ -21,13 +19,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Share } from "shared";
 import { exportCanvas } from "../api/index";
 import { logout } from "../auth/service";
-import { SIDEBAR_WIDTH } from "../constants";
+import { CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../constants";
 import { useDeleteShare, useImportCanvas } from "../hooks/mutations";
 import { useShares } from "../hooks/queries";
 import FeedbackForm from "../sharedComponents/FeedbackForm";
+import { canvasItemTypeIcon, LabelBadge } from "../sharedComponents/LabelBadge";
 import { useAppStore } from "../stores/appStore";
 import { useCanvasStore } from "../stores/canvasStore";
 import type { ThemePreference } from "../styles/styleConsts";
+import { FONT_SIZES } from "../styles/styleConsts";
 import { useThemePreference } from "../styles/Theme";
 import { ManageTags } from "./ManageTags";
 
@@ -236,7 +236,6 @@ function ShareRow({ share }: { share: Share }) {
         py: 1,
       }}
     >
-      <LinkIcon sx={{ color: "var(--color-green)", fontSize: 18, flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
           variant="body2"
@@ -249,11 +248,17 @@ function ShareRow({ share }: { share: Share }) {
         >
           {label}
         </Typography>
-        <Chip
-          label={share.itemId ? (share.itemType ?? "item") : "canvas"}
-          size="small"
-          sx={{ height: 18, fontSize: 11, mt: 0.25 }}
-        />
+        {share.itemId && share.itemType && (
+          <LabelBadge
+            label={
+              CANVAS_ITEM_TYPES.find((t) => t.value === share.itemType)?.label ?? share.itemType
+            }
+            accentColor="var(--color-surface1)"
+            icon={canvasItemTypeIcon(share.itemType)}
+            height={18}
+            fontSize={FONT_SIZES.xs}
+          />
+        )}
       </Box>
       <IconButton size="small" onClick={handleCopy} title="Copy link">
         <ContentCopyIcon sx={{ fontSize: 16 }} />

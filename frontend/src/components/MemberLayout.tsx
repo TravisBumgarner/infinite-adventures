@@ -74,7 +74,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
           <>
             <SavingIndicator />
             <IconButton
-              title="Share Canvas"
+              title="Share canvas"
               size="small"
               onClick={() => {
                 if (activeCanvasId) {

@@ -1,11 +1,10 @@
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
-import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import LinkIcon from "@mui/icons-material/Link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import ShareIcon from "@mui/icons-material/Share";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -14,12 +13,10 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
-import { useEffect, useRef, useState } from "react";
-import type { CanvasItem } from "shared";
+import { useRef, useState } from "react";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface PanelHeaderProps {
-  item: CanvasItem;
   title: string;
   onTitleChange: (value: string) => void;
   onClose: () => void;
@@ -30,7 +27,6 @@ interface PanelHeaderProps {
 }
 
 export default function PanelHeader({
-  item,
   title,
   onTitleChange,
   onClose,
@@ -39,27 +35,9 @@ export default function PanelHeader({
   onDeleteItem,
   onShare,
 }: PanelHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
   const exportTimeout = useRef<ReturnType<typeof setTimeout>>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isEditing && titleInputRef.current) {
-      titleInputRef.current.focus();
-      titleInputRef.current.select();
-    }
-  }, [isEditing]);
-
-  function handleTitleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") {
-      setIsEditing(false);
-    } else if (e.key === "Escape") {
-      onTitleChange(item.title);
-      setIsEditing(false);
-    }
-  }
 
   function closeAllMenus() {
     setMenuAnchor(null);
@@ -76,42 +54,36 @@ export default function PanelHeader({
         pb: 1,
       }}
     >
-      {isEditing ? (
-        <InputBase
-          inputRef={titleInputRef}
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          onBlur={() => setIsEditing(false)}
-          onKeyDown={handleTitleKeyDown}
-          sx={{
-            flex: 1,
-            fontSize: FONT_SIZES.xl,
-            fontWeight: 500,
-            "& input": {
-              padding: 0,
+      <InputBase
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        placeholder="Untitled"
+        sx={{
+          flex: 1,
+          fontSize: FONT_SIZES.xl,
+          fontWeight: 500,
+          cursor: "text",
+          "& input": {
+            padding: 0,
+            cursor: "text",
+            "&::placeholder": {
+              color: "var(--color-overlay0)",
+              opacity: 1,
+              fontStyle: "italic",
             },
-          }}
-        />
-      ) : (
-        <Typography
-          variant="h6"
-          sx={{
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            flex: 1,
-            cursor: "pointer",
-            ...(title ? {} : { color: "text.secondary", fontStyle: "italic" }),
-          }}
-          onClick={() => setIsEditing(true)}
-        >
-          {title || "Untitled"}
-        </Typography>
+          },
+        }}
+      />
+      {onShare && (
+        <IconButton size="small" onClick={onShare} title="Share item" sx={{ p: 0.5 }}>
+          <ShareIcon sx={{ fontSize: FONT_SIZES.lg }} />
+        </IconButton>
       )}
       <IconButton
         data-tour="panel-menu"
         size="small"
         onClick={(e) => setMenuAnchor(e.currentTarget)}
+        title="More options"
         sx={{ p: 0.5 }}
       >
         <MoreVertIcon sx={{ fontSize: FONT_SIZES.lg }} />
@@ -130,30 +102,6 @@ export default function PanelHeader({
           },
         }}
       >
-        <MenuItem
-          onClick={() => {
-            closeAllMenus();
-            setIsEditing(true);
-          }}
-        >
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          Edit Title
-        </MenuItem>
-        {onShare && (
-          <MenuItem
-            onClick={() => {
-              closeAllMenus();
-              onShare();
-            }}
-          >
-            <ListItemIcon>
-              <LinkIcon fontSize="small" />
-            </ListItemIcon>
-            Share
-          </MenuItem>
-        )}
         <MenuItem
           onMouseEnter={(e) => {
             if (exportTimeout.current) clearTimeout(exportTimeout.current);
@@ -234,7 +182,11 @@ export default function PanelHeader({
           Markdown
         </MenuItem>
       </Menu>
-      <IconButton onClick={onClose} sx={{ color: "var(--color-text)", ml: "auto" }}>
+      <IconButton
+        onClick={onClose}
+        title="Close panel"
+        sx={{ color: "var(--color-text)", ml: "auto" }}
+      >
         <CloseIcon />
       </IconButton>
     </Box>

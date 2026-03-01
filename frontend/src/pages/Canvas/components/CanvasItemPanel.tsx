@@ -428,7 +428,6 @@ export default function CanvasItemPanel({
       }}
     >
       <PanelHeader
-        item={item}
         title={title}
         onTitleChange={(value) => {
           setTitle(value);
