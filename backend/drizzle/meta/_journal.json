@@ -92,6 +92,13 @@
       "when": 1771477484203,
       "tag": "0012_low_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1772326776758,
+      "tag": "0013_light_wild_child",
+      "breakpoints": true
     }
   ]
 }

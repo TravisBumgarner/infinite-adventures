@@ -15,14 +15,11 @@ import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { useEffect, useRef, useState } from "react";
 import type { CanvasItem } from "shared";
-import { canvasItemTypeIcon, LabelBadge } from "../../../sharedComponents/LabelBadge";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 
 interface PanelHeaderProps {
   item: CanvasItem;
   title: string;
-  typeBgColor: string;
-  typeLabel: string;
   onTitleChange: (value: string) => void;
   onClose: () => void;
   onDownloadPdf: () => void;
@@ -33,8 +30,6 @@ interface PanelHeaderProps {
 export default function PanelHeader({
   item,
   title,
-  typeBgColor,
-  typeLabel,
   onTitleChange,
   onClose,
   onDownloadPdf,
@@ -110,13 +105,6 @@ export default function PanelHeader({
           {title || "Untitled"}
         </Typography>
       )}
-      <LabelBadge
-        label={typeLabel}
-        accentColor={typeBgColor}
-        icon={canvasItemTypeIcon(item.type)}
-        height={22}
-        fontSize={FONT_SIZES.xs}
-      />
       <IconButton
         data-tour="panel-menu"
         size="small"

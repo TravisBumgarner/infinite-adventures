@@ -70,6 +70,8 @@ export async function handler(req: Request<{ itemId: string }>, res: Response): 
       caption: photo.caption,
       aspectRatio: photo.aspectRatio ?? undefined,
       blurhash: photo.blurhash ?? undefined,
+      cropX: photo.cropX ?? undefined,
+      cropY: photo.cropY ?? undefined,
     },
     201,
   );

@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../../constants";
 import { useCreateItem } from "../../hooks/mutations";
 import { useCanvases, useSessions } from "../../hooks/queries";
+import BlurImage from "../../sharedComponents/BlurImage";
 import QueryErrorDisplay from "../../sharedComponents/QueryErrorDisplay";
 import { useAppStore } from "../../stores/appStore";
 import { useCanvasStore } from "../../stores/canvasStore";
@@ -84,8 +85,7 @@ export default function Sessions() {
       {sessionId ? (
         <Box
           sx={{
-            pt: 2,
-            px: 3,
+            height: "100%",
             ml: showSettings ? `${SIDEBAR_WIDTH + 16}px` : 0,
             transition: "margin-left 0.2s",
           }}
@@ -206,35 +206,28 @@ export default function Sessions() {
                   sx={{
                     border: "1px solid var(--color-surface1)",
                     bgcolor: "var(--color-base)",
-                    "&:hover": session.selectedPhotoUrl
-                      ? {
-                          transform: "scale(1.05)",
-                          zIndex: 10,
-                          "& .session-img": { objectFit: "contain" },
-                        }
-                      : { bgcolor: "var(--color-surface0)" },
+                    "&:hover": {
+                      bgcolor: session.selectedPhotoUrl ? undefined : "var(--color-surface0)",
+                    },
                     position: "relative",
                     aspectRatio: "1",
                     p: 0,
                     overflow: "hidden",
-                    transition: "transform 0.2s ease",
-                    zIndex: 1,
                   }}
                 >
                   {session.selectedPhotoUrl && (
                     <>
-                      <Box
-                        className="session-img"
-                        component="img"
+                      <BlurImage
                         src={session.selectedPhotoUrl}
                         alt={session.title}
+                        cropX={session.selectedPhotoCropX}
+                        cropY={session.selectedPhotoCropY}
+                        aspectRatio={session.selectedPhotoAspectRatio}
                         sx={{
                           position: "absolute",
                           inset: 0,
                           width: "100%",
                           height: "100%",
-                          objectFit: "cover",
-                          transition: "object-fit 0.2s ease",
                         }}
                       />
                       <Box

@@ -64,8 +64,8 @@ export function usePhotoHandlers({
   );
 
   const handlePhotoSelect = useCallback(
-    async (photoId: string) => {
-      await selectPhotoMutation.mutateAsync(photoId);
+    async (photoId: string, cropX?: number, cropY?: number) => {
+      await selectPhotoMutation.mutateAsync({ photoId, cropX, cropY });
       const { data: updated } = await refetchItem();
       if (updated) {
         setPhotos(updated.photos);

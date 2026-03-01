@@ -156,6 +156,8 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
     caption: p.caption,
     aspectRatio: p.aspectRatio ?? undefined,
     blurhash: p.blurhash ?? undefined,
+    cropX: p.cropX ?? undefined,
+    cropY: p.cropY ?? undefined,
   }));
 
   // Get tags
@@ -460,7 +462,12 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
   const summaries: SessionSummary[] = [];
   for (const item of items) {
     const selectedPhotos = await db
-      .select({ filename: photos.filename })
+      .select({
+        filename: photos.filename,
+        cropX: photos.cropX,
+        cropY: photos.cropY,
+        aspectRatio: photos.aspectRatio,
+      })
       .from(photos)
       .where(
         and(
@@ -470,12 +477,16 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
         ),
       );
 
+    const mainPhoto = selectedPhotos[0];
     summaries.push({
       id: item.id,
       title: item.title,
       sessionDate: item.sessionDate,
       createdAt: item.createdAt.toISOString(),
-      selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
+      selectedPhotoUrl: mainPhoto ? `/api/photos/${mainPhoto.filename}` : undefined,
+      selectedPhotoCropX: mainPhoto?.cropX ?? undefined,
+      selectedPhotoCropY: mainPhoto?.cropY ?? undefined,
+      selectedPhotoAspectRatio: mainPhoto?.aspectRatio ?? undefined,
     });
   }
 
