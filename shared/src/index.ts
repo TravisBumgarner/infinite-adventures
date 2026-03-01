@@ -257,6 +257,46 @@ export const PaginatedGallerySchema = z.object({
 
 export type PaginatedGallery = z.infer<typeof PaginatedGallerySchema>;
 
+// --- Shares ---
+
+export const ShareSchema = z.object({
+  id: z.string(),
+  token: z.string(),
+  canvasId: z.string(),
+  itemId: z.string().nullable(),
+  itemTitle: z.string().optional(),
+  itemType: CanvasItemTypeSchema.optional(),
+  createdAt: z.string(),
+});
+
+export const CreateShareInputSchema = z.object({
+  canvasId: z.string().uuid(),
+  itemId: z.string().uuid().optional(),
+});
+
+// --- Shared Content ---
+
+export const SharedCanvasContentSchema = z.object({
+  shareType: z.literal("canvas"),
+  canvasName: z.string(),
+  items: z.array(CanvasItemSchema),
+  tags: z.array(TagSchema),
+});
+
+export const SharedItemContentSchema = z.object({
+  shareType: z.literal("item"),
+  canvasName: z.string(),
+  item: CanvasItemSchema,
+  allItems: z.array(CanvasItemSchema),
+});
+
+export const SharedContentSchema = z.discriminatedUnion("shareType", [
+  SharedCanvasContentSchema,
+  SharedItemContentSchema,
+]);
+
+export type SharedContent = z.infer<typeof SharedContentSchema>;
+
 // --- Error codes ---
 
 export const ERROR_CODES = [
@@ -273,6 +313,7 @@ export const ERROR_CODES = [
   "TAG_NOT_FOUND",
   "LAST_CANVAS",
   "INVALID_BACKUP",
+  "SHARE_NOT_FOUND",
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -308,3 +349,5 @@ export type Canvas = z.infer<typeof CanvasSchema>;
 export type CreateCanvasInput = z.infer<typeof CreateCanvasInputSchema>;
 export type UpdateCanvasInput = z.infer<typeof UpdateCanvasInputSchema>;
 export type ImportCanvasResult = z.infer<typeof ImportCanvasResultSchema>;
+export type Share = z.infer<typeof ShareSchema>;
+export type CreateShareInput = z.infer<typeof CreateShareInputSchema>;

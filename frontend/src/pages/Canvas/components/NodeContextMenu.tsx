@@ -1,6 +1,7 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import LabelIcon from "@mui/icons-material/Label";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ShareIcon from "@mui/icons-material/Share";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -20,6 +21,7 @@ interface NodeContextMenuProps {
   onDelete: () => void;
   onAddTag: (tagId: string) => void;
   onOpenInSessionViewer?: () => void;
+  onShare?: () => void;
   onClose: () => void;
 }
 
@@ -33,6 +35,7 @@ export default function NodeContextMenu({
   onDelete,
   onAddTag,
   onOpenInSessionViewer,
+  onShare,
   onClose,
 }: NodeContextMenuProps) {
   const openModal = useModalStore((s) => s.openModal);
@@ -86,6 +89,19 @@ export default function NodeContextMenu({
               <OpenInNewIcon fontSize="small" />
             </ListItemIcon>
             Open in Session Viewer
+          </MenuItem>
+        )}
+        {onShare && (
+          <MenuItem
+            onClick={() => {
+              onShare();
+              onClose();
+            }}
+          >
+            <ListItemIcon>
+              <ShareIcon fontSize="small" />
+            </ListItemIcon>
+            Share
           </MenuItem>
         )}
         <MenuItem ref={tagMenuAnchor} onClick={() => setTagMenuOpen(true)}>

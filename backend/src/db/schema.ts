@@ -263,6 +263,27 @@ export const canvasItemLinks = pgTable(
 );
 
 // ============================================
+// Shares (public link sharing)
+// ============================================
+
+export const shares = pgTable(
+  "shares",
+  {
+    id: uuid("id").primaryKey(),
+    token: text("token").unique().notNull(),
+    canvasId: uuid("canvas_id")
+      .notNull()
+      .references(() => canvases.id, { onDelete: "cascade" }),
+    itemId: uuid("item_id").references(() => canvasItems.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("shares_token_idx").on(table.token)],
+);
+
+// ============================================
 // Type exports
 // ============================================
 
@@ -293,3 +314,5 @@ export type CanvasItemTag = typeof canvasItemTags.$inferSelect;
 export type InsertCanvasItemTag = typeof canvasItemTags.$inferInsert;
 export type ContentHistory = typeof contentHistory.$inferSelect;
 export type InsertContentHistory = typeof contentHistory.$inferInsert;
+export type Share = typeof shares.$inferSelect;
+export type InsertShare = typeof shares.$inferInsert;

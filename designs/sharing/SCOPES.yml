@@ -1,0 +1,380 @@
+project: Sharing Feature
+design_file: designs/sharing/DESIGN.md
+scoping_date: 2026-02-28
+
+milestones:
+  - number: 1
+    title: "1. Backend sharing infrastructure"
+    description: |
+      Database schema, share service, auth middleware for per-route share
+      access, share management routes, and public content + copy routes.
+    branch:
+      working: sharing-backend
+      base: main
+
+  - number: 2
+    title: "2. Settings sidebar tabs"
+    description: |
+      Restructure the existing SettingsSidebar from a flat list into a tabbed
+      layout (General, Tags, Data, Sharing). This is a UI-only change with no
+      new backend dependencies.
+    branch:
+      working: sharing-settings-tabs
+      base: main
+
+  - number: 3
+    title: "3. Share UI and modal"
+    description: |
+      Frontend share modal, share icon placement in top bar and item panel,
+      the Sharing tab content in settings, and the public shared viewer page.
+    branch:
+      working: sharing-frontend
+      base: sharing-backend
+
+tasks:
+  # ── Milestone 1: Backend ──────────────────────────────────────────
+
+  - id: 1
+    milestone: 1
+    title: Add shares table and migration
+    description: |
+      Create the `shares` table in `backend/src/db/schema.ts` with columns:
+      - `id` (uuid, primary key)
+      - `token` (text, unique, indexed)
+      - `canvasId` (uuid, FK → canvases, cascade delete)
+      - `itemId` (uuid, FK → canvas_items, nullable, cascade delete)
+      - `createdBy` (uuid, FK → users)
+      - `createdAt` (timestamp with timezone, default now)
+
+      Add the Drizzle type exports (`Share`, `InsertShare`).
+      Generate the migration with `npx drizzle-kit generate`.
+
+      Add shared Zod schemas in `shared/src/index.ts`:
+      - `ShareSchema` (id, token, canvasId, itemId nullable, itemTitle optional, itemType optional, createdAt)
+      - `CreateShareInputSchema` (canvasId, itemId optional)
+      - Inferred types: `Share`, `CreateShareInput`
+      - Add `SHARE_NOT_FOUND` to ERROR_CODES
+    acceptance_criteria:
+      - shares table defined in schema.ts with all columns and indexes
+      - Migration generated and applies cleanly
+      - Zod schemas and types exported from shared
+    depends_on: []
+    effort: 1
+    status: scoped
+
+  - id: 2
+    milestone: 1
+    title: Add optionalAuth and requireShareOrOwner middleware
+    description: |
+      Create two new middleware functions in `backend/src/middleware/auth.ts`:
+
+      **`optionalAuth`**: Same logic as `requireAuth` but does NOT reject when
+      no Bearer token is present. If a valid token is provided, populates
+      `req.user`. If no token or invalid token, `req.user` remains undefined
+      and the request continues. This allows routes to be accessible by both
+      authenticated and unauthenticated users.
+
+      **`requireShareOrOwner`**: A middleware factory that returns a middleware
+      function. It checks access in this order:
+      1. Look for a share token in `req.query.token` or `req.headers['x-share-token']`
+      2. If a share token is found, validate it via `getShareByToken(token)`.
+         If valid, attach the share to `req.share` and continue.
+      3. If no share token, check `req.user` (set by `optionalAuth` or
+         `requireAuth`). If user exists, check `userOwnsCanvas(userId, canvasId)`.
+         If they own it, continue.
+      4. If neither check passes, return 403 Forbidden.
+
+      Extend `AuthenticatedRequest` to include an optional `share` field
+      with the share row data.
+
+      Include unit tests for both middleware functions covering:
+      - optionalAuth with valid token, invalid token, no token
+      - requireShareOrOwner with valid share token, valid owner, neither
+    acceptance_criteria:
+      - optionalAuth populates req.user when token valid, passes through when missing
+      - requireShareOrOwner checks share token first, then owner auth
+      - Share data attached to req.share when accessed via share token
+      - Both middleware functions have unit tests
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Implement share service
+    description: |
+      Create `backend/src/services/shareService.ts` with functions:
+
+      - `createShare(canvasId, itemId | null, userId)` — generates a UUID token,
+        inserts a row, returns the share. If a share already exists for the same
+        canvas+item combo, return the existing one instead of creating a duplicate.
+      - `listSharesByCanvas(canvasId)` — returns all shares for a canvas, with
+        item title/type joined if itemId is set.
+      - `deleteShare(shareId)` — deletes the share row.
+      - `getShareByToken(token)` — looks up a share by its public token.
+        Returns null if not found.
+      - `getShareById(shareId)` — looks up by id. Returns null if not found.
+
+      Include unit tests using the existing in-memory DB test pattern
+      (see `backend/src/__tests__/tagService.test.ts` for reference).
+    acceptance_criteria:
+      - All five functions implemented and exported
+      - Duplicate share for same canvas+item returns existing share
+      - Unit tests cover create, list, delete, get by token, get by id, and duplicate handling
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 1
+    title: Add share management routes (CRUD)
+    description: |
+      Create `backend/src/routes/shares/` with route files following the existing
+      pattern (validate → processRequest → handler):
+
+      - `POST /api/shares` — body: `{ canvasId, itemId? }`. Uses `requireAuth`.
+        Validates user owns the canvas. Calls `createShare()`. Returns the share.
+      - `GET /api/shares?canvasId=X` — query param `canvasId` required. Uses
+        `requireAuth`. Validates user owns canvas. Returns array of shares.
+      - `DELETE /api/shares/:id` — uses `requireAuth`. Validates user owns the
+        canvas that the share belongs to. Calls `deleteShare()`.
+
+      Create `backend/src/routes/shares/index.ts` router with `requireAuth`.
+      Mount at `/api/shares` in `backend/src/index.ts`.
+
+      Add frontend API module `frontend/src/api/shares.ts`:
+      - `createShare(canvasId, itemId?)` → POST
+      - `listShares(canvasId)` → GET
+      - `deleteShare(shareId)` → DELETE
+
+      Add React Query hooks in `frontend/src/hooks/`:
+      - `useShares(canvasId)` query
+      - `useCreateShare()`, `useDeleteShare()` mutations (invalidate shares query)
+
+      Include route-level tests following the pattern in
+      `backend/src/__tests__/tagRoutes.test.ts`.
+    acceptance_criteria:
+      - Three routes implemented with proper auth and canvas ownership checks
+      - Routes return appropriate error codes for unauthorized/forbidden/not-found
+      - Frontend API module and hooks created
+      - Route-level tests cover happy path and auth failures
+    depends_on: [3]
+    effort: 2
+    status: scoped
+
+  - id: 5
+    milestone: 1
+    title: Add shared content view and copy routes
+    description: |
+      Create routes for viewing and copying shared content. These use the
+      per-route middleware approach — no separate `/api/public` prefix.
+
+      **`GET /api/shared/:token`** — uses `optionalAuth` (no auth required).
+      Looks up share by token via `getShareByToken()`. If not found, returns
+      404 with `SHARE_NOT_FOUND`. If canvas-level share, returns full canvas
+      data (items list with summaries, tags). If item-level share, returns the
+      single item with notes, photos, tags, connections. Response includes
+      share metadata (share type, canvas name, item title if applicable).
+      Uses existing service functions (`canvasItemService.getItem`,
+      `canvasItemService.listItems`) but skips user ownership checks since
+      access is validated by the share token.
+
+      **`POST /api/shared/:token/copy`** — uses `requireAuth` (must be logged
+      in to copy). Validates token, then copies the shared content into the
+      user's workspace:
+      - Canvas share: uses existing `backupService` export+import pattern —
+        export shared canvas to zip buffer in memory, import for the
+        requesting user. New canvas named "[Name] (Copy)".
+      - Item share: creates a new canvas "[Item Title]" with just that item
+        and its data copied.
+
+      Add shared Zod schemas:
+      - `SharedContentSchema` with fields for canvas name, share type,
+        items/item data, etc.
+
+      Add frontend API in `frontend/src/api/shares.ts`:
+      - `fetchSharedContent(token)` → GET (no auth header)
+      - `copySharedContent(token)` → POST (with auth)
+    acceptance_criteria:
+      - GET route returns correct data for canvas-level and item-level shares
+      - GET route works without authentication (uses optionalAuth)
+      - GET route returns 404 for invalid/revoked tokens
+      - POST copy route requires auth and creates a new canvas with deep-copied data
+      - Tests cover both share types, invalid tokens, and copy flow
+    depends_on: [2, 3]
+    effort: 3
+    status: scoped
+
+  # ── Milestone 2: Settings tabs ────────────────────────────────────
+
+  - id: 6
+    milestone: 2
+    title: Restructure SettingsSidebar into tabs
+    description: |
+      Refactor `frontend/src/components/SettingsSidebar.tsx` from a flat layout
+      to a tabbed layout using MUI `Tabs` and `Tab`.
+
+      **Tab 1 — General:**
+      - Theme toggle
+      - Feedback form
+      - Community links (Discord, Release Notes)
+      - Restart Tour button
+      - Logout button (at bottom with `mt: auto`)
+
+      **Tab 2 — Tags:**
+      - The existing `<ManageTags />` component
+
+      **Tab 3 — Data:**
+      - Backup Canvas button
+      - Import Canvas button
+
+      **Tab 4 — Sharing:**
+      - Empty placeholder for now (just a Typography "No shares yet")
+      - Will be populated in task 9
+
+      Keep the Drawer wrapper, header with close button, and all existing
+      functionality intact. The only change is reorganizing content into tabs.
+
+      Add `settingsTab` state to `canvasStore` (default "general") so the
+      active tab persists when the sidebar is closed and reopened, and so
+      other components can open settings to a specific tab (e.g., the share
+      modal linking to the Sharing tab).
+    acceptance_criteria:
+      - Four tabs render correctly: General, Tags, Data, Sharing
+      - All existing functionality preserved in its respective tab
+      - settingsTab state in canvasStore allows opening to a specific tab
+      - Logout button stays at the bottom of the General tab
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  # ── Milestone 3: Share UI ─────────────────────────────────────────
+
+  - id: 7
+    milestone: 3
+    title: Create ShareModal component
+    description: |
+      Create `frontend/src/modals/components/ShareModal.tsx` using `BaseModal`.
+
+      **Props** (add to modal types):
+      - `canvasId: string`
+      - `itemId?: string` (if sharing a specific item)
+      - `itemTitle?: string` (display name for item shares)
+
+      **Behavior:**
+      - On open, fetch existing share for this canvas+item combo from the
+        `useShares(canvasId)` query (filter client-side by itemId match).
+      - If no share exists: show a "Share" button that creates one.
+      - If share exists: show the share URL, a "Copy link" button, and a
+        "Revoke" button.
+      - Share URL format: `${window.location.origin}/shared/${token}`
+      - Show a link "Manage all shares in Settings" that closes the modal,
+        opens the SettingsSidebar, and switches to the Sharing tab.
+      - Display: item title (if item share) or canvas name (if canvas share)
+        at the top.
+
+      Register in modal types (`MODAL_ID.SHARE`, `ShareModalProps`) and
+      `ModalRenderer.tsx`.
+    acceptance_criteria:
+      - Modal shows current share status (shared or not shared)
+      - Can create a share from the modal
+      - Can copy share link to clipboard
+      - Can revoke a share from the modal
+      - "Manage in Settings" link opens Settings sidebar to Sharing tab
+    depends_on: [4, 6]
+    effort: 2
+    status: scoped
+
+  - id: 8
+    milestone: 3
+    title: Add share icons to top bar and item panel header
+    description: |
+      **Top bar** (`MemberLayout.tsx`):
+      Add a `ShareIcon` (MUI `IosShare` or `Share`) button next to the
+      `SettingsButton` in the `right` slot. Clicking opens the ShareModal
+      for the current canvas (`activeCanvasId`). Only show when a canvas
+      is active.
+
+      **Item panel header** (`PanelHeader.tsx`):
+      Add a `ShareIcon` button next to the three-dot menu button (before it).
+      Add `onShare` callback to `PanelHeaderProps`. Clicking opens the
+      ShareModal for the specific item.
+
+      Wire up in `CanvasItemPanel.tsx`: pass an `onShare` handler that calls
+      `openModal({ id: MODAL_ID.SHARE, canvasId, itemId, itemTitle })`.
+    acceptance_criteria:
+      - Share icon visible in top bar next to settings gear
+      - Share icon visible in item panel header next to three-dot menu
+      - Both icons open ShareModal with correct context (canvas vs item)
+    depends_on: [7]
+    effort: 1
+    status: scoped
+
+  - id: 9
+    milestone: 3
+    title: Populate Settings Sharing tab with share management
+    description: |
+      Fill in the Sharing tab placeholder (from task 6) in `SettingsSidebar.tsx`.
+
+      **Content:**
+      - Use `useShares(activeCanvasId)` to fetch all shares for the current canvas.
+      - List each share as a row with:
+        - Type badge: "Canvas" or item type badge (using existing `LabelBadge`)
+        - Item title (if item share) or "Entire Canvas"
+        - Created date
+        - Copy link icon button
+        - Revoke (delete) icon button with confirmation
+      - Empty state: "No active shares"
+      - "Create Canvas Share" button at the top if no canvas-level share exists
+
+      Extract the share list into a `SharesList` component within
+      `frontend/src/components/` if it exceeds ~100 lines.
+    acceptance_criteria:
+      - Sharing tab lists all active shares for the current canvas
+      - Each share row shows type, title, date, copy link, and revoke button
+      - Revoking a share removes it from the list
+      - Copy link copies the share URL to clipboard
+    depends_on: [6, 4]
+    effort: 2
+    status: scoped
+
+  - id: 10
+    milestone: 3
+    title: Create shared viewer page
+    description: |
+      Create `frontend/src/pages/Shared/SharedViewer.tsx` — a new page route
+      at `/shared/:token` that is accessible without authentication.
+
+      **Route setup:**
+      - Add route in `Router.tsx`: `/shared/:token` → `SharedViewer`
+      - This route must NOT be wrapped in `MemberRoute` — it's publicly accessible
+
+      **Content:**
+      - Fetch shared data via `fetchSharedContent(token)` (unauthenticated GET)
+      - Show a minimal header: app logo/name, share type badge
+      - **Canvas share view**: list of items as cards with title, type badge,
+        summary, main photo thumbnail. Click a card to expand and see its
+        notes (rendered HTML, readonly) and photos (masonry grid with lightbox).
+      - **Item share view**: single item detail with notes and photos, similar
+        to the item panel but full-width and readonly.
+      - All editing controls hidden: no edit buttons, no delete, no upload,
+        no drag-and-drop.
+      - **Copy to workspace button**: if user is logged in (`useAppStore.user`),
+        show a "Copy to My Workspace" button. On click, calls
+        `copySharedContent(token)`, shows success toast, navigates to the
+        new canvas.
+      - **Not logged in**: show "Sign in to copy this to your workspace" link
+        pointing to `/login?redirect=/shared/:token`.
+      - **Invalid token**: show "This shared link is no longer available" message.
+
+      The page should look clean and branded — it's the first thing a non-user
+      sees. Use the app's theme and CSS variables.
+    acceptance_criteria:
+      - Page renders shared canvas or item content readonly
+      - No editing controls visible
+      - Copy to workspace works for authenticated users
+      - Invalid/revoked tokens show appropriate error state
+      - Page is accessible without authentication
+    depends_on: [5, 7]
+    effort: 3
+    status: scoped

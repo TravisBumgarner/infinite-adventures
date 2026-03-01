@@ -1,5 +1,10 @@
+import DescriptionIcon from "@mui/icons-material/Description";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import ShareIcon from "@mui/icons-material/Share";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
@@ -15,6 +20,8 @@ interface ContextMenuProps {
   onViewAll: () => void;
   onUnstack: () => void;
   onExportPdf: () => void;
+  onExportMarkdown?: () => void;
+  onShare: () => void;
   onClose: () => void;
 }
 
@@ -25,13 +32,17 @@ export default function ContextMenu({
   onViewAll,
   onUnstack,
   onExportPdf,
+  onExportMarkdown,
+  onShare,
   onClose,
 }: ContextMenuProps) {
   const theme = useTheme();
   const [itemAnchor, setItemAnchor] = useState<HTMLElement | null>(null);
   const [utilsAnchor, setUtilsAnchor] = useState<HTMLElement | null>(null);
+  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
   const itemTimeout = useRef<ReturnType<typeof setTimeout>>(null);
   const utilsTimeout = useRef<ReturnType<typeof setTimeout>>(null);
+  const exportTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     function handleScroll() {
@@ -81,6 +92,35 @@ export default function ContextMenu({
           }}
         >
           View All
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            onShare();
+            onClose();
+          }}
+        >
+          <ListItemIcon>
+            <ShareIcon fontSize="small" />
+          </ListItemIcon>
+          Share Canvas
+        </MenuItem>
+        <MenuItem
+          onMouseEnter={(e) => {
+            if (exportTimeout.current) clearTimeout(exportTimeout.current);
+            setExportAnchor(e.currentTarget);
+          }}
+          onMouseLeave={() => {
+            exportTimeout.current = setTimeout(() => setExportAnchor(null), 150);
+          }}
+        >
+          <ListItemIcon>
+            <FileDownloadIcon fontSize="small" />
+          </ListItemIcon>
+          Export
+          <Typography variant="body2" sx={{ color: "var(--color-overlay0)", ml: "auto" }}>
+            ▸
+          </Typography>
         </MenuItem>
         <Divider />
         <MenuItem
@@ -141,6 +181,57 @@ export default function ContextMenu({
         ))}
       </Menu>
 
+      {/* Export submenu */}
+      <Menu
+        open={Boolean(exportAnchor)}
+        anchorEl={exportAnchor}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        onClose={() => setExportAnchor(null)}
+        sx={{ pointerEvents: "none" }}
+        slotProps={{
+          paper: {
+            sx: {
+              pointerEvents: "auto",
+              bgcolor: "var(--color-base)",
+              border: "1px solid var(--color-surface1)",
+              boxShadow: "0 8px 24px var(--color-backdrop)",
+              minWidth: 150,
+            },
+            onMouseEnter: () => {
+              if (exportTimeout.current) clearTimeout(exportTimeout.current);
+            },
+            onMouseLeave: () => setExportAnchor(null),
+          },
+        }}
+        disableAutoFocus
+      >
+        <MenuItem
+          onClick={() => {
+            onExportPdf();
+            onClose();
+          }}
+        >
+          <ListItemIcon>
+            <PictureAsPdfIcon fontSize="small" />
+          </ListItemIcon>
+          Canvas as Image
+        </MenuItem>
+        {onExportMarkdown && (
+          <MenuItem
+            onClick={() => {
+              onExportMarkdown();
+              onClose();
+            }}
+          >
+            <ListItemIcon>
+              <DescriptionIcon fontSize="small" />
+            </ListItemIcon>
+            Markdown
+          </MenuItem>
+        )}
+      </Menu>
+
       {/* Utilities submenu */}
       <Menu
         open={Boolean(utilsAnchor)}
@@ -173,14 +264,6 @@ export default function ContextMenu({
           }}
         >
           Unstack Overlapping Items
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            onExportPdf();
-            onClose();
-          }}
-        >
-          Save view as PDF
         </MenuItem>
       </Menu>
     </>

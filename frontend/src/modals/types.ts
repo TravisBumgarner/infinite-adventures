@@ -15,6 +15,7 @@ export const MODAL_ID = {
   CANVAS_SETTINGS: "CANVAS_SETTINGS",
   CREATE_CANVAS: "CREATE_CANVAS",
   CROP_PHOTO: "CROP_PHOTO",
+  SHARE: "SHARE",
 } as const;
 
 export type ModalId = (typeof MODAL_ID)[keyof typeof MODAL_ID];
@@ -72,6 +73,13 @@ export interface CropPhotoModalProps {
   onConfirm: (cropX: number, cropY: number) => void;
 }
 
+export interface ShareModalProps {
+  id: typeof MODAL_ID.SHARE;
+  canvasId: string;
+  itemId?: string;
+  itemTitle?: string;
+}
+
 // Union type of all modals
 export type ActiveModal =
   | DeleteItemModalProps
@@ -80,4 +88,5 @@ export type ActiveModal =
   | ItemSettingsModalProps
   | CanvasSettingsModalProps
   | CreateCanvasModalProps
-  | CropPhotoModalProps;
+  | CropPhotoModalProps
+  | ShareModalProps;

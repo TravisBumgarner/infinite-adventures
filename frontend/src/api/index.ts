@@ -7,5 +7,6 @@ export * from "./notes.js";
 export * from "./photos.js";
 export * from "./quickNotes.js";
 export * from "./sessions.js";
+export * from "./shares.js";
 export * from "./tags.js";
 export * from "./timeline.js";

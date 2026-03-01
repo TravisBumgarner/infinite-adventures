@@ -8,6 +8,7 @@ export const DRAFT_NOTE_ID = "__draft__";
 export const STORAGE_KEY_THEME = "infinite-adventures-theme";
 export const STORAGE_KEY_ACTIVE_CANVAS = "infinite-adventures-active-canvas";
 export const STORAGE_KEY_ONBOARDING_COMPLETE = "infinite-adventures-onboarding-complete";
+export const STORAGE_KEY_POST_AUTH_REDIRECT = "infinite-adventures-post-auth-redirect";
 
 export const CANVAS_ITEM_TYPE_LABELS: Record<CanvasItemType, string> = {
   person: "Person",

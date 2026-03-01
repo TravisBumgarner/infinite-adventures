@@ -259,6 +259,11 @@ export default function Canvas() {
             onViewAll={handleViewAll}
             onUnstack={handleUnstack}
             onExportPdf={handleExportPdf}
+            onShare={() => {
+              if (activeCanvasId) {
+                openModal({ id: MODAL_ID.SHARE, canvasId: activeCanvasId });
+              }
+            }}
             onClose={() => setContextMenu(null)}
           />
         )}
@@ -283,6 +288,17 @@ export default function Canvas() {
             }}
             onAddTag={(tagId) => handleAddTag(nodeContextMenu.nodeId, tagId)}
             onOpenInSessionViewer={() => navigate(`/sessions/${nodeContextMenu.nodeId}`)}
+            onShare={() => {
+              if (activeCanvasId) {
+                const item = itemsCache.get(nodeContextMenu.nodeId);
+                openModal({
+                  id: MODAL_ID.SHARE,
+                  canvasId: activeCanvasId,
+                  itemId: nodeContextMenu.nodeId,
+                  itemTitle: item?.title,
+                });
+              }
+            }}
             onClose={() => setNodeContextMenu(null)}
           />
         )}

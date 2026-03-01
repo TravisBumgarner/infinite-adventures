@@ -428,7 +428,6 @@ export default function CanvasItemPanel({
       }}
     >
       <PanelHeader
-        item={item}
         title={title}
         onTitleChange={(value) => {
           setTitle(value);
@@ -438,6 +437,16 @@ export default function CanvasItemPanel({
         onDownloadPdf={handleDownloadPdf}
         onDownloadMarkdown={handleDownloadMarkdown}
         onDeleteItem={handleOpenDeleteModal}
+        onShare={() => {
+          if (activeCanvasId) {
+            openModal({
+              id: MODAL_ID.SHARE,
+              canvasId: activeCanvasId,
+              itemId,
+              itemTitle: title,
+            });
+          }
+        }}
       />
 
       {/* Two-column metadata section */}

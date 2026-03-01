@@ -23,7 +23,7 @@ export async function truncateAllTables() {
       content_history, canvas_item_tags, tags,
       notes, canvas_item_links, canvas_items, photos,
       people, places, things, sessions, events,
-      quick_notes, canvas_users, canvases, users
+      quick_notes, shares, canvas_users, canvases, users
       CASCADE`,
   );
   await db.execute(

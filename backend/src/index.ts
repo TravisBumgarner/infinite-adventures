@@ -14,6 +14,8 @@ import { itemNotesRouter, notesRouter } from "./routes/notes/index.js";
 import { itemPhotosRouter, photosRouter } from "./routes/photos/index.js";
 import { quickNotesRouter } from "./routes/quickNotes/index.js";
 import { sessionsRouter } from "./routes/sessions/index.js";
+import { sharedContentRouter } from "./routes/shared-content/index.js";
+import { sharesRouter } from "./routes/shares/index.js";
 import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
 import { timelineRouter } from "./routes/timeline/index.js";
 
@@ -67,6 +69,10 @@ app.use("/api/items/:itemId/tags", itemTagsRouter);
 
 // Link routes
 app.use("/api/links", linksRouter);
+
+// Share routes
+app.use("/api/shares", sharesRouter);
+app.use("/api/shared", sharedContentRouter);
 
 Sentry.setupExpressErrorHandler(app);
 

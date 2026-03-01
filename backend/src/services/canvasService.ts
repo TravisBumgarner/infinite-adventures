@@ -38,6 +38,20 @@ export async function getCanvas(id: string, userId: string): Promise<CanvasRow |
   return canvas ?? null;
 }
 
+export async function getCanvasById(id: string): Promise<CanvasRow | null> {
+  const db = getDb();
+  const [canvas] = await db
+    .select({
+      id: canvases.id,
+      name: canvases.name,
+      createdAt: canvases.createdAt,
+      updatedAt: canvases.updatedAt,
+    })
+    .from(canvases)
+    .where(eq(canvases.id, id));
+  return canvas ?? null;
+}
+
 export async function createCanvas(name: string, userId: string): Promise<CanvasRow> {
   const db = getDb();
   const id = uuidv4();
