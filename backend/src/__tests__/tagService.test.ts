@@ -72,7 +72,7 @@ describe("tagService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      const tag = await getTag("non-existent-id");
+      const tag = await getTag("00000000-0000-4000-8000-ffffffffffff");
       expect(tag).toBeNull();
     });
   });
@@ -91,7 +91,7 @@ describe("tagService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      const result = await updateTag("non-existent-id", { name: "Nope" });
+      const result = await updateTag("00000000-0000-4000-8000-ffffffffffff", { name: "Nope" });
       expect(result).toBeNull();
     });
   });
@@ -109,7 +109,7 @@ describe("tagService", () => {
     });
 
     it("returns false for non-existent id", async () => {
-      const result = await deleteTag("non-existent-id");
+      const result = await deleteTag("00000000-0000-4000-8000-ffffffffffff");
       expect(result).toBe(false);
     });
   });
@@ -147,7 +147,10 @@ describe("tagService", () => {
     });
 
     it("removeTagFromItem returns false when association does not exist", async () => {
-      const result = await removeTagFromItem("no-item", "no-tag");
+      const result = await removeTagFromItem(
+        "00000000-0000-4000-8000-fffffffffff1",
+        "00000000-0000-4000-8000-fffffffffff2",
+      );
       expect(result).toBe(false);
     });
   });

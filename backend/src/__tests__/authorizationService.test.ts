@@ -13,7 +13,7 @@ import { uploadPhoto } from "../services/photoService.js";
 import { createTag } from "../services/tagService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-const OTHER_USER_ID = "other-user-0000-0000-000000000002";
+const OTHER_USER_ID = "00000000-0000-4000-8000-000000000002";
 
 describe("authorizationService", () => {
   beforeAll(async () => {

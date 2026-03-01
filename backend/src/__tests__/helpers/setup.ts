@@ -5,7 +5,7 @@ const TEST_DATABASE_URL =
   process.env.DATABASE_URL ||
   "postgresql://infinite:infinite@localhost:5434/infinite_adventures_test";
 
-export const TEST_USER_ID = "test-user-0000-0000-000000000001";
+export const TEST_USER_ID = "00000000-0000-4000-8000-000000000001";
 export const TEST_USER_AUTH_ID = "auth-test-0000-0000-000000000001";
 
 export async function setupTestDb() {

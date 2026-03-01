@@ -175,7 +175,7 @@ describe("canvasItemService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      expect(await getItem("non-existent")).toBeNull();
+      expect(await getItem("00000000-0000-4000-8000-ffffffffffff")).toBeNull();
     });
 
     it("returns sessionDate for session-type items", async () => {
@@ -217,7 +217,9 @@ describe("canvasItemService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      expect(await updateItem("non-existent", { title: "test" })).toBeNull();
+      expect(
+        await updateItem("00000000-0000-4000-8000-ffffffffffff", { title: "test" }),
+      ).toBeNull();
     });
   });
 
@@ -229,7 +231,7 @@ describe("canvasItemService", () => {
     });
 
     it("returns false for non-existent id", async () => {
-      expect(await deleteItem("non-existent")).toBe(false);
+      expect(await deleteItem("00000000-0000-4000-8000-ffffffffffff")).toBe(false);
     });
 
     it("also deletes the associated content record", async () => {

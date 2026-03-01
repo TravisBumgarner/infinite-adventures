@@ -13,7 +13,7 @@ import {
 } from "../services/canvasService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-const OTHER_USER_ID = "other-user-0000-0000-000000000002";
+const OTHER_USER_ID = "00000000-0000-4000-8000-000000000002";
 
 describe("canvasService", () => {
   beforeAll(async () => {
@@ -104,7 +104,7 @@ describe("canvasService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      expect(await getCanvas("non-existent", TEST_USER_ID)).toBeNull();
+      expect(await getCanvas("00000000-0000-4000-8000-ffffffffffff", TEST_USER_ID)).toBeNull();
     });
 
     it("returns null when accessing another user's canvas", async () => {
@@ -131,7 +131,9 @@ describe("canvasService", () => {
     });
 
     it("returns null for non-existent id", async () => {
-      expect(await updateCanvas("non-existent", "Test", TEST_USER_ID)).toBeNull();
+      expect(
+        await updateCanvas("00000000-0000-4000-8000-ffffffffffff", "Test", TEST_USER_ID),
+      ).toBeNull();
     });
   });
 
@@ -143,7 +145,7 @@ describe("canvasService", () => {
     });
 
     it("returns false for non-existent id", async () => {
-      expect(await deleteCanvas("non-existent", TEST_USER_ID)).toBe(false);
+      expect(await deleteCanvas("00000000-0000-4000-8000-ffffffffffff", TEST_USER_ID)).toBe(false);
     });
 
     it("throws LastCanvasError when deleting the only canvas", async () => {

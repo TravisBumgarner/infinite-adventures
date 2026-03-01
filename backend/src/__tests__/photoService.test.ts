@@ -15,8 +15,8 @@ import { setupTestDb, teardownTestDb, truncateAllTables } from "./helpers/setup.
 
 // Test content item details (simulating a person content record)
 const TEST_CONTENT_TYPE = "person" as const;
-const TEST_CONTENT_ID = "test-content-0000-0000-000000000001";
-const TEST_CONTENT_ID_2 = "test-content-0000-0000-000000000002";
+const TEST_CONTENT_ID = "00000000-0000-4000-a000-000000000001";
+const TEST_CONTENT_ID_2 = "00000000-0000-4000-a000-000000000002";
 
 // Minimal valid PNG (1x1 pixel transparent)
 const TEST_PNG_BUFFER = Buffer.from(
@@ -115,7 +115,7 @@ describe("photoService", () => {
     });
 
     it("returns null for non-existent ID", async () => {
-      const photo = await getPhoto("non-existent-id");
+      const photo = await getPhoto("00000000-0000-4000-8000-ffffffffffff");
       expect(photo).toBeNull();
     });
   });
@@ -175,7 +175,7 @@ describe("photoService", () => {
     });
 
     it("returns false for non-existent ID", async () => {
-      const result = await deletePhoto("non-existent-id");
+      const result = await deletePhoto("00000000-0000-4000-8000-ffffffffffff");
       expect(result).toBe(false);
     });
   });
@@ -244,7 +244,7 @@ describe("photoService", () => {
     });
 
     it("returns null for non-existent ID", async () => {
-      const result = await selectPhoto("non-existent-id");
+      const result = await selectPhoto("00000000-0000-4000-8000-ffffffffffff");
       expect(result).toBeNull();
     });
   });

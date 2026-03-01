@@ -404,7 +404,7 @@ export async function searchItems(
     sql`
      SELECT * FROM (
        -- Item-level matches (title / summary)
-       SELECT ci.id as "itemId", ci.type, ci.title, NULL::text as "noteId",
+       SELECT ci.id as "itemId", ci.type, ci.title, NULL::uuid as "noteId",
               ts_headline('simple',
                 coalesce(ci.title, '') || ' ' || coalesce(ci.summary, ''),
                 to_tsquery('simple', ${tsquery}),

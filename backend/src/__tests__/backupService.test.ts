@@ -60,7 +60,7 @@ describe("backupService", () => {
       const manifest: BackupManifest = JSON.parse(
         zip.getEntry("manifest.json")!.getData().toString("utf-8"),
       );
-      expect(manifest.schemaVersion).toBe(1);
+      expect(manifest.schemaVersion).toBe(2);
       expect(manifest.canvasName).toBe("Default");
       expect(manifest.exportedAt).toBeTruthy();
 
@@ -223,6 +223,8 @@ describe("backupService", () => {
         tags: [],
         canvasItemTags: [],
         canvasItemLinks: [],
+        quickNotes: [],
+        contentHistory: [],
       };
 
       const zip = new AdmZip();
