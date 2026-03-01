@@ -1,0 +1,394 @@
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ImageIcon from "@mui/icons-material/Image";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
+import LoginIcon from "@mui/icons-material/Login";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import type { CanvasItem, CanvasItemSummary, SharedContent } from "shared";
+import { copySharedContent, fetchSharedContent } from "../../api/shares";
+import { CANVAS_ITEM_TYPES } from "../../constants";
+import BlurImage from "../../sharedComponents/BlurImage";
+import { canvasItemTypeIcon, LabelBadge } from "../../sharedComponents/LabelBadge";
+import { useAppStore } from "../../stores/appStore";
+import { FONT_SIZES } from "../../styles/styleConsts";
+import { getNotePreview } from "../../utils/getNotePreview";
+
+function SharedHeader({
+  canvasName,
+  shareType,
+}: {
+  canvasName: string;
+  shareType: "canvas" | "item";
+}) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        p: 2,
+        borderBottom: "1px solid var(--color-surface1)",
+        bgcolor: "var(--color-chrome-bg)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        Infinite Adventures
+      </Typography>
+      <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+        Shared {shareType === "canvas" ? "Canvas" : "Item"} from "{canvasName}"
+      </Typography>
+    </Box>
+  );
+}
+
+function CopySection({ token }: { token: string }) {
+  const user = useAppStore((s) => s.user);
+  const showToast = useAppStore((s) => s.showToast);
+  const navigate = useNavigate();
+  const [copying, setCopying] = useState(false);
+
+  const handleCopy = async () => {
+    setCopying(true);
+    try {
+      const result = await copySharedContent(token);
+      showToast("Copied to your workspace!");
+      navigate(`/canvas?canvasId=${result.id}`);
+    } catch {
+      showToast("Failed to copy");
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  if (user) {
+    return (
+      <Button
+        variant="contained"
+        startIcon={<ContentCopyIcon />}
+        onClick={handleCopy}
+        disabled={copying}
+        sx={{ alignSelf: "flex-start" }}
+      >
+        {copying ? "Copying..." : "Copy to My Workspace"}
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="outlined"
+      startIcon={<LoginIcon />}
+      component="a"
+      href={`/login?redirect=/shared/${token}`}
+    >
+      Sign in to copy this to your workspace
+    </Button>
+  );
+}
+
+function ItemNotes({ item }: { item: CanvasItem }) {
+  if (!item.notes.length) return null;
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+        Notes
+      </Typography>
+      {item.notes.map((note) => (
+        <Box
+          key={note.id}
+          sx={{
+            bgcolor: "var(--color-surface0)",
+            borderRadius: 1,
+            p: 1.5,
+          }}
+        >
+          {note.title && (
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+              {note.title}
+            </Typography>
+          )}
+          <Typography
+            variant="body2"
+            sx={{
+              color: "var(--color-subtext0)",
+              wordBreak: "break-word",
+              "& a": { color: "var(--color-blue)" },
+            }}
+            dangerouslySetInnerHTML={{ __html: getNotePreview(note.content, undefined, 0) }}
+          />
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function ItemPhotos({ item }: { item: CanvasItem }) {
+  if (!item.photos.length) return null;
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <Typography variant="caption" sx={{ color: "var(--color-subtext0)", fontWeight: 600 }}>
+        Photos
+      </Typography>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: 1,
+        }}
+      >
+        {item.photos.map((photo) => (
+          <Box
+            key={photo.id}
+            sx={{
+              borderRadius: 1,
+              overflow: "hidden",
+              aspectRatio: "1",
+              bgcolor: "var(--color-surface0)",
+            }}
+          >
+            <BlurImage
+              src={photo.url}
+              alt={photo.caption ?? ""}
+              blurhash={photo.blurhash}
+              cropX={photo.cropX}
+              cropY={photo.cropY}
+              aspectRatio={photo.aspectRatio}
+              sx={{ width: "100%", height: "100%" }}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+function SharedItemView({ item, token }: { item: CanvasItem; token: string }) {
+  const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
+  const mainPhoto = item.photos.find((p) => p.isMainPhoto);
+
+  return (
+    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+        {mainPhoto && (
+          <Box
+            sx={{
+              width: 120,
+              height: 120,
+              flexShrink: 0,
+              borderRadius: 1,
+              overflow: "hidden",
+            }}
+          >
+            <BlurImage
+              src={mainPhoto.url}
+              alt={item.title}
+              blurhash={mainPhoto.blurhash}
+              cropX={mainPhoto.cropX}
+              cropY={mainPhoto.cropY}
+              aspectRatio={mainPhoto.aspectRatio}
+              sx={{ width: "100%", height: "100%" }}
+            />
+          </Box>
+        )}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            {item.title || "Untitled"}
+          </Typography>
+          {typeInfo && (
+            <LabelBadge
+              label={typeInfo.label}
+              accentColor="var(--color-surface1)"
+              icon={canvasItemTypeIcon(item.type)}
+              height={22}
+              fontSize={FONT_SIZES.xs}
+            />
+          )}
+          {item.summary && (
+            <Typography variant="body2" sx={{ color: "var(--color-subtext0)", mt: 1 }}>
+              {item.summary}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+      <ItemNotes item={item} />
+      <ItemPhotos item={item} />
+      <CopySection token={token} />
+    </Box>
+  );
+}
+
+function ItemCard({ item }: { item: CanvasItemSummary }) {
+  const typeInfo = CANVAS_ITEM_TYPES.find((t) => t.value === item.type);
+
+  return (
+    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          flexShrink: 0,
+          borderRadius: 1,
+          overflow: "hidden",
+          bgcolor: "var(--color-surface0)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {item.selectedPhotoUrl ? (
+          <Box
+            component="img"
+            src={item.selectedPhotoUrl}
+            alt={item.title}
+            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <ImageIcon sx={{ fontSize: 20, color: "var(--color-overlay0)" }} />
+        )}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          variant="body1"
+          sx={{
+            fontWeight: 500,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {item.title || "Untitled"}
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {typeInfo && (
+            <LabelBadge
+              label={typeInfo.label}
+              accentColor="var(--color-surface1)"
+              icon={canvasItemTypeIcon(item.type)}
+              height={18}
+              fontSize={FONT_SIZES.xs}
+            />
+          )}
+          {item.summary && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: "var(--color-subtext0)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {item.summary}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function SharedCanvasView({
+  content,
+  token,
+}: {
+  content: Extract<SharedContent, { shareType: "canvas" }>;
+  token: string;
+}) {
+  return (
+    <Box sx={{ maxWidth: 800, mx: "auto", p: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Typography variant="h5" sx={{ fontWeight: 600 }}>
+        {content.canvasName}
+      </Typography>
+      <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+        {content.items.length} item{content.items.length !== 1 ? "s" : ""}
+      </Typography>
+      {content.items.map((item) => (
+        <Accordion
+          key={item.id}
+          disableGutters
+          sx={{
+            bgcolor: "var(--color-base)",
+            border: "1px solid var(--color-surface1)",
+            "&:before": { display: "none" },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <ItemCard item={item} />
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+              Open this item for full details by copying to your workspace.
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+      ))}
+      <CopySection token={token} />
+    </Box>
+  );
+}
+
+export default function SharedViewer() {
+  const { token } = useParams<{ token: string }>();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["shared", token],
+    queryFn: () => fetchSharedContent(token!),
+    enabled: !!token,
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          gap: 2,
+        }}
+      >
+        <LinkOffIcon sx={{ fontSize: 48, color: "var(--color-overlay0)" }} />
+        <Typography variant="h6">This shared link is no longer available</Typography>
+        <Typography variant="body2" sx={{ color: "var(--color-subtext0)" }}>
+          The link may have been revoked or the content may have been deleted.
+        </Typography>
+        <Button variant="outlined" component="a" href="/">
+          Go to Infinite Adventures
+        </Button>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ minHeight: "100vh", bgcolor: "var(--color-base)", color: "var(--color-text)" }}>
+      <SharedHeader canvasName={data.canvasName} shareType={data.shareType} />
+      {data.shareType === "canvas" ? (
+        <SharedCanvasView content={data} token={token!} />
+      ) : (
+        <SharedItemView item={data.item} token={token!} />
+      )}
+    </Box>
+  );
+}

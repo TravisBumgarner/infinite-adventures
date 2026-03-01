@@ -10,6 +10,7 @@ import NotFound from "../pages/NotFound";
 import PasswordReset from "../pages/PasswordReset";
 import ReleaseNotes from "../pages/ReleaseNotes";
 import Sessions from "../pages/Sessions";
+import SharedViewer from "../pages/Shared";
 import Signup from "../pages/Signup";
 import Timeline from "../pages/Timeline";
 import TreeView from "../pages/TreeView";
@@ -149,6 +150,7 @@ export default function Router() {
           </MemberRoute>
         }
       />
+      <Route path="/shared/:token" element={<SharedViewer />} />
       <Route path="/password-reset" element={<PasswordReset />} />
       <Route path="/release-notes" element={<ReleaseNotes />} />
       <Route path="*" element={<NotFound />} />
