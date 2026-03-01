@@ -8,6 +8,13 @@
       "when": 1772340902688,
       "tag": "0000_chief_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772341145890,
+      "tag": "0001_silly_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }

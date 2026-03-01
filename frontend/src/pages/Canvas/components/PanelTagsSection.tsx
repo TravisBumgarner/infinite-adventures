@@ -129,6 +129,7 @@ export default function PanelTagsSection({ item, itemId, onItemUpdated }: PanelT
         <ListItemButton
           onClick={() => {
             setOpen(false);
+            useCanvasStore.getState().setSettingsTab("tags");
             setShowSettings(true);
           }}
           sx={{ py: 1 }}

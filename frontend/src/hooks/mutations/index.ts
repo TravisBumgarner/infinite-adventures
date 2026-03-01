@@ -15,12 +15,14 @@ import {
   createItem,
   createNote,
   createQuickNote,
+  createShare,
   createTag,
   deleteCanvas,
   deleteItem,
   deleteNote,
   deletePhoto,
   deleteQuickNote,
+  deleteShare,
   deleteTag,
   importCanvas,
   removeTagFromItem,
@@ -313,6 +315,28 @@ export function useToggleQuickNoteImportant(canvasId: string) {
     mutationFn: (id: string) => toggleQuickNoteImportant(canvasId, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.quickNotes.list(canvasId) });
+    },
+  });
+}
+
+// --- Share mutations ---
+
+export function useCreateShare(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId?: string) => createShare(canvasId, itemId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.shares.list(canvasId) });
+    },
+  });
+}
+
+export function useDeleteShare(canvasId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (shareId: string) => deleteShare(shareId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.shares.list(canvasId) });
     },
   });
 }

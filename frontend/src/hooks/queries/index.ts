@@ -12,6 +12,7 @@ import {
   fetchTags,
   fetchTimeline,
   fetchTimelineCounts,
+  listShares,
   searchItems,
 } from "../../api/index.js";
 import { queryKeys } from "./queryKeys.js";
@@ -141,5 +142,13 @@ export function useQuickNoteHistory(canvasId: string | undefined, quickNoteId: s
     enabled: !!canvasId && quickNoteId !== null,
     staleTime: 0,
     gcTime: 0,
+  });
+}
+
+export function useShares(canvasId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.shares.list(canvasId!),
+    queryFn: () => listShares(canvasId!),
+    enabled: !!canvasId,
   });
 }
