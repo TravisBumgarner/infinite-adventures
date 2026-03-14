@@ -109,19 +109,31 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
   }, [updateItemMutation]);
 
   // Save function for note content (with snapshot throttling)
+  const creatingRef = useRef(false);
+  const markNoteDirtyRef = useRef<() => void>(() => {});
   const saveNoteFn = useCallback(async () => {
     if (!editingNoteIdRef.current) return;
     const noteId = editingNoteIdRef.current;
 
     // Draft note — create on server for the first time.
-    // Keep editingNoteId as DRAFT_NOTE_ID so the draft card stays in place;
-    // store the real ID in the ref so subsequent saves use updateNote.
+    // Guard against concurrent creates (e.g. rapid auto-saves while first create is in-flight).
     if (noteId === DRAFT_NOTE_ID) {
-      const newNote = await createNoteMutation.mutateAsync({
-        content: noteContentRef.current,
-        title: noteTitleRef.current,
-      });
-      editingNoteIdRef.current = newNote.id;
+      if (creatingRef.current) {
+        // A create is already in-flight — re-mark dirty so the latest
+        // content is saved once the create completes and we have a real ID.
+        markNoteDirtyRef.current();
+        return;
+      }
+      creatingRef.current = true;
+      try {
+        const newNote = await createNoteMutation.mutateAsync({
+          content: noteContentRef.current,
+          title: noteTitleRef.current,
+        });
+        editingNoteIdRef.current = newNote.id;
+      } finally {
+        creatingRef.current = false;
+      }
       return;
     }
 
@@ -149,6 +161,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     saveFn: saveDateFn,
   });
   const { markDirty: markNoteDirty, flush: flushNote } = useAutoSave({ saveFn: saveNoteFn });
+  markNoteDirtyRef.current = markNoteDirty;
 
   void titleStatus;
 
@@ -185,6 +198,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
     handleTogglePhotoImportant,
     handleFileDrop,
     handleUpdateCaption,
+    isUploading,
   } = usePhotoHandlers({
     itemId: sessionId,
     canvasId: activeCanvasId ?? "",
@@ -194,6 +208,26 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
       setItem(updated);
     },
   });
+
+  // Paste images from clipboard
+  useEffect(() => {
+    function handlePaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleFileDrop(file);
+          }
+          return;
+        }
+      }
+    }
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [handleFileDrop]);
 
   // Sync local state from React Query data
   const prevSessionIdRef = useRef<string | null>(null);
@@ -519,6 +553,7 @@ export default function SessionDetail({ sessionId }: SessionDetailProps) {
               onOpenLightbox={handleOpenLightbox}
               onFileDrop={handleFileDrop}
               onUpdateCaption={handleUpdateCaption}
+              isUploading={isUploading}
             />
           </Box>
         </Box>

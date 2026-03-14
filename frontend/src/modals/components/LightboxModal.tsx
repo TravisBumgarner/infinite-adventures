@@ -4,8 +4,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
 import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
-import StarIcon from "@mui/icons-material/Star";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import Box from "@mui/material/Box";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
@@ -221,7 +221,7 @@ export default function LightboxModal({
                       p: 0.5,
                     }}
                   >
-                    {currentPhoto.isImportant ? <StarIcon /> : <StarOutlineIcon />}
+                    {currentPhoto.isImportant ? <PushPinIcon /> : <PushPinOutlinedIcon />}
                   </IconButton>
                 </Tooltip>
               )}

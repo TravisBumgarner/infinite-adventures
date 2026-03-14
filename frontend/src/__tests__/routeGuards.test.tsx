@@ -94,7 +94,7 @@ describe("AnonymousRoute", () => {
     expect(screen.getByText("login-form")).toBeDefined();
   });
 
-  it("redirects to /canvas when user is authenticated", () => {
+  it("redirects to /sessions when user is authenticated", () => {
     useAppStore.setState({
       user: { id: "u1", email: "gandalf@middle.earth" },
       authLoading: false,
@@ -103,7 +103,7 @@ describe("AnonymousRoute", () => {
     render(
       <MemoryRouter initialEntries={["/login"]}>
         <Routes>
-          <Route path="/canvas" element={<div>canvas-page</div>} />
+          <Route path="/sessions" element={<div>sessions-page</div>} />
           <Route
             path="/login"
             element={
@@ -116,6 +116,6 @@ describe("AnonymousRoute", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("canvas-page")).toBeDefined();
+    expect(screen.getByText("sessions-page")).toBeDefined();
   });
 });

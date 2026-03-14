@@ -10,10 +10,10 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
 import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import SortIcon from "@mui/icons-material/Sort";
-import StarIcon from "@mui/icons-material/Star";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
 import type { ComponentType } from "react";
@@ -27,8 +27,8 @@ const ACTION_ICON_MAP = {
 
   // Actions
   edit: EditIcon,
-  pin: StarIcon,
-  unpin: StarOutlineIcon,
+  pin: PushPinIcon,
+  unpin: PushPinOutlinedIcon,
   delete: DeleteIcon,
   add: AddIcon,
   close: CloseIcon,

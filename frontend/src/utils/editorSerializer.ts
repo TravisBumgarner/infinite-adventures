@@ -15,7 +15,14 @@ interface TipTapNode {
 function serializeInline(nodes: TipTapNode[]): string {
   let result = "";
   for (const node of nodes) {
-    if (node.type === "mention") {
+    if (node.type === "hardBreak") {
+      // Only emit \n for mid-content hard breaks (Shift+Enter).
+      // Skip if it's the sole node — that's a structural <br> in an
+      // empty <p><br></p>, and the paragraph boundary already adds \n.
+      if (nodes.length > 1) {
+        result += "\n";
+      }
+    } else if (node.type === "mention") {
       const id = node.attrs?.id as string;
       result += `@{${id}}`;
     } else if (node.type === "text") {
@@ -225,5 +232,5 @@ function renderParagraph(
   const remaining = line.slice(lastIndex);
   result += formatInlineMarkdown(escapeHtml(remaining));
 
-  return `<p>${result}</p>`;
+  return result ? `<p>${result}</p>` : "<p></p>";
 }
