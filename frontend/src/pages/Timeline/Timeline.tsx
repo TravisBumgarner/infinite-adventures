@@ -2,8 +2,8 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import MapIcon from "@mui/icons-material/Map";
+import PushPinIcon from "@mui/icons-material/PushPin";
 import SortIcon from "@mui/icons-material/Sort";
-import StarIcon from "@mui/icons-material/Star";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
@@ -301,7 +301,7 @@ export default function Timeline() {
           {/* Pinned only filter */}
           <Chip
             label="Pinned only"
-            icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
+            icon={<PushPinIcon sx={{ fontSize: FONT_SIZES.md }} />}
             onClick={() => setImportantOnly(!importantOnly)}
             sx={{
               height: 32,

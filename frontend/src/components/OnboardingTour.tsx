@@ -48,7 +48,7 @@ const steps: Step[] = [
     disableBeacon: true,
     title: "Switch Views",
     content:
-      "Canvas is your spatial overview. Sessions organizes by session date. Timeline shows everything chronologically. Gallery collects all photos. Tree displays item references.",
+      "Canvas is your spatial overview. Sessions organizes by session date. Timeline shows everything chronologically. Gallery collects all photos.",
   },
   {
     target: '[data-tour="search-button"]',

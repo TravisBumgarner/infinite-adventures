@@ -1,3 +1,5 @@
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -24,6 +26,8 @@ interface PanelHeaderProps {
   onDownloadMarkdown: () => void;
   onDeleteItem: () => void;
   onShare?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 export default function PanelHeader({
@@ -34,6 +38,8 @@ export default function PanelHeader({
   onDownloadMarkdown,
   onDeleteItem,
   onShare,
+  isFavorite,
+  onToggleFavorite,
 }: PanelHeaderProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
@@ -74,6 +80,20 @@ export default function PanelHeader({
           },
         }}
       />
+      {onToggleFavorite && (
+        <IconButton
+          size="small"
+          onClick={onToggleFavorite}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          sx={{ p: 0.5, color: isFavorite ? "var(--color-blue)" : undefined }}
+        >
+          {isFavorite ? (
+            <BookmarkIcon sx={{ fontSize: FONT_SIZES.lg }} />
+          ) : (
+            <BookmarkBorderIcon sx={{ fontSize: FONT_SIZES.lg }} />
+          )}
+        </IconButton>
+      )}
       {onShare && (
         <IconButton size="small" onClick={onShare} title="Share item" sx={{ p: 0.5 }}>
           <ShareIcon sx={{ fontSize: FONT_SIZES.lg }} />

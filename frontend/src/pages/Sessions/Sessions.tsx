@@ -40,7 +40,10 @@ export default function Sessions() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDate, setNewDate] = useState(() => new Date().toISOString().split("T")[0]!);
+  const [newDate, setNewDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   // Fetch canvases via React Query and initialize the active canvas
   const { data: canvases = [] } = useCanvases();
@@ -70,7 +73,10 @@ export default function Sessions() {
         sessionDate: newDate,
       });
       setNewTitle("");
-      setNewDate(new Date().toISOString().split("T")[0]!);
+      const d = new Date();
+      setNewDate(
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+      );
       setShowCreate(false);
     } catch {
       showToast("Failed to create session");

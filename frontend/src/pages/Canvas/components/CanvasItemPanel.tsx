@@ -29,6 +29,7 @@ import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 import NotesTab from "../../../sharedComponents/NotesTab";
 import PhotosTab from "../../../sharedComponents/PhotosTab";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { useFavoritesStore } from "../../../stores/favoritesStore";
 import { FONT_SIZES } from "../../../styles/styleConsts";
 import { getNotePreview } from "../../../utils/getNotePreview";
 import { formatItemMarkdown, printItemHtml } from "../../../utils/noteExport";
@@ -64,6 +65,12 @@ export default function CanvasItemPanel({
   const setEditingItemId = useCanvasStore((s) => s.setEditingItemId);
   const storeItemsCache = useCanvasStore((s) => s.itemsCache);
   const itemsCache = itemsCacheProp ?? storeItemsCache;
+
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const favAdd = useFavoritesStore((s) => s.addFavorite);
+  const favRemove = useFavoritesStore((s) => s.removeFavorite);
+  const canvasId = activeCanvasId ?? "";
+  const itemIsFavorite = (favorites[canvasId] ?? []).includes(itemId);
 
   const handleSaved = useMemo(() => onSaved ?? (() => {}), [onSaved]);
   const handleDeleted = useMemo(
@@ -457,6 +464,14 @@ export default function CanvasItemPanel({
         onDownloadPdf={handleDownloadPdf}
         onDownloadMarkdown={handleDownloadMarkdown}
         onDeleteItem={handleOpenDeleteModal}
+        isFavorite={itemIsFavorite}
+        onToggleFavorite={() => {
+          if (itemIsFavorite) {
+            favRemove(canvasId, itemId);
+          } else {
+            favAdd(canvasId, itemId);
+          }
+        }}
         onShare={() => {
           if (activeCanvasId) {
             openModal({

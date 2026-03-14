@@ -2,8 +2,8 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HistoryIcon from "@mui/icons-material/History";
-import StarIcon from "@mui/icons-material/Star";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import Box from "@mui/material/Box";
@@ -239,9 +239,9 @@ function QuickNoteItem({
                 }}
               >
                 {isImportant ? (
-                  <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                  <PushPinIcon sx={{ fontSize: FONT_SIZES.md }} />
                 ) : (
-                  <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                  <PushPinOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
                 )}
               </IconButton>
             </Tooltip>

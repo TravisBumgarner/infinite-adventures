@@ -1,9 +1,12 @@
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
+import { Extension } from "@tiptap/core";
 import Link from "@tiptap/extension-link";
 import Mention from "@tiptap/extension-mention";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
+import { DOMParser as PmDOMParser } from "@tiptap/pm/model";
+import { Plugin } from "@tiptap/pm/state";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
@@ -67,6 +70,34 @@ export default function MentionEditor({
         codeBlock: false,
         horizontalRule: false,
         link: false,
+      }),
+      Extension.create({
+        name: "preserveNewlines",
+        priority: 1000,
+        addProseMirrorPlugins() {
+          return [
+            new Plugin({
+              props: {
+                handlePaste(view, event) {
+                  const text = event.clipboardData?.getData("text/plain");
+                  if (!text || event.clipboardData?.types.includes("text/html")) return false;
+                  event.preventDefault();
+                  const escapeHtml = (s: string) =>
+                    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                  const html = text
+                    .split("\n")
+                    .map((line) => `<p>${escapeHtml(line) || "<br>"}</p>`)
+                    .join("");
+                  const dom = new window.DOMParser().parseFromString(html, "text/html");
+                  const pmParser = PmDOMParser.fromSchema(view.state.schema);
+                  const slice = pmParser.parseSlice(dom.body);
+                  view.dispatch(view.state.tr.replaceSelection(slice));
+                  return true;
+                },
+              },
+            }),
+          ];
+        },
       }),
       TaskList,
       TaskItem.configure({ nested: true }),

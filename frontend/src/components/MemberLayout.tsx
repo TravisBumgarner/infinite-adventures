@@ -7,6 +7,7 @@ import { MODAL_ID, useModalStore } from "../modals";
 import CanvasItemPanel from "../pages/Canvas/components/CanvasItemPanel";
 import DiceRoller from "../pages/Canvas/components/DiceRoller";
 import DiceRoller3d from "../pages/Canvas/components/DiceRoller3d";
+import FavoritesButton from "../pages/Canvas/components/FavoritesPanel";
 import InitiativeTracker from "../pages/Canvas/components/InitiativeTracker";
 import QuickNotes from "../pages/Canvas/components/QuickNotes";
 import ToolSidebar from "../pages/Canvas/components/ToolSidebar";
@@ -47,15 +48,13 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [setShowSearchBar]);
 
-  const activePage = location.pathname.startsWith("/sessions")
-    ? "sessions"
+  const activePage = location.pathname.startsWith("/canvas")
+    ? "canvas"
     : location.pathname.startsWith("/timeline")
       ? "timeline"
       : location.pathname.startsWith("/gallery")
         ? "gallery"
-        : location.pathname.startsWith("/tree")
-          ? "tree"
-          : "canvas";
+        : "sessions";
 
   const isCanvasPage = activePage === "canvas";
   const showRightPanel = Boolean(editingItemId) && !isCanvasPage;
@@ -68,6 +67,7 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
           <>
             <PageToggle activePage={activePage} />
             <SearchBarButton onClick={() => setShowSearchBar(true)} />
+            <FavoritesButton />
           </>
         }
         right={

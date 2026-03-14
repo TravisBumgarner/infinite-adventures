@@ -11,7 +11,7 @@ import type { CanvasItemSearchResult, CanvasItemType } from "shared";
 import { useSearchItems } from "../hooks/queries";
 import { useCanvasStore } from "../stores/canvasStore";
 import { FONT_SIZES } from "../styles/styleConsts";
-import { CanvasItemTypeBadge } from "./LabelBadge";
+import { CanvasItemTypeBadge, LabelBadge } from "./LabelBadge";
 
 type Destination = "Canvas" | "Sessions" | "Timeline" | "Gallery";
 

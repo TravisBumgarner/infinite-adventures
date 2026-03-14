@@ -1,12 +1,13 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoSizeSelectActualIcon from "@mui/icons-material/PhotoSizeSelectActual";
 import PhotoSizeSelectActualOutlinedIcon from "@mui/icons-material/PhotoSizeSelectActualOutlined";
-import StarIcon from "@mui/icons-material/Star";
-import StarOutlineIcon from "@mui/icons-material/StarOutline";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import Masonry from "@mui/lab/Masonry";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -25,6 +26,7 @@ interface PhotosTabProps {
   onFileDrop?: (file: File) => void;
   onUpdateCaption?: (photoId: string, caption: string) => void;
   columns?: number;
+  isUploading?: boolean;
 }
 
 export default function PhotosTab({
@@ -37,6 +39,7 @@ export default function PhotosTab({
   onFileDrop,
   onUpdateCaption: _onUpdateCaption,
   columns: columnsProp,
+  isUploading,
 }: PhotosTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [autoColumns, setAutoColumns] = useState(3);
@@ -120,6 +123,8 @@ export default function PhotosTab({
         <input type="file" accept="image/*" hidden onChange={onUpload} />
       </Button>
 
+      {isUploading && <LinearProgress sx={{ mb: 2 }} />}
+
       {/* Photo grid */}
       {sortedPhotos.length === 0 ? (
         <Typography
@@ -166,7 +171,7 @@ export default function PhotosTab({
                 {/* Pin badge — always visible */}
                 {photo.isImportant && (
                   <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 2 }}>
-                    <StarIcon
+                    <PushPinIcon
                       sx={{
                         fontSize: FONT_SIZES.md,
                         color: "var(--color-yellow)",
@@ -273,9 +278,9 @@ export default function PhotosTab({
                         }}
                       >
                         {photo.isImportant ? (
-                          <StarIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          <PushPinIcon sx={{ fontSize: FONT_SIZES.md }} />
                         ) : (
-                          <StarOutlineIcon sx={{ fontSize: FONT_SIZES.md }} />
+                          <PushPinOutlinedIcon sx={{ fontSize: FONT_SIZES.md }} />
                         )}
                       </IconButton>
                     </Tooltip>

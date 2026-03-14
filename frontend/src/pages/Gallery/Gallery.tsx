@@ -4,7 +4,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
-import StarIcon from "@mui/icons-material/Star";
+import PushPinIcon from "@mui/icons-material/PushPin";
 import Masonry from "@mui/lab/Masonry";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
@@ -191,7 +191,7 @@ export default function Gallery() {
           />
           <Chip
             label="Pinned only"
-            icon={<StarIcon sx={{ fontSize: FONT_SIZES.md }} />}
+            icon={<PushPinIcon sx={{ fontSize: FONT_SIZES.md }} />}
             onClick={() => setImportantOnly(!importantOnly)}
             sx={{
               height: 32,
@@ -262,7 +262,7 @@ export default function Gallery() {
                         zIndex: 2,
                       }}
                     >
-                      <StarIcon
+                      <PushPinIcon
                         sx={{
                           fontSize: FONT_SIZES.md,
                           color: "var(--color-yellow)",

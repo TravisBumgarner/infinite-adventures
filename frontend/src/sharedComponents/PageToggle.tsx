@@ -1,4 +1,3 @@
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import MapIcon from "@mui/icons-material/Map";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
@@ -9,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { FONT_SIZES } from "../styles/styleConsts";
 
 interface PageToggleProps {
-  activePage: "canvas" | "sessions" | "timeline" | "gallery" | "tree";
+  activePage: "canvas" | "sessions" | "timeline" | "gallery";
 }
 
 function navButtonSx(isActive: boolean) {
@@ -41,19 +40,19 @@ export default function PageToggle({ activePage }: PageToggleProps) {
     >
       <Button
         size="small"
-        onClick={() => navigate("/canvas")}
-        sx={navButtonSx(activePage === "canvas")}
-      >
-        <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
-        Canvas
-      </Button>
-      <Button
-        size="small"
         onClick={() => navigate("/sessions")}
         sx={navButtonSx(activePage === "sessions")}
       >
         <CalendarMonthIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Sessions
+      </Button>
+      <Button
+        size="small"
+        onClick={() => navigate("/canvas")}
+        sx={navButtonSx(activePage === "canvas")}
+      >
+        <MapIcon sx={{ fontSize: FONT_SIZES.lg }} />
+        Canvas
       </Button>
       <Button
         size="small"
@@ -70,14 +69,6 @@ export default function PageToggle({ activePage }: PageToggleProps) {
       >
         <PhotoLibraryIcon sx={{ fontSize: FONT_SIZES.lg }} />
         Gallery
-      </Button>
-      <Button
-        size="small"
-        onClick={() => navigate("/tree")}
-        sx={navButtonSx(activePage === "tree")}
-      >
-        <AccountTreeIcon sx={{ fontSize: FONT_SIZES.lg }} />
-        Tree
       </Button>
     </Box>
   );

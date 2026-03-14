@@ -113,5 +113,6 @@ export function usePhotoHandlers({
     handleTogglePhotoImportant,
     handleFileDrop,
     handleUpdateCaption,
+    isUploading: uploadPhotoMutation.isPending,
   };
 }

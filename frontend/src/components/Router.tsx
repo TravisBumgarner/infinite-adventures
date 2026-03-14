@@ -14,7 +14,6 @@ import Sessions from "../pages/Sessions";
 import SharedViewer from "../pages/Shared";
 import Signup from "../pages/Signup";
 import Timeline from "../pages/Timeline";
-import TreeView from "../pages/TreeView";
 import { useAppStore } from "../stores/appStore";
 import MemberLayout from "./MemberLayout";
 
@@ -38,7 +37,7 @@ export function AnonymousRoute({ children }: { children: ReactNode }) {
     if (redirect && !redirect.startsWith("/shared/")) {
       localStorage.removeItem(STORAGE_KEY_POST_AUTH_REDIRECT);
     }
-    return <Navigate to={redirect ?? "/canvas"} replace />;
+    return <Navigate to={redirect ?? "/sessions"} replace />;
   }
 
   return <>{children}</>;
@@ -53,9 +52,7 @@ function HomePage() {
   if (user) {
     return (
       <MemberLayout>
-        <ReactFlowProvider>
-          <Canvas />
-        </ReactFlowProvider>
+        <Sessions />
       </MemberLayout>
     );
   }
@@ -141,18 +138,6 @@ export default function Router() {
           <MemberRoute>
             <MemberLayout>
               <PhotoDetail />
-            </MemberLayout>
-          </MemberRoute>
-        }
-      />
-      <Route
-        path="/tree"
-        element={
-          <MemberRoute>
-            <MemberLayout>
-              <ReactFlowProvider>
-                <TreeView />
-              </ReactFlowProvider>
             </MemberLayout>
           </MemberRoute>
         }
