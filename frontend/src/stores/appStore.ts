@@ -22,7 +22,7 @@ export const useAppStore = create<AppState>((set) => ({
     const result = await getUser();
     if (result.success) {
       set({ user: result.data, authLoading: false });
-      posthog.identify(result.data.id, { email: result.data.email });
+      posthog.identify(result.data.id);
     } else {
       set({ user: null, authLoading: false });
       posthog.reset();
