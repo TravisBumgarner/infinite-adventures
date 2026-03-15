@@ -244,7 +244,7 @@ export default function NotesTab({
                       noteRefs.current.delete(note.id);
                     }
                     if (isEditing) {
-                      editingCardRef.current = el;
+                      editingCardRef.current = el as HTMLDivElement | null;
                     }
                   }}
                   sx={{

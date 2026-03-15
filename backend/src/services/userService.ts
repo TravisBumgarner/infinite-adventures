@@ -8,8 +8,8 @@ export interface UserRow {
   authId: string;
   email: string;
   displayName: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export async function getUserByAuthId(authId: string): Promise<UserRow | undefined> {

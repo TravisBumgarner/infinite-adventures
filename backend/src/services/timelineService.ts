@@ -92,6 +92,7 @@ export async function getTimeline(
   const photoRows = await db
     .select({
       id: photos.id,
+      filename: photos.filename,
       originalName: photos.originalName,
       isImportant: photos.isImportant,
       createdAt: photos.createdAt,

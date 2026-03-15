@@ -7,6 +7,7 @@ import type { CanvasItemType } from "shared";
 import { CANVAS_ITEM_TYPE_LABELS, CANVAS_ITEM_TYPES, SIDEBAR_WIDTH } from "../../../constants";
 import { CanvasItemTypeBadge } from "../../../sharedComponents/LabelBadge";
 import { useCanvasStore } from "../../../stores/canvasStore";
+import { getContrastText } from "../../../utils/getContrastText";
 
 interface ToolbarProps {
   onCreate: (type: CanvasItemType) => void;

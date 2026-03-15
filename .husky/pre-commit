@@ -1,3 +1,5 @@
 npx biome check --staged --no-errors-on-unmatched
+npm --prefix frontend run tsc
+npm --prefix backend run tsc
 npm --prefix frontend test
 npm --prefix backend test

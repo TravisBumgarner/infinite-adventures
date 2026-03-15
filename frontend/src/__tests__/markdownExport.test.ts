@@ -5,7 +5,9 @@ import { formatItemMarkdown } from "../utils/noteExport";
 function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }): CanvasItem {
   return {
     type: "person",
-    content: { id: overrides.id, notes: "" },
+    summary: "",
+    notes: [],
+    tags: [],
     photos: [],
     canvasX: 0,
     canvasY: 0,
@@ -20,6 +22,7 @@ function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }
 function makeNote(overrides: Partial<Note> & { content: string }): Note {
   return {
     id: "note-1",
+    title: null,
     plainContent: "",
     isImportant: false,
     createdAt: "2024-01-01",
