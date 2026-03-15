@@ -48,7 +48,7 @@ function serializeInline(nodes: TipTapNode[]): string {
  * and markdown syntax for bold, italic, bullet lists, and ordered lists.
  */
 export function serializeToMentionText(json: Record<string, unknown>): string {
-  const doc = json as TipTapNode;
+  const doc = json as unknown as TipTapNode;
   if (!doc.content) return "";
 
   const lines: string[] = [];

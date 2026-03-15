@@ -19,9 +19,13 @@ function makeNode(
       itemId: id,
       type,
       title,
+      summary: content,
       content,
       mentionLabels: {},
       onMentionClick: () => {},
+      notesCount: 0,
+      photosCount: 0,
+      connectionsCount: 0,
       tagIds,
     },
   };

@@ -13,19 +13,8 @@ export function blurhashToDataURL(hash: string | undefined): string | undefined 
 function parsePixels(pixels: Uint8ClampedArray, width: number, height: number) {
   const pixelsString = [...pixels].map((byte) => String.fromCharCode(byte)).join("");
   const pngString = generatePng(width, height, pixelsString);
-  const dataURL =
-    typeof Buffer !== "undefined"
-      ? Buffer.from(getPngArray(pngString)).toString("base64")
-      : btoa(pngString);
+  const dataURL = btoa(pngString);
   return `data:image/png;base64,${dataURL}`;
-}
-
-function getPngArray(pngString: string) {
-  const pngArray = new Uint8Array(pngString.length);
-  for (let i = 0; i < pngString.length; i++) {
-    pngArray[i] = pngString.charCodeAt(i);
-  }
-  return pngArray;
 }
 
 function generatePng(width: number, height: number, rgbaString: string) {

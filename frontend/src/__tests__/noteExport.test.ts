@@ -5,7 +5,9 @@ import { formatItemExport } from "../utils/noteExport";
 function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }): CanvasItem {
   return {
     type: "person",
-    content: { id: overrides.id, notes: "" },
+    summary: "",
+    notes: [],
+    tags: [],
     photos: [],
     canvasX: 0,
     canvasY: 0,
@@ -22,7 +24,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      content: { id: "1", notes: "A wizard" },
+      summary: "A wizard",
     });
     const cache = new Map<string, CanvasItem>([["1", item]]);
     const result = formatItemExport(item, cache);
@@ -42,7 +44,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      content: { id: "1", notes: "Met @{2} today" },
+      summary: "Met @{2} today",
     });
     const cache = new Map<string, CanvasItem>([
       ["1", item],
@@ -57,7 +59,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      content: { id: "1", notes: "Met @{unknown-id}" },
+      summary: "Met @{unknown-id}",
     });
     const cache = new Map<string, CanvasItem>([["1", item]]);
     const result = formatItemExport(item, cache);
@@ -68,7 +70,7 @@ describe("formatItemExport", () => {
     const frodo = makeItem({
       id: "2",
       title: "Frodo",
-      content: { id: "2", notes: "A hobbit" },
+      summary: "A hobbit",
     });
     const item = makeItem({
       id: "1",
@@ -89,7 +91,7 @@ describe("formatItemExport", () => {
       id: "3",
       title: "The Shire",
       type: "place",
-      content: { id: "3", notes: "A peaceful place" },
+      summary: "A peaceful place",
     });
     const item = makeItem({
       id: "1",
@@ -109,7 +111,7 @@ describe("formatItemExport", () => {
     const frodo = makeItem({
       id: "2",
       title: "Frodo",
-      content: { id: "2", notes: "A hobbit" },
+      summary: "A hobbit",
     });
     const item = makeItem({
       id: "1",
@@ -133,7 +135,7 @@ describe("formatItemExport", () => {
     const item = makeItem({
       id: "1",
       title: "Gandalf",
-      content: { id: "1", notes: "A wizard" },
+      summary: "A wizard",
     });
     const cache = new Map<string, CanvasItem>([["1", item]]);
     const result = formatItemExport(item, cache);

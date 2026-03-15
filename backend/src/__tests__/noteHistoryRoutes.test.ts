@@ -19,7 +19,8 @@ function createMockReq(overrides: Record<string, unknown> = {}) {
     query: {},
     body: {},
     ...overrides,
-  } as unknown as import("express").Request;
+  // biome-ignore lint/suspicious/noExplicitAny: test mock
+  } as any;
 }
 
 describe("note history route", () => {

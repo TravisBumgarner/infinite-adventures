@@ -72,7 +72,9 @@ describe("API client request handling", () => {
         canvasY: 0,
         createdAt: "",
         updatedAt: "",
-        content: { id: "c1", notes: "" },
+        summary: "",
+        notes: [],
+        tags: [],
         photos: [],
         linksTo: [],
         linkedFrom: [],
@@ -211,7 +213,9 @@ describe("canvas item API functions", () => {
         canvasY: 0,
         createdAt: "",
         updatedAt: "",
-        content: { id: "c1", notes: "" },
+        summary: "",
+        notes: [],
+        tags: [],
         photos: [],
         linksTo: [],
         linkedFrom: [],
@@ -222,7 +226,7 @@ describe("canvas item API functions", () => {
       expect(getCalledUrl()).toContain("/items/item-123");
     });
 
-    it("returns canvas item with content and photos", async () => {
+    it("returns canvas item with summary and photos", async () => {
       const item = {
         id: "1",
         type: "person",
@@ -231,7 +235,9 @@ describe("canvas item API functions", () => {
         canvasY: 0,
         createdAt: "",
         updatedAt: "",
-        content: { id: "c1", notes: "A wizard" },
+        summary: "A wizard",
+        notes: [],
+        tags: [],
         photos: [
           {
             id: "p1",
@@ -247,7 +253,7 @@ describe("canvas item API functions", () => {
 
       const result = await fetchItem("1");
 
-      expect(result.content.notes).toBe("A wizard");
+      expect(result.summary).toBe("A wizard");
       expect(result.photos).toHaveLength(1);
     });
   });
