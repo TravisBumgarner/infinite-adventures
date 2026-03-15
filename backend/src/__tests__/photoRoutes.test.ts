@@ -1,28 +1,36 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import config from "../config.js";
+import { handler as confirmHandler } from "../routes/photos/confirm.js";
 import { handler as deleteHandler, validate as deleteValidate } from "../routes/photos/delete.js";
+import { handler as presignHandler } from "../routes/photos/presign.js";
 import { handler as selectHandler, validate as selectValidate } from "../routes/photos/select.js";
-import { handler as serveHandler } from "../routes/photos/serve.js";
-import { handler as uploadHandler, validate as uploadValidate } from "../routes/photos/upload.js";
 import {
   createItem,
   DEFAULT_CANVAS_ID,
   getItem,
   getItemContentId,
 } from "../services/canvasItemService.js";
-import { uploadPhoto } from "../services/photoService.js";
+import { confirmUpload } from "../services/photoService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
 
-const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
+// Mock S3 module
+vi.mock("../lib/s3.js", () => ({
+  getS3Object: vi
+    .fn()
+    .mockResolvedValue(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    ),
+  deleteS3Object: vi.fn().mockResolvedValue(undefined),
+  generatePresignedGetUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-url"),
+  generatePresignedPutUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-put-url"),
+}));
 
 function createMockRes() {
   const res = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn().mockReturnThis(),
-    sendFile: vi.fn().mockReturnThis(),
-    setHeader: vi.fn().mockReturnThis(),
   };
   return res as unknown as import("express").Response;
 }
@@ -32,7 +40,6 @@ function createMockReq(overrides: Record<string, unknown> = {}) {
     params: {},
     query: {},
     body: {},
-    file: undefined,
     ...overrides,
   } as unknown as import("express").Request;
 }
@@ -44,112 +51,82 @@ describe("photo routes", () => {
 
   beforeEach(async () => {
     await truncateAllTables();
-    // Clean up test photos
-    if (fs.existsSync(UPLOADS_DIR)) {
-      const files = fs.readdirSync(UPLOADS_DIR);
-      for (const file of files) {
-        fs.unlinkSync(path.join(UPLOADS_DIR, file));
-      }
-    }
   });
 
   afterAll(async () => {
     await teardownTestDb();
   });
 
-  describe("upload", () => {
-    it("validate returns null and sends 400 for invalid UUID", () => {
+  describe("presign", () => {
+    it("handler returns presigned URL data for valid item", async () => {
+      const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
+      const req = createMockReq({
+        params: { itemId: item.id },
+        body: { contentType: "image/png", filename: "gandalf.png" },
+        user: { userId: TEST_USER_ID },
+      });
       const res = createMockRes();
-      const req = createMockReq({ params: { itemId: "not-a-uuid" } });
-      const context = uploadValidate(req as import("express").Request<{ itemId: string }>, res);
-      expect(context).toBeNull();
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
+      await presignHandler(req as import("express").Request<{ itemId: string }>, res);
 
-    it("validate returns context with itemId for valid UUID", () => {
-      const res = createMockRes();
-      const req = createMockReq({ params: { itemId: "550e8400-e29b-41d4-a716-446655440000" } });
-      const context = uploadValidate(req as import("express").Request<{ itemId: string }>, res);
-      expect(context).toEqual({ itemId: "550e8400-e29b-41d4-a716-446655440000" });
+      expect(res.status).toHaveBeenCalledWith(200);
+      const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(jsonArg.success).toBe(true);
+      expect(jsonArg.data.uploadUrl).toBeDefined();
+      expect(jsonArg.data.key).toBeDefined();
+      expect(jsonArg.data.photoId).toBeDefined();
     });
 
     it("handler returns 403 for non-existent item", async () => {
       const req = createMockReq({
         params: { itemId: "550e8400-e29b-41d4-a716-446655440000" },
-        file: {
-          originalname: "test.jpg",
-          mimetype: "image/jpeg",
-          buffer: Buffer.from("test"),
-        },
+        body: { contentType: "image/png", filename: "test.png" },
         user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
-      await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
+      await presignHandler(req as import("express").Request<{ itemId: string }>, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
     });
+  });
 
-    it("handler returns 400 when no file is uploaded", async () => {
+  describe("confirm", () => {
+    it("handler creates photo and returns 201 with success envelope", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const req = createMockReq({
         params: { itemId: item.id },
-        file: undefined,
-        user: { userId: TEST_USER_ID },
-      });
-      const res = createMockRes();
-      await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it("handler uploads photo and returns 201 with success envelope", async () => {
-      const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
-      const req = createMockReq({
-        params: { itemId: item.id },
-        file: {
-          originalname: "gandalf.jpg",
-          mimetype: "image/jpeg",
-          buffer: Buffer.from("fake image data"),
+        body: {
+          key: "photos/test-id.png",
+          photoId: crypto.randomUUID(),
+          originalName: "gandalf.png",
+          mimeType: "image/png",
         },
         user: { userId: TEST_USER_ID },
       });
       const res = createMockRes();
-      await uploadHandler(req as import("express").Request<{ itemId: string }>, res);
+      await confirmHandler(req as import("express").Request<{ itemId: string }>, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       const jsonArg = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(jsonArg.success).toBe(true);
-      expect(jsonArg.data.originalName).toBe("gandalf.jpg");
-    });
-  });
-
-  describe("serve", () => {
-    it("handler returns 404 for non-existent photo", async () => {
-      const req = createMockReq({ params: { filename: "nonexistent.jpg" } });
-      const res = createMockRes();
-      await serveHandler(req as import("express").Request<{ filename: string }>, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(jsonArg.data.originalName).toBe("gandalf.png");
+      expect(jsonArg.data.url).toBeDefined();
     });
 
-    it("handler serves photo file with correct content type", async () => {
-      const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
-      const fullItem = await getItem(item.id);
-      const contentId = await getItemContentId(item.id);
-      const photo = await uploadPhoto({
-        contentType: fullItem!.type,
-        contentId: contentId!,
-        originalName: "test.jpg",
-        mimeType: "image/jpeg",
-        buffer: Buffer.from("test image data"),
+    it("handler returns 403 for non-existent item", async () => {
+      const req = createMockReq({
+        params: { itemId: "550e8400-e29b-41d4-a716-446655440000" },
+        body: {
+          key: "photos/test.png",
+          photoId: crypto.randomUUID(),
+          originalName: "test.png",
+          mimeType: "image/png",
+        },
+        user: { userId: TEST_USER_ID },
       });
-
-      const req = createMockReq({ params: { filename: photo.filename } });
       const res = createMockRes();
-      await serveHandler(req as import("express").Request<{ filename: string }>, res);
+      await confirmHandler(req as import("express").Request<{ itemId: string }>, res);
 
-      expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/jpeg");
-      expect(res.sendFile).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
     });
   });
 
@@ -184,12 +161,13 @@ describe("photo routes", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
-      const photo = await uploadPhoto({
+      const photo = await confirmUpload({
+        photoId: crypto.randomUUID(),
+        key: "photos/test-delete.png",
         contentType: fullItem!.type,
         contentId: contentId!,
         originalName: "test.jpg",
         mimeType: "image/jpeg",
-        buffer: Buffer.from("test image data"),
       });
 
       const req = createMockReq({
@@ -236,12 +214,13 @@ describe("photo routes", () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const fullItem = await getItem(item.id);
       const contentId = await getItemContentId(item.id);
-      const photo = await uploadPhoto({
+      const photo = await confirmUpload({
+        photoId: crypto.randomUUID(),
+        key: "photos/test-select.png",
         contentType: fullItem!.type,
         contentId: contentId!,
         originalName: "test.jpg",
         mimeType: "image/jpeg",
-        buffer: Buffer.from("test image data"),
       });
 
       const req = createMockReq({

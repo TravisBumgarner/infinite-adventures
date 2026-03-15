@@ -1,10 +1,24 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createItem, DEFAULT_CANVAS_ID, getItemContentId } from "../services/canvasItemService.js";
 import { createCanvas } from "../services/canvasService.js";
 import { createNote, updateNote } from "../services/noteService.js";
-import { uploadPhoto } from "../services/photoService.js";
+import { confirmUpload } from "../services/photoService.js";
 import { getTimeline, getTimelineDayCounts } from "../services/timelineService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+
+vi.mock("../lib/s3.js", () => ({
+  getS3Object: vi
+    .fn()
+    .mockResolvedValue(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    ),
+  deleteS3Object: vi.fn().mockResolvedValue(undefined),
+  generatePresignedGetUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-url"),
+  generatePresignedPutUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-put-url"),
+}));
 
 describe("timelineService", () => {
   beforeAll(async () => {
@@ -24,12 +38,13 @@ describe("timelineService", () => {
     await createNote(item.id, { content: "A wizard" });
 
     const contentId = (await getItemContentId(item.id))!;
-    await uploadPhoto({
+    await confirmUpload({
+      photoId: crypto.randomUUID(),
+      key: `photos/test-${crypto.randomUUID()}.png`,
       contentType: "person",
       contentId: contentId,
       originalName: "gandalf.png",
       mimeType: "image/png",
-      buffer: Buffer.from("fake"),
     });
 
     const result = await getTimeline(DEFAULT_CANVAS_ID);
@@ -42,7 +57,7 @@ describe("timelineService", () => {
     expect(note.parentItemTitle).toBe("Gandalf");
 
     const photo = result.entries.find((e) => e.kind === "photo")!;
-    expect(photo.photoUrl).toContain("/api/photos/");
+    expect(photo.photoUrl).toContain("s3.example.com");
     expect(photo.originalName).toBe("gandalf.png");
     expect(photo.parentItemId).toBe(item.id);
     expect(photo.parentItemType).toBe("person");
@@ -84,12 +99,13 @@ describe("timelineService", () => {
       await createNote(item.id, { content: "Note 2" });
 
       const contentId = (await getItemContentId(item.id))!;
-      await uploadPhoto({
+      await confirmUpload({
+        photoId: crypto.randomUUID(),
+        key: `photos/test-${crypto.randomUUID()}.png`,
         contentType: "person",
         contentId: contentId,
         originalName: "pic.png",
         mimeType: "image/png",
-        buffer: Buffer.from("fake"),
       });
 
       const today = new Date().toISOString().slice(0, 10);
