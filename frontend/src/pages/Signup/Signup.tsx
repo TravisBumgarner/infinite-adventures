@@ -2,6 +2,7 @@ import { Alert, Box, Button, Link as MuiLink, TextField, Typography } from "@mui
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { signup } from "../../auth/service.js";
+import Turnstile from "../../sharedComponents/Turnstile";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,7 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -17,6 +19,11 @@ export default function Signup() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+
+    if (!turnstileToken) {
+      setError("Please complete the verification");
       return;
     }
 
@@ -98,8 +105,11 @@ export default function Signup() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           autoComplete="new-password"
         />
+        <Box sx={{ my: 2 }}>
+          <Turnstile onToken={setTurnstileToken} />
+        </Box>
         <Button type="submit" variant="contained" fullWidth disabled={submitting} sx={{ mt: 2 }}>
-          {submitting ? "Creating account…" : "Sign up"}
+          {submitting ? "Creating account..." : "Sign up"}
         </Button>
       </Box>
 

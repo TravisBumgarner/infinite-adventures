@@ -17,6 +17,7 @@ const envSchema = z.object({
   S3_BUCKET_NAME: z.string(),
   POSTHOG_API_KEY: z.string(),
   POSTHOG_HOST: z.string(),
+  CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string(),
 });
 
 const parsed = envSchema.safeParse({
@@ -34,6 +35,7 @@ const parsed = envSchema.safeParse({
   S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
   POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
   POSTHOG_HOST: process.env.POSTHOG_HOST,
+  CLOUDFLARE_TURNSTILE_SECRET_KEY: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
 });
 
 if (!parsed.success) {
@@ -57,6 +59,7 @@ const config = {
   s3BucketName: parsed.data.S3_BUCKET_NAME,
   posthogApiKey: parsed.data.POSTHOG_API_KEY,
   posthogHost: parsed.data.POSTHOG_HOST,
+  cloudflareTurnstileSecretKey: parsed.data.CLOUDFLARE_TURNSTILE_SECRET_KEY,
   isProduction: parsed.data.NODE_ENV === "production",
   isDevelopment: parsed.data.NODE_ENV === "development",
 };

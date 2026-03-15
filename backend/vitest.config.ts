@@ -14,6 +14,7 @@ export default defineConfig({
       S3_BUCKET_NAME: "test-bucket",
       POSTHOG_API_KEY: "phc_test",
       POSTHOG_HOST: "https://test.posthog.com",
+      CLOUDFLARE_TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
     },
   },
 });

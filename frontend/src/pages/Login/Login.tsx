@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../auth/service.js";
 import { STORAGE_KEY_POST_AUTH_REDIRECT } from "../../constants";
+import Turnstile from "../../sharedComponents/Turnstile";
 import { useAppStore } from "../../stores/appStore";
 
 export default function Login() {
@@ -12,9 +13,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!turnstileToken) {
+      setError("Please complete the verification");
+      return;
+    }
     setError("");
     setSubmitting(true);
 
@@ -72,8 +78,11 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
         />
+        <Box sx={{ my: 2 }}>
+          <Turnstile onToken={setTurnstileToken} />
+        </Box>
         <Button type="submit" variant="contained" fullWidth disabled={submitting} sx={{ mt: 2 }}>
-          {submitting ? "Logging in…" : "Log in"}
+          {submitting ? "Logging in..." : "Log in"}
         </Button>
       </Box>
 

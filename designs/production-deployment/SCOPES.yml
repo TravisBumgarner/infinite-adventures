@@ -380,7 +380,7 @@ tasks:
       - Config schemas include Turnstile keys on both frontend and backend
     depends_on: [6]
     effort: 2
-    status: scoped
+    status: completed
 
   # --- Milestone 4: CI/CD + Alpha Banner ---
 
