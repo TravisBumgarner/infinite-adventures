@@ -73,7 +73,7 @@ function ShareRow({ share }: { share: Share }) {
 
 export default function SharingTab() {
   const activeCanvasId = useCanvasStore((s) => s.activeCanvasId);
-  const { data: shares, isLoading } = useShares(activeCanvasId);
+  const { data: shares, isLoading } = useShares(activeCanvasId ?? undefined);
 
   if (isLoading) {
     return (

@@ -113,8 +113,8 @@ describe("requireAuth middleware", () => {
         authId: "supabase-auth-id",
         email: "gandalf@middle.earth",
         displayName: "gandalf",
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       });
 
       const req = createMockReq({ headers: { authorization: "Bearer valid-token" } });

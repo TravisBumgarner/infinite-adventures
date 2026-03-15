@@ -5,7 +5,7 @@ import { buildEdges } from "../utils/buildEdges";
 function makeItem(overrides: Partial<CanvasItem> & { id: string; title: string }): CanvasItem {
   return {
     type: "person",
-    content: { id: overrides.id, notes: "" },
+    summary: "",
     photos: [],
     canvasX: 0,
     canvasY: 0,

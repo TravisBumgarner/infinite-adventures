@@ -440,7 +440,7 @@ export async function importCanvas(
         const uploadUrl = await generatePresignedPutUrl(newKey, p.mimeType);
         await fetch(uploadUrl, {
           method: "PUT",
-          body: photoBuffer,
+          body: new Uint8Array(photoBuffer),
           headers: { "Content-Type": p.mimeType },
         });
         uploadedS3Keys.push(newKey);
