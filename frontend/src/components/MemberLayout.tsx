@@ -1,5 +1,6 @@
 import ShareIcon from "@mui/icons-material/Share";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -62,7 +63,12 @@ export default function MemberLayout({ children }: MemberLayoutProps) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <TopBar
-        left={<ConnectedCanvasPicker />}
+        left={
+          <>
+            <ConnectedCanvasPicker />
+            <Chip label="Alpha" size="small" color="warning" />
+          </>
+        }
         center={
           <>
             <PageToggle activePage={activePage} />
