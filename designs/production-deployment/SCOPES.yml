@@ -314,7 +314,7 @@ tasks:
       - X-Powered-By header disabled
     depends_on: [5]
     effort: 2
-    status: scoped
+    status: completed
 
   # --- Milestone 3: Security Hardening ---
 

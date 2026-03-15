@@ -3,6 +3,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import config from "./config.js";
 import { initDb } from "./db/connection.js";
 import { logger, shutdownPosthog } from "./lib/logger.js";
@@ -21,7 +22,23 @@ import { timelineRouter } from "./routes/timeline/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const s3Origin = `https://${config.s3BucketName}.s3.${config.awsRegion}.amazonaws.com`;
+
 const app = express();
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
+        connectSrc: ["'self'", "*.supabase.co", "*.posthog.com", s3Origin],
+        imgSrc: ["'self'", "data:", "blob:", s3Origin],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        frameSrc: ["https://challenges.cloudflare.com"],
+      },
+    },
+  }),
+);
 app.use(cors({ origin: config.frontendUrl }));
 app.use(express.json());
 
