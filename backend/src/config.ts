@@ -9,6 +9,10 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().optional().default(""),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(""),
   UPLOADS_DIR: z.string(),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  AWS_REGION: z.string(),
+  S3_BUCKET_NAME: z.string(),
 });
 
 const parsed = envSchema.safeParse({
@@ -18,6 +22,10 @@ const parsed = envSchema.safeParse({
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   UPLOADS_DIR: process.env.UPLOADS_DIR,
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  AWS_REGION: process.env.AWS_REGION,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
 });
 
 if (!parsed.success) {
@@ -33,6 +41,10 @@ const config = {
   supabaseUrl: parsed.data.SUPABASE_URL,
   supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
   uploadsDir: parsed.data.UPLOADS_DIR,
+  awsAccessKeyId: parsed.data.AWS_ACCESS_KEY_ID,
+  awsSecretAccessKey: parsed.data.AWS_SECRET_ACCESS_KEY,
+  awsRegion: parsed.data.AWS_REGION,
+  s3BucketName: parsed.data.S3_BUCKET_NAME,
   isProduction: parsed.data.NODE_ENV === "production",
   isDevelopment: parsed.data.NODE_ENV === "development",
 };
