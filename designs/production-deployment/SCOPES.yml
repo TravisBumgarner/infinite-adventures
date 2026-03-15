@@ -127,7 +127,7 @@ tasks:
       - .env, .env.example, vitest.config.ts updated
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: implementing
 
   - id: 3
     milestone: 1
