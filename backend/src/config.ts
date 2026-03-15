@@ -6,6 +6,8 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .default("postgresql://infinite:infinite@localhost:5434/infinite_adventures"),
+  DATABASE_SSL_REJECT_UNAUTHORIZED: z.string(),
+  FRONTEND_URL: z.string(),
   SUPABASE_URL: z.string().optional().default(""),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(""),
   UPLOADS_DIR: z.string(),
@@ -19,6 +21,8 @@ const parsed = envSchema.safeParse({
   PORT: process.env.PORT,
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_SSL_REJECT_UNAUTHORIZED: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED,
+  FRONTEND_URL: process.env.FRONTEND_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   UPLOADS_DIR: process.env.UPLOADS_DIR,
@@ -38,6 +42,8 @@ const config = {
   port: Number.parseInt(parsed.data.PORT, 10),
   nodeEnv: parsed.data.NODE_ENV,
   databaseUrl: parsed.data.DATABASE_URL,
+  databaseSslRejectUnauthorized: parsed.data.DATABASE_SSL_REJECT_UNAUTHORIZED === "true",
+  frontendUrl: parsed.data.FRONTEND_URL,
   supabaseUrl: parsed.data.SUPABASE_URL,
   supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
   uploadsDir: parsed.data.UPLOADS_DIR,
