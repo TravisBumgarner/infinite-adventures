@@ -8,6 +8,7 @@ import config from "./config.js";
 import { initDb } from "./db/connection.js";
 import { logger, shutdownPosthog } from "./lib/logger.js";
 import { publicRateLimit, standardRateLimit, strictRateLimit } from "./middleware/rateLimit.js";
+import { requireTurnstile } from "./middleware/turnstile.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { galleryRouter } from "./routes/gallery/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
@@ -46,8 +47,8 @@ app.use(express.json());
 
 await initDb();
 
-// Public routes (rate limited by IP)
-app.use("/api/shared", publicRateLimit, sharedContentRouter);
+// Public routes (rate limited by IP, Turnstile protected)
+app.use("/api/shared", publicRateLimit, requireTurnstile, sharedContentRouter);
 
 // Strict rate limited routes (uploads, canvas create/delete)
 app.use("/api/canvases", strictRateLimit, canvasesRouter);
