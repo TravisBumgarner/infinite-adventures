@@ -15,6 +15,8 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_REGION: z.string(),
   S3_BUCKET_NAME: z.string(),
+  POSTHOG_API_KEY: z.string(),
+  POSTHOG_HOST: z.string(),
 });
 
 const parsed = envSchema.safeParse({
@@ -30,6 +32,8 @@ const parsed = envSchema.safeParse({
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
   AWS_REGION: process.env.AWS_REGION,
   S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+  POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
+  POSTHOG_HOST: process.env.POSTHOG_HOST,
 });
 
 if (!parsed.success) {
@@ -51,6 +55,8 @@ const config = {
   awsSecretAccessKey: parsed.data.AWS_SECRET_ACCESS_KEY,
   awsRegion: parsed.data.AWS_REGION,
   s3BucketName: parsed.data.S3_BUCKET_NAME,
+  posthogApiKey: parsed.data.POSTHOG_API_KEY,
+  posthogHost: parsed.data.POSTHOG_HOST,
   isProduction: parsed.data.NODE_ENV === "production",
   isDevelopment: parsed.data.NODE_ENV === "development",
 };

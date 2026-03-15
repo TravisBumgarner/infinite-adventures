@@ -1,5 +1,7 @@
-import * as Sentry from "@sentry/node";
+import { PostHog } from "posthog-node";
 import config from "../config.js";
+
+const posthog = new PostHog(config.posthogApiKey, { host: config.posthogHost });
 
 export const logger = {
   // Info logs go to stdout (visible in Heroku logs)
@@ -9,7 +11,18 @@ export const logger = {
   },
   error(msg: string, error?: unknown): void {
     if (config.isProduction) {
-      Sentry.captureException(error ?? new Error(msg));
+      posthog.capture({
+        distinctId: "server",
+        event: "$exception",
+        properties: {
+          $exception_message: msg,
+          $exception_stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
     }
   },
 };
+
+export function shutdownPosthog(): Promise<void> {
+  return posthog.shutdown();
+}

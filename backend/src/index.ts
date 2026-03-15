@@ -1,12 +1,11 @@
 import "dotenv/config";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import * as Sentry from "@sentry/node";
 import cors from "cors";
 import express from "express";
 import config from "./config.js";
 import { initDb } from "./db/connection.js";
-import { logger } from "./lib/logger.js";
+import { logger, shutdownPosthog } from "./lib/logger.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { galleryRouter } from "./routes/gallery/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
@@ -21,11 +20,6 @@ import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
 import { timelineRouter } from "./routes/timeline/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-Sentry.init({
-  dsn: "https://6ef02465e2d32a4e41d39e0fdd83f73e@o196886.ingest.us.sentry.io/4510862831386624",
-  sendDefaultPii: true,
-});
 
 const app = express();
 app.use(cors({ origin: config.frontendUrl }));
@@ -82,7 +76,13 @@ if (config.isProduction) {
   });
 }
 
-Sentry.setupExpressErrorHandler(app);
+// Graceful shutdown
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, async () => {
+    await shutdownPosthog();
+    process.exit(0);
+  });
+}
 
 app.listen(config.port, () => {
   logger.info(`Server running on port ${config.port}`);

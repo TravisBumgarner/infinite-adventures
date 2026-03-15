@@ -285,7 +285,7 @@ tasks:
       - PostHog shuts down gracefully on backend process exit
     depends_on: [4]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 6
     milestone: 2
