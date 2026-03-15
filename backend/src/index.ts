@@ -7,6 +7,7 @@ import helmet from "helmet";
 import config from "./config.js";
 import { initDb } from "./db/connection.js";
 import { logger, shutdownPosthog } from "./lib/logger.js";
+import { publicRateLimit, standardRateLimit, strictRateLimit } from "./middleware/rateLimit.js";
 import { canvasesRouter } from "./routes/canvases/index.js";
 import { galleryRouter } from "./routes/gallery/index.js";
 import { canvasItemsRouter, itemsRouter } from "./routes/items/index.js";
@@ -25,6 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const s3Origin = `https://${config.s3BucketName}.s3.${config.awsRegion}.amazonaws.com`;
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -44,43 +46,27 @@ app.use(express.json());
 
 await initDb();
 
-// Canvas routes
-app.use("/api/canvases", canvasesRouter);
+// Public routes (rate limited by IP)
+app.use("/api/shared", publicRateLimit, sharedContentRouter);
 
-// Canvas items routes
-app.use("/api/canvases/:canvasId/items", canvasItemsRouter);
-app.use("/api/items", itemsRouter);
+// Strict rate limited routes (uploads, canvas create/delete)
+app.use("/api/canvases", strictRateLimit, canvasesRouter);
+app.use("/api/items/:itemId/photos", strictRateLimit, itemPhotosRouter);
 
-// Session routes
-app.use("/api/canvases/:canvasId/sessions", sessionsRouter);
-
-// Timeline routes
-app.use("/api/canvases/:canvasId/timeline", timelineRouter);
-
-// Gallery routes
-app.use("/api/canvases/:canvasId/gallery", galleryRouter);
-
-// Note routes
-app.use("/api/notes", notesRouter);
-app.use("/api/items/:itemId/notes", itemNotesRouter);
-
-// Photo routes
-app.use("/api/photos", photosRouter);
-app.use("/api/items/:itemId/photos", itemPhotosRouter);
-
-// Quick notes routes
-app.use("/api/canvases/:canvasId/quick-notes", quickNotesRouter);
-
-// Tag routes
-app.use("/api/canvases/:canvasId/tags", canvasTagsRouter);
-app.use("/api/items/:itemId/tags", itemTagsRouter);
-
-// Link routes
-app.use("/api/links", linksRouter);
-
-// Share routes
-app.use("/api/shares", sharesRouter);
-app.use("/api/shared", sharedContentRouter);
+// Standard rate limited routes
+app.use("/api/canvases/:canvasId/items", standardRateLimit, canvasItemsRouter);
+app.use("/api/items", standardRateLimit, itemsRouter);
+app.use("/api/canvases/:canvasId/sessions", standardRateLimit, sessionsRouter);
+app.use("/api/canvases/:canvasId/timeline", standardRateLimit, timelineRouter);
+app.use("/api/canvases/:canvasId/gallery", standardRateLimit, galleryRouter);
+app.use("/api/notes", standardRateLimit, notesRouter);
+app.use("/api/items/:itemId/notes", standardRateLimit, itemNotesRouter);
+app.use("/api/photos", standardRateLimit, photosRouter);
+app.use("/api/canvases/:canvasId/quick-notes", standardRateLimit, quickNotesRouter);
+app.use("/api/canvases/:canvasId/tags", standardRateLimit, canvasTagsRouter);
+app.use("/api/items/:itemId/tags", standardRateLimit, itemTagsRouter);
+app.use("/api/links", standardRateLimit, linksRouter);
+app.use("/api/shares", standardRateLimit, sharesRouter);
 
 // Serve frontend in production
 if (config.isProduction) {

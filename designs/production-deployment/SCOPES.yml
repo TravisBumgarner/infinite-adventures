@@ -343,7 +343,7 @@ tasks:
       - Rate limited responses return 429 with consistent error format
     depends_on: [6]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 8
     milestone: 3
