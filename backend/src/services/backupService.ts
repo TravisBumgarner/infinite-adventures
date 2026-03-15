@@ -1,10 +1,8 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 import AdmZip from "adm-zip";
 import archiver from "archiver";
 import { and, eq, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import config from "../config.js";
 import { getDb } from "../db/connection.js";
 import type { CanvasItemType } from "../db/schema.js";
 import {
@@ -24,8 +22,7 @@ import {
   tags,
   things,
 } from "../db/schema.js";
-
-const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
+import { deleteS3Object, generatePresignedPutUrl, getS3Object } from "../lib/s3.js";
 
 export const CURRENT_SCHEMA_VERSION = 2;
 
@@ -326,6 +323,17 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
     canvasName: canvas.name,
   };
 
+  // Download photo files from S3
+  const photoBuffers = new Map<string, Buffer>();
+  for (const photo of photoData) {
+    try {
+      const buffer = await getS3Object(photo.filename);
+      photoBuffers.set(photo.filename, buffer);
+    } catch {
+      // Skip photos that can't be downloaded
+    }
+  }
+
   // Build zip
   return new Promise<Buffer>((resolve, reject) => {
     const archive = archiver("zip", { zlib: { level: 9 } });
@@ -338,11 +346,11 @@ export async function exportCanvas(canvasId: string): Promise<Buffer> {
     archive.append(JSON.stringify(manifest, null, 2), { name: "manifest.json" });
     archive.append(JSON.stringify(data, null, 2), { name: "data.json" });
 
-    // Add photo files
+    // Add photo files from S3
     for (const photo of photoData) {
-      const filePath = path.join(UPLOADS_DIR, photo.filename);
-      if (fs.existsSync(filePath)) {
-        archive.file(filePath, { name: `photos/${photo.filename}` });
+      const buffer = photoBuffers.get(photo.filename);
+      if (buffer) {
+        archive.append(buffer, { name: `photos/${photo.filename}` });
       }
     }
 
@@ -413,13 +421,32 @@ export async function importCanvas(
   // 8. New content history IDs (v2+)
   for (const ch of data.contentHistory ?? []) contentHistoryIdMap.set(ch.id, uuidv4());
 
-  // Track written photo files for cleanup on failure
-  const writtenPhotoPaths: string[] = [];
+  // Track uploaded S3 keys for cleanup on failure
+  const uploadedS3Keys: string[] = [];
 
   const db = getDb();
   const now = new Date();
 
   try {
+    // Upload photos to S3 before the transaction
+    for (const p of data.photos) {
+      const newPhotoId = photoIdMap.get(p.id)!;
+      const ext = path.extname(p.filename);
+      const newKey = `photos/${newPhotoId}${ext}`;
+
+      const photoEntry = zip.getEntry(`photos/${p.filename}`);
+      if (photoEntry) {
+        const photoBuffer = photoEntry.getData();
+        const uploadUrl = await generatePresignedPutUrl(newKey, p.mimeType);
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: photoBuffer,
+          headers: { "Content-Type": p.mimeType },
+        });
+        uploadedS3Keys.push(newKey);
+      }
+    }
+
     await db.transaction(async (tx) => {
       // Insert canvas
       await tx.insert(canvases).values({
@@ -508,29 +535,17 @@ export async function importCanvas(
         });
       }
 
-      // Write photo files and insert photo records
-      if (!fs.existsSync(UPLOADS_DIR)) {
-        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-      }
-
+      // Insert photo records (S3 keys already uploaded above)
       for (const p of data.photos) {
         const newPhotoId = photoIdMap.get(p.id)!;
         const ext = path.extname(p.filename);
-        const newFilename = `${newPhotoId}${ext}`;
-
-        // Extract photo from zip
-        const photoEntry = zip.getEntry(`photos/${p.filename}`);
-        if (photoEntry) {
-          const filePath = path.join(UPLOADS_DIR, newFilename);
-          fs.writeFileSync(filePath, photoEntry.getData());
-          writtenPhotoPaths.push(filePath);
-        }
+        const newKey = `photos/${newPhotoId}${ext}`;
 
         await tx.insert(photos).values({
           id: newPhotoId,
           contentType: p.contentType,
           contentId: contentIdMap.get(p.contentId)!,
-          filename: newFilename,
+          filename: newKey,
           originalName: p.originalName,
           mimeType: p.mimeType,
           isMainPhoto: p.isMainPhoto,
@@ -610,10 +625,12 @@ export async function importCanvas(
       }
     });
   } catch (err) {
-    // Clean up any photo files written before the failure
-    for (const filePath of writtenPhotoPaths) {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    // Clean up any S3 objects uploaded before the failure
+    for (const key of uploadedS3Keys) {
+      try {
+        await deleteS3Object(key);
+      } catch {
+        // Best effort cleanup
       }
     }
     throw err;

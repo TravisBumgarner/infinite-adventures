@@ -2,6 +2,7 @@ import { and, eq, lt, or, sql } from "drizzle-orm";
 import type { GalleryEntry } from "shared";
 import { getDb } from "../db/connection.js";
 import { canvasItems, photos } from "../db/schema.js";
+import { getPhotoUrl } from "./photoService.js";
 
 interface GalleryCursor {
   timestamp: string;
@@ -66,20 +67,22 @@ export async function getGalleryEntries(
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;
-  const entries: GalleryEntry[] = rows.slice(0, limit).map((row) => ({
-    id: row.id,
-    url: `/api/photos/${row.filename}`,
-    originalName: row.originalName,
-    caption: row.caption,
-    aspectRatio: row.aspectRatio ?? undefined,
-    blurhash: row.blurhash ?? undefined,
-    isMainPhoto: row.isMainPhoto,
-    isImportant: row.isImportant,
-    createdAt: row.createdAt.toISOString(),
-    parentItemId: row.parentItemId,
-    parentItemType: row.parentItemType,
-    parentItemTitle: row.parentItemTitle,
-  }));
+  const entries: GalleryEntry[] = await Promise.all(
+    rows.slice(0, limit).map(async (row) => ({
+      id: row.id,
+      url: await getPhotoUrl(row.filename),
+      originalName: row.originalName,
+      caption: row.caption,
+      aspectRatio: row.aspectRatio ?? undefined,
+      blurhash: row.blurhash ?? undefined,
+      isMainPhoto: row.isMainPhoto,
+      isImportant: row.isImportant,
+      createdAt: row.createdAt.toISOString(),
+      parentItemId: row.parentItemId,
+      parentItemType: row.parentItemType,
+      parentItemTitle: row.parentItemTitle,
+    })),
+  );
 
   let nextCursor: string | null = null;
   if (hasMore && entries.length > 0) {

@@ -2,6 +2,7 @@ import { and, between, eq, lt, or, sql } from "drizzle-orm";
 import type { TimelineEntry } from "shared";
 import { getDb } from "../db/connection.js";
 import { canvasItems, notes, photos } from "../db/schema.js";
+import { getPhotoUrl } from "./photoService.js";
 
 export type TimelineSort = "createdAt" | "updatedAt";
 
@@ -109,20 +110,22 @@ export async function getTimeline(
     .orderBy(sql`${photos.createdAt} DESC, ${photos.id} DESC`)
     .limit(limit + 1);
 
-  const photoEntries: TimelineEntry[] = photoRows.map((row) => ({
-    id: row.id,
-    kind: "photo" as const,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.createdAt.toISOString(),
-    isImportant: row.isImportant,
-    photoUrl: `/api/photos/${row.id}`,
-    originalName: row.originalName,
-    aspectRatio: row.aspectRatio ?? undefined,
-    blurhash: row.blurhash ?? undefined,
-    parentItemId: row.parentItemId,
-    parentItemType: row.parentItemType,
-    parentItemTitle: row.parentItemTitle,
-  }));
+  const photoEntries: TimelineEntry[] = await Promise.all(
+    photoRows.map(async (row) => ({
+      id: row.id,
+      kind: "photo" as const,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.createdAt.toISOString(),
+      isImportant: row.isImportant,
+      photoUrl: await getPhotoUrl(row.filename),
+      originalName: row.originalName,
+      aspectRatio: row.aspectRatio ?? undefined,
+      blurhash: row.blurhash ?? undefined,
+      parentItemId: row.parentItemId,
+      parentItemType: row.parentItemType,
+      parentItemTitle: row.parentItemTitle,
+    })),
+  );
 
   // Merge and sort descending by requested field
   const all = [...noteEntries, ...photoEntries];

@@ -31,7 +31,7 @@ import {
   recomputePlainContentForMentionedItem,
   replaceMentionsForDeletedItem,
 } from "./noteService.js";
-import { deletePhotosForContent, listPhotos } from "./photoService.js";
+import { deletePhotosForContent, getPhotoUrl, listPhotos } from "./photoService.js";
 import { listTagIdsForItem, listTagsForItem } from "./tagService.js";
 
 export const DEFAULT_CANVAS_ID = "00000000-0000-4000-8000-000000000000";
@@ -113,7 +113,9 @@ export async function listItems(canvasId: string): Promise<CanvasItemSummary[]> 
       canvasX: item.canvasX,
       canvasY: item.canvasY,
       createdAt: item.createdAt.toISOString(),
-      selectedPhotoUrl: selectedPhotos[0] ? `/api/photos/${selectedPhotos[0].filename}` : undefined,
+      selectedPhotoUrl: selectedPhotos[0]
+        ? await getPhotoUrl(selectedPhotos[0].filename)
+        : undefined,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
     });
   }
@@ -147,18 +149,20 @@ export async function getItem(id: string): Promise<CanvasItem | null> {
 
   // Get photos
   const photoRecords = await listPhotos(type, item.contentId);
-  const photoList: Photo[] = photoRecords.map((p) => ({
-    id: p.id,
-    url: `/api/photos/${p.filename}`,
-    originalName: p.originalName,
-    isMainPhoto: p.isMainPhoto,
-    isImportant: p.isImportant,
-    caption: p.caption,
-    aspectRatio: p.aspectRatio ?? undefined,
-    blurhash: p.blurhash ?? undefined,
-    cropX: p.cropX ?? undefined,
-    cropY: p.cropY ?? undefined,
-  }));
+  const photoList: Photo[] = await Promise.all(
+    photoRecords.map(async (p) => ({
+      id: p.id,
+      url: await getPhotoUrl(p.filename),
+      originalName: p.originalName,
+      isMainPhoto: p.isMainPhoto,
+      isImportant: p.isImportant,
+      caption: p.caption,
+      aspectRatio: p.aspectRatio ?? undefined,
+      blurhash: p.blurhash ?? undefined,
+      cropX: p.cropX ?? undefined,
+      cropY: p.cropY ?? undefined,
+    })),
+  );
 
   // Get tags
   const tagList = await listTagsForItem(id);
@@ -483,7 +487,7 @@ export async function listSessions(canvasId: string): Promise<SessionSummary[]> 
       title: item.title,
       sessionDate: item.sessionDate,
       createdAt: item.createdAt.toISOString(),
-      selectedPhotoUrl: mainPhoto ? `/api/photos/${mainPhoto.filename}` : undefined,
+      selectedPhotoUrl: mainPhoto ? await getPhotoUrl(mainPhoto.filename) : undefined,
       selectedPhotoCropX: mainPhoto?.cropX ?? undefined,
       selectedPhotoCropY: mainPhoto?.cropY ?? undefined,
       selectedPhotoAspectRatio: mainPhoto?.aspectRatio ?? undefined,
@@ -560,7 +564,7 @@ export async function getTaggedItems(itemId: string): Promise<TaggedItem[]> {
         title: targetItem.title,
         type: targetItem.type as CanvasItemType,
         selectedPhotoUrl: selectedPhotos[0]
-          ? `/api/photos/${selectedPhotos[0].filename}`
+          ? await getPhotoUrl(selectedPhotos[0].filename)
           : undefined,
       });
     }

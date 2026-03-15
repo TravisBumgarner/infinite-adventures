@@ -11,8 +11,8 @@ import { handler as getNoteHandler } from "../routes/notes/get.js";
 import { handler as listNotesHandler } from "../routes/notes/list.js";
 import { handler as updateNoteHandler } from "../routes/notes/update.js";
 import { handler as deletePhotoHandler } from "../routes/photos/delete.js";
+import { handler as presignPhotoHandler } from "../routes/photos/presign.js";
 import { handler as selectPhotoHandler } from "../routes/photos/select.js";
-import { handler as uploadPhotoHandler } from "../routes/photos/upload.js";
 import { handler as assignTagHandler } from "../routes/tags/assign.js";
 import { handler as deleteTagHandler } from "../routes/tags/delete.js";
 import { handler as removeTagHandler } from "../routes/tags/remove.js";
@@ -144,10 +144,14 @@ describe("item-scoped route authorization", () => {
     });
 
     // Photo routes
-    it("photos/upload", async () => {
-      const req = createMockReq({ params: { itemId }, user: { userId: OTHER_USER_ID } });
+    it("photos/presign", async () => {
+      const req = createMockReq({
+        params: { itemId },
+        body: { contentType: "image/png", filename: "test.png" },
+        user: { userId: OTHER_USER_ID },
+      });
       const res = createMockRes();
-      await uploadPhotoHandler(req as import("express").Request<{ itemId: string }>, res);
+      await presignPhotoHandler(req as import("express").Request<{ itemId: string }>, res);
       expect(res.status).toHaveBeenCalledWith(403);
     });
 

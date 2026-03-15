@@ -322,11 +322,30 @@ describe("canvas item API functions", () => {
 });
 
 describe("photo API functions", () => {
+  function mockPresignedUploadFlow(photo: Record<string, unknown>) {
+    // 1. Presign response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: { uploadUrl: "https://s3.example.com/put", key: "photos/p1.jpg", photoId: "p1" },
+        }),
+    });
+    // 2. S3 PUT response
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 200 });
+    // 3. Confirm response
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: photo }),
+    });
+  }
+
   describe("uploadPhoto", () => {
-    it("calls POST /items/:itemId/photos with FormData", async () => {
-      mockOkResponse({
+    it("calls presign, S3 PUT, then confirm", async () => {
+      mockPresignedUploadFlow({
         id: "p1",
-        url: "/api/photos/p1.jpg",
+        url: "https://s3.example.com/signed",
         originalName: "test.jpg",
         isMainPhoto: false,
       });
@@ -334,49 +353,24 @@ describe("photo API functions", () => {
       const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
       await uploadPhoto("item-123", file);
 
-      expect(getCalledUrl()).toContain("/items/item-123/photos");
-      expect(getCalledOptions().method).toBe("POST");
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      // First call: presign
+      expect(mockFetch.mock.calls[0][0]).toContain("/items/item-123/photos/presign");
+      // Second call: S3 PUT
+      expect(mockFetch.mock.calls[1][0]).toBe("https://s3.example.com/put");
+      expect(mockFetch.mock.calls[1][1].method).toBe("PUT");
+      // Third call: confirm
+      expect(mockFetch.mock.calls[2][0]).toContain("/items/item-123/photos/confirm");
     });
 
-    it("sends file in FormData body", async () => {
-      mockOkResponse({
-        id: "p1",
-        url: "/api/photos/p1.jpg",
-        originalName: "test.jpg",
-        isMainPhoto: false,
-      });
-
-      const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
-      await uploadPhoto("item-123", file);
-
-      const body = getCalledOptions().body;
-      expect(body).toBeInstanceOf(FormData);
-      expect((body as FormData).get("photo")).toBeInstanceOf(File);
-    });
-
-    it("does not include Content-Type header (browser sets it for FormData)", async () => {
-      mockOkResponse({
-        id: "p1",
-        url: "/api/photos/p1.jpg",
-        originalName: "test.jpg",
-        isMainPhoto: false,
-      });
-
-      const file = new File(["test content"], "test.jpg", { type: "image/jpeg" });
-      await uploadPhoto("item-123", file);
-
-      const headers = getCalledOptions().headers as Record<string, string>;
-      expect(headers["Content-Type"]).toBeUndefined();
-    });
-
-    it("returns uploaded photo info", async () => {
+    it("returns uploaded photo info from confirm response", async () => {
       const photo = {
         id: "p1",
-        url: "/api/photos/p1.jpg",
+        url: "https://s3.example.com/signed",
         originalName: "gandalf.jpg",
         isMainPhoto: false,
       };
-      mockOkResponse(photo);
+      mockPresignedUploadFlow(photo);
 
       const file = new File(["test content"], "gandalf.jpg", { type: "image/jpeg" });
       const result = await uploadPhoto("item-123", file);

@@ -1,28 +1,24 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { handler as captionHandler } from "./caption.js";
+import { handler as confirmHandler } from "./confirm.js";
 import { handler as deleteHandler, validate as deleteValidate } from "./delete.js";
 import { handler as importantHandler } from "./important.js";
+import { handler as presignHandler } from "./presign.js";
 import { handler as selectHandler, validate as selectValidate } from "./select.js";
-import { handler as serveHandler } from "./serve.js";
-import { handler as uploadHandler, validate as uploadValidate } from "./upload.js";
 
-// Photo routes: mounted at /api/photos and /api/items/:itemId/photos
+// Photo routes: mounted at /api/photos
 const photosRouter = Router();
-
-// Public route for serving photos (no auth required)
-photosRouter.get("/:filename", serveHandler);
-
-// Protected routes
 photosRouter.use(requireAuth);
 photosRouter.delete("/:id", deleteHandler);
 photosRouter.put("/:id/select", selectHandler);
 photosRouter.put("/:id/important", importantHandler);
 photosRouter.put("/:id/caption", captionHandler);
 
-// Item-scoped photo upload: mounted at /api/items/:itemId/photos
+// Item-scoped photo routes: mounted at /api/items/:itemId/photos
 const itemPhotosRouter = Router({ mergeParams: true });
 itemPhotosRouter.use(requireAuth);
-itemPhotosRouter.post("/", uploadHandler);
+itemPhotosRouter.post("/presign", presignHandler);
+itemPhotosRouter.post("/confirm", confirmHandler);
 
-export { photosRouter, itemPhotosRouter, deleteValidate, selectValidate, uploadValidate };
+export { deleteValidate, itemPhotosRouter, photosRouter, selectValidate };

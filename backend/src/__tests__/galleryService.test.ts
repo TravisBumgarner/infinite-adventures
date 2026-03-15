@@ -1,9 +1,38 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createItem, DEFAULT_CANVAS_ID, getItemContentId } from "../services/canvasItemService.js";
 import { createCanvas } from "../services/canvasService.js";
 import { getGalleryEntries } from "../services/galleryService.js";
-import { uploadPhoto } from "../services/photoService.js";
+import { confirmUpload } from "../services/photoService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+
+vi.mock("../lib/s3.js", () => ({
+  getS3Object: vi
+    .fn()
+    .mockResolvedValue(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    ),
+  deleteS3Object: vi.fn().mockResolvedValue(undefined),
+  generatePresignedGetUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-url"),
+  generatePresignedPutUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-put-url"),
+}));
+
+async function createTestPhoto(
+  contentType: "person" | "place" | "thing" | "session" | "event",
+  contentId: string,
+  originalName: string,
+) {
+  return confirmUpload({
+    photoId: crypto.randomUUID(),
+    key: `photos/test-${crypto.randomUUID()}.png`,
+    contentType,
+    contentId,
+    originalName,
+    mimeType: "image/png",
+  });
+}
 
 describe("galleryService", () => {
   beforeAll(async () => {
@@ -21,13 +50,7 @@ describe("galleryService", () => {
   it("returns photos with parent item info", async () => {
     const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
     const contentId = (await getItemContentId(item.id))!;
-    await uploadPhoto({
-      contentType: "person",
-      contentId: contentId,
-      originalName: "gandalf.png",
-      mimeType: "image/png",
-      buffer: Buffer.from("fake"),
-    });
+    await createTestPhoto("person", contentId, "gandalf.png");
 
     const result = await getGalleryEntries(DEFAULT_CANVAS_ID);
     expect(result.entries).toHaveLength(1);
@@ -47,20 +70,8 @@ describe("galleryService", () => {
     const contentId1 = (await getItemContentId(item1.id))!;
     const contentId2 = (await getItemContentId(item2.id))!;
 
-    await uploadPhoto({
-      contentType: "person",
-      contentId: contentId1,
-      originalName: "gandalf.png",
-      mimeType: "image/png",
-      buffer: Buffer.from("fake"),
-    });
-    await uploadPhoto({
-      contentType: "place",
-      contentId: contentId2,
-      originalName: "mordor.png",
-      mimeType: "image/png",
-      buffer: Buffer.from("fake"),
-    });
+    await createTestPhoto("person", contentId1, "gandalf.png");
+    await createTestPhoto("place", contentId2, "mordor.png");
 
     const defaultResult = await getGalleryEntries(DEFAULT_CANVAS_ID);
     expect(defaultResult.entries).toHaveLength(1);
@@ -82,13 +93,7 @@ describe("galleryService", () => {
     const contentId = (await getItemContentId(item.id))!;
 
     for (let i = 0; i < 3; i++) {
-      await uploadPhoto({
-        contentType: "person",
-        contentId: contentId,
-        originalName: `photo${i}.png`,
-        mimeType: "image/png",
-        buffer: Buffer.from("fake"),
-      });
+      await createTestPhoto("person", contentId, `photo${i}.png`);
       await new Promise((r) => setTimeout(r, 20));
     }
 

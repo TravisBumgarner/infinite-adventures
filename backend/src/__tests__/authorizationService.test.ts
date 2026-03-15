@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getCanvasIdForItem,
   getCanvasIdForNote,
@@ -9,9 +9,23 @@ import {
 } from "../services/authorizationService.js";
 import { createItem, DEFAULT_CANVAS_ID, getItemContentId } from "../services/canvasItemService.js";
 import { createNote } from "../services/noteService.js";
-import { uploadPhoto } from "../services/photoService.js";
+import { confirmUpload } from "../services/photoService.js";
 import { createTag } from "../services/tagService.js";
 import { setupTestDb, TEST_USER_ID, teardownTestDb, truncateAllTables } from "./helpers/setup.js";
+
+vi.mock("../lib/s3.js", () => ({
+  getS3Object: vi
+    .fn()
+    .mockResolvedValue(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    ),
+  deleteS3Object: vi.fn().mockResolvedValue(undefined),
+  generatePresignedGetUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-url"),
+  generatePresignedPutUrl: vi.fn().mockResolvedValue("https://s3.example.com/signed-put-url"),
+}));
 
 const OTHER_USER_ID = "00000000-0000-4000-8000-000000000002";
 
@@ -71,12 +85,13 @@ describe("authorizationService", () => {
     it("returns canvas ID for existing photo", async () => {
       const item = await createItem({ type: "person", title: "Gandalf" }, DEFAULT_CANVAS_ID);
       const contentId = await getItemContentId(item.id);
-      const photo = await uploadPhoto({
+      const photo = await confirmUpload({
+        photoId: crypto.randomUUID(),
+        key: "photos/test-auth.png",
         contentType: "person",
         contentId: contentId!,
         originalName: "test.jpg",
         mimeType: "image/jpeg",
-        buffer: Buffer.from("fake"),
       });
       expect(await getCanvasIdForPhoto(photo.id)).toBe(DEFAULT_CANVAS_ID);
     });
