@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { AuthUser } from "../auth/service.js";
 import { getUser } from "../auth/service.js";
+import posthog from "../lib/posthog.js";
 
 interface AppState {
   user: AuthUser | null;
@@ -21,8 +22,10 @@ export const useAppStore = create<AppState>((set) => ({
     const result = await getUser();
     if (result.success) {
       set({ user: result.data, authLoading: false });
+      posthog.identify(result.data.id);
     } else {
       set({ user: null, authLoading: false });
+      posthog.reset();
     }
   },
 

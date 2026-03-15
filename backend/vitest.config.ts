@@ -12,6 +12,8 @@ export default defineConfig({
       AWS_SECRET_ACCESS_KEY: "test-secret-key",
       AWS_REGION: "us-east-2",
       S3_BUCKET_NAME: "test-bucket",
+      POSTHOG_API_KEY: "phc_test",
+      POSTHOG_HOST: "https://test.posthog.com",
     },
   },
 });
