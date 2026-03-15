@@ -188,7 +188,7 @@ tasks:
       - No `uploads/` directory usage remains
     depends_on: [2]
     effort: 3
-    status: implementing
+    status: completed
 
   # --- Milestone 2: Heroku Deployment + PostHog ---
 
