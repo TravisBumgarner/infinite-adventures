@@ -411,7 +411,7 @@ tasks:
       - All required env vars set with test/dummy values
     depends_on: []
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 10
     milestone: 4

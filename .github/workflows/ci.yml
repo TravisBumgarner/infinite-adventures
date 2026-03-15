@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: infinite
+          POSTGRES_PASSWORD: infinite
+          POSTGRES_DB: infinite_adventures_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U infinite"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://infinite:infinite@localhost:5434/infinite_adventures_test
+      UPLOADS_DIR: uploads/photos-test
+      AWS_ACCESS_KEY_ID: test-key-id
+      AWS_SECRET_ACCESS_KEY: test-secret-key
+      AWS_REGION: us-east-2
+      S3_BUCKET_NAME: test-bucket
+      VITE_API_URL: http://localhost:3021/api
+      VITE_SUPABASE_URL: https://test.supabase.co
+      VITE_SUPABASE_ANON_KEY: test-anon-key
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint and format check
+        run: npx @biomejs/biome check .
+
+      - name: Run tests
+        run: npm test
