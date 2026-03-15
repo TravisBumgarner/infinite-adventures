@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import config from "../config.js";
 import * as schema from "./schema.js";
 
 type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -14,11 +15,14 @@ export function getDb(): DrizzleDb {
   return db;
 }
 
-export async function initDb(
-  connectionString: string = process.env.DATABASE_URL ||
-    "postgresql://infinite:infinite@localhost:5434/infinite_adventures",
-): Promise<DrizzleDb> {
-  pool = new pg.Pool({ connectionString });
+export async function initDb(connectionString: string = config.databaseUrl): Promise<DrizzleDb> {
+  const poolConfig: pg.PoolConfig = { connectionString };
+
+  if (config.isProduction) {
+    poolConfig.ssl = { rejectUnauthorized: config.databaseSslRejectUnauthorized };
+  }
+
+  pool = new pg.Pool(poolConfig);
   db = drizzle(pool, { schema });
 
   return db;

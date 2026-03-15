@@ -238,7 +238,7 @@ tasks:
       - Database connection supports SSL for Heroku Postgres
     depends_on: [3]
     effort: 3
-    status: scoped
+    status: completed
 
   - id: 5
     milestone: 2

@@ -12,6 +12,8 @@
     "test": "npm --prefix frontend test && npm --prefix backend test",
     "lint": "biome check .",
     "format": "biome format --write .",
+    "build:heroku": "npm --prefix frontend run build && npm --prefix backend run build",
+    "heroku-postbuild": "npm run build:heroku",
     "prepare": "husky"
   },
   "devDependencies": {

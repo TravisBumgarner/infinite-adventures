@@ -6,6 +6,8 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       UPLOADS_DIR: "uploads/photos-test",
+      DATABASE_SSL_REJECT_UNAUTHORIZED: "false",
+      FRONTEND_URL: "http://localhost:5173",
       AWS_ACCESS_KEY_ID: "test-key-id",
       AWS_SECRET_ACCESS_KEY: "test-secret-key",
       AWS_REGION: "us-east-2",

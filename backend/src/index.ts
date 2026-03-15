@@ -1,4 +1,6 @@
 import "dotenv/config";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as Sentry from "@sentry/node";
 import cors from "cors";
 import express from "express";
@@ -18,13 +20,15 @@ import { sharesRouter } from "./routes/shares/index.js";
 import { canvasTagsRouter, itemTagsRouter } from "./routes/tags/index.js";
 import { timelineRouter } from "./routes/timeline/index.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 Sentry.init({
   dsn: "https://6ef02465e2d32a4e41d39e0fdd83f73e@o196886.ingest.us.sentry.io/4510862831386624",
   sendDefaultPii: true,
 });
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: config.frontendUrl }));
 app.use(express.json());
 
 await initDb();
@@ -66,6 +70,17 @@ app.use("/api/links", linksRouter);
 // Share routes
 app.use("/api/shares", sharesRouter);
 app.use("/api/shared", sharedContentRouter);
+
+// Serve frontend in production
+if (config.isProduction) {
+  const frontendDist = path.resolve(__dirname, "..", "..", "frontend", "dist");
+  app.use(express.static(frontendDist, { index: false }));
+
+  // SPA fallback: serve index.html for all non-API GET requests
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 Sentry.setupExpressErrorHandler(app);
 

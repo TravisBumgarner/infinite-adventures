@@ -1,0 +1,21 @@
+{
+  "name": "infinite-adventures",
+  "buildpacks": [{ "url": "heroku/nodejs" }],
+  "formation": {
+    "web": { "quantity": 1, "size": "basic" }
+  },
+  "addons": ["heroku-postgresql:essential-0"],
+  "env": {
+    "NODE_ENV": { "value": "production" },
+    "FRONTEND_URL": { "description": "Production frontend URL for CORS", "required": true },
+    "DATABASE_SSL_REJECT_UNAUTHORIZED": { "value": "false" },
+    "SUPABASE_URL": { "description": "Supabase project URL", "required": true },
+    "SUPABASE_SERVICE_ROLE_KEY": { "description": "Supabase service role key", "required": true },
+    "AWS_ACCESS_KEY_ID": { "description": "AWS IAM access key for S3", "required": true },
+    "AWS_SECRET_ACCESS_KEY": { "description": "AWS IAM secret key for S3", "required": true },
+    "AWS_REGION": { "description": "AWS region for S3 bucket", "required": true },
+    "S3_BUCKET_NAME": { "description": "S3 bucket name for photo storage", "required": true },
+    "VITE_SUPABASE_URL": { "description": "Supabase URL (frontend)", "required": true },
+    "VITE_SUPABASE_ANON_KEY": { "description": "Supabase anon key (frontend)", "required": true }
+  }
+}
