@@ -1,0 +1,25 @@
+{
+  "name": "@infinite-adventures/infra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk --profile infinite-adventures",
+    "synth:dev": "cdk synth -c environment=dev --profile infinite-adventures",
+    "synth:production": "cdk synth -c environment=production --profile infinite-adventures",
+    "deploy:dev": "cdk deploy -c environment=dev --profile infinite-adventures",
+    "deploy:production": "cdk deploy -c environment=production --profile infinite-adventures",
+    "diff:dev": "cdk diff -c environment=dev --profile infinite-adventures",
+    "diff:production": "cdk diff -c environment=production --profile infinite-adventures",
+    "destroy:dev": "cdk destroy -c environment=dev --profile infinite-adventures"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.237.1",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.1104.0",
+    "esbuild": "^0.27.3",
+    "typescript": "^5.7.0"
+  }
+}

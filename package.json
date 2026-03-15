@@ -4,7 +4,8 @@
   "workspaces": [
     "frontend",
     "backend",
-    "shared"
+    "shared",
+    "infra"
   ],
   "scripts": {
     "dev": "concurrently -n docker,backend,frontend -c gray,blue,green \"docker compose up\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",

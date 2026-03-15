@@ -1,0 +1,11 @@
+{
+  "app": "npx ts-node bin/infra.ts",
+  "context": {
+    "environment": "production",
+    "alertEmail": "hello@travisbumgarner.dev",
+    "allowedOrigins": {
+      "production": ["https://PLACEHOLDER.herokuapp.com"],
+      "dev": ["http://localhost:3021"]
+    }
+  }
+}
