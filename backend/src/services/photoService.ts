@@ -1,14 +1,16 @@
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { encode } from "blurhash";
 import { and, eq } from "drizzle-orm";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
-import config from "../config.js";
 import { getDb } from "../db/connection.js";
 import { type CanvasItemType, photos } from "../db/schema.js";
-
-const UPLOADS_DIR = path.resolve(process.cwd(), config.uploadsDir);
+import {
+  deleteS3Object,
+  generatePresignedGetUrl,
+  generatePresignedPutUrl,
+  getS3Object,
+} from "../lib/s3.js";
 
 export interface PhotoInfo {
   id: string;
@@ -27,57 +29,53 @@ export interface PhotoInfo {
   createdAt: string;
 }
 
-export interface UploadPhotoInput {
+export interface PresignResult {
+  uploadUrl: string;
+  key: string;
+  photoId: string;
+}
+
+export interface ConfirmUploadInput {
+  photoId: string;
+  key: string;
   contentType: CanvasItemType;
   contentId: string;
   originalName: string;
   mimeType: string;
-  buffer: Buffer;
 }
 
 /**
- * Ensure the uploads directory exists.
+ * Generate a presigned PUT URL for uploading a photo to S3.
  */
-function ensureUploadsDir(): void {
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  }
+export async function presignUpload(
+  originalName: string,
+  mimeType: string,
+): Promise<PresignResult> {
+  const photoId = uuidv4();
+  const ext = path.extname(originalName);
+  const key = `photos/${photoId}${ext}`;
+  const uploadUrl = await generatePresignedPutUrl(key, mimeType);
+  return { uploadUrl, key, photoId };
 }
 
 /**
- * Extract file extension from filename.
+ * Confirm a photo upload: download from S3, compute metadata, store in DB.
  */
-function getExtension(filename: string): string {
-  const ext = path.extname(filename);
-  return ext || "";
-}
-
-/**
- * Upload a photo and store metadata.
- * Returns the photo record.
- */
-export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
+export async function confirmUpload(input: ConfirmUploadInput): Promise<PhotoInfo> {
   const db = getDb();
-  const id = uuidv4();
-  const ext = getExtension(input.originalName);
-  const filename = `${id}${ext}`;
   const now = new Date();
 
-  // Ensure uploads directory exists
-  ensureUploadsDir();
-
-  // Write file to disk
-  const filePath = path.join(UPLOADS_DIR, filename);
-  fs.writeFileSync(filePath, input.buffer);
+  // Download from S3 to compute metadata
+  const buffer = await getS3Object(input.key);
 
   // Compute aspectRatio and blurhash
   let aspectRatio: number | null = null;
   let blurhash: string | null = null;
   try {
-    const metadata = await sharp(input.buffer).metadata();
+    const metadata = await sharp(buffer).metadata();
     if (metadata.width && metadata.height) {
       aspectRatio = metadata.width / metadata.height;
-      const { data, info } = await sharp(input.buffer)
+      const { data, info } = await sharp(buffer)
         .resize(32, 32, { fit: "inside" })
         .ensureAlpha()
         .raw()
@@ -92,28 +90,28 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
   const existing = await listPhotos(input.contentType, input.contentId);
   const isMainPhoto = existing.length === 0;
 
-  // Insert metadata into database
+  // The S3 key is stored in the filename column
   await db.insert(photos).values({
-    id,
+    id: input.photoId,
     contentType: input.contentType,
     contentId: input.contentId,
-    filename,
+    filename: input.key,
     originalName: input.originalName,
     mimeType: input.mimeType,
-    isMainPhoto: isMainPhoto,
+    isMainPhoto,
     aspectRatio,
     blurhash,
     createdAt: now,
   });
 
   return {
-    id,
+    id: input.photoId,
     contentType: input.contentType,
     contentId: input.contentId,
-    filename,
+    filename: input.key,
     originalName: input.originalName,
     mimeType: input.mimeType,
-    isMainPhoto: isMainPhoto,
+    isMainPhoto,
     isImportant: false,
     caption: "",
     aspectRatio,
@@ -122,6 +120,13 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<PhotoInfo> {
     cropY: null,
     createdAt: now.toISOString(),
   };
+}
+
+/**
+ * Get a presigned GET URL for a photo's S3 key.
+ */
+export async function getPhotoUrl(s3Key: string): Promise<string> {
+  return generatePresignedGetUrl(s3Key);
 }
 
 /**
@@ -150,25 +155,20 @@ export async function listPhotos(
 }
 
 /**
- * Delete a photo by ID (removes file and metadata).
+ * Delete a photo by ID (removes from S3 and database).
  * Returns true if deleted, false if not found.
  */
 export async function deletePhoto(id: string): Promise<boolean> {
   const db = getDb();
 
-  // Get photo to find filename
   const photo = await getPhoto(id);
   if (!photo) return false;
 
-  // Delete from database
   const result = await db.delete(photos).where(eq(photos.id, id)).returning({ id: photos.id });
   if (result.length === 0) return false;
 
-  // Delete file from disk
-  const filePath = getPhotoPath(photo.filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
+  // Delete from S3
+  await deleteS3Object(photo.filename);
 
   return true;
 }
@@ -185,7 +185,6 @@ export async function selectPhoto(
 ): Promise<PhotoInfo | null> {
   const db = getDb();
 
-  // Get the photo to find its content
   const photo = await getPhoto(id);
   if (!photo) return null;
 
@@ -205,7 +204,6 @@ export async function selectPhoto(
     })
     .where(eq(photos.id, id));
 
-  // Return updated photo
   return getPhoto(id);
 }
 
@@ -221,13 +219,6 @@ export async function togglePhotoImportant(id: string): Promise<PhotoInfo | null
   await db.update(photos).set({ isImportant: !photo.isImportant }).where(eq(photos.id, id));
 
   return getPhoto(id);
-}
-
-/**
- * Get the file path for a photo (for serving).
- */
-export function getPhotoPath(filename: string): string {
-  return path.join(UPLOADS_DIR, filename);
 }
 
 /**
@@ -253,17 +244,12 @@ export async function deletePhotosForContent(
 ): Promise<number> {
   const db = getDb();
 
-  // Get all photos for this content
   const photosToDelete = await listPhotos(contentType, contentId);
-
   if (photosToDelete.length === 0) return 0;
 
-  // Delete files from disk
+  // Delete from S3
   for (const photo of photosToDelete) {
-    const filePath = getPhotoPath(photo.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    await deleteS3Object(photo.filename);
   }
 
   // Delete from database

@@ -1,69 +1,58 @@
 import type { Request, Response } from "express";
+import { z } from "zod";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import { userOwnsResource } from "../../services/authorizationService.js";
 import { getItem, getItemContentId } from "../../services/canvasItemService.js";
-import { uploadPhoto } from "../../services/photoService.js";
+import { confirmUpload, getPhotoUrl } from "../../services/photoService.js";
 import { requireUserId } from "../shared/auth.js";
-import { sendBadRequest, sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
+import { sendForbidden, sendNotFound, sendSuccess } from "../shared/responses.js";
 import { ItemIdParams, parseRoute } from "../shared/validation.js";
 
-export interface UploadValidationContext {
-  itemId: string;
-}
-
-export function validate(
-  req: Request<{ itemId: string }>,
-  res: Response,
-): UploadValidationContext | null {
-  const parsed = parseRoute(req, res, { params: ItemIdParams });
-  if (!parsed) return null;
-  return { itemId: parsed.params.itemId };
-}
+const ConfirmBody = z.object({
+  key: z.string(),
+  photoId: z.string().uuid(),
+  originalName: z.string(),
+  mimeType: z.string(),
+});
 
 export async function handler(req: Request<{ itemId: string }>, res: Response): Promise<void> {
   const auth = requireUserId(req as AuthenticatedRequest, res);
   if (!auth) return;
-  const context = validate(req, res);
-  if (!context) return;
-  if (!(await userOwnsResource(auth.userId, "item", context.itemId))) {
+  const parsed = parseRoute(req, res, { params: ItemIdParams, body: ConfirmBody });
+  if (!parsed) return;
+  if (!(await userOwnsResource(auth.userId, "item", parsed.params.itemId))) {
     sendForbidden(res);
     return;
   }
 
-  // Get the item to find its contentId and type
-  const item = await getItem(context.itemId);
+  const item = await getItem(parsed.params.itemId);
   if (!item) {
     sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
     return;
   }
 
-  // Check if file was uploaded (multer adds req.file)
-  const file = (req as Request & { file?: Express.Multer.File }).file;
-  if (!file) {
-    sendBadRequest(res);
-    return;
-  }
-
-  // Get contentId for photo association
-  const contentId = await getItemContentId(context.itemId);
+  const contentId = await getItemContentId(parsed.params.itemId);
   if (!contentId) {
     sendNotFound(res, "CANVAS_ITEM_NOT_FOUND");
     return;
   }
 
-  const photo = await uploadPhoto({
+  const photo = await confirmUpload({
+    photoId: parsed.body.photoId,
+    key: parsed.body.key,
     contentType: item.type,
-    contentId: contentId,
-    originalName: file.originalname,
-    mimeType: file.mimetype,
-    buffer: file.buffer,
+    contentId,
+    originalName: parsed.body.originalName,
+    mimeType: parsed.body.mimeType,
   });
+
+  const url = await getPhotoUrl(photo.filename);
 
   sendSuccess(
     res,
     {
       id: photo.id,
-      url: `/api/photos/${photo.filename}`,
+      url,
       originalName: photo.originalName,
       isMainPhoto: photo.isMainPhoto,
       isImportant: photo.isImportant,
