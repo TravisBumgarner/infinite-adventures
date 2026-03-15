@@ -1,0 +1,432 @@
+project: infinite-adventures production deployment
+design_file: designs/production-deployment/DESIGN.md
+scoping_date: 2026-03-14
+
+milestones:
+  - number: 1
+    title: "1. AWS Infra + S3 Photo Storage"
+    description: Create infra package with CDK, provision S3 buckets, migrate photo storage from disk to S3 presigned URLs
+    branch:
+      working: task-1-infra-s3-storage
+      base: main
+
+  - number: 2
+    title: "2. Heroku Deployment + PostHog"
+    description: Heroku deployment config, replace Sentry with PostHog, CSP headers
+    branch:
+      working: task-2-heroku-posthog
+      base: task-1-infra-s3-storage
+
+  - number: 3
+    title: "3. Security Hardening"
+    description: Rate limiting and Cloudflare Turnstile bot protection
+    branch:
+      working: task-3-security-hardening
+      base: task-2-heroku-posthog
+
+  - number: 4
+    title: "4. CI/CD + Alpha Banner"
+    description: GitHub Actions workflows and alpha indicator
+    branch:
+      working: task-4-cicd-alpha
+      base: task-3-security-hardening
+
+tasks:
+  # --- Milestone 1: AWS Infra + S3 Photo Storage ---
+
+  - id: 1
+    milestone: 1
+    title: Create infra package with CDK S3 stack
+    description: |
+      Create a new `infra/` workspace package using AWS CDK, following the
+      just-recordings infra pattern. Provisions S3 buckets, IAM user, and
+      cost controls for both dev and production environments.
+
+      **Package setup:**
+      - Add `infra/` to root `package.json` workspaces
+      - `infra/package.json` with `aws-cdk-lib`, `constructs`, dev deps `aws-cdk`, `typescript`
+      - `infra/tsconfig.json` targeting ES2020, CommonJS
+      - `infra/cdk.json` with context: environment (default production), alertEmail, allowedOrigins per env
+      - `infra/.gitignore` for dist/, cdk.out/, *.js, *.d.ts
+
+      **CDK Stack (`infra/lib/storage-stack.ts`):**
+
+      S3 Storage Bucket (`infinite-adventures-<env>`):
+      - Block all public access
+      - S3-managed encryption, versioning enabled, SSL enforced
+      - CORS: PUT + GET from env-specific origins, expose ETag, max age 3600
+      - Lifecycle: abort incomplete multipart uploads after 24 hours
+      - Server access logging to logs bucket
+      - Removal policy: RETAIN
+
+      S3 Logs Bucket (`infinite-adventures-logs-<env>`):
+      - Private, encrypted, SSL enforced
+      - 90-day expiration lifecycle
+      - Removal policy: RETAIN
+
+      IAM Runtime User (`infinite-adventures-s3-<env>`):
+      - S3 object permissions: PutObject, GetObject, DeleteObject
+      - Access key created, output as CloudFormation outputs (AccessKeyId, SecretAccessKey, BucketName, Region)
+
+      Budget (`infinite-adventures-monthly-<env>`):
+      - $100/month with SNS alerts at $5, $10, $15, $20, $25
+      - Cost kill switch: auto-deny S3 at $100 spend via IAM policy attachment
+      - SNS topic with email subscriber (alertEmail from context)
+
+      **Entry point (`infra/bin/infra.ts`):**
+      - Read environment from context, instantiate StorageStack
+
+      **Scripts in `infra/package.json`:**
+      - `cdk`: base CDK command with `--profile infinite-adventures`
+      - `deploy:dev` / `deploy:production`
+      - `diff:dev` / `diff:production`
+      - `synth:dev` / `synth:production`
+      - `destroy:dev`
+
+      **CORS origins in `cdk.json`:**
+      - Dev: `["http://localhost:3021"]`
+      - Production: `["https://PLACEHOLDER.herokuapp.com"]` (update when domain known)
+    acceptance_criteria:
+      - infra/ package exists as a workspace with CDK dependencies
+      - `npm run synth:dev` produces a valid CloudFormation template
+      - Stack provisions S3 storage bucket, logs bucket, IAM user with access key
+      - Budget with cost kill switch is configured
+      - Dev and production environments isolated by resource naming
+    depends_on: []
+    effort: 3
+    status: completed
+
+  - id: 2
+    milestone: 1
+    title: Add S3 client utility and backend config for AWS
+    description: |
+      Add S3 client library and AWS config vars to the backend. Remove
+      UPLOADS_DIR. This is the foundation that the photo migration builds on.
+
+      **New file `backend/src/lib/s3.ts`:**
+      - Initialize S3Client with credentials from config
+      - `generatePresignedPutUrl(key, contentType)` — 15 min expiry
+      - `generatePresignedGetUrl(key)` — 1 hour expiry
+      - `deleteObject(key)` — remove object from S3
+      - `getObject(key)` — download object as buffer (for blurhash processing)
+
+      **Config changes (`backend/src/config.ts`):**
+      - Add: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET_NAME` (all required strings)
+      - Remove: `UPLOADS_DIR`
+
+      **Update `.env`, `.env.example`** — add S3 vars, remove UPLOADS_DIR
+      **Update `vitest.config.ts`** — add test values for S3 vars
+
+      **New dependencies in `backend/package.json`:**
+      - `@aws-sdk/client-s3`
+      - `@aws-sdk/s3-request-presigner`
+    acceptance_criteria:
+      - S3 client utility exists with presigned URL generation (PUT and GET), delete, and get
+      - Config schema validates all AWS/S3 env vars at startup
+      - UPLOADS_DIR removed from config
+      - .env, .env.example, vitest.config.ts updated
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: Migrate photo upload/serve/delete flow to S3 presigned URLs
+    description: |
+      Replace disk-based photo storage with S3 presigned URLs. After this,
+      no photos are stored on the local filesystem.
+
+      **New routes:**
+      - `POST /api/items/:itemId/photos/presign` (authenticated)
+        - Body: `{ contentType, filename }`
+        - Generates photo UUID, S3 key (`photos/{photoId}.{ext}`), presigned PUT URL
+        - Returns `{ uploadUrl, key, photoId }`
+
+      - `POST /api/items/:itemId/photos/confirm` (authenticated)
+        - Body: `{ key, photoId, originalName, mimeType }`
+        - Downloads uploaded file from S3 via `getObject`
+        - Runs Sharp: dimensions for aspect ratio, 32x32 resize for blurhash
+        - Creates photo record in DB (S3 key in `filename` column)
+        - Auto-selects as main photo if first for the item
+        - Returns photo metadata with presigned GET URL
+
+      **Update photo serving:**
+      - Photo metadata responses include presigned GET URL (generated on read)
+      - Remove `GET /api/photos/:filename` static file serving route
+      - photoService generates `url` field via `generatePresignedGetUrl(filename)`
+
+      **Update photo deletion:**
+      - `DELETE /api/photos/:id` also calls `deleteObject(key)` on S3
+
+      **Update canvas export:**
+      - Download photos from S3 via `getObject` instead of reading from disk
+
+      **Remove:**
+      - Multer middleware from photo upload route in `index.ts`
+      - Multer import, configuration, and `multer` dependency from `backend/package.json`
+      - Local file write/read/delete logic from `photoService.ts`
+      - `getPhotoPath()` function
+      - Any `fs` usage for photo files
+
+      **Frontend changes (`frontend/src/api/photos.ts`):**
+      - Update `uploadPhoto`:
+        1. `POST /api/items/:itemId/photos/presign` → `{ uploadUrl, key, photoId }`
+        2. `PUT` file to S3 presigned URL with `Content-Type` header
+        3. `POST /api/items/:itemId/photos/confirm` → photo metadata
+      - Remove FormData-based upload
+      - Photo display uses `url` from API responses (presigned S3 URL)
+
+      **Shared types:**
+      - `PhotoSchema.url` stays a string — now a presigned S3 URL
+    acceptance_criteria:
+      - Photos upload to S3 via presigned PUT URLs from the browser
+      - Backend confirms upload, processes blurhash/dimensions from S3, stores metadata
+      - Photo API responses include presigned GET URLs
+      - Photo deletion removes from both DB and S3
+      - Canvas export downloads photos from S3
+      - Multer dependency and all local file storage code removed
+      - No `uploads/` directory usage remains
+    depends_on: [2]
+    effort: 3
+    status: scoped
+
+  # --- Milestone 2: Heroku Deployment + PostHog ---
+
+  - id: 4
+    milestone: 2
+    title: Add Heroku deployment config and serve frontend from Express
+    description: |
+      Create deployment infrastructure so the app runs on Heroku.
+
+      **Deployment files:**
+      - `Procfile`:
+        ```
+        web: node backend/dist/index.js
+        release: node backend/dist/db/migrate.js
+        ```
+      - `app.json`: all required env vars, `heroku-postgresql` add-on, Node.js buildpack
+
+      **Root `package.json` additions:**
+      - `build:heroku`: builds shared, frontend (with prod env vars), then backend
+      - `heroku-postbuild`: calls `build:heroku`
+
+      **Serve frontend from Express (`backend/src/index.ts`):**
+      - When `NODE_ENV=production`, serve static files from `../frontend/dist`
+      - SPA fallback: non-`/api` GET requests serve `index.html`
+      - `express.static` with cache headers for hashed assets
+
+      **Config additions (`backend/src/config.ts`):**
+      - `FRONTEND_URL` (string, required) — CORS origin
+      - `DATABASE_SSL_REJECT_UNAUTHORIZED` (string, required)
+
+      **DB connection update (`backend/src/db/connection.ts`):**
+      - Add SSL config when configured — Heroku Postgres requires `ssl: { rejectUnauthorized: false }`
+
+      **CORS update (`backend/src/index.ts`):**
+      - Use `config.frontendUrl` as CORS origin instead of wildcard
+
+      **Frontend config (`frontend/src/config.ts`):**
+      - Make `VITE_API_URL` default to `/api` in production (same-origin)
+
+      **Update `.env`, `.env.example`, `vitest.config.ts`** with new vars.
+    acceptance_criteria:
+      - Procfile and app.json exist with correct configuration
+      - `npm run build:heroku` builds shared, frontend, and backend
+      - Express serves frontend static files when NODE_ENV=production
+      - SPA fallback serves index.html for non-API routes
+      - CORS uses FRONTEND_URL from config
+      - Database connection supports SSL for Heroku Postgres
+    depends_on: [3]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: Replace Sentry with PostHog
+    description: |
+      Remove all Sentry integration. Add PostHog for error tracking and analytics.
+
+      **Remove from backend:**
+      - `@sentry/node` dependency from `backend/package.json`
+      - `Sentry.init()` and `Sentry.setupExpressErrorHandler(app)` from `backend/src/index.ts`
+      - Sentry import from `backend/src/lib/logger.ts`
+
+      **Remove from frontend:**
+      - `@sentry/react` dependency from `frontend/package.json`
+      - `Sentry.init()` from `frontend/src/main.tsx`
+      - Sentry import from `frontend/src/lib/logger.ts`
+
+      **Add PostHog backend (`posthog-node`):**
+      - New dependency: `posthog-node`
+      - Config vars: `POSTHOG_API_KEY`, `POSTHOG_HOST` (both required)
+      - Initialize PostHog client in a new file or in logger
+      - Update `backend/src/lib/logger.ts`:
+        - `error()`: capture exception event via PostHog
+        - `info()`: keep console.log for Heroku logs, optionally capture via PostHog
+      - Add `posthog.shutdown()` call on process SIGTERM/SIGINT
+
+      **Add PostHog frontend (`posthog-js`):**
+      - New dependency: `posthog-js`
+      - Config vars: `VITE_POSTHOG_API_KEY`, `VITE_POSTHOG_HOST` (both required)
+      - Initialize PostHog in `frontend/src/main.tsx` (replace Sentry.init)
+      - Update `frontend/src/lib/logger.ts`:
+        - `error()`: `posthog.capture('$exception', ...)` with error details
+        - `info()`: `posthog.capture()` with message
+      - Add page view tracking (PostHog `$pageview` on route changes)
+      - User identification: call `posthog.identify(userId)` on login
+
+      **Update `.env`, `.env.example`, `vitest.config.ts`** with PostHog vars.
+    acceptance_criteria:
+      - All Sentry code and dependencies removed from both packages
+      - PostHog initialized in both frontend and backend
+      - Logger captures errors and info via PostHog
+      - Frontend tracks page views on route changes
+      - Frontend identifies users on login
+      - PostHog shuts down gracefully on backend process exit
+    depends_on: [4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    milestone: 2
+    title: Add CSP headers via Helmet
+    description: |
+      Add `helmet` middleware to Express for security headers.
+
+      **New dependency:** `helmet` in `backend/package.json`
+
+      **Add to `backend/src/index.ts`:**
+      - `app.use(helmet({ ... }))` before routes
+      - CSP directives:
+        - `default-src: 'self'`
+        - `script-src: 'self', challenges.cloudflare.com` (for Turnstile)
+        - `connect-src: 'self', *.supabase.co, *.posthog.com, S3 bucket domain`
+        - `img-src: 'self', data:, blob:, S3 bucket domain`
+        - `style-src: 'self', 'unsafe-inline'` (MUI uses inline styles)
+        - `frame-src: challenges.cloudflare.com` (Turnstile widget)
+      - Disable `X-Powered-By`
+
+      CSP values should reference config where possible so they're correct
+      per environment.
+    acceptance_criteria:
+      - Helmet middleware applied with CSP directives
+      - CSP allows Supabase, PostHog, Cloudflare Turnstile, and S3 origins
+      - X-Powered-By header disabled
+    depends_on: [5]
+    effort: 2
+    status: scoped
+
+  # --- Milestone 3: Security Hardening ---
+
+  - id: 7
+    milestone: 3
+    title: Add rate limiting middleware
+    description: |
+      Add express-rate-limit to protect API endpoints from abuse.
+
+      **New dependency:** `express-rate-limit` in `backend/package.json`
+
+      **New file `backend/src/middleware/rateLimit.ts`:**
+      - `standardRateLimit` — 100 req/min, keyed by user ID from req.user
+      - `strictRateLimit` — 30 req/min, keyed by user ID (uploads, mutations)
+      - `publicRateLimit` — 60 req/min, keyed by IP (unauthenticated endpoints)
+      - Response: `{ success: false, errorCode: "RATE_LIMITED" }` with 429
+
+      **Apply in `backend/src/index.ts`:**
+      - `app.set('trust proxy', 1)` for Heroku IP detection
+      - `publicRateLimit` on share/public routes
+      - `strictRateLimit` on photo presign/confirm, canvas create/delete
+      - `standardRateLimit` as default on all other `/api` routes
+    acceptance_criteria:
+      - Three rate limit tiers defined and applied to appropriate routes
+      - Trust proxy enabled for Heroku
+      - Rate limited responses return 429 with consistent error format
+    depends_on: [6]
+    effort: 2
+    status: scoped
+
+  - id: 8
+    milestone: 3
+    title: Add Cloudflare Turnstile bot protection
+    description: |
+      Add Cloudflare Turnstile verification on public-facing endpoints.
+
+      **Backend middleware `backend/src/middleware/turnstile.ts`:**
+      - Extract token from `cf-turnstile-token` request header
+      - POST to `https://challenges.cloudflare.com/turnstile/v0/siteverify`
+        with `{ secret, response, remoteip }`
+      - Return 403 `{ success: false, errorCode: "TURNSTILE_FAILED" }` on failure
+      - Config: `CLOUDFLARE_TURNSTILE_SECRET_KEY` (required)
+
+      **Apply to routes:**
+      - Public share access endpoints (`/api/shared/*`)
+      - Any future unauthenticated form submissions
+
+      **Frontend component `frontend/src/sharedComponents/Turnstile.tsx`:**
+      - Dynamically load `https://challenges.cloudflare.com/turnstile/v0/api.js`
+      - Render managed widget with site key from config
+      - Expose token via callback prop, support reset via ref
+      - Config: `VITE_CLOUDFLARE_SITE_KEY` (required)
+
+      **Frontend integration:**
+      - Add Turnstile widget to login/signup pages
+      - Pass token in `cf-turnstile-token` header on relevant requests
+
+      **Update `.env`, `.env.example`, `vitest.config.ts`** with Turnstile keys.
+    acceptance_criteria:
+      - Turnstile middleware validates tokens against Cloudflare API
+      - Turnstile component renders widget and exposes token
+      - Token passed in headers and validated server-side
+      - Config schemas include Turnstile keys on both frontend and backend
+    depends_on: [6]
+    effort: 2
+    status: scoped
+
+  # --- Milestone 4: CI/CD + Alpha Banner ---
+
+  - id: 9
+    milestone: 4
+    title: Add GitHub Actions CI workflow
+    description: |
+      Create a GitHub Actions workflow that runs tests and linting on PRs.
+
+      **New file `.github/workflows/ci.yml`:**
+      - Trigger: push to main, pull_request
+      - Node.js 22.x
+      - PostgreSQL 16 service container (for backend integration tests)
+      - Steps:
+        1. Checkout
+        2. Setup Node 22
+        3. `npm ci`
+        4. `npx biome check .` (lint + format check)
+        5. `npm test` (runs frontend + backend tests)
+      - Environment variables for test DB connection, dummy S3/PostHog/Supabase/Turnstile values
+
+      Keep it simple — no deploy step in this workflow. Deploy is manual
+      via `npm run deploy:heroku:main` for now.
+    acceptance_criteria:
+      - CI workflow runs on PRs and pushes to main
+      - Runs biome check and all tests
+      - PostgreSQL service container available for backend tests
+      - All required env vars set with test/dummy values
+    depends_on: []
+    effort: 2
+    status: scoped
+
+  - id: 10
+    milestone: 4
+    title: Add alpha chip to TopBar
+    description: |
+      Add a small "Alpha" indicator to the app header.
+
+      **In `frontend/src/sharedComponents/TopBar.tsx`:**
+      - Add a MUI `Chip` with label "Alpha" in the left section near the canvas picker
+      - `size="small"`, subtle color (e.g., `color="warning"` or custom)
+      - Always visible — not environment-gated
+    acceptance_criteria:
+      - An "Alpha" chip is visible in the TopBar header
+      - Uses MUI Chip with size="small"
+      - Always shown regardless of environment
+    depends_on: []
+    effort: 1
+    status: scoped
