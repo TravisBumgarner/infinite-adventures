@@ -4,19 +4,14 @@ import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
+import config from "../config.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
 
-const databaseUrl =
-  process.env.DATABASE_URL || "postgresql://infinite:infinite@localhost:5434/infinite_adventures";
-
-const sslReject = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true";
-const isProduction = process.env.NODE_ENV === "production";
-
 const pool = new Pool({
-  connectionString: databaseUrl,
-  ...(isProduction && { ssl: { rejectUnauthorized: sslReject } }),
+  connectionString: config.databaseUrl,
+  ...(config.isProduction && { ssl: { rejectUnauthorized: config.databaseSslRejectUnauthorized } }),
 });
 
 const db = drizzle(pool);
