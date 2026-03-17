@@ -5,7 +5,7 @@
     "alertEmail": "hello@travisbumgarner.dev",
     "allowedOrigins": {
       "production": [
-        "https://infinite-adventures-256af0127e18.herokuapp.com/"
+        "https://infinite-adventures-2d56aff8fdae.herokuapp.com/"
       ],
       "dev": [
         "http://localhost:5177"

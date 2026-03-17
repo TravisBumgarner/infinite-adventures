@@ -75,7 +75,7 @@ if (config.isProduction) {
   app.use(express.static(frontendDist, { index: false }));
 
   // SPA fallback: serve index.html for all non-API GET requests
-  app.get("*", (_req, res) => {
+  app.get("*path", (_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
