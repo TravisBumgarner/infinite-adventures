@@ -11,8 +11,12 @@ const { Pool } = pg;
 const databaseUrl =
   process.env.DATABASE_URL || "postgresql://infinite:infinite@localhost:5434/infinite_adventures";
 
+const sslReject = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "true";
+const isProduction = process.env.NODE_ENV === "production";
+
 const pool = new Pool({
   connectionString: databaseUrl,
+  ...(isProduction && { ssl: { rejectUnauthorized: sslReject } }),
 });
 
 const db = drizzle(pool);

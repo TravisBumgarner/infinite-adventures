@@ -247,6 +247,7 @@ export default function CanvasItemPanel({
     handleTogglePhotoImportant,
     handleFileDrop,
     handleUpdateCaption,
+    isUploading,
   } = usePhotoHandlers({
     itemId,
     canvasId: activeCanvasId ?? "",
@@ -622,6 +623,7 @@ export default function CanvasItemPanel({
           onFileDrop={handleFileDrop}
           onUpdateCaption={handleUpdateCaption}
           columns={2}
+          isUploading={isUploading}
         />
       )}
 

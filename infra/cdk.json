@@ -4,8 +4,12 @@
     "environment": "production",
     "alertEmail": "hello@travisbumgarner.dev",
     "allowedOrigins": {
-      "production": ["https://PLACEHOLDER.herokuapp.com"],
-      "dev": ["http://localhost:3021"]
+      "production": [
+        "https://infinite-adventures-256af0127e18.herokuapp.com/"
+      ],
+      "dev": [
+        "http://localhost:5177"
+      ]
     }
   }
 }

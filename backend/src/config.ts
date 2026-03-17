@@ -1,16 +1,13 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  PORT: z.string().default("3021"),
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  DATABASE_URL: z
-    .string()
-    .default("postgresql://infinite:infinite@localhost:5434/infinite_adventures"),
+  PORT: z.string(),
+  NODE_ENV: z.enum(["development", "production", "test"]),
+  DATABASE_URL: z.string(),
   DATABASE_SSL_REJECT_UNAUTHORIZED: z.string(),
   FRONTEND_URL: z.string(),
-  SUPABASE_URL: z.string().optional().default(""),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(""),
-  UPLOADS_DIR: z.string(),
+  SUPABASE_URL: z.string(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string(),
   AWS_ACCESS_KEY_ID: z.string(),
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_REGION: z.string(),
@@ -28,7 +25,6 @@ const parsed = envSchema.safeParse({
   FRONTEND_URL: process.env.FRONTEND_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  UPLOADS_DIR: process.env.UPLOADS_DIR,
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
   AWS_REGION: process.env.AWS_REGION,
@@ -52,7 +48,6 @@ const config = {
   frontendUrl: parsed.data.FRONTEND_URL,
   supabaseUrl: parsed.data.SUPABASE_URL,
   supabaseServiceRoleKey: parsed.data.SUPABASE_SERVICE_ROLE_KEY,
-  uploadsDir: parsed.data.UPLOADS_DIR,
   awsAccessKeyId: parsed.data.AWS_ACCESS_KEY_ID,
   awsSecretAccessKey: parsed.data.AWS_SECRET_ACCESS_KEY,
   awsRegion: parsed.data.AWS_REGION,
