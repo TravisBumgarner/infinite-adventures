@@ -4,3 +4,4 @@ data/
 *.db
 uploads/
 uploads-test/
+.env.production
