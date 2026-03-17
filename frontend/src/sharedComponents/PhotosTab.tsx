@@ -107,6 +107,7 @@ export default function PhotosTab({
         variant="outlined"
         size="small"
         fullWidth
+        disabled={isUploading}
         sx={{
           mb: 2,
           textTransform: "none",
@@ -119,8 +120,8 @@ export default function PhotosTab({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {isDragging ? "Drop image here" : "Upload Photo"}
-        <input type="file" accept="image/*" hidden onChange={onUpload} />
+        {isUploading ? "Uploading..." : isDragging ? "Drop image here" : "Upload Photo"}
+        <input type="file" accept="image/*" hidden onChange={onUpload} disabled={isUploading} />
       </Button>
 
       {isUploading && <LinearProgress sx={{ mb: 2 }} />}
