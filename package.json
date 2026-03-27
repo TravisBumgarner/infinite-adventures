@@ -2,17 +2,18 @@
   "name": "infinite-adventures",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend",
-    "shared",
-    "infra"
+    "packages/frontend",
+    "packages/backend",
+    "packages/shared",
+    "packages/infra",
+    "packages/desktop"
   ],
   "scripts": {
-    "dev": "concurrently -n docker,backend,frontend -c gray,blue,green \"docker compose up\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
-    "test": "npm --prefix frontend test && npm --prefix backend test",
+    "dev": "concurrently -n docker,backend,frontend -c gray,blue,green \"docker compose up\" \"npm --prefix packages/backend run dev\" \"npm --prefix packages/frontend run dev\"",
+    "test": "npm --prefix packages/frontend test && npm --prefix packages/backend test",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "build:heroku": "npm --prefix frontend run build && npm --prefix backend run build",
+    "build:heroku": "npm --prefix packages/frontend run build && npm --prefix packages/backend run build",
     "heroku-postbuild": "npm run build:heroku",
     "deploy:heroku:main": "bash scripts/deploy-heroku.sh main",
     "deploy:heroku:branch": "bash scripts/deploy-heroku.sh HEAD",

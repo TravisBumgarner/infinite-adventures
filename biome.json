@@ -41,9 +41,11 @@
   },
   "files": {
     "includes": [
-      "frontend/src/**/*.{ts,tsx}",
-      "backend/src/**/*.{ts,tsx}",
-      "shared/src/**/*.{ts,tsx}"
+      "packages/frontend/src/**/*.{ts,tsx}",
+      "packages/backend/src/**/*.{ts,tsx}",
+      "packages/shared/src/**/*.{ts,tsx}",
+      "packages/desktop/src/**/*.{ts,tsx}",
+      "packages/desktop/*.ts"
     ]
   }
 }
