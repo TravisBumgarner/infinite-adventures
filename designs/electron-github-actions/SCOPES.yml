@@ -79,7 +79,7 @@ tasks:
       - Desktop workspace is registered in root package.json
     depends_on: []
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 2
     milestone: 1
