@@ -43,7 +43,9 @@
     "includes": [
       "frontend/src/**/*.{ts,tsx}",
       "backend/src/**/*.{ts,tsx}",
-      "shared/src/**/*.{ts,tsx}"
+      "shared/src/**/*.{ts,tsx}",
+      "desktop/src/**/*.{ts,tsx}",
+      "desktop/*.ts"
     ]
   }
 }

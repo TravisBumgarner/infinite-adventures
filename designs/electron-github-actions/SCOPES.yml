@@ -1,0 +1,270 @@
+project: Electron Desktop App with GitHub Actions CI/CD
+design_file: null # Scoped directly from just-recordings reference project
+scoping_date: 2026-03-26
+
+milestones:
+  - number: 1
+    title: "1. Desktop Package Foundation"
+    description: >
+      Scaffold an Electron Forge desktop package that wraps the existing frontend,
+      with makers for all platforms and a GitHub publisher for releases.
+    branch:
+      working: task-1-desktop-package-foundation
+      base: main
+
+  - number: 2
+    title: "2. Code Signing & Notarization"
+    description: >
+      Add macOS code signing + notarization and Windows Azure Trusted Signing
+      to the forge config, gated behind environment variables so local dev
+      is unaffected.
+    branch:
+      working: task-3-code-signing
+      base: task-1-desktop-package-foundation
+
+  - number: 3
+    title: "3. GitHub Actions Build Workflow"
+    description: >
+      Create a GitHub Actions workflow that builds, signs, and publishes
+      the Electron app for macOS, Windows, and Linux in parallel.
+    branch:
+      working: task-5-github-actions-workflow
+      base: task-3-code-signing
+
+  - number: 4
+    title: "4. Auto-Update"
+    description: >
+      Set up automatic update checking so installed apps can self-update
+      from GitHub releases.
+    branch:
+      working: task-6-auto-updater
+      base: task-5-github-actions-workflow
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: Scaffold Electron Forge desktop package with Vite plugin
+    description: |
+      Create a `packages/desktop` directory with a new Electron Forge project
+      configured to use the Vite plugin (matching just-recordings' approach).
+
+      **Setup:**
+      - Add `packages/desktop/package.json` with Electron Forge deps:
+        - `electron` (latest stable)
+        - `@electron-forge/cli`
+        - `@electron-forge/plugin-vite`
+        - `@electron-forge/maker-squirrel` (Windows)
+        - `@electron-forge/maker-dmg` (macOS)
+        - `@electron-forge/maker-deb` (Linux)
+        - `@electron-forge/maker-zip` (macOS portable)
+        - `@electron-forge/publisher-github`
+        - `@electron/notarize`
+        - `@electron/windows-sign`
+        - `electron-squirrel-startup`
+        - `update-electron-app`
+      - Add `desktop` to root `package.json` workspaces array
+      - Create `forge.config.ts` with:
+        - App name and ASAR packaging enabled
+        - Vite plugin config with separate main/preload/renderer entries
+        - Vite configs for main process (`vite.main.config.ts`) and preload (`vite.preload.config.ts`)
+      - Create minimal entry points:
+        - `src/main/index.ts` — creates BrowserWindow, loads frontend
+        - `src/preload/preload.ts` — context bridge setup
+      - Add npm scripts: `dev`, `package`, `make`, `publish`
+
+      **Reference:** `~/Programming/just-recordings/packages/desktop/` for structure and config patterns.
+    acceptance_criteria:
+      - packages/desktop exists with package.json, forge.config.ts, and vite configs
+      - `npm run dev -w desktop` launches an Electron window loading the frontend
+      - Desktop workspace is registered in root package.json
+    depends_on: []
+    effort: 3
+    status: implementing
+
+  - id: 2
+    milestone: 1
+    title: Configure forge makers, publisher, and frontend bundling hook
+    description: |
+      Flesh out the forge.config.ts with all makers, the GitHub publisher,
+      and the `packageAfterCopy` hook that bundles the pre-built frontend
+      into the Electron app.
+
+      **Makers:**
+      - `MakerSquirrel` — Windows .exe installer with setup icon
+      - `MakerDMG` — macOS disk image with custom layout (app + Applications symlink)
+      - `MakerDeb` — Linux .deb package with proper metadata
+      - `MakerZIP` — macOS portable ZIP
+
+      **Publisher:**
+      - `@electron-forge/publisher-github` pointing to a releases repo
+        (e.g., `TravisBumgarner/infinite-adventures-releases`)
+      - Draft mode enabled so releases require manual approval
+
+      **Hooks:**
+      - `packageAfterCopy`: Copy `frontend/dist` into `.vite/renderer`
+        (throws if frontend hasn't been built)
+      - `postMake`: Rename artifacts to stable, version-agnostic filenames
+        (e.g., `Infinite-Adventures-darwin.dmg`)
+
+      **Build assets:**
+      - Create `packages/desktop/build/` with placeholder icon files
+      - Add `packages/desktop/build/entitlements.mac.plist` (Electron-standard
+        entitlements: allow-jit, allow-unsigned-executable-memory,
+        disable-library-validation)
+
+      **Reference:** just-recordings `forge.config.ts` for exact maker options
+      and hook implementations.
+    acceptance_criteria:
+      - All four makers configured in forge.config.ts
+      - GitHub publisher configured with draft releases
+      - packageAfterCopy hook copies frontend dist into renderer
+      - postMake hook renames artifacts to stable names
+      - Entitlements plist exists with correct Electron permissions
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 2
+    title: Add macOS code signing and notarization config
+    description: |
+      Add macOS signing and notarization to `forge.config.ts`, gated behind
+      the `SHOULD_APPLE_SIGN` environment variable so it only activates in CI.
+
+      **Signing (`osxSign`):**
+      - Identity from `process.env.APPLE_IDENTITY`
+      - Hardened runtime enabled
+      - Entitlements from `./build/entitlements.mac.plist`
+      - Only enabled when `SHOULD_APPLE_SIGN=1`
+
+      **Notarization (`postPackage` hook):**
+      - Uses `@electron/notarize` with `notarize()` function
+      - Requires `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID` env vars
+      - Only runs on darwin platform when `SHOULD_APPLE_SIGN=1`
+
+      **Reference:** just-recordings `forge.config.ts` lines with `osxSign`
+      and `postPackage`.
+    acceptance_criteria:
+      - osxSign config in forge.config.ts gated on SHOULD_APPLE_SIGN
+      - postPackage notarization hook using @electron/notarize
+      - Local dev unaffected (signing disabled by default)
+    depends_on: [2]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 2
+    title: Add Windows Azure Trusted Signing config
+    description: |
+      Add Windows code signing via Azure Trusted Signing to the forge config.
+
+      **Create `packages/desktop/windowsSign.ts`:**
+      - Export `WindowsSignOptions` object with:
+        - `signToolPath` from `process.env.SIGNTOOL_PATH`
+        - `signWithParams` referencing Azure Code Signing DLib and metadata JSON
+        - Timestamp server: `http://timestamp.acs.microsoft.com`
+        - Hash: `sha256`
+      - Only enabled when `SHOULD_WINDOWS_SIGN=1`
+
+      **Update `forge.config.ts`:**
+      - Import and apply `windowsSign` options conditionally
+
+      **Reference:** just-recordings `windowsSign.ts` and forge.config.ts
+      Windows signing sections.
+    acceptance_criteria:
+      - windowsSign.ts exports signing options referencing env vars
+      - forge.config.ts conditionally applies Windows signing
+      - Local dev unaffected (signing disabled by default)
+    depends_on: [2]
+    effort: 1
+    status: scoped
+
+  - id: 5
+    milestone: 3
+    title: Create multi-platform GitHub Actions build workflow
+    description: |
+      Create `.github/workflows/desktop-release.yml` that builds, signs, and
+      publishes the Electron app for all three platforms.
+
+      **Trigger:** `workflow_dispatch` (manual)
+
+      **Permissions:** `contents: write`
+
+      **Strategy:** Matrix build across `[windows-latest, ubuntu-latest, macos-latest]`
+      with `fail-fast: false` and `continue-on-error: true`.
+
+      **Environment variables (set per-platform):**
+      - `SHOULD_APPLE_SIGN`: `1` on macOS, `0` elsewhere
+      - `SHOULD_WINDOWS_SIGN`: `1` on Windows, `0` elsewhere
+      - `GITHUB_TOKEN` from secrets
+      - Apple signing secrets (macOS only): `APPLE_TEAM_ID`, `APPLE_ID`,
+        `APPLE_PASSWORD`, `APPLE_IDENTITY`
+      - Azure signing secrets (Windows only): `AZURE_TENANT_ID`,
+        `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
+      - Frontend build env vars: any `VITE_PUBLIC_*` secrets needed
+
+      **Steps:**
+
+      1. **Checkout** — `actions/checkout@v4`
+      2. **Setup Node** — `actions/setup-node@v4` with node version from `.nvmrc` or explicit
+      3. **macOS certificate import** (macOS only):
+         - Decode base64 `APPLE_CERTIFICATE` secret
+         - Create temporary keychain
+         - Import certificate
+         - Set key partition list for codesign
+      4. **Windows signing tools** (Windows only):
+         - Install Microsoft Trusted Signing Client via NuGet
+         - Extract `Azure.CodeSigning.Dlib.dll`
+         - Create `metadata.json` with Azure endpoint/credentials
+         - Locate `signtool.exe` from Windows SDK
+         - Export env vars: `AZURE_CODE_SIGNING_DLIB`, `AZURE_METADATA_JSON`,
+           `SIGNTOOL_PATH`
+      5. **Install dependencies** — `npm ci`
+      6. **Build shared** — `npm run build -w shared`
+      7. **Build frontend** — `npm run build -w frontend` (with VITE env vars)
+      8. **Publish desktop** — `npm run publish -w desktop`
+
+      **Reference:** just-recordings `.github/workflows/desktop-release.yml`
+      for exact step implementations, especially certificate import and
+      Windows signing tool setup.
+    acceptance_criteria:
+      - Workflow file exists at .github/workflows/desktop-release.yml
+      - Manual trigger via workflow_dispatch
+      - Parallel builds for macOS, Windows, and Linux
+      - macOS certificate import step (conditional)
+      - Windows signing tools setup step (conditional)
+      - Builds shared, frontend, then publishes desktop
+      - All required secrets documented in workflow comments
+    depends_on: [3, 4]
+    effort: 3
+    status: scoped
+
+  - id: 6
+    milestone: 4
+    title: Set up auto-updater for desktop app
+    description: |
+      Add automatic update checking so installed apps can detect and install
+      new versions from GitHub releases.
+
+      **macOS + Windows:**
+      - Use `update-electron-app` in `src/main/index.ts`
+      - Call on app ready, skip on Linux (Squirrel not supported)
+      - Connect to logger for update status messages
+
+      **Linux fallback:**
+      - Add IPC handler `check-for-update` in main process
+      - Fetches latest release from GitHub API
+        (`https://api.github.com/repos/OWNER/REPO-releases/releases/latest`)
+      - Compares `release.tag_name` with `app.getVersion()`
+      - Returns `{ version, url }` if update available, `null` otherwise
+      - Expose via preload context bridge so renderer can trigger check
+
+      **Reference:** just-recordings `src/main/index.ts` lines 62-72
+      (update-electron-app) and lines 459-475 (Linux IPC handler).
+    acceptance_criteria:
+      - update-electron-app configured for macOS and Windows
+      - Linux IPC handler checks GitHub API for newer releases
+      - Preload exposes check-for-update to renderer
+    depends_on: [1]
+    effort: 2
+    status: scoped
