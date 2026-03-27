@@ -33,8 +33,9 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
-        connectSrc: ["'self'", "*.supabase.co", "*.posthog.com", s3Origin],
+        scriptSrc: ["'self'", "https://challenges.cloudflare.com", "https://us-assets.i.posthog.com"],
+        connectSrc: ["'self'", "*.supabase.co", "*.posthog.com", "*.i.posthog.com", s3Origin],
+        workerSrc: ["'self'", "blob:"],
         imgSrc: ["'self'", "data:", "blob:", s3Origin],
         styleSrc: ["'self'", "'unsafe-inline'"],
         frameSrc: ["https://challenges.cloudflare.com"],
