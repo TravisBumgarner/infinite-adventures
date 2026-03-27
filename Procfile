@@ -1,2 +1,2 @@
-web: node backend/dist/index.js
-release: node backend/dist/db/migrate.js
+web: node packages/backend/dist/index.js
+release: node packages/backend/dist/db/migrate.js
